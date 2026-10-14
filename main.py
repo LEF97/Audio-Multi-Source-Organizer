@@ -16,6 +16,7 @@ load_dotenv()
 sys.path.insert(0, str(Path(__file__).parent.resolve()))
 
 from amso.core.database import DatabaseManager, get_database_path
+from amso.core.i18n import get_i18n, tr
 from amso.ui.views.main_window import MainWindow
 
 
@@ -26,9 +27,13 @@ def main() -> int:
     # Initialisation de la persistance SQLite3 (crée les tables si nécessaire)
     db = DatabaseManager(db_path=db_path)
 
+    # Initialisation de la langue et des préférences utilisateur
+    i18n = get_i18n()
+    i18n.init_language()
+
     # Initialisation de l'application Qt
     app = QApplication(sys.argv)
-    app.setApplicationName("Audio Multi-Source Organizer")
+    app.setApplicationName(tr("app.name"))
     app.setApplicationVersion("0.1.0")
     app.setOrganizationName("LEF97")
 

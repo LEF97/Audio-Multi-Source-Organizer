@@ -11,6 +11,7 @@ from typing import Any, Optional, Sequence
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, QObject, Qt
 
 from amso.core.database import DatabaseManager, TrackRecord
+from amso.core.i18n import tr
 
 
 def format_duration(seconds: Optional[float]) -> str:
@@ -30,29 +31,29 @@ def format_quality(score: int, fmt: Optional[str], bitrate: Optional[int]) -> st
     """Génère un libellé lisible de qualité audio."""
     f = (fmt or "").upper()
     if score >= 900:
-        return f"Hi-Res ({f})"
+        return tr("quality.hires", format=f)
     elif score >= 800:
-        return f"Lossless ({f})"
+        return tr("quality.lossless", format=f)
     elif score >= 600:
-        return f"{f} {bitrate}k" if bitrate else f"{f} HQ"
+        return tr("quality.bitrate", format=f, bitrate=bitrate) if bitrate else tr("quality.hq", format=f)
     elif score >= 400:
-        return f"{f} {bitrate}k" if bitrate else f"{f}"
-    return f"{f}" if f else "Audio"
+        return tr("quality.bitrate", format=f, bitrate=bitrate) if bitrate else f
+    return f if f else tr("quality.audio")
 
 
 class TrackTableModel(QAbstractTableModel):
     """Modèle de table virtualisé pour l'affichage haute performance des pistes."""
 
     COLUMNS: list[tuple[str, str]] = [
-        ("Titre", "title"),
-        ("Artiste", "artist"),
-        ("Album", "album"),
-        ("Durée", "duration_seconds"),
-        ("Qualité", "quality_score"),
-        ("Format", "format"),
-        ("Source", "source_type"),
-        ("Année", "year"),
-        ("Piste", "track_number"),
+        ("table.col_title", "title"),
+        ("table.col_artist", "artist"),
+        ("table.col_album", "album"),
+        ("table.col_duration", "duration_seconds"),
+        ("table.col_quality", "quality_score"),
+        ("table.col_format", "format"),
+        ("table.col_source", "source_type"),
+        ("table.col_year", "year"),
+        ("table.col_track", "track_number"),
     ]
 
     def __init__(self, db: DatabaseManager, parent: Optional[QObject] = None) -> None:
@@ -88,9 +89,9 @@ class TrackTableModel(QAbstractTableModel):
 
         if role == Qt.ItemDataRole.DisplayRole:
             if col == 0:
-                return track.title or "Sans titre"
+                return track.title or tr("track.untitled")
             elif col == 1:
-                return track.artist or "Artiste inconnu"
+                return track.artist or tr("track.unknown_artist")
             elif col == 2:
                 return track.album or "--"
             elif col == 3:
@@ -128,8 +129,16 @@ class TrackTableModel(QAbstractTableModel):
     ) -> Any:
         if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             if 0 <= section < len(self.COLUMNS):
-                return self.COLUMNS[section][0]
+                return tr(self.COLUMNS[section][0])
         return None
+
+    def notify_language_changed(self) -> None:
+        """Notifie la vue que les en-têtes et les libellés de qualité/titres ont changé."""
+        self.headerDataChanged.emit(Qt.Orientation.Horizontal, 0, len(self.COLUMNS) - 1)
+        if self._tracks:
+            top_left = self.index(0, 0)
+            bottom_right = self.index(len(self._tracks) - 1, len(self.COLUMNS) - 1)
+            self.dataChanged.emit(top_left, bottom_right)
 
     def sort(self, column: int, order: Qt.SortOrder = Qt.SortOrder.AscendingOrder) -> None:
         """Effectue le tri des données selon la colonne sélectionnée."""

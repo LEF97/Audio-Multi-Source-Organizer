@@ -193,4 +193,36 @@ QProgressBar::chunk {
     background-color: #0284C7;
     border-radius: 3px;
 }
+
+/* --- Sélecteur de langue (QComboBox) --- */
+QComboBox#langComboBox {
+    background-color: #20242D;
+    color: #F8FAFC;
+    border: 1px solid #333846;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
+    min-height: 20px;
+}
+
+QComboBox#langComboBox:hover {
+    border-color: #38BDF8;
+    background-color: #242833;
+}
+
+QComboBox#langComboBox::drop-down {
+    border: none;
+    width: 20px;
+}
+
+QComboBox#langComboBox QAbstractItemView {
+    background-color: #1A1D24;
+    color: #F8FAFC;
+    selection-background-color: #0284C7;
+    selection-color: #FFFFFF;
+    border: 1px solid #333846;
+    border-radius: 4px;
+    padding: 4px;
+    outline: none;
+}
 """

@@ -33,7 +33,10 @@ def build(onefile: bool = False) -> int:
         f"--workpath={build_dir}",
         # Ajouter le package amso pour garantir que tous les sous-modules sont inclus
         f"--paths={project_root}",
+        f"--add-data={project_root / 'amso' / 'locales'};amso/locales",
+        "--hidden-import=amso.core.config",
         "--hidden-import=amso.core.database",
+        "--hidden-import=amso.core.i18n",
         "--hidden-import=amso.core.metadata",
         "--hidden-import=amso.core.scanner",
         "--hidden-import=amso.ui.models",

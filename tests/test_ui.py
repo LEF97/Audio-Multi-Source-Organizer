@@ -11,6 +11,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
 from amso.core.database import DatabaseManager, SourceType, TrackRecord
+from amso.core.i18n import get_i18n, tr
 from amso.ui.models import TrackTableModel, format_duration, format_quality
 from amso.ui.views.main_window import MainWindow
 
@@ -69,6 +70,7 @@ def test_format_helpers():
     assert format_duration(None) == "--:--"
     assert format_duration(0) == "--:--"
 
+    get_i18n().set_language("fr")
     assert "Lossless" in format_quality(850, "flac", 1000)
     assert "Hi-Res" in format_quality(950, "flac", 2500)
     assert "320k" in format_quality(650, "mp3", 320)
@@ -76,16 +78,30 @@ def test_format_helpers():
 
 def test_track_table_model(qapp: QApplication, db: DatabaseManager):
     """Vérifie le fonctionnement du modèle virtualisé QAbstractTableModel."""
+    i18n = get_i18n()
+    i18n.set_language("fr")
+
     model = TrackTableModel(db=db)
     model.reload_data()
 
     assert model.rowCount() == 2
     assert model.columnCount() == 9
 
-    # Vérification des en-têtes
+    # Vérification des en-têtes en français
     assert model.headerData(0, Qt.Orientation.Horizontal) == "Titre"
     assert model.headerData(1, Qt.Orientation.Horizontal) == "Artiste"
     assert model.headerData(3, Qt.Orientation.Horizontal) == "Durée"
+
+    # Vérification de la dynamique de changement de langue
+    i18n.set_language("en")
+    model.notify_language_changed()
+    assert model.headerData(0, Qt.Orientation.Horizontal) == "Title"
+    assert model.headerData(1, Qt.Orientation.Horizontal) == "Artist"
+    assert model.headerData(3, Qt.Orientation.Horizontal) == "Duration"
+
+    # Retour au français
+    i18n.set_language("fr")
+    model.notify_language_changed()
 
     # Vérification des cellules (ligne 0 : Queen)
     idx_title = model.index(0, 0)
@@ -108,12 +124,32 @@ def test_track_table_model(qapp: QApplication, db: DatabaseManager):
 
 
 def test_main_window_instantiation(qapp: QApplication, db: DatabaseManager):
-    """Vérifie la création correcte de la fenêtre principale et de ses widgets."""
+    """Vérifie la création correcte de la fenêtre principale et du sélecteur de langue."""
+    i18n = get_i18n()
+    i18n.set_language("fr")
+
     window = MainWindow(db=db)
     assert "AMSO" in window.windowTitle()
     assert window.table_model.rowCount() == 2
     assert window.search_edit is not None
     assert window.btn_all_tracks.isChecked() is True
+    assert "Tous les morceaux" in window.btn_all_tracks.text()
+
+    # Vérification du sélecteur de langue
+    assert window.combo_language is not None
+    assert window.combo_language.count() >= 4
+
+    # Changement dynamique de langue vers l'anglais
+    en_idx = window.combo_language.findData("en")
+    assert en_idx >= 0
+    window.combo_language.setCurrentIndex(en_idx)
+    assert "All Tracks" in window.btn_all_tracks.text()
+    assert "Scan Sources" in window.btn_scan_all.text()
+
+    # Retour au français
+    fr_idx = window.combo_language.findData("fr")
+    window.combo_language.setCurrentIndex(fr_idx)
+    assert "Tous les morceaux" in window.btn_all_tracks.text()
 
     # Test clic sur Doublons
     window.btn_duplicates.click()

@@ -13,6 +13,7 @@ from PySide6.QtGui import QAction, QCursor, QIcon
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QButtonGroup,
+    QComboBox,
     QFileDialog,
     QFrame,
     QHBoxLayout,
@@ -34,6 +35,7 @@ from PySide6.QtWidgets import (
 )
 
 from amso.core.database import DatabaseManager, SourceRecord, SourceType, TrackRecord
+from amso.core.i18n import SUPPORTED_LANGUAGES, get_i18n, tr
 from amso.core.scanner import ScanSummary
 from amso.ui.models import TrackTableModel
 from amso.ui.theme import DARK_THEME_QSS
@@ -47,8 +49,8 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.db = db
         self.scan_worker: Optional[ScanWorker] = None
+        self.i18n = get_i18n()
 
-        self.setWindowTitle("Audio Multi-Source Organizer (AMSO)")
         self.resize(1200, 780)
         self.setMinimumSize(900, 600)
 
@@ -62,6 +64,12 @@ class MainWindow(QMainWindow):
         self._setup_ui()
         self._setup_status_bar()
 
+        # Enregistrement du callback de changement de langue dynamique
+        self.i18n.add_listener(self._on_language_changed)
+
+        # Appliquer les libellés traduits
+        self.retranslate_ui()
+
         # Timer pour recherche incrémentale fluide (debounce de 250ms)
         self._search_timer = QTimer(self)
         self._search_timer.setSingleShot(True)
@@ -72,6 +80,10 @@ class MainWindow(QMainWindow):
         self.refresh_sources_list()
         self.table_model.reload_data()
         self._update_track_count()
+
+    def closeEvent(self, event) -> None:
+        self.i18n.remove_listener(self._on_language_changed)
+        super().closeEvent(event)
 
     # -------------------------------------------------------------------------
     # Construction de l'interface graphique
@@ -113,20 +125,20 @@ class MainWindow(QMainWindow):
         logo.setObjectName("appLogoLabel")
         layout.addWidget(logo)
 
-        subtitle = QLabel("Audio Multi-Source")
-        subtitle.setStyleSheet("color: #64748B; font-size: 11px; margin-left: 16px; margin-bottom: 12px;")
-        layout.addWidget(subtitle)
+        self.lbl_subtitle = QLabel(tr("sidebar.subtitle"))
+        self.lbl_subtitle.setStyleSheet("color: #64748B; font-size: 11px; margin-left: 16px; margin-bottom: 12px;")
+        layout.addWidget(self.lbl_subtitle)
 
         # Groupe de boutons de navigation
         self.nav_button_group = QButtonGroup(self)
         self.nav_button_group.setExclusive(True)
 
         # Section Bibliothèque
-        sec_lib = QLabel("BIBLIOTHÈQUE")
-        sec_lib.setStyleSheet("color: #64748B; font-size: 10px; font-weight: 700; padding: 6px 12px;")
-        layout.addWidget(sec_lib)
+        self.sec_lib_label = QLabel(tr("sidebar.section_library"))
+        self.sec_lib_label.setStyleSheet("color: #64748B; font-size: 10px; font-weight: 700; padding: 6px 12px;")
+        layout.addWidget(self.sec_lib_label)
 
-        self.btn_all_tracks = QPushButton("🎵  Tous les morceaux")
+        self.btn_all_tracks = QPushButton(tr("sidebar.nav_all_tracks"))
         self.btn_all_tracks.setProperty("class", "nav-btn")
         self.btn_all_tracks.setCheckable(True)
         self.btn_all_tracks.setChecked(True)
@@ -134,14 +146,14 @@ class MainWindow(QMainWindow):
         self.nav_button_group.addButton(self.btn_all_tracks)
         layout.addWidget(self.btn_all_tracks)
 
-        self.btn_duplicates = QPushButton("👥  Doublons détectés")
+        self.btn_duplicates = QPushButton(tr("sidebar.nav_duplicates"))
         self.btn_duplicates.setProperty("class", "nav-btn")
         self.btn_duplicates.setCheckable(True)
         self.btn_duplicates.clicked.connect(self._on_duplicates_clicked)
         self.nav_button_group.addButton(self.btn_duplicates)
         layout.addWidget(self.btn_duplicates)
 
-        self.btn_stats = QPushButton("📊  Statistiques")
+        self.btn_stats = QPushButton(tr("sidebar.nav_stats"))
         self.btn_stats.setProperty("class", "nav-btn")
         self.btn_stats.setCheckable(True)
         self.btn_stats.clicked.connect(self._on_stats_clicked)
@@ -150,9 +162,9 @@ class MainWindow(QMainWindow):
 
         # Séparateur
         layout.addSpacing(12)
-        sec_sources = QLabel("SOURCES CONNECTÉES")
-        sec_sources.setStyleSheet("color: #64748B; font-size: 10px; font-weight: 700; padding: 6px 12px;")
-        layout.addWidget(sec_sources)
+        self.sec_sources_label = QLabel(tr("sidebar.section_sources"))
+        self.sec_sources_label.setStyleSheet("color: #64748B; font-size: 10px; font-weight: 700; padding: 6px 12px;")
+        layout.addWidget(self.sec_sources_label)
 
         # Zone déroulante pour la liste des sources
         self.sources_scroll = QScrollArea()
@@ -167,10 +179,43 @@ class MainWindow(QMainWindow):
 
         # Bouton d'ajout de source locale
         layout.addSpacing(8)
-        self.btn_add_source = QPushButton("➕  Ajouter un dossier...")
+        self.btn_add_source = QPushButton(tr("sidebar.btn_add_source"))
         self.btn_add_source.setProperty("class", "secondary-btn")
         self.btn_add_source.clicked.connect(self._on_add_local_folder)
         layout.addWidget(self.btn_add_source)
+
+        # Sélecteur de langue en bas de la barre latérale
+        layout.addSpacing(14)
+        lang_box = QWidget()
+        lang_layout = QVBoxLayout(lang_box)
+        lang_layout.setContentsMargins(4, 4, 4, 4)
+        lang_layout.setSpacing(4)
+
+        self.lbl_language = QLabel(tr("sidebar.language_label"))
+        self.lbl_language.setStyleSheet("color: #64748B; font-size: 11px; font-weight: 600;")
+        lang_layout.addWidget(self.lbl_language)
+
+        self.combo_language = QComboBox()
+        self.combo_language.setObjectName("langComboBox")
+
+        lang_display = {
+            "fr": "🇫🇷  Français",
+            "en": "🇬🇧  English",
+            "es": "🇪🇸  Español",
+            "it": "🇮🇹  Italiano",
+            "de": "🇩🇪  Deutsch",
+        }
+        for code, name in SUPPORTED_LANGUAGES.items():
+            disp = lang_display.get(code, f"{code.upper()} - {name}")
+            self.combo_language.addItem(disp, userData=code)
+
+        cur_idx = self.combo_language.findData(self.i18n.current_language)
+        if cur_idx >= 0:
+            self.combo_language.setCurrentIndex(cur_idx)
+
+        self.combo_language.currentIndexChanged.connect(self._on_language_combo_changed)
+        lang_layout.addWidget(self.combo_language)
+        layout.addWidget(lang_box)
 
         return frame
 
@@ -190,19 +235,19 @@ class MainWindow(QMainWindow):
         # Barre de recherche FTS5
         self.search_edit = QLineEdit()
         self.search_edit.setObjectName("searchEdit")
-        self.search_edit.setPlaceholderText("🔍 Rechercher par titre, artiste, album, genre...")
+        self.search_edit.setPlaceholderText(tr("topbar.search_placeholder"))
         self.search_edit.textChanged.connect(self._on_search_changed)
         top_layout.addWidget(self.search_edit)
 
         top_layout.addStretch()
 
         # Compteur de morceaux
-        self.track_count_label = QLabel("0 morceaux")
+        self.track_count_label = QLabel(tr("topbar.track_count", count="0"))
         self.track_count_label.setStyleSheet("color: #94A3B8; font-size: 12px; font-weight: 500;")
         top_layout.addWidget(self.track_count_label)
 
         # Bouton Scanner / Actualiser
-        self.btn_scan_all = QPushButton("🔄  Scanner les sources")
+        self.btn_scan_all = QPushButton(tr("topbar.btn_scan_all"))
         self.btn_scan_all.setProperty("class", "primary-btn")
         self.btn_scan_all.clicked.connect(self._on_scan_current_source)
         top_layout.addWidget(self.btn_scan_all)
@@ -252,18 +297,58 @@ class MainWindow(QMainWindow):
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
 
-        self.status_label = QLabel("Prêt")
+        self.status_label = QLabel(tr("status.ready"))
         self.status_bar.addWidget(self.status_label, 1)
 
         self.progress_bar = QProgressBar()
         self.progress_bar.setVisible(False)
         self.status_bar.addPermanentWidget(self.progress_bar)
 
-        self.btn_cancel_scan = QPushButton("Annuler")
+        self.btn_cancel_scan = QPushButton(tr("status.cancel"))
         self.btn_cancel_scan.setStyleSheet("font-size: 11px; padding: 2px 8px;")
         self.btn_cancel_scan.setVisible(False)
         self.btn_cancel_scan.clicked.connect(self._cancel_current_scan)
         self.status_bar.addPermanentWidget(self.btn_cancel_scan)
+
+    # -------------------------------------------------------------------------
+    # Internationalisation & Changement de langue dynamique
+    # -------------------------------------------------------------------------
+
+    def retranslate_ui(self) -> None:
+        """Applique les traductions de la langue active à l'ensemble de l'interface."""
+        self.setWindowTitle(tr("app.window_title"))
+        self.lbl_subtitle.setText(tr("sidebar.subtitle"))
+        self.sec_lib_label.setText(tr("sidebar.section_library"))
+        self.btn_all_tracks.setText(tr("sidebar.nav_all_tracks"))
+        self.btn_duplicates.setText(tr("sidebar.nav_duplicates"))
+        self.btn_stats.setText(tr("sidebar.nav_stats"))
+        self.sec_sources_label.setText(tr("sidebar.section_sources"))
+        self.btn_add_source.setText(tr("sidebar.btn_add_source"))
+        self.lbl_language.setText(tr("sidebar.language_label"))
+
+        self.search_edit.setPlaceholderText(tr("topbar.search_placeholder"))
+        self.btn_scan_all.setText(tr("topbar.btn_scan_all"))
+        self.btn_cancel_scan.setText(tr("status.cancel"))
+
+        if not (self.scan_worker and self.scan_worker.isRunning()):
+            self.status_label.setText(tr("status.ready"))
+
+        self._update_track_count()
+        self.table_model.notify_language_changed()
+
+    def _on_language_combo_changed(self, index: int) -> None:
+        lang_code = self.combo_language.itemData(index)
+        if lang_code and lang_code != self.i18n.current_language:
+            self.i18n.set_language(lang_code, save_to_config=True)
+
+    def _on_language_changed(self, lang_code: str) -> None:
+        self.combo_language.blockSignals(True)
+        idx = self.combo_language.findData(lang_code)
+        if idx >= 0:
+            self.combo_language.setCurrentIndex(idx)
+        self.combo_language.blockSignals(False)
+
+        self.retranslate_ui()
 
     # -------------------------------------------------------------------------
     # Actions & Événements
@@ -271,7 +356,6 @@ class MainWindow(QMainWindow):
 
     def refresh_sources_list(self) -> None:
         """Met à jour les boutons de sources dans la barre latérale."""
-        # Nettoyage des boutons existants
         while self.sources_layout.count():
             item = self.sources_layout.takeAt(0)
             if item.widget():
@@ -315,8 +399,11 @@ class MainWindow(QMainWindow):
         self.table_model.set_tracks(all_dup_tracks)
         self._update_track_count()
         self.status_label.setText(
-            f"{len(dup_hash)} groupes de doublons par empreinte, "
-            f"{len(dup_meta)} groupes par métadonnées détectés."
+            tr(
+                "status.duplicates_summary",
+                hash_count=len(dup_hash),
+                meta_count=len(dup_meta),
+            )
         )
 
     def _on_stats_clicked(self) -> None:
@@ -325,19 +412,21 @@ class MainWindow(QMainWindow):
         size_gb = round(stats["total_size_bytes"] / (1024**3), 2)
         duration_hrs = round(stats["total_duration_seconds"] / 3600, 1)
 
-        fmt_details = ", ".join(f"{k.upper()}: {v}" for k, v in stats["by_format"].items()) or "Aucun"
-        src_details = ", ".join(f"{k}: {v}" for k, v in stats["by_source_type"].items()) or "Aucun"
+        none_str = tr("dialog.stats_none")
+        fmt_details = ", ".join(f"{k.upper()}: {v}" for k, v in stats["by_format"].items()) or none_str
+        src_details = ", ".join(f"{k}: {v}" for k, v in stats["by_source_type"].items()) or none_str
 
+        total_tracks_fmt = f"{stats['total_tracks']:,}"
         msg = (
-            f"<b>📊 Statistiques de la Bibliothèque :</b><br><br>"
-            f"• <b>Total des morceaux :</b> {stats['total_tracks']:,}<br>"
-            f"• <b>Volume total :</b> {size_gb} Go<br>"
-            f"• <b>Durée d'écoute cumulée :</b> {duration_hrs} heures<br>"
-            f"• <b>Sources connectées :</b> {stats['total_sources']}<br><br>"
-            f"• <b>Répartition par source :</b> {src_details}<br>"
-            f"• <b>Formats audio :</b> {fmt_details}"
+            f"{tr('dialog.stats_header')}"
+            f"{tr('dialog.stats_total_tracks', total=total_tracks_fmt)}"
+            f"{tr('dialog.stats_total_size', size=size_gb)}"
+            f"{tr('dialog.stats_total_duration', duration=duration_hrs)}"
+            f"{tr('dialog.stats_total_sources', total=stats['total_sources'])}"
+            f"{tr('dialog.stats_by_source', details=src_details)}"
+            f"{tr('dialog.stats_by_format', details=fmt_details)}"
         )
-        QMessageBox.information(self, "Statistiques AMSO", msg)
+        QMessageBox.information(self, tr("dialog.stats_title"), msg)
 
     def _on_search_changed(self, text: str) -> None:
         """Déclenche la recherche avec debounce."""
@@ -350,13 +439,16 @@ class MainWindow(QMainWindow):
 
     def _update_track_count(self) -> None:
         count = self.table_model.rowCount()
-        self.track_count_label.setText(f"{count:,} morceaux")
+        if count <= 1:
+            self.track_count_label.setText(tr("topbar.track_count_singular", count=f"{count:,}"))
+        else:
+            self.track_count_label.setText(tr("topbar.track_count", count=f"{count:,}"))
 
     def _on_add_local_folder(self) -> None:
         """Permet à l'utilisateur de sélectionner un dossier audio local à ajouter."""
         folder = QFileDialog.getExistingDirectory(
             self,
-            "Sélectionner un dossier audio à organiser",
+            tr("dialog.select_folder_title"),
             str(Path.home()),
         )
         if not folder:
@@ -373,8 +465,8 @@ class MainWindow(QMainWindow):
         # Proposer un scan immédiat
         reply = QMessageBox.question(
             self,
-            "Lancer le scan ?",
-            f"Le dossier '{folder_path.name}' a été ajouté.<br>Voulez-vous lancer l'indexation immédiatement ?",
+            tr("dialog.scan_prompt_title"),
+            tr("dialog.scan_prompt_message", name=folder_path.name),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
         if reply == QMessageBox.StandardButton.Yes:
@@ -386,12 +478,11 @@ class MainWindow(QMainWindow):
         if not sources:
             QMessageBox.information(
                 self,
-                "Aucune source",
-                "Ajoutez d'abord un dossier local pour lancer un scan.",
+                tr("dialog.no_source_title"),
+                tr("dialog.no_source_message"),
             )
             return
 
-        # Scanner la première source ou itérer
         for src in sources:
             if src.source_type == SourceType.LOCAL:
                 self._start_scan(src)
@@ -400,13 +491,13 @@ class MainWindow(QMainWindow):
     def _start_scan(self, source: SourceRecord) -> None:
         """Démarre le worker asynchrone de scan."""
         if self.scan_worker and self.scan_worker.isRunning():
-            QMessageBox.warning(self, "Scan en cours", "Un scan est déjà en cours d'exécution.")
+            QMessageBox.warning(self, tr("dialog.scan_running_title"), tr("dialog.scan_running_message"))
             return
 
         self.progress_bar.setVisible(True)
         self.progress_bar.setValue(0)
         self.btn_cancel_scan.setVisible(True)
-        self.status_label.setText(f"Scan en cours de {source.name}...")
+        self.status_label.setText(tr("status.scanning", source=source.name))
 
         self.scan_worker = ScanWorker(db=self.db, source=source, compute_hash=True, parent=self)
         self.scan_worker.progress.connect(self._on_scan_progress)
@@ -418,14 +509,14 @@ class MainWindow(QMainWindow):
     def _cancel_current_scan(self) -> None:
         if self.scan_worker and self.scan_worker.isRunning():
             self.scan_worker.cancel()
-            self.status_label.setText("Annulation en cours...")
+            self.status_label.setText(tr("status.cancelling"))
 
     def _on_scan_progress(self, current: int, total: int, current_file: str) -> None:
         if total > 0:
             pct = int((current / total) * 100)
             self.progress_bar.setValue(pct)
             fn = Path(current_file).name
-            self.status_label.setText(f"Indexation ({current}/{total}) : {fn}")
+            self.status_label.setText(tr("status.indexing", current=current, total=total, file=fn))
 
     def _on_scan_finished(self, summary: ScanSummary) -> None:
         self.progress_bar.setVisible(False)
@@ -435,22 +526,35 @@ class MainWindow(QMainWindow):
         self._update_track_count()
 
         if summary.cancelled:
-            self.status_label.setText("Scan interrompu par l'utilisateur.")
+            self.status_label.setText(tr("status.cancelled"))
         elif summary.errors and summary.added == 0 and summary.updated == 0 and summary.unchanged == 0:
-            err_msg = f"{len(summary.errors)} erreur(s) lors du scan."
+            err_msg = tr("status.scan_errors", count=len(summary.errors))
             self.status_label.setText(err_msg)
-            QMessageBox.warning(self, "Erreurs de scan", f"{err_msg}<br><br>Détail de la première erreur :<br>{summary.errors[0]}")
+            QMessageBox.warning(
+                self,
+                tr("dialog.scan_errors_title"),
+                tr("dialog.scan_errors_message", count=len(summary.errors), error=summary.errors[0]),
+            )
         else:
             self.status_label.setText(
-                f"Scan terminé en {summary.elapsed_seconds}s : "
-                f"+{summary.added} ajouts, {summary.updated} mis à jour, {summary.unchanged} inchangés."
+                tr(
+                    "status.scan_finished",
+                    elapsed=summary.elapsed_seconds,
+                    added=summary.added,
+                    updated=summary.updated,
+                    unchanged=summary.unchanged,
+                )
             )
 
     def _on_scan_error(self, err_msg: str) -> None:
         self.progress_bar.setVisible(False)
         self.btn_cancel_scan.setVisible(False)
-        self.status_label.setText(f"Erreur : {err_msg}")
-        QMessageBox.critical(self, "Erreur de scan", f"Une erreur est survenue pendant le scan :<br>{err_msg}")
+        self.status_label.setText(tr("status.scan_error", error=err_msg))
+        QMessageBox.critical(
+            self,
+            tr("dialog.scan_error_title"),
+            tr("dialog.scan_error_message", error=err_msg),
+        )
 
     # -------------------------------------------------------------------------
     # Menu contextuel du tableau
@@ -467,13 +571,13 @@ class MainWindow(QMainWindow):
 
         menu = QMenu(self)
 
-        action_open_dir = QAction("📂 Ouvrir l'emplacement du fichier", self)
+        action_open_dir = QAction(tr("context_menu.open_file_location"), self)
         action_open_dir.triggered.connect(lambda: self._open_file_location(track.source_path))
         menu.addAction(action_open_dir)
 
         menu.addSeparator()
 
-        action_del = QAction("🗑️ Supprimer de la bibliothèque", self)
+        action_del = QAction(tr("context_menu.delete_track"), self)
         action_del.triggered.connect(lambda: self._delete_track_from_lib(track))
         menu.addAction(action_del)
 
@@ -481,7 +585,11 @@ class MainWindow(QMainWindow):
 
     def _open_file_location(self, file_path: Optional[str]) -> None:
         if not file_path or not os.path.exists(file_path):
-            QMessageBox.warning(self, "Introuvable", "Le fichier local est introuvable sur le disque.")
+            QMessageBox.warning(
+                self,
+                tr("dialog.file_not_found_title"),
+                tr("dialog.file_not_found_message"),
+            )
             return
 
         norm_path = os.path.normpath(file_path)
@@ -497,8 +605,8 @@ class MainWindow(QMainWindow):
             return
         reply = QMessageBox.question(
             self,
-            "Confirmation",
-            f"Voulez-vous supprimer '{track.title}' de la bibliothèque ?<br>(Le fichier sur le disque ne sera pas supprimé)",
+            tr("dialog.delete_confirm_title"),
+            tr("dialog.delete_confirm_message", title=track.title or tr("track.untitled")),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
         if reply == QMessageBox.StandardButton.Yes:
