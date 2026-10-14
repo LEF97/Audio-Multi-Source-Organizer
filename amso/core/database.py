@@ -92,8 +92,8 @@ class SourceRecord:
             source_type=SourceType(row["source_type"]),
             name=row["name"],
             path_or_uri=row["path_or_uri"],
-            created_at=row["created_at"],
-            last_scanned_at=row["last_scanned_at"],
+            created_at=str(row["created_at"]) if row["created_at"] is not None else None,
+            last_scanned_at=str(row["last_scanned_at"]) if row["last_scanned_at"] is not None else None,
         )
 
 
@@ -211,7 +211,6 @@ class DatabaseManager:
         conn = sqlite3.connect(
             self.db_path,
             timeout=30.0,
-            detect_types=sqlite3.PARSE_DECLTYPES,
         )
         conn.row_factory = sqlite3.Row
 

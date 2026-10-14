@@ -56,11 +56,21 @@ def is_audio_file(file_path: str | Path) -> bool:
 
 
 def compute_file_hash(file_path: str | Path, chunk_size: int = 65536) -> str:
-    """Calcule l'empreinte SHA-256 du fichier pour le dédoublonnage strict."""
+    """Calcule une empreinte rapide et robuste adaptée aux disques locaux et partages réseau."""
     sha256 = hashlib.sha256()
+    size = os.path.getsize(file_path)
+    sha256.update(str(size).encode("ascii"))
+
+    threshold = 4 * 1024 * 1024  # 4 Mo
     with open(file_path, "rb") as f:
-        while chunk := f.read(chunk_size):
-            sha256.update(chunk)
+        if size <= threshold:
+            while chunk := f.read(chunk_size):
+                sha256.update(chunk)
+        else:
+            # Pour les gros fichiers (FLAC Hi-Res, WAV, etc.) : hachage début + fin
+            sha256.update(f.read(1024 * 1024))
+            f.seek(max(0, size - (1024 * 1024)))
+            sha256.update(f.read(1024 * 1024))
     return sha256.hexdigest()
 
 
@@ -125,11 +135,14 @@ def _get_tag_value(tags: Any, keys: Sequence[str]) -> Optional[str]:
     if not tags:
         return None
     for k in keys:
-        if k in tags:
-            val = tags[k]
-            res = _clean_str(val)
-            if res:
-                return res
+        try:
+            if k in tags:
+                val = tags[k]
+                res = _clean_str(val)
+                if res:
+                    return res
+        except (KeyError, ValueError, TypeError):
+            continue
     return None
 
 
@@ -216,47 +229,50 @@ def extract_metadata(
         if t:
             title = t
 
-            # Artiste
-            artist = _get_tag_value(tags, ["TPE1", "artist", "ARTIST", "\xa9ART", "Author"])
+        # Artiste
+        artist = _get_tag_value(tags, ["TPE1", "artist", "ARTIST", "\xa9ART", "Author"])
 
-            # Artiste de l'album
-            album_artist = _get_tag_value(tags, ["TPE2", "albumartist", "ALBUMARTIST", "album_artist", "aART", "WM/AlbumArtist"])
+        # Artiste de l'album
+        album_artist = _get_tag_value(tags, ["TPE2", "albumartist", "ALBUMARTIST", "album_artist", "aART", "WM/AlbumArtist"])
 
-            # Album
-            album = _get_tag_value(tags, ["TALB", "album", "ALBUM", "\xa9alb", "WM/AlbumTitle"])
+        # Album
+        album = _get_tag_value(tags, ["TALB", "album", "ALBUM", "\xa9alb", "WM/AlbumTitle"])
 
-            # Genre
-            genre = _get_tag_value(tags, ["TCON", "genre", "GENRE", "\xa9gen", "WM/Genre"])
+        # Genre
+        genre = _get_tag_value(tags, ["TCON", "genre", "GENRE", "\xa9gen", "WM/Genre"])
 
-            # ISRC
-            isrc = _get_tag_value(tags, ["TSRC", "isrc", "ISRC"])
+        # ISRC
+        isrc = _get_tag_value(tags, ["TSRC", "isrc", "ISRC"])
 
-            # Année / Date
-            y_val = _get_tag_value(tags, ["TDRC", "TYER", "date", "DATE", "year", "YEAR", "\xa9day", "WM/Year"])
-            year = _parse_year(y_val)
+        # Année / Date
+        y_val = _get_tag_value(tags, ["TDRC", "TYER", "date", "DATE", "year", "YEAR", "\xa9day", "WM/Year"])
+        year = _parse_year(y_val)
 
-            # Numéro de piste
-            # MP4 stocke souvent trkn sous forme de tuple ((track, total),)
-            if "\xa9trkn" in tags or "trkn" in tags:
+        # Numéro de piste & Disque
+        if fmt in {"m4a", "mp4"}:
+            try:
                 trkn_val = tags.get("\xa9trkn") or tags.get("trkn")
                 if isinstance(trkn_val, (list, tuple)) and trkn_val and isinstance(trkn_val[0], tuple):
                     track_number = trkn_val[0][0]
                 else:
                     track_number = _parse_int_pair(trkn_val)
-            else:
-                tr_val = _get_tag_value(tags, ["TRCK", "tracknumber", "TRACKNUMBER", "WM/TrackNumber"])
-                track_number = _parse_int_pair(tr_val)
+            except Exception:
+                pass
 
-            # Numéro de disque
-            if "\xa9disk" in tags or "disk" in tags:
+            try:
                 disk_val = tags.get("\xa9disk") or tags.get("disk")
                 if isinstance(disk_val, (list, tuple)) and disk_val and isinstance(disk_val[0], tuple):
                     disc_number = disk_val[0][0]
                 else:
                     disc_number = _parse_int_pair(disk_val)
-            else:
-                disc_val = _get_tag_value(tags, ["TPOS", "discnumber", "DISCNUMBER"])
-                disc_number = _parse_int_pair(disc_val)
+            except Exception:
+                pass
+        else:
+            tr_val = _get_tag_value(tags, ["TRCK", "tracknumber", "TRACKNUMBER", "WM/TrackNumber"])
+            track_number = _parse_int_pair(tr_val)
+
+            disc_val = _get_tag_value(tags, ["TPOS", "discnumber", "DISCNUMBER"])
+            disc_number = _parse_int_pair(disc_val)
 
     quality_score = compute_quality_score(fmt, bitrate, sample_rate)
 

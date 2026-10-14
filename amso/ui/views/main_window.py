@@ -430,11 +430,16 @@ class MainWindow(QMainWindow):
     def _on_scan_finished(self, summary: ScanSummary) -> None:
         self.progress_bar.setVisible(False)
         self.btn_cancel_scan.setVisible(False)
+        self.refresh_sources_list()
         self.table_model.reload_data()
         self._update_track_count()
 
         if summary.cancelled:
             self.status_label.setText("Scan interrompu par l'utilisateur.")
+        elif summary.errors and summary.added == 0 and summary.updated == 0 and summary.unchanged == 0:
+            err_msg = f"{len(summary.errors)} erreur(s) lors du scan."
+            self.status_label.setText(err_msg)
+            QMessageBox.warning(self, "Erreurs de scan", f"{err_msg}<br><br>Détail de la première erreur :<br>{summary.errors[0]}")
         else:
             self.status_label.setText(
                 f"Scan terminé en {summary.elapsed_seconds}s : "
