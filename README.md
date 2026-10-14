@@ -12,7 +12,7 @@
 
 | Fonctionnalité | Description | Statut |
 | :--- | :--- | :---: |
-| **Scanner local multithreadé** | Découverte récursive et rapide des fichiers audio locaux (MP3, FLAC, AAC, OGG...) | 🟡 En cours |
+| **Scanner local multithreadé** | Découverte récursive et rapide des fichiers audio locaux (MP3, FLAC, AAC, OGG...) | 🟢 Implémenté |
 | **Extraction de métadonnées** | Lecture/écriture ID3, Vorbis Comments et calcul d'empreinte audio (`mutagen`) | 🟢 Implémenté |
 | **Base de données SQLite3** | Stockage persistant optimisé avec schéma relationnel dédié (sans ORM lourd) | 🟢 Implémenté |
 | **Interface graphique PySide6** | Modèle tabulaire virtualisé (`QAbstractTableModel`) pour > 50 000 morceaux | ⚪ Prévu |
