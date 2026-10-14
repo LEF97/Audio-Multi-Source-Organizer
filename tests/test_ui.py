@@ -154,9 +154,30 @@ def test_main_window_instantiation(qapp: QApplication, db: DatabaseManager):
     # Test clic sur Doublons
     window.btn_duplicates.click()
     assert window.btn_duplicates.isChecked() is True
+    assert window.stacked_widget.currentIndex() == 0
 
-    # Test clic sur Tous les morceaux
+    # Test clic sur Statistiques (nouvelle page dédiée)
+    window.btn_stats_page.click()
+    assert window.btn_stats_page.isChecked() is True
+    assert window.stacked_widget.currentIndex() == 1
+    assert "2" in window.kpi_tracks_val.text()
+
+    # Test clic sur Paramètres > Général (page dédiée avec langue)
+    window.btn_settings_general.click()
+    assert window.btn_settings_general.isChecked() is True
+    assert window.stacked_widget.currentIndex() == 2
+
+    # Test retour sur Tous les morceaux
     window.btn_all_tracks.click()
     assert window.btn_all_tracks.isChecked() is True
+    assert window.stacked_widget.currentIndex() == 0
+
+    # Test repliement / dépliement d'un tiroir
+    assert window.drawer_library._is_expanded is True
+    window.drawer_library.toggle()
+    assert window.drawer_library._is_expanded is False
+    assert window.drawer_library.content_widget.isVisible() is False
+    window.drawer_library.toggle()
+    assert window.drawer_library._is_expanded is True
 
     window.close()

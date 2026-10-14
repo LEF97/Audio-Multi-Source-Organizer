@@ -225,4 +225,34 @@ QComboBox#langComboBox QAbstractItemView {
     padding: 4px;
     outline: none;
 }
+
+/* --- En-têtes de tiroirs pliables (Drawer Header) --- */
+QPushButton.drawer-header {
+    background-color: transparent;
+    color: #64748B;
+    text-align: left;
+    padding: 6px 8px;
+    border: none;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+}
+
+QPushButton.drawer-header:hover {
+    background-color: #20242E;
+    color: #94A3B8;
+}
+
+/* --- Cartes de tableau de bord (Dashboard / Statistiques / Paramètres) --- */
+QFrame.dashboard-card {
+    background-color: #1A1D24;
+    border: 1px solid #282C37;
+    border-radius: 8px;
+}
+
+QFrame.dashboard-card:hover {
+    border-color: #38BDF8;
+}
 """
