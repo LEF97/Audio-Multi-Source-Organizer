@@ -51,3 +51,6 @@ python_functions = ["test_*"]
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["amso*"]
+
+[tool.setuptools.package-data]
+amso = ["locales/*.json"]
