@@ -15,13 +15,13 @@ load_dotenv()
 # S'assurer que le package amso est importable
 sys.path.insert(0, str(Path(__file__).parent.resolve()))
 
-from amso.core.database import DatabaseManager
+from amso.core.database import DatabaseManager, get_database_path
 from amso.ui.views.main_window import MainWindow
 
 
 def main() -> int:
     """Initialise la base locale et démarre l'interface graphique PySide6."""
-    db_path = os.getenv("AMSO_DB_PATH", "amso_library.db")
+    db_path = get_database_path()
 
     # Initialisation de la persistance SQLite3 (crée les tables si nécessaire)
     db = DatabaseManager(db_path=db_path)

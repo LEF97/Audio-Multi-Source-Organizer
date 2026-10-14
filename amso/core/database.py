@@ -11,8 +11,10 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 import json
+import os
 from pathlib import Path
 import sqlite3
+import sys
 from typing import Any, Generator, Iterable, Optional, Sequence
 
 
@@ -176,18 +178,55 @@ class TrackRecord:
         )
 
 
+def get_default_data_dir() -> Path:
+    """Retourne le répertoire de données standard utilisateur selon l'OS (AppData, etc.)."""
+    if sys.platform == "win32":
+        base = os.getenv("APPDATA") or (Path.home() / "AppData" / "Roaming")
+    elif sys.platform == "darwin":
+        base = Path.home() / "Library" / "Application Support"
+    else:
+        base = os.getenv("XDG_DATA_HOME") or (Path.home() / ".local" / "share")
+    app_dir = Path(base) / "AMSO"
+    app_dir.mkdir(parents=True, exist_ok=True)
+    return app_dir
+
+
+def get_database_path() -> Path:
+    """Détermine l'emplacement standardisé de la base SQLite.
+
+    Priorité :
+    1. Variable d'environnement AMSO_DB_PATH si explicitement définie
+    2. Répertoire AppData utilisateur (%APPDATA%/AMSO/amso_library.db sous Windows)
+    """
+    custom = os.getenv("AMSO_DB_PATH")
+    if custom and custom.strip():
+        p = Path(custom.strip()).resolve()
+        p.parent.mkdir(parents=True, exist_ok=True)
+        return p
+
+    db_file = get_default_data_dir() / "amso_library.db"
+    return db_file
+
+
 class DatabaseManager:
     """Gestionnaire de persistance SQLite pour la bibliothèque AMSO."""
 
     SCHEMA_VERSION = 1
 
-    def __init__(self, db_path: str | Path = ":memory:") -> None:
-        self.db_path = str(db_path)
+    def __init__(self, db_path: Optional[str | Path] = None) -> None:
+        if db_path is None:
+            self.db_path = str(get_database_path())
+        else:
+            self.db_path = str(db_path)
+
         self._memory_conn: Optional[sqlite3.Connection] = None
         if self.db_path == ":memory:":
             self._memory_conn = sqlite3.connect(":memory:", check_same_thread=False)
             self._memory_conn.row_factory = sqlite3.Row
             self._memory_conn.execute("PRAGMA foreign_keys = ON;")
+        else:
+            Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
+
         self.init_schema()
 
     def close(self) -> None:
