@@ -15,7 +15,7 @@
 | **Scanner local multithreadé** | Découverte récursive et rapide des fichiers audio locaux (MP3, FLAC, AAC, OGG...) | 🟢 Implémenté |
 | **Extraction de métadonnées** | Lecture/écriture ID3, Vorbis Comments et calcul d'empreinte audio (`mutagen`) | 🟢 Implémenté |
 | **Base de données SQLite3** | Stockage persistant optimisé avec schéma relationnel dédié (sans ORM lourd) | 🟢 Implémenté |
-| **Interface graphique PySide6** | Modèle tabulaire virtualisé (`QAbstractTableModel`) pour > 50 000 morceaux | ⚪ Prévu |
+| **Interface graphique PySide6** | Modèle tabulaire virtualisé (`QAbstractTableModel`) pour > 50 000 morceaux | 🟢 Implémenté |
 | **Connecteur Google Drive** | Scan et synchronisation de collections audio distantes via OAuth 2.0 | ⚪ Prévu |
 | **Connecteur Spotify / Streaming** | Importation de playlists et correspondance de pistes | ⚪ Prévu |
 | **Dédoublonnage intelligent** | Détection de doublons (titre/artiste flous + empreintes audio) | ⚪ Prévu |
