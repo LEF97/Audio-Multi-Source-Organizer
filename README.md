@@ -1,6 +1,6 @@
 # Audio Multi-Source Organizer (AMSO)
 
-[![CI Tests](https://github.com/votre-user/audio-multi-source-organizer/actions/workflows/tests.yml/badge.svg)](https://github.com/votre-user/audio-multi-source-organizer/actions)
+[![CI Tests](https://github.com/LEF97/Audio-Multi-Source-Organizer/actions/workflows/tests.yml/badge.svg)](https://github.com/LEF97/Audio-Multi-Source-Organizer/actions)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
@@ -32,7 +32,7 @@
 
 ```bash
 # 1. Cloner le dépôt
-git clone https://github.com/<votre-user>/audio-multi-source-organizer.git
+git clone https://github.com/LEF97/Audio-Multi-Source-Organizer.git
 cd audio-multi-source-organizer
 
 # 2. Créer l'environnement virtuel
