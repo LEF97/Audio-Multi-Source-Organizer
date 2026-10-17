@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import time
+
 from PySide6.QtCore import (
     QEasingCurve,
     QPropertyAnimation,
@@ -74,12 +76,17 @@ class BlindTestView(QWidget):
         cfg = get_config_manager()
         self._configured_countdown: int = cfg.get_blind_test_countdown()
         self._configured_reveal: int = cfg.get_blind_test_reveal()
+        self._configured_fade: int = cfg.get_blind_test_fade()
         self._countdown_remain: int = self._configured_countdown
         self._reveal_remain: int = self._configured_reveal
         self._total_round_duration: int = self._countdown_remain + self._reveal_remain
         self._current_round_elapsed: int = 0
         self._is_active_page: bool = False
         self.current_effect: str = cfg.get_visual_effect()
+        self._nominal_volume: int = getattr(self.player, "volume", 100)
+        self._is_fading: bool = False
+        self._fade_start_time: float = 0.0
+        self._fade_duration: float = float(self._configured_fade)
 
         self._setup_ui()
         self._connect_signals()
@@ -88,6 +95,11 @@ class BlindTestView(QWidget):
         self._game_timer = QTimer(self)
         self._game_timer.setInterval(1000)
         self._game_timer.timeout.connect(self._on_game_tick)
+
+        # Timer pour fondu sonore progressif
+        self._fade_timer = QTimer(self)
+        self._fade_timer.setInterval(50)
+        self._fade_timer.timeout.connect(self._on_fade_tick)
 
     def _setup_ui(self) -> None:
         layout = QVBoxLayout(self)
@@ -419,20 +431,26 @@ class BlindTestView(QWidget):
     def hideEvent(self, event: QHideEvent) -> None:
         """Déclenché lorsque l'utilisateur quitte la page Blind Test."""
         self._is_active_page = False
-        # Stopper le timer automatique pour ne pas forcer de saut de piste sur les autres vues
+        # Stopper le timer automatique et rétablir le volume nominal
         self._game_timer.stop()
+        self._stop_fade_and_restore_volume()
         try:
             super().hideEvent(event)
         except Exception:
             pass
 
-    def set_durations(self, countdown_seconds: int, reveal_seconds: int) -> None:
+    def set_durations(
+        self, countdown_seconds: int, reveal_seconds: int, fade_seconds: int | None = None
+    ) -> None:
         """Met à jour les durées configurées du Blind Test."""
         self._configured_countdown = countdown_seconds
         self._configured_reveal = reveal_seconds
+        if fade_seconds is not None:
+            self._configured_fade = fade_seconds
         self._countdown_remain = countdown_seconds
         self._reveal_remain = reveal_seconds
         self._total_round_duration = countdown_seconds + reveal_seconds
+        self._fade_duration = float(self._configured_fade)
 
     def _start_round_for_track(self, track: TrackRecord | None) -> None:
         """Initialise et lance une manche de Blind Test sur la piste fournie."""
@@ -440,8 +458,11 @@ class BlindTestView(QWidget):
             self._reset_to_empty_state()
             return
 
+        self._stop_fade_and_restore_volume()
+        self._nominal_volume = getattr(self.player, "volume", 100)
         self._countdown_remain = self._configured_countdown
         self._reveal_remain = self._configured_reveal
+        self._fade_duration = float(self._configured_fade)
         self._total_round_duration = self._countdown_remain + self._reveal_remain
         self._current_round_elapsed = 0
 
@@ -519,10 +540,63 @@ class BlindTestView(QWidget):
             self._reveal_remain -= 1
             if self._reveal_remain > 0:
                 self.lbl_status_badge.setText(tr("blind_test.status_revealed", remain=self._reveal_remain))
+                # Vérifier et appliquer le fondu sonore si on est dans la période finale
+                eff_fade = min(self._configured_fade, self._configured_reveal)
+                if eff_fade > 0 and self._reveal_remain <= eff_fade:
+                    if not self._is_fading:
+                        self._start_fade(eff_fade)
+                    fraction = max(0.0, float(self._reveal_remain) / max(1, eff_fade))
+                    target_vol = max(0, int(round(self._nominal_volume * fraction)))
+                    self._apply_temporary_volume(target_vol)
             else:
                 # Fin de la phase de découverte : passage automatique à la piste suivante !
                 self._game_timer.stop()
+                self._stop_fade_and_restore_volume()
                 self.player.next()
+
+    def _start_fade(self, duration_sec: int | float) -> None:
+        """Déclenche le fondu progressif de fin de manche."""
+        self._is_fading = True
+        self._fade_duration = float(duration_sec)
+        self._fade_start_time = time.time()
+        self._fade_timer.start(50)
+
+    def _on_fade_tick(self) -> None:
+        """Applique une atténuation continue et fluide toutes les 50ms."""
+        if not self._is_active_page or not self.player.is_playing or not self._is_fading:
+            return
+        if self._fade_duration <= 0:
+            return
+        elapsed = time.time() - self._fade_start_time
+        progress = max(0.0, min(1.0, elapsed / self._fade_duration))
+        remaining_ratio = 1.0 - progress
+        target_vol = max(0, int(round(self._nominal_volume * remaining_ratio)))
+        self._apply_temporary_volume(target_vol)
+        if progress >= 1.0:
+            self._fade_timer.stop()
+
+    def _apply_temporary_volume(self, vol: int) -> None:
+        """Transmet le volume atténué au lecteur sans écraser la configuration."""
+        if hasattr(self.player, "audio_set_temporary_volume"):
+            self.player.audio_set_temporary_volume(vol)
+        elif hasattr(self.player, "_media_player") and self.player._media_player:
+            try:
+                self.player._media_player.audio_set_volume(vol)
+            except Exception:
+                pass
+
+    def _stop_fade_and_restore_volume(self) -> None:
+        """Arrête le fondu et rétablit instantanément 100% du volume nominal."""
+        if hasattr(self, "_fade_timer"):
+            self._fade_timer.stop()
+        self._is_fading = False
+        if hasattr(self.player, "restore_volume"):
+            self.player.restore_volume()
+        elif hasattr(self.player, "_media_player") and self.player._media_player:
+            try:
+                self.player._media_player.audio_set_volume(self.player.volume)
+            except Exception:
+                pass
 
     def _trigger_reveal(self) -> None:
         """Déclenche l'animation de révélation (Fade-In de la pochette et textes)."""
@@ -575,6 +649,7 @@ class BlindTestView(QWidget):
     def _on_next_track_clicked(self) -> None:
         """Passe immédiatement au titre suivant."""
         self._game_timer.stop()
+        self._stop_fade_and_restore_volume()
         self.player.next()
 
     def _on_play_pause_clicked(self) -> None:
@@ -582,12 +657,16 @@ class BlindTestView(QWidget):
         if self.player.is_playing:
             self.player.pause()
             self._game_timer.stop()
+            if self._is_fading and hasattr(self, "_fade_timer"):
+                self._fade_timer.stop()
             self.btn_play_pause.setText("▶")
             self.lbl_status_badge.setText(tr("blind_test.status_paused"))
         else:
             self.player.play()
             if self._is_active_page:
                 self._game_timer.start(1000)
+                if self._is_fading and hasattr(self, "_fade_timer"):
+                    self._fade_timer.start(50)
             self.btn_play_pause.setText("⏸")
             if self._state == "countdown":
                 self.lbl_status_badge.setText(tr("blind_test.status_searching"))
@@ -627,10 +706,13 @@ class BlindTestView(QWidget):
         self.player.toggle_mute()
 
     def _on_volume_changed(self, val: int) -> None:
+        self._nominal_volume = val
         self.player.set_volume(val)
         self.lbl_volume.setText(f"{val}%")
 
     def _on_player_volume_changed(self, vol: int, muted: bool) -> None:
+        if not self._is_fading:
+            self._nominal_volume = vol
         self.slider_volume.blockSignals(True)
         self.slider_volume.setValue(vol)
         self.slider_volume.blockSignals(False)
@@ -710,6 +792,14 @@ class BlindTestView(QWidget):
     @property
     def _reveal_duration(self) -> int:
         return self._reveal_remain
+
+    @property
+    def _fade_duration_prop(self) -> int:
+        return self._configured_fade
+
+    @property
+    def _is_fade_active(self) -> bool:
+        return self._is_fading
 
     @property
     def _remaining_seconds(self) -> int:

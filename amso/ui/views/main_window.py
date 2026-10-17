@@ -35,6 +35,7 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QSizePolicy,
     QSlider,
+    QSpinBox,
     QSplitter,
     QStackedWidget,
     QStatusBar,
@@ -825,7 +826,6 @@ class MainWindow(QMainWindow):
         # Page 5b : Vue Blind Test (Intercalée entre Lecteur et Playlist)
         self.page_blind_test = BlindTestView(self.player_service, parent=self)
         self.page_blind_test.effect_changed.connect(self._sync_visual_effect_radio)
-        self.page_player.blind_test_settings_changed.connect(self.page_blind_test.set_durations)
         self.stacked_widget.addWidget(self.page_blind_test)
 
         # Page 6 : Vue Playlist (Mini-lecteur + Tableau de file d'attente)
@@ -1861,12 +1861,152 @@ class MainWindow(QMainWindow):
         l_vlc.addWidget(self.lbl_vlc_status_val)
 
         content_layout.addWidget(card_vlc)
+
+        # Carte 4 : Paramètres du Blind Test
+        card_bt = QFrame()
+        card_bt.setProperty("class", "dashboard-card")
+        self.card_settings_blind_test = card_bt
+        l_bt = QVBoxLayout(card_bt)
+        l_bt.setContentsMargins(18, 16, 18, 16)
+        l_bt.setSpacing(12)
+
+        self.lbl_card_bt_title = QLabel("🎭  " + tr("blind_test.settings_title"))
+        self.lbl_card_bt_title.setStyleSheet("color: #F8FAFC; font-size: 14px; font-weight: 700;")
+        l_bt.addWidget(self.lbl_card_bt_title)
+
+        self.lbl_card_bt_desc = QLabel(tr("settings.blind_test_desc"))
+        self.lbl_card_bt_desc.setStyleSheet("color: #94A3B8; font-size: 13px;")
+        l_bt.addWidget(self.lbl_card_bt_desc)
+
+        spin_qss = """
+            QSpinBox {
+                background-color: #20242D;
+                color: #F8FAFC;
+                border: 1px solid #333846;
+                border-radius: 6px;
+                padding: 4px 8px;
+                font-size: 12.5px;
+                font-weight: 600;
+            }
+            QSpinBox:focus {
+                border-color: #38BDF8;
+            }
+        """
+
+        inputs_layout = QHBoxLayout()
+        inputs_layout.setSpacing(20)
+
+        # 1. Durée du décompte
+        cd_box = QHBoxLayout()
+        cd_box.setSpacing(8)
+        self.lbl_bt_countdown = QLabel(tr("blind_test.countdown_label"))
+        self.lbl_bt_countdown.setStyleSheet("color: #CBD5E1; font-size: 12.5px; font-weight: 500;")
+        cd_box.addWidget(self.lbl_bt_countdown)
+
+        self.spin_bt_countdown = QSpinBox()
+        self.spin_bt_countdown.setRange(5, 120)
+        self.spin_bt_countdown.setSingleStep(5)
+        self.spin_bt_countdown.setSuffix(" s")
+        self.spin_bt_countdown.setValue(cfg.get_blind_test_countdown())
+        self.spin_bt_countdown.setFixedWidth(80)
+        self.spin_bt_countdown.setStyleSheet(spin_qss)
+        self.spin_bt_countdown.valueChanged.connect(self._on_blind_test_settings_changed)
+        cd_box.addWidget(self.spin_bt_countdown)
+        inputs_layout.addLayout(cd_box)
+
+        # 2. Durée de la découverte
+        rev_box = QHBoxLayout()
+        rev_box.setSpacing(8)
+        self.lbl_bt_reveal = QLabel(tr("blind_test.reveal_label"))
+        self.lbl_bt_reveal.setStyleSheet("color: #CBD5E1; font-size: 12.5px; font-weight: 500;")
+        rev_box.addWidget(self.lbl_bt_reveal)
+
+        self.spin_bt_reveal = QSpinBox()
+        self.spin_bt_reveal.setRange(3, 60)
+        self.spin_bt_reveal.setSingleStep(1)
+        self.spin_bt_reveal.setSuffix(" s")
+        self.spin_bt_reveal.setValue(cfg.get_blind_test_reveal())
+        self.spin_bt_reveal.setFixedWidth(80)
+        self.spin_bt_reveal.setStyleSheet(spin_qss)
+        self.spin_bt_reveal.valueChanged.connect(self._on_blind_test_settings_changed)
+        rev_box.addWidget(self.spin_bt_reveal)
+        inputs_layout.addLayout(rev_box)
+
+        # 3. Durée du fondu sonore de transition
+        fade_box = QHBoxLayout()
+        fade_box.setSpacing(8)
+        self.lbl_bt_fade = QLabel(tr("blind_test.fade_label"))
+        self.lbl_bt_fade.setStyleSheet("color: #CBD5E1; font-size: 12.5px; font-weight: 500;")
+        fade_box.addWidget(self.lbl_bt_fade)
+
+        self.spin_bt_fade = QSpinBox()
+        self.spin_bt_fade.setRange(0, 10)
+        self.spin_bt_fade.setSingleStep(1)
+        self.spin_bt_fade.setSuffix(" s")
+        self.spin_bt_fade.setValue(cfg.get_blind_test_fade())
+        self.spin_bt_fade.setFixedWidth(80)
+        self.spin_bt_fade.setStyleSheet(spin_qss)
+        self.spin_bt_fade.valueChanged.connect(self._on_blind_test_settings_changed)
+        fade_box.addWidget(self.spin_bt_fade)
+        inputs_layout.addLayout(fade_box)
+
+        inputs_layout.addStretch()
+        l_bt.addLayout(inputs_layout)
+
+        # Label d'information résumé de la manche
+        self.lbl_bt_total = QLabel()
+        self.lbl_bt_total.setStyleSheet("color: #38BDF8; font-size: 12px; font-weight: 500; margin-top: 4px;")
+        self._update_blind_test_summary_label()
+        l_bt.addWidget(self.lbl_bt_total)
+
+        content_layout.addWidget(card_bt)
         content_layout.addStretch(1)
+
+        # Rendre accessibles les contrôles sur le widget de page
+        container.spin_bt_countdown = self.spin_bt_countdown
+        container.spin_bt_reveal = self.spin_bt_reveal
+        container.spin_bt_fade = self.spin_bt_fade
+        container.lbl_bt_total = self.lbl_bt_total
 
         scroll.setWidget(scroll_content)
         main_layout.addWidget(scroll, 1)
 
         return container
+
+    def _update_blind_test_summary_label(self) -> None:
+        if not hasattr(self, "spin_bt_countdown") or not hasattr(self, "lbl_bt_total"):
+            return
+        cd = self.spin_bt_countdown.value()
+        rev = self.spin_bt_reveal.value()
+        fade = self.spin_bt_fade.value()
+        tot = cd + rev
+        self.lbl_bt_total.setText(
+            tr("blind_test.total_duration", total=tot, countdown=cd, reveal=rev, fade=fade)
+        )
+
+    def _on_blind_test_settings_changed(self) -> None:
+        if not hasattr(self, "spin_bt_countdown"):
+            return
+        cd = self.spin_bt_countdown.value()
+        rev = self.spin_bt_reveal.value()
+        fade = self.spin_bt_fade.value()
+
+        # Le fondu ne peut excéder la durée de la découverte
+        if fade > rev:
+            fade = rev
+            self.spin_bt_fade.blockSignals(True)
+            self.spin_bt_fade.setValue(fade)
+            self.spin_bt_fade.blockSignals(False)
+
+        cfg = get_config_manager()
+        cfg.set_blind_test_countdown(cd)
+        cfg.set_blind_test_reveal(rev)
+        cfg.set_blind_test_fade(fade)
+
+        self._update_blind_test_summary_label()
+
+        if hasattr(self, "page_blind_test") and self.page_blind_test:
+            self.page_blind_test.set_durations(cd, rev, fade)
 
     def _create_settings_about_page(self) -> QWidget:
         """Page dédiée Paramètres > À propos d'AMSO."""
@@ -2990,6 +3130,14 @@ class MainWindow(QMainWindow):
             self.lbl_vlc_status_val.setText(
                 f"• <b>{tr('settings.player_engine_status')}</b> <span style='color: {status_color}; font-weight: 600;'>{status_txt}</span>"
             )
+
+            if hasattr(self, "lbl_card_bt_title"):
+                self.lbl_card_bt_title.setText("🎭  " + tr("blind_test.settings_title"))
+                self.lbl_card_bt_desc.setText(tr("settings.blind_test_desc"))
+                self.lbl_bt_countdown.setText(tr("blind_test.countdown_label"))
+                self.lbl_bt_reveal.setText(tr("blind_test.reveal_label"))
+                self.lbl_bt_fade.setText(tr("blind_test.fade_label"))
+                self._update_blind_test_summary_label()
 
         # Vues Lecteur, Blind Test et Playlist
         if hasattr(self, "page_player") and self.page_player:

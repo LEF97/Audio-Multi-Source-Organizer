@@ -15,7 +15,6 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QSizePolicy,
     QSlider,
-    QSpinBox,
     QVBoxLayout,
     QWidget,
 )
@@ -62,7 +61,6 @@ class PlayerView(QWidget):
     """Page dédiée au Lecteur Audio grand format avec jaquette et contrôles complets."""
 
     effect_changed = Signal(str)
-    blind_test_settings_changed = Signal(int, int)
 
     def __init__(self, player_service: PlayerService, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -94,10 +92,54 @@ class PlayerView(QWidget):
         self.top_bar = top_bar
         top_layout = QHBoxLayout(top_bar)
         top_layout.setContentsMargins(20, 10, 20, 10)
+        top_layout.setSpacing(8)
 
         self.lbl_page_title = QLabel(tr("player.title"))
         self.lbl_page_title.setStyleSheet("color: #F8FAFC; font-size: 16px; font-weight: 700;")
         top_layout.addWidget(self.lbl_page_title)
+
+        top_layout.addSpacing(16)
+
+        # Contrôle du volume sonore intégré dans la barre supérieure
+        self.btn_mute = QPushButton("🔊")
+        self.btn_mute.setFixedSize(30, 30)
+        self.btn_mute.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._style_icon_button(self.btn_mute, font_size=13)
+        top_layout.addWidget(self.btn_mute)
+
+        self.slider_volume = ClickableSlider(Qt.Orientation.Horizontal)
+        self.slider_volume.setRange(0, 100)
+        self.slider_volume.setValue(self.player.volume)
+        self.slider_volume.setFixedWidth(120)
+        self.slider_volume.setFixedHeight(22)
+        self.slider_volume.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.slider_volume.setStyleSheet("""
+            QSlider::groove:horizontal {
+                height: 5px;
+                background-color: #282C37;
+                border-radius: 2px;
+            }
+            QSlider::sub-page:horizontal {
+                background-color: #38BDF8;
+                border-radius: 2px;
+            }
+            QSlider::handle:horizontal {
+                background-color: #E2E8F0;
+                width: 12px;
+                height: 12px;
+                margin: -3px 0;
+                border-radius: 6px;
+            }
+            QSlider::handle:horizontal:hover {
+                background-color: #38BDF8;
+            }
+        """)
+        top_layout.addWidget(self.slider_volume)
+
+        self.lbl_volume = QLabel(f"{self.player.volume}%")
+        self.lbl_volume.setStyleSheet("color: #94A3B8; font-size: 12px; min-width: 38px;")
+        top_layout.addWidget(self.lbl_volume)
+
         top_layout.addStretch()
 
         self.lbl_effect_badge = QLabel(tr("player.visual_effect"))
@@ -330,144 +372,7 @@ class PlayerView(QWidget):
 
         card_layout.addLayout(ctrl_layout)
 
-        # 5. Contrôle du volume sonore
-        vol_container = QWidget()
-        vol_layout = QHBoxLayout(vol_container)
-        vol_layout.setContentsMargins(0, 2, 0, 0)
-        vol_layout.setSpacing(8)
-        vol_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        self.btn_mute = QPushButton("🔊")
-        self.btn_mute.setFixedSize(30, 30)
-        self.btn_mute.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._style_icon_button(self.btn_mute, font_size=13)
-        vol_layout.addWidget(self.btn_mute)
-
-        self.slider_volume = ClickableSlider(Qt.Orientation.Horizontal)
-        self.slider_volume.setRange(0, 100)
-        self.slider_volume.setValue(self.player.volume)
-        self.slider_volume.setFixedWidth(140)
-        self.slider_volume.setFixedHeight(22)
-        self.slider_volume.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.slider_volume.setStyleSheet("""
-            QSlider::groove:horizontal {
-                height: 5px;
-                background-color: #282C37;
-                border-radius: 2px;
-            }
-            QSlider::sub-page:horizontal {
-                background-color: #38BDF8;
-                border-radius: 2px;
-            }
-            QSlider::handle:horizontal {
-                background-color: #E2E8F0;
-                width: 12px;
-                height: 12px;
-                margin: -3px 0;
-                border-radius: 6px;
-            }
-            QSlider::handle:horizontal:hover {
-                background-color: #38BDF8;
-            }
-        """)
-        vol_layout.addWidget(self.slider_volume)
-
-        self.lbl_volume = QLabel(f"{self.player.volume}%")
-        self.lbl_volume.setStyleSheet("color: #94A3B8; font-size: 12px; min-width: 38px;")
-        vol_layout.addWidget(self.lbl_volume)
-
-        card_layout.addWidget(vol_container)
-
         center_layout.addWidget(self.card)
-
-        # 6. Section Paramètres Blind Test sous le lecteur
-        self.card_blind_test = QFrame()
-        self.card_blind_test.setObjectName("cardBlindTestSettings")
-        self.card_blind_test.setMinimumWidth(500)
-        self.card_blind_test.setMaximumWidth(580)
-        self.card_blind_test.setStyleSheet("""
-            QFrame#cardBlindTestSettings {
-                background-color: rgba(26, 29, 36, 0.88);
-                border: 1px solid rgba(56, 189, 248, 0.2);
-                border-radius: 12px;
-            }
-        """)
-        bt_layout = QVBoxLayout(self.card_blind_test)
-        bt_layout.setContentsMargins(16, 12, 16, 12)
-        bt_layout.setSpacing(8)
-
-        self.lbl_bt_title = QLabel("🎭  " + tr("blind_test.settings_title"))
-        self.lbl_bt_title.setStyleSheet("color: #F8FAFC; font-size: 13px; font-weight: 700;")
-        bt_layout.addWidget(self.lbl_bt_title)
-
-        inputs_layout = QHBoxLayout()
-        inputs_layout.setSpacing(16)
-
-        # Durée décompte
-        cd_layout = QHBoxLayout()
-        cd_layout.setSpacing(6)
-        self.lbl_bt_cd = QLabel(tr("blind_test.countdown_label"))
-        self.lbl_bt_cd.setStyleSheet("color: #94A3B8; font-size: 12px;")
-        cd_layout.addWidget(self.lbl_bt_cd)
-
-        self.spin_bt_countdown = QSpinBox()
-        self.spin_bt_countdown.setRange(5, 120)
-        self.spin_bt_countdown.setSingleStep(5)
-        self.spin_bt_countdown.setSuffix(" s")
-        self.spin_bt_countdown.setValue(cfg.get_blind_test_countdown())
-        self.spin_bt_countdown.setFixedWidth(75)
-        self.spin_bt_countdown.setStyleSheet("""
-            QSpinBox {
-                background-color: #20242D;
-                color: #F8FAFC;
-                border: 1px solid #333846;
-                border-radius: 5px;
-                padding: 3px 6px;
-                font-size: 12px;
-                font-weight: 600;
-            }
-        """)
-        self.spin_bt_countdown.valueChanged.connect(self._on_blind_test_settings_changed)
-        cd_layout.addWidget(self.spin_bt_countdown)
-        inputs_layout.addLayout(cd_layout)
-
-        # Durée découverte
-        rev_layout = QHBoxLayout()
-        rev_layout.setSpacing(6)
-        self.lbl_bt_rev = QLabel(tr("blind_test.reveal_label"))
-        self.lbl_bt_rev.setStyleSheet("color: #94A3B8; font-size: 12px;")
-        rev_layout.addWidget(self.lbl_bt_rev)
-
-        self.spin_bt_reveal = QSpinBox()
-        self.spin_bt_reveal.setRange(3, 60)
-        self.spin_bt_reveal.setSingleStep(5)
-        self.spin_bt_reveal.setSuffix(" s")
-        self.spin_bt_reveal.setValue(cfg.get_blind_test_reveal())
-        self.spin_bt_reveal.setFixedWidth(75)
-        self.spin_bt_reveal.setStyleSheet("""
-            QSpinBox {
-                background-color: #20242D;
-                color: #F8FAFC;
-                border: 1px solid #333846;
-                border-radius: 5px;
-                padding: 3px 6px;
-                font-size: 12px;
-                font-weight: 600;
-            }
-        """)
-        self.spin_bt_reveal.valueChanged.connect(self._on_blind_test_settings_changed)
-        rev_layout.addWidget(self.spin_bt_reveal)
-        inputs_layout.addLayout(rev_layout)
-
-        bt_layout.addLayout(inputs_layout)
-
-        # Label total dynamique
-        self.lbl_bt_total = QLabel()
-        self.lbl_bt_total.setStyleSheet("color: #38BDF8; font-size: 11.5px; font-weight: 500;")
-        self._update_blind_test_total_label()
-        bt_layout.addWidget(self.lbl_bt_total)
-
-        center_layout.addWidget(self.card_blind_test)
         scroll.setWidget(center_container)
         layout.addWidget(scroll, 1)
 
@@ -601,12 +506,12 @@ class PlayerView(QWidget):
         # Hauteur requise pour les composants de la carte hors pochette
         card_hint = self.card.sizeHint().height()
         current_cover_h = self.lbl_cover.height()
-        non_cover_h = max(160, card_hint - current_cover_h)
+        non_cover_h = max(130, card_hint - current_cover_h)
 
         # Taille idéale de la pochette carrée
         target_size = net_available - non_cover_h - 4
-        # Borner entre une taille minimale lisible (150px) et maximale (300px)
-        target_size = max(150, min(300, target_size))
+        # Borner entre une taille minimale lisible (150px) et maximale (320px)
+        target_size = max(150, min(320, target_size))
 
         if target_size != self.lbl_cover.width():
             self.lbl_cover.setFixedSize(target_size, target_size)
@@ -884,29 +789,3 @@ class PlayerView(QWidget):
         self.btn_repeat.setToolTip(tr("player.btn_repeat"))
         if self.player.is_muted or self.player.volume == 0:
             self.lbl_volume.setText(tr("player.btn_mute"))
-
-        if hasattr(self, "lbl_bt_title"):
-            self.lbl_bt_title.setText("🎭  " + tr("blind_test.settings_title"))
-        if hasattr(self, "lbl_bt_cd"):
-            self.lbl_bt_cd.setText(tr("blind_test.countdown_label"))
-        if hasattr(self, "lbl_bt_rev"):
-            self.lbl_bt_rev.setText(tr("blind_test.reveal_label"))
-        if hasattr(self, "lbl_bt_total"):
-            self._update_blind_test_total_label()
-
-    def _update_blind_test_total_label(self) -> None:
-        cd = self.spin_bt_countdown.value()
-        rev = self.spin_bt_reveal.value()
-        tot = cd + rev
-        self.lbl_bt_total.setText(
-            tr("blind_test.total_duration", total=tot, countdown=cd, reveal=rev)
-        )
-
-    def _on_blind_test_settings_changed(self) -> None:
-        cd = self.spin_bt_countdown.value()
-        rev = self.spin_bt_reveal.value()
-        cfg = get_config_manager()
-        cfg.set_blind_test_countdown(cd)
-        cfg.set_blind_test_reveal(rev)
-        self._update_blind_test_total_label()
-        self.blind_test_settings_changed.emit(cd, rev)

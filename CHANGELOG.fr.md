@@ -16,6 +16,20 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 ## [0.2.0-dev] - En cours de développement
 
 ### Added
+- **Optimisations et corrections ergonomiques du Lecteur et du Blind Test** :
+  - **Intégration du volume en haut du Lecteur audio** : déplacement du curseur de volume, de l'icône muet et du pourcentage sonore dans la barre supérieure de la page, directement à côté du titre « Lecteur audio », libérant ainsi l'espace visuel sous la carte principale.
+  - **Épuration de la page Lecteur** : retrait complet du bloc de configuration du Blind Test qui n'apparaît plus sous le lecteur audio.
+  - **Délocalisation des paramètres Blind Test dans Paramètres > Lecteur** :
+    - Nouvelle carte dédiée « 🎭 Paramètres du Blind Test » ajoutée à la fin de la page `Paramètres > Lecteur`.
+    - Configuration de la durée du décompte (5 à 120 s, 20 s par défaut) et de la durée de découverte (3 à 60 s, 10 s par défaut).
+    - **Nouveau paramètre : Durée du fondu sonore (*Fade-out*)** : réglable de 0 à 10 secondes (2 secondes par défaut, plafonné dynamiquement à la durée de découverte).
+    - Calcul et résumé en direct de la manche : `Durée d'une manche : {total}s ({countdown}s recherche + {reveal}s découverte dont {fade}s de fondu)`.
+  - **Gestion acoustique du fondu de découverte** :
+    - La durée totale de découverte reste inchangée (ex: 10 s par défaut).
+    - La lecture audio s'effectue à 100 % du volume nominal défini pendant `découverte - fondu` (ex: 10 - 2 = 8 secondes), puis s'atténue de manière fluide et progressive jusqu'à 0 pendant les 2 dernières secondes.
+    - Dès le passage au morceau suivant (nouvelle manche), le volume sonore est instantanément et automatiquement rétabli à 100 % dès la première milliseconde.
+    - Rétablissement immédiat du volume nominal en cas de clic manuel sur « Morceau suivant », pause ou changement de vue.
+  - **Internationalisation intégrale** : libellés et textes d'explication traduits et synchronisés en 5 langues (FR, EN, ES, DE, IT).
 - **Refonte et perfectionnement du mode Aléatoire (Shuffle)** :
   - **Mélange intégral de la playlist** : lorsque l'icône Shuffle passe de désactivé à activé, l'ensemble complet de la file d'attente/tableau est mélangé aléatoirement (et non plus uniquement les titres en dessous). La piste en cours de lecture est elle-même redistribuée aléatoirement (pouvant se retrouver en première comme en dernière position) tout en poursuivant sa lecture sans coupure.
   - **Restauration fidèle de l'ordre initial** : dès que le mode Shuffle est désactivé, la playlist reprend instantanément son ordre de titres d'origine (avant le mélange), l'index de lecture étant automatiquement recalé sur la position d'origine du morceau actif.

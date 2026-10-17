@@ -35,6 +35,7 @@ KEY_VISUAL_EFFECT = "visual_effect"
 KEY_POSITION_MS = "position_ms"
 KEY_BLIND_TEST_COUNTDOWN = "blind_test_countdown"
 KEY_BLIND_TEST_REVEAL = "blind_test_reveal"
+KEY_BLIND_TEST_FADE = "blind_test_fade"
 
 
 def get_config_path() -> Path:
@@ -272,6 +273,18 @@ class ConfigManager:
     def set_blind_test_reveal(self, seconds: int) -> None:
         """Définit la durée de la découverte Blind Test en secondes."""
         self.set(SECTION_PLAYER, KEY_BLIND_TEST_REVEAL, str(max(3, min(60, seconds))))
+
+    def get_blind_test_fade(self) -> int:
+        """Retourne la durée en secondes du fondu sonore de fin de manche Blind Test (2s par défaut)."""
+        val = self.get(SECTION_PLAYER, KEY_BLIND_TEST_FADE, "2")
+        try:
+            return max(0, min(10, int(val)))
+        except Exception:
+            return 2
+
+    def set_blind_test_fade(self, seconds: int) -> None:
+        """Définit la durée du fondu sonore Blind Test en secondes (0 à 10s)."""
+        self.set(SECTION_PLAYER, KEY_BLIND_TEST_FADE, str(max(0, min(10, seconds))))
 
 
 

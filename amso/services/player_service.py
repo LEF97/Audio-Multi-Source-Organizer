@@ -950,6 +950,23 @@ class PlayerService(QObject):
             pass
         self.volume_changed.emit(self._volume, self._is_muted)
 
+    def audio_set_temporary_volume(self, volume: int) -> None:
+        """Applique temporairement un volume matériel (ex: fondu Blind Test) sans altérer la configuration."""
+        vol = max(0, min(100, volume))
+        if self._media_player and not self._is_muted and not self._is_crossfading:
+            try:
+                self._media_player.audio_set_volume(vol)
+            except Exception:
+                pass
+
+    def restore_volume(self) -> None:
+        """Rétablit le volume nominal enregistré après un fondu temporaire."""
+        if self._media_player and not self._is_muted and not self._is_crossfading:
+            try:
+                self._media_player.audio_set_volume(self._volume)
+            except Exception:
+                pass
+
     def toggle_mute(self) -> None:
         """Bascule le mode silencieux (Mute/Unmute)."""
         self._is_muted = not self._is_muted
