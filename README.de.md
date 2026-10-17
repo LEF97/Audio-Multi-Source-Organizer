@@ -15,6 +15,12 @@
 
 ---
 
+<p align="center">
+  <img src="screenshots/2026-10-17%20v0.1.0.png" alt="Audio Multi-Source Organizer (AMSO) Screenshot" width="850">
+</p>
+
+---
+
 ## 📌 Funktionen & Projektstatus
 
 | Funktion | Beschreibung | Status |
