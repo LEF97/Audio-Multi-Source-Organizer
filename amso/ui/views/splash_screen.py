@@ -6,7 +6,9 @@ et statut des étapes d'initialisation (BDD, audio, interface).
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
+import os
+
+from PySide6.QtCore import Qt, QThread
 from PySide6.QtGui import QColor, QGuiApplication
 from PySide6.QtWidgets import (
     QApplication,
@@ -27,6 +29,8 @@ class SplashScreen(QWidget):
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
+
+        self._current_value: int = 0
 
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.SplashScreen
@@ -186,13 +190,37 @@ class SplashScreen(QWidget):
             y = geom.y() + (geom.height() - self.height()) // 2
             self.move(x, y)
 
-    def set_progress(self, value: int, message: str) -> None:
-        """Met à jour le pourcentage et le message d'étape, et rafraîchit l'affichage immédiatement."""
-        val = max(0, min(100, value))
-        self.progress_bar.setValue(val)
-        self.lbl_percent.setText(f"{val}%")
+    def set_progress(self, value: int, message: str, step_delay_ms: int = 10) -> None:
+        """Met à jour le pourcentage de manière fluide pas-à-pas (1% en 1%) et rafraîchit l'affichage en continu."""
+        target = max(0, min(100, value))
         self.lbl_status.setText(message)
-        QApplication.processEvents()
+
+        # En environnement sans affichage (CI / tests) ou sans délai, mise à jour immédiate
+        if os.environ.get("QT_QPA_PLATFORM") == "offscreen" or step_delay_ms <= 0:
+            self._current_value = target
+            self.progress_bar.setValue(target)
+            self.lbl_percent.setText(f"{target}%")
+            QApplication.processEvents()
+            return
+
+        if target <= self._current_value:
+            self._current_value = target
+            self.progress_bar.setValue(target)
+            self.lbl_percent.setText(f"{target}%")
+            QApplication.processEvents()
+            return
+
+        # Progression fluide continue pas à pas de 1% en 1%
+        for v in range(self._current_value + 1, target + 1):
+            if not self.isVisible():
+                break
+            self.progress_bar.setValue(v)
+            self.lbl_percent.setText(f"{v}%")
+            QApplication.processEvents()
+            if step_delay_ms > 0:
+                QThread.msleep(step_delay_ms)
+
+        self._current_value = target
 
     def finish(self, main_window: QWidget) -> None:
         """Ferme l'écran de chargement et active la fenêtre principale."""
