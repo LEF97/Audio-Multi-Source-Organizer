@@ -13,15 +13,10 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 
 ---
 
-## [Unreleased]
+## [0.2.0-dev] - En cours de développement
 
-### À venir (Prévu)
-- Gestion des artistes et discographie associée.
-- Connecteur Amazon Music pour le scan et la synchronisation de dossiers musicaux distants (OAuth 2.0).
-- Connecteur Google Drive pour le scan et la synchronisation de dossiers musicaux distants (OAuth 2.0).
-- Intégration Spotify pour l'import de playlists et la correspondance hybride.
-- Égaliseur graphique 10 bandes intégré au lecteur audio.
-- Module de dédoublonnage intelligent (empreinte acoustique et similarité textuelle floue).
+### En cours / Prévu
+- Consulter la [Feuille de route (ROADMAP.fr.md)](ROADMAP.fr.md) pour le détail des chantiers ciblés en v0.2.0.
 
 ---
 

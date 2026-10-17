@@ -61,7 +61,7 @@ def test_funding_yaml_exists_and_valid():
 
 def test_constants_and_version():
     """Vérifie la définition cohérente des versions et des URLs de distribution/don."""
-    assert __version__ == "0.1.0"
+    assert __version__ == "0.2.0-dev"
     assert "github.com/LEF97" in URL_GITHUB_REPO
     assert "itch.io" in URL_ITCH_IO
     assert "ko-fi.com" in URL_KO_FI
@@ -321,7 +321,7 @@ def test_about_page_update_status_flow(qapp: QApplication, db: DatabaseManager, 
     # 1. Simuler l'état "À jour"
     window._on_update_check_finished(False, "v0.1.0", manual=False)
     assert "✓ À jour" in window.lbl_update_status_about.text()
-    assert "0.1.0" in window.lbl_update_status_about.text()
+    assert __version__ in window.lbl_update_status_about.text()
     assert window.btn_update_download.isHidden() is True
 
     # 2. Simuler une nouvelle version disponible avec date

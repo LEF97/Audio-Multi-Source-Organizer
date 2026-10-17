@@ -13,6 +13,7 @@ load_dotenv()
 # S'assurer que le package amso est importable
 sys.path.insert(0, str(Path(__file__).parent.resolve()))
 
+from amso import __version__  # noqa: E402
 from amso.core.database import DatabaseManager, get_database_path  # noqa: E402
 from amso.core.i18n import get_i18n, tr  # noqa: E402
 from amso.ui.views.main_window import MainWindow  # noqa: E402
@@ -33,7 +34,7 @@ def main() -> int:
     # 1. Initialisation prioritaire de l'application Qt pour affichage instantané du splash screen
     app = QApplication(sys.argv)
     app.setApplicationName("Audio Multi-Source Organizer")
-    app.setApplicationVersion("0.1.0")
+    app.setApplicationVersion(__version__)
     app.setOrganizationName("LEF97")
 
     # Icône officielle de l'application

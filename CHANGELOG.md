@@ -13,15 +13,10 @@ and this project adheres to [Semantic Versioning (SemVer)](https://semver.org/).
 
 ---
 
-## [Unreleased]
+## [0.2.0-dev] - In Development
 
-### Planned
-- Artist profiles and associated discography management.
-- Amazon Music connector for remote music directory scanning and synchronization (OAuth 2.0).
-- Google Drive connector for remote cloud music scanning and sync (OAuth 2.0).
-- Spotify integration for playlist importing and hybrid collection matching.
-- Built-in 10-band graphical audio equalizer.
-- Intelligent deduplication engine (acoustic audio fingerprinting and fuzzy metadata similarity).
+### In Progress / Planned
+- Refer to the [Roadmap (ROADMAP.md)](ROADMAP.md) for details on milestones and targeted v0.2.0 features.
 
 ---
 

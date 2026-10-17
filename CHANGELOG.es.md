@@ -12,15 +12,10 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
-## [Unreleased]
+## [0.2.0-dev] - En desarrollo
 
-### Próximamente (Planificado)
-- Gestión de artistas y discografía asociada.
-- Conector de Amazon Music para escaneo y sincronización en la nube (OAuth 2.0).
-- Conector de Google Drive para escaneo y sincronización en la nube (OAuth 2.0).
-- Integración de Spotify para importación de listas y correspondencia híbrida.
-- Ecualizador gráfico de 10 bandas integrado en el reproductor.
-- Módulo de desduplicación inteligente (huella acústica y similitud difusa).
+### En curso / Planificado
+- Consultar la [Hoja de ruta (ROADMAP.es.md)](ROADMAP.es.md) para conocer los hitos y funciones planificadas para v0.2.0.
 
 ---
 

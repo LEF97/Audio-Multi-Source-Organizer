@@ -19,6 +19,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from amso import __version__
+
 
 class SplashScreen(QWidget):
     """Fenêtre sans bordure affichant l'avancement de l'initialisation."""
@@ -165,7 +167,7 @@ class SplashScreen(QWidget):
         footer_box = QHBoxLayout()
         footer_box.setContentsMargins(0, 0, 0, 0)
 
-        lbl_version = QLabel("v0.1.0")
+        lbl_version = QLabel(f"v{__version__}")
         lbl_version.setStyleSheet("color: #475569; font-size: 11px; font-weight: 500;")
         footer_box.addWidget(lbl_version)
 

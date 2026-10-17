@@ -12,15 +12,10 @@ Il formato si basa su [Keep a Changelog](https://keepachangelog.com/it/1.0.0/) e
 
 ---
 
-## [Unreleased]
+## [0.2.0-dev] - In sviluppo
 
-### In arrivo (Pianificato)
-- Gestione artisti e discografia correlata.
-- Connettore Amazon Music per scansione e sincronizzazione cloud (OAuth 2.0).
-- Connettore Google Drive per scansione e sincronizzazione cloud (OAuth 2.0).
-- Integrazione Spotify per importazione playlist e corrispondenza ibrida.
-- Equalizzatore grafico a 10 bande nel lettore audio.
-- Modulo di deduplicazione intelligente (impronta acustica e similarità approssimata).
+### In corso / Pianificato
+- Consultare la [Tabella di marcia (ROADMAP.it.md)](ROADMAP.it.md) per i dettagli delle tappe e funzionalità per la v0.2.0.
 
 ---
 
