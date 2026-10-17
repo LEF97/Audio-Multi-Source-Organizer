@@ -274,6 +274,7 @@
   "blind_test.fade_label": "Duración del fundido:",
   "blind_test.total_duration": "Duración de ronda: {total}s ({countdown}s búsqueda + {reveal}s revelación con {fade}s de fundido)",
   "settings.blind_test_desc": "Configure las duraciones para la cuenta atrás, la revelación del tema y el fundido de audio.",
+  "blind_test.btn_prev": "⏮️  Pista anterior",
   "blind_test.btn_reveal": "👁️  Revelar",
   "blind_test.btn_next": "⏭️  Pista siguiente",
   "blind_test.mystery_title": "Pista misteriosa",

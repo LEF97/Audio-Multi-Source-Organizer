@@ -334,6 +334,11 @@ class PlayerService(QObject):
         return getattr(self, "_current_time_ms", 0)
 
     @property
+    def position_ms(self) -> int:
+        """Alias pratique de current_time_ms."""
+        return self.current_time_ms
+
+    @property
     def total_time_ms(self) -> int:
         """Retourne la durée totale du morceau en millisecondes."""
         if self._media_player:
@@ -663,7 +668,7 @@ class PlayerService(QObject):
         # S'assurer que le mélangeur Windows n'est pas sourdine ou ducké
         ensure_windows_audio_session_active()
 
-        seek_ms = self._pending_seek_ms if (resume_pending and index == self._current_index) else 0
+        seek_ms = self._pending_seek_ms if resume_pending else 0
         self._pending_seek_ms = 0
         self._reset_standby_player()
         self._current_index = index

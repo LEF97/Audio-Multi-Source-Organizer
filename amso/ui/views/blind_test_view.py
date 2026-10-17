@@ -5,13 +5,14 @@ from __future__ import annotations
 import time
 
 from PySide6.QtCore import (
+    Property,
     QEasingCurve,
     QPropertyAnimation,
     Qt,
     QTimer,
     Signal,
 )
-from PySide6.QtGui import QHideEvent, QPixmap
+from PySide6.QtGui import QColor, QFont, QHideEvent, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QComboBox,
     QFrame,
@@ -36,30 +37,68 @@ from amso.ui.views.visual_effects import VisualEffectWidget
 
 
 class ZoomFadeLabel(QLabel):
-    """QLabel animé effectuant un zoom et un fondu à chaque changement de valeur."""
+    """QLabel animé effectuant un zoom dynamique et un fondu à chaque changement de valeur."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._scale: float = 1.0
+
         self._opacity_effect = QGraphicsOpacityEffect(self)
         self.setGraphicsEffect(self._opacity_effect)
 
+        # Animation d'opacité (fondu doux)
         self._anim_opacity = QPropertyAnimation(self._opacity_effect, b"opacity", self)
-        self._anim_opacity.setDuration(800)
+        self._anim_opacity.setDuration(750)
         self._anim_opacity.setStartValue(1.0)
         self._anim_opacity.setEndValue(0.4)
         self._anim_opacity.setEasingCurve(QEasingCurve.Type.OutQuad)
 
+        # Animation d'échelle (Zoom dynamique de 1.45 vers 1.0)
+        self._anim_scale = QPropertyAnimation(self, b"scale_factor", self)
+        self._anim_scale.setDuration(750)
+        self._anim_scale.setStartValue(1.45)
+        self._anim_scale.setEndValue(1.0)
+        self._anim_scale.setEasingCurve(QEasingCurve.Type.OutCubic)
+
+    def get_scale_factor(self) -> float:
+        return self._scale
+
+    def set_scale_factor(self, s: float) -> None:
+        self._scale = s
+        self.update()
+
+    scale_factor = Property(float, get_scale_factor, set_scale_factor)
+
     def trigger_tick_animation(self) -> None:
-        """Déclenche l'animation de pulse et fondu à chaque seconde."""
+        """Déclenche l'animation de pulse (zoom dynamique) et fondu à chaque seconde."""
         self._anim_opacity.stop()
+        self._anim_scale.stop()
         self._opacity_effect.setOpacity(1.0)
+        self._scale = 1.45
         self._anim_opacity.start()
+        self._anim_scale.start()
 
     def show_number(self, val: int) -> None:
         """Affiche le nombre et déclenche l'animation de zoom et fondu."""
         self.setText(str(val))
         self.trigger_tick_animation()
+
+    def paintEvent(self, event) -> None:
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.TextAntialiasing)
+
+        w = float(self.width())
+        h = float(self.height())
+        painter.translate(w / 2.0, h / 2.0)
+        painter.scale(self._scale, self._scale)
+        painter.translate(-w / 2.0, -h / 2.0)
+
+        painter.setFont(self.font())
+        painter.setPen(QColor("#38BDF8"))
+        painter.drawText(self.rect(), int(self.alignment()), self.text())
+        painter.end()
 
 
 class BlindTestView(QWidget):
@@ -109,12 +148,59 @@ class BlindTestView(QWidget):
         # 1. En-tête de la page
         top_bar = QFrame()
         top_bar.setObjectName("topBarFrame")
+        self.top_bar = top_bar
         top_layout = QHBoxLayout(top_bar)
         top_layout.setContentsMargins(20, 10, 20, 10)
+        top_layout.setSpacing(8)
 
         self.lbl_page_title = QLabel("🎭  " + tr("blind_test.title"))
         self.lbl_page_title.setStyleSheet("color: #F8FAFC; font-size: 16px; font-weight: 700;")
         top_layout.addWidget(self.lbl_page_title)
+
+        top_layout.addSpacing(16)
+
+        # Contrôle du volume sonore intégré dans la barre supérieure
+        self.btn_mute = QPushButton("🔊")
+        self.btn_mute.setFixedSize(30, 30)
+        self.btn_mute.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._style_icon_button(self.btn_mute, font_size=13)
+        self.btn_mute.clicked.connect(self._toggle_mute)
+        top_layout.addWidget(self.btn_mute)
+
+        self.slider_volume = ClickableSlider(Qt.Orientation.Horizontal)
+        self.slider_volume.setRange(0, 100)
+        self.slider_volume.setValue(self.player.volume)
+        self.slider_volume.setFixedWidth(120)
+        self.slider_volume.setFixedHeight(22)
+        self.slider_volume.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.slider_volume.setStyleSheet("""
+            QSlider::groove:horizontal {
+                height: 5px;
+                background-color: #282C37;
+                border-radius: 2px;
+            }
+            QSlider::sub-page:horizontal {
+                background-color: #38BDF8;
+                border-radius: 2px;
+            }
+            QSlider::handle:horizontal {
+                background-color: #E2E8F0;
+                width: 12px;
+                height: 12px;
+                margin: -3px 0;
+                border-radius: 6px;
+            }
+            QSlider::handle:horizontal:hover {
+                background-color: #38BDF8;
+            }
+        """)
+        self.slider_volume.valueChanged.connect(self._on_volume_changed)
+        top_layout.addWidget(self.slider_volume)
+
+        self.lbl_volume = QLabel(f"{self.player.volume}%")
+        self.lbl_volume.setStyleSheet("color: #94A3B8; font-size: 12px; min-width: 38px;")
+        top_layout.addWidget(self.lbl_volume)
+
         top_layout.addStretch()
 
         self.lbl_effect_badge = QLabel(tr("player.visual_effect"))
@@ -207,6 +293,10 @@ class BlindTestView(QWidget):
         # Chiffre géant animé superposé
         self.lbl_countdown = ZoomFadeLabel(self.cover_box)
         self.lbl_countdown.setFixedSize(280, 280)
+        font = self.lbl_countdown.font()
+        font.setPixelSize(88)
+        font.setWeight(QFont.Weight.ExtraBold)
+        self.lbl_countdown.setFont(font)
         self.lbl_countdown.setText("20")
         self.lbl_countdown.setStyleSheet("""
             color: #38BDF8;
@@ -273,11 +363,33 @@ class BlindTestView(QWidget):
 
         # 4. Commandes de jeu du Blind Test
         ctrl_layout = QHBoxLayout()
-        ctrl_layout.setSpacing(12)
+        ctrl_layout.setSpacing(10)
         ctrl_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        # Bouton Play / Pause (pour figer le chrono)
-        self.btn_play_pause = QPushButton("⏸")
+        # Bouton Morceau précédent
+        self.btn_prev = QPushButton(tr("blind_test.btn_prev"))
+        self.btn_prev.setFixedHeight(46)
+        self.btn_prev.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_prev.setStyleSheet("""
+            QPushButton {
+                background-color: #20242D;
+                color: #F8FAFC;
+                border: 1px solid #333846;
+                border-radius: 12px;
+                padding: 0 14px;
+                font-size: 13px;
+                font-weight: 600;
+            }
+            QPushButton:hover {
+                background-color: #2B303C;
+                border-color: #38BDF8;
+            }
+        """)
+        self.btn_prev.clicked.connect(self._on_prev_track_clicked)
+        ctrl_layout.addWidget(self.btn_prev)
+
+        # Bouton Play / Pause (pour lancer ou figer le chrono)
+        self.btn_play_pause = QPushButton("▶")
         self.btn_play_pause.setFixedSize(46, 46)
         self.btn_play_pause.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_play_pause.setStyleSheet("""
@@ -307,7 +419,7 @@ class BlindTestView(QWidget):
                 color: #FFFFFF;
                 border: 1px solid #38BDF8;
                 border-radius: 12px;
-                padding: 0 20px;
+                padding: 0 18px;
                 font-size: 14px;
                 font-weight: 700;
             }
@@ -329,7 +441,7 @@ class BlindTestView(QWidget):
                 color: #F8FAFC;
                 border: 1px solid #333846;
                 border-radius: 12px;
-                padding: 0 16px;
+                padding: 0 14px;
                 font-size: 13px;
                 font-weight: 600;
             }
@@ -343,61 +455,6 @@ class BlindTestView(QWidget):
 
         card_layout.addLayout(ctrl_layout)
 
-        # Contrôle du volume
-        vol_container = QWidget()
-        vol_layout = QHBoxLayout(vol_container)
-        vol_layout.setContentsMargins(0, 4, 0, 0)
-        vol_layout.setSpacing(8)
-        vol_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        self.btn_mute = QPushButton("🔊")
-        self.btn_mute.setFixedSize(30, 30)
-        self.btn_mute.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_mute.setStyleSheet("""
-            QPushButton {
-                background-color: #20242D;
-                color: #CBD5E1;
-                border: 1px solid #282C37;
-                border-radius: 6px;
-                font-size: 13px;
-            }
-        """)
-        self.btn_mute.clicked.connect(self._toggle_mute)
-        vol_layout.addWidget(self.btn_mute)
-
-        self.slider_volume = ClickableSlider(Qt.Orientation.Horizontal)
-        self.slider_volume.setRange(0, 100)
-        self.slider_volume.setValue(self.player.volume)
-        self.slider_volume.setFixedWidth(140)
-        self.slider_volume.setFixedHeight(22)
-        self.slider_volume.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.slider_volume.setStyleSheet("""
-            QSlider::groove:horizontal {
-                height: 5px;
-                background-color: #282C37;
-                border-radius: 2px;
-            }
-            QSlider::sub-page:horizontal {
-                background-color: #38BDF8;
-                border-radius: 2px;
-            }
-            QSlider::handle:horizontal {
-                background-color: #E2E8F0;
-                width: 12px;
-                height: 12px;
-                margin: -3px 0;
-                border-radius: 6px;
-            }
-        """)
-        self.slider_volume.valueChanged.connect(self._on_volume_changed)
-        vol_layout.addWidget(self.slider_volume)
-
-        self.lbl_volume = QLabel(f"{self.player.volume}%")
-        self.lbl_volume.setStyleSheet("color: #94A3B8; font-size: 12px; min-width: 38px;")
-        vol_layout.addWidget(self.lbl_volume)
-
-        card_layout.addWidget(vol_container)
-
         center_layout.addWidget(self.card)
         scroll.setWidget(center_container)
         layout.addWidget(scroll, 1)
@@ -405,39 +462,106 @@ class BlindTestView(QWidget):
         self._populate_effects_combo()
         self.combo_effect.currentIndexChanged.connect(self._on_effect_combo_changed)
 
+    def _style_icon_button(self, btn: QPushButton, font_size: int = 14) -> None:
+        btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: #20242D;
+                color: #CBD5E1;
+                border: 1px solid #282C37;
+                border-radius: 6px;
+                font-size: {font_size}px;
+            }}
+            QPushButton:hover {{
+                background-color: #2B303C;
+                color: #F8FAFC;
+                border-color: #38BDF8;
+            }}
+            QPushButton:pressed {{
+                background-color: #0284C7;
+                color: #FFFFFF;
+            }}
+        """)
+
     def _connect_signals(self) -> None:
         self.player.track_changed.connect(self._on_track_changed)
         self.player.state_changed.connect(self._on_playback_state_changed)
         self.player.volume_changed.connect(self._on_player_volume_changed)
 
     def showEvent(self, event) -> None:
-        """Déclenché lorsque l'utilisateur affiche la page Blind Test."""
+        """Déclenché lorsque l'utilisateur affiche la page Blind Test.
+        Sauvegarde l'état du lecteur sans démarrer la musique automatiquement."""
         super().showEvent(event)
         self._is_active_page = True
+
+        # Sauvegarder l'état exact du lecteur (piste sélectionnée, position, lecture en cours)
+        # pour le restaurer fidèlement lorsqu'on quitte le Blind Test
+        self._saved_player_index = self.player.current_index
+        self._saved_player_position_ms = getattr(self.player, "current_time_ms", 0)
+        self._saved_player_was_playing = self.player.is_playing
+
+        # La musique ne doit PAS démarrer de suite lors de l'arrivée sur la page
+        if self.player.is_playing:
+            self.player.pause()
 
         # Synchroniser l'effet visuel actif avec le ConfigManager
         cfg = get_config_manager()
         eff = cfg.get_visual_effect()
         self.set_effect_type(eff)
 
-        # Si le lecteur est arrêté ou pas de manche en cours, lancer une manche
+        # Préparer la manche sur le morceau courant à 0 seconde, en attente de play
         if self.player.current_track:
-            self._start_round_for_track(self.player.current_track)
-            if not self.player.is_playing:
-                self.player.play()
+            self._start_round_for_track(self.player.current_track, auto_play=False)
+        elif self.player.playlist:
+            self.player.play_index(0)
+            self.player.pause()
+            self._start_round_for_track(self.player.current_track, auto_play=False)
         else:
             self._reset_to_empty_state()
 
     def hideEvent(self, event: QHideEvent) -> None:
-        """Déclenché lorsque l'utilisateur quitte la page Blind Test."""
+        """Déclenché lorsque l'utilisateur quitte la page Blind Test.
+        Restaure fidèlement l'état initial du lecteur (morceau et position d'origine)."""
         self._is_active_page = False
-        # Stopper le timer automatique et rétablir le volume nominal
+        # Stopper les timers et rétablir le volume nominal
         self._game_timer.stop()
         self._stop_fade_and_restore_volume()
+
+        # Restauration de l'état du lecteur enregistré avant le Blind Test
+        self._restore_saved_player_state()
+
         try:
             super().hideEvent(event)
         except Exception:
             pass
+
+    def _restore_saved_player_state(self) -> None:
+        """Restaure la piste et la position de lecture qui étaient actives avant d'entrer en Blind Test."""
+        if not hasattr(self, "_saved_player_index") or self._saved_player_index is None:
+            return
+
+        saved_idx = self._saved_player_index
+        saved_ms = getattr(self, "_saved_player_position_ms", 0)
+        saved_was_playing = getattr(self, "_saved_player_was_playing", False)
+        self._saved_player_index = None
+
+        if not self.player.playlist or saved_idx < 0 or saved_idx >= len(self.player.playlist):
+            return
+
+        # Si le Blind Test a changé de piste ou si la position a changé :
+        if self.player.current_index != saved_idx:
+            if saved_ms > 0:
+                self.player._pending_seek_ms = saved_ms
+                self.player.play_index(saved_idx, resume_pending=True)
+            else:
+                self.player.play_index(saved_idx)
+            if not saved_was_playing:
+                self.player.pause()
+        else:
+            self.player.seek_ms(saved_ms)
+            if not saved_was_playing and self.player.is_playing:
+                self.player.pause()
+            elif saved_was_playing and not self.player.is_playing:
+                self.player.play()
 
     def set_durations(
         self, countdown_seconds: int, reveal_seconds: int, fade_seconds: int | None = None
@@ -452,8 +576,8 @@ class BlindTestView(QWidget):
         self._total_round_duration = countdown_seconds + reveal_seconds
         self._fade_duration = float(self._configured_fade)
 
-    def _start_round_for_track(self, track: TrackRecord | None) -> None:
-        """Initialise et lance une manche de Blind Test sur la piste fournie."""
+    def _start_round_for_track(self, track: TrackRecord | None, auto_play: bool = False) -> None:
+        """Initialise une manche de Blind Test sur la piste fournie, démarrant à 0 seconde."""
         if not track:
             self._reset_to_empty_state()
             return
@@ -468,8 +592,7 @@ class BlindTestView(QWidget):
 
         self._state = "countdown"
         self.lbl_countdown.setVisible(True)
-        self.lbl_countdown.setText(str(self._countdown_remain))
-        self.lbl_countdown.trigger_tick_animation()
+        self.lbl_countdown.show_number(self._countdown_remain)
 
         # Pochette masquée
         self.cover_opacity.setOpacity(0.0)
@@ -485,28 +608,96 @@ class BlindTestView(QWidget):
         self.lbl_title.setText("❓  " + tr("blind_test.mystery_title"))
         self.lbl_artist_album.setText("👥  " + tr("blind_test.mystery_artist"))
 
-        self.lbl_status_badge.setText(tr("blind_test.status_searching"))
-        self.lbl_status_badge.setStyleSheet("""
-            color: #38BDF8;
-            font-size: 12px;
-            font-weight: 600;
-            padding: 3px 12px;
-            border-radius: 10px;
-            background-color: rgba(56, 189, 248, 0.12);
-            border: 1px solid rgba(56, 189, 248, 0.3);
-        """)
-
         self.btn_reveal.setEnabled(True)
+        if hasattr(self, "btn_prev"):
+            self.btn_prev.setEnabled(True)
+        self.btn_next.setEnabled(True)
         self.round_progress.setValue(0)
 
-        # Précharger l'image de couverture en arrière-plan sans l'afficher encore
+        # Précharger l'image de couverture
         pix = load_cover_async(track, size=280, radius=16, callback=self._on_cover_loaded)
         if pix and not pix.isNull():
             self.lbl_cover.setPixmap(pix)
 
-        # Assurer la lecture
-        if self._is_active_page:
+        # Positionner la lecture impérativement à 0 seconde
+        self.player.seek_ratio(0.0)
+
+        if auto_play:
+            if not self.player.is_playing:
+                self.player.play()
+                self.player.seek_ratio(0.0)
+            self.btn_play_pause.setText("⏸")
+            self.lbl_status_badge.setText(tr("blind_test.status_searching"))
+            self.lbl_status_badge.setStyleSheet("""
+                color: #38BDF8;
+                font-size: 12px;
+                font-weight: 600;
+                padding: 3px 12px;
+                border-radius: 10px;
+                background-color: rgba(56, 189, 248, 0.12);
+                border: 1px solid rgba(56, 189, 248, 0.3);
+            """)
+            if self._is_active_page:
+                self._game_timer.start(1000)
+        else:
+            self._game_timer.stop()
+            self.btn_play_pause.setText("▶")
+            self.lbl_status_badge.setText(tr("blind_test.status_paused"))
+            self.lbl_status_badge.setStyleSheet("""
+                color: #94A3B8;
+                font-size: 12px;
+                font-weight: 600;
+                padding: 3px 12px;
+                border-radius: 10px;
+                background-color: rgba(148, 163, 184, 0.12);
+                border: 1px solid rgba(148, 163, 184, 0.3);
+            """)
+
+    def _restart_current_round(self) -> None:
+        """Remet à zéro la manche courante du Blind Test."""
+        self._stop_fade_and_restore_volume()
+        self._current_round_elapsed = 0
+        self._countdown_remain = self._configured_countdown
+        self._reveal_remain = self._configured_reveal
+        self._state = "countdown"
+        self.round_progress.setValue(0)
+        self.lbl_countdown.setVisible(True)
+        self.lbl_countdown.show_number(self._countdown_remain)
+        self.cover_opacity.setOpacity(0.0)
+        self.cover_box.setStyleSheet("""
+            QFrame {
+                background-color: #12151B;
+                border: 2px dashed rgba(56, 189, 248, 0.4);
+                border-radius: 16px;
+            }
+        """)
+        self.lbl_title.setText("❓  " + tr("blind_test.mystery_title"))
+        self.lbl_artist_album.setText("👥  " + tr("blind_test.mystery_artist"))
+        self.btn_reveal.setEnabled(True)
+        self.player.seek_ratio(0.0)
+        if self.player.is_playing:
+            self.lbl_status_badge.setText(tr("blind_test.status_searching"))
+            self.lbl_status_badge.setStyleSheet("""
+                color: #38BDF8;
+                font-size: 12px;
+                font-weight: 600;
+                padding: 3px 12px;
+                border-radius: 10px;
+                background-color: rgba(56, 189, 248, 0.12);
+                border: 1px solid rgba(56, 189, 248, 0.3);
+            """)
             self._game_timer.start(1000)
+        else:
+            self.lbl_status_badge.setText(tr("blind_test.status_paused"))
+            self.lbl_status_badge.setStyleSheet("""
+                color: #94A3B8;
+                font-size: 12px;
+                font-weight: 600;
+                padding: 3px 12px;
+                border-radius: 10px;
+                background-color: rgba(148, 163, 184, 0.12);
+                border: 1px solid rgba(148, 163, 184, 0.3);
+            """)
 
     def _on_cover_loaded(self, target_path: str, pix: QPixmap | None) -> None:
         if not pix or pix.isNull():
@@ -553,6 +744,9 @@ class BlindTestView(QWidget):
                 self._game_timer.stop()
                 self._stop_fade_and_restore_volume()
                 self.player.next()
+                self.player.seek_ratio(0.0)
+                if self.player.current_track:
+                    self._start_round_for_track(self.player.current_track, auto_play=True)
 
     def _start_fade(self, duration_sec: int | float) -> None:
         """Déclenche le fondu progressif de fin de manche."""
@@ -604,6 +798,13 @@ class BlindTestView(QWidget):
         self.lbl_countdown.setVisible(False)
         self.btn_reveal.setEnabled(False)
 
+        # Repositionner au début de la phase de découverte (10s restantes par défaut)
+        self._countdown_remain = 0
+        self._reveal_remain = self._configured_reveal
+        self._current_round_elapsed = self._configured_countdown
+        pct = min(100, int((self._current_round_elapsed / max(1, self._total_round_duration)) * 100))
+        self.round_progress.setValue(pct)
+
         # Animation fondu de la pochette
         self.anim_cover = QPropertyAnimation(self.cover_opacity, b"opacity", self)
         self.anim_cover.setDuration(450)
@@ -641,16 +842,38 @@ class BlindTestView(QWidget):
             border: 1px solid rgba(74, 222, 128, 0.3);
         """)
 
+        # Si le fondu configuré est supérieur ou égal au temps de découverte restant, lancer le fondu
+        eff_fade = min(self._configured_fade, self._configured_reveal)
+        if eff_fade >= self._reveal_remain and eff_fade > 0 and not self._is_fading:
+            self._start_fade(eff_fade)
+
     def _on_reveal_clicked(self) -> None:
-        """Révèle immédiatement la piste si les joueurs ont trouvé avant la fin des 20s."""
+        """Révèle immédiatement la piste si les joueurs ont trouvé avant la fin des 20s.
+        Garantit qu'il reste la durée complète de découverte (10s par défaut)."""
         if self._state == "countdown":
             self._trigger_reveal()
 
+    def _on_prev_track_clicked(self) -> None:
+        """Revient à 0 d'abord si la manche a déjà démarré (> 2s ou révélée),
+        ou passe réellement au morceau précédent si au tout début."""
+        if self._current_round_elapsed > 2 or self._state == "revealed":
+            self._restart_current_round()
+        else:
+            self._stop_fade_and_restore_volume()
+            self._game_timer.stop()
+            self.player.previous()
+            self.player.seek_ratio(0.0)
+            if self.player.current_track:
+                self._start_round_for_track(self.player.current_track, auto_play=self.player.is_playing)
+
     def _on_next_track_clicked(self) -> None:
-        """Passe immédiatement au titre suivant."""
+        """Passe immédiatement au titre suivant dans le Blind Test (démarre à 0s)."""
         self._game_timer.stop()
         self._stop_fade_and_restore_volume()
         self.player.next()
+        self.player.seek_ratio(0.0)
+        if self.player.current_track:
+            self._start_round_for_track(self.player.current_track, auto_play=True)
 
     def _on_play_pause_clicked(self) -> None:
         """Met en pause ou reprend la lecture et le décompte."""
@@ -661,8 +884,22 @@ class BlindTestView(QWidget):
                 self._fade_timer.stop()
             self.btn_play_pause.setText("▶")
             self.lbl_status_badge.setText(tr("blind_test.status_paused"))
+            self.lbl_status_badge.setStyleSheet("""
+                color: #94A3B8;
+                font-size: 12px;
+                font-weight: 600;
+                padding: 3px 12px;
+                border-radius: 10px;
+                background-color: rgba(148, 163, 184, 0.12);
+                border: 1px solid rgba(148, 163, 184, 0.3);
+            """)
         else:
+            # Démarrer ou reprendre la lecture
+            if self._current_round_elapsed == 0 and self._state == "countdown":
+                self.player.seek_ratio(0.0)
             self.player.play()
+            if self._current_round_elapsed == 0 and self._state == "countdown":
+                self.player.seek_ratio(0.0)
             if self._is_active_page:
                 self._game_timer.start(1000)
                 if self._is_fading and hasattr(self, "_fade_timer"):
@@ -670,13 +907,31 @@ class BlindTestView(QWidget):
             self.btn_play_pause.setText("⏸")
             if self._state == "countdown":
                 self.lbl_status_badge.setText(tr("blind_test.status_searching"))
+                self.lbl_status_badge.setStyleSheet("""
+                    color: #38BDF8;
+                    font-size: 12px;
+                    font-weight: 600;
+                    padding: 3px 12px;
+                    border-radius: 10px;
+                    background-color: rgba(56, 189, 248, 0.12);
+                    border: 1px solid rgba(56, 189, 248, 0.3);
+                """)
             elif self._state == "revealed":
                 self.lbl_status_badge.setText(tr("blind_test.status_revealed", remain=self._reveal_remain))
+                self.lbl_status_badge.setStyleSheet("""
+                    color: #4ADE80;
+                    font-size: 12px;
+                    font-weight: 600;
+                    padding: 3px 12px;
+                    border-radius: 10px;
+                    background-color: rgba(74, 222, 128, 0.12);
+                    border: 1px solid rgba(74, 222, 128, 0.3);
+                """)
 
     def _on_track_changed(self, track: TrackRecord | None) -> None:
         """Appelé lors d'un changement de piste dans le PlayerService."""
         if self._is_active_page:
-            self._start_round_for_track(track)
+            self._start_round_for_track(track, auto_play=self.player.is_playing)
 
     def _on_playback_state_changed(self, state: str) -> None:
         is_playing = state == "playing"
@@ -770,6 +1025,10 @@ class BlindTestView(QWidget):
         return self.lbl_countdown
 
     @property
+    def btn_previous(self) -> QPushButton:
+        return self.btn_prev
+
+    @property
     def cover_label(self) -> QLabel:
         return self.lbl_cover
 
@@ -813,7 +1072,7 @@ class BlindTestView(QWidget):
             self._reveal_remain = val
 
     def _on_track_loaded(self, track: TrackRecord | None) -> None:
-        self._start_round_for_track(track)
+        self._start_round_for_track(track, auto_play=self.player.is_playing)
 
     def _tick(self) -> None:
         self._on_game_tick()
@@ -825,6 +1084,8 @@ class BlindTestView(QWidget):
         """Met à jour les textes traduits lors d'un changement de langue."""
         self.lbl_page_title.setText("🎭  " + tr("blind_test.title"))
         self.lbl_effect_badge.setText(tr("player.visual_effect"))
+        if hasattr(self, "btn_prev"):
+            self.btn_prev.setText(tr("blind_test.btn_prev"))
         self.btn_reveal.setText(tr("blind_test.btn_reveal"))
         self.btn_next.setText(tr("blind_test.btn_next"))
         if self._state == "countdown":

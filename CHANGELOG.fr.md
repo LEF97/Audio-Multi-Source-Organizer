@@ -16,6 +16,14 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 ## [0.2.0-dev] - En cours de développement
 
 ### Added
+- **Autonomie et perfectionnement ergonomique de la page Blind Test** :
+  - **Démarrage manuel sous contrôle (aucun autoplay à l'ouverture)** : la musique ne démarre plus automatiquement à l'affichage de la page Blind Test. Le joueur se place en attente (statut *En pause*) sur la piste en cours calée à 0 seconde, le jeu attendant le clic sur le bouton Play.
+  - **Repositionnement du volume dans la barre supérieure** : la réglette de volume, l'icône muet et l'affichage du pourcentage sont relogés tout en haut de l'écran, à droite du titre « 🎭 Blind Test », calqués sur l'ergonomie de la page Lecteur et épurant la carte de jeu.
+  - **Lecture systématique à 0 seconde** : chaque extrait joué dans le Blind Test démarre impérativement à 0:00 (ne reprenant plus la position en cours du lecteur).
+  - **Autonomie complète du Blind Test & Restauration fidèle du Lecteur** : distinction stricte entre la progression de manche du Blind Test (0 à 30 secondes d'extrait) et la position du lecteur audio. Lorsque l'utilisateur quitte la page Blind Test, la piste choisie avant le jeu ainsi que sa position exacte en millisecondes et son état de lecture sont fidèlement restaurés.
+  - **Animation de zoom dynamique sur le décompte** : effet de zoom vectoriel fluide (redimensionnement dynamique de 1.45 vers 1.0 avec lissage OutCubic) synchronisé avec le fondu d'opacité sur chaque seconde du décompte.
+  - **Bouton « ⏮️ Morceau précédent » interactif** : ajout de la commande dans la rangée de contrôle (`btn_prev`). Si la manche est entamée (> 2 s) ou déjà révélée, le bouton remet à zéro la manche en cours à 0:00 (décompte et pochette mystère réinitialisés). Si la manche est au tout début (<= 2 s), il recule réellement vers la piste précédente de la playlist.
+  - **Durée complète de découverte lors de la révélation** : un clic sur « 👁️ Révéler » bascule directement au début de la phase de découverte, garantissant toujours les 10 secondes complètes restantes (ou la durée configurée) avant le titre suivant, avec application du fondu sonore de fin de manche.
 - **Optimisations et corrections ergonomiques du Lecteur et du Blind Test** :
   - **Intégration du volume en haut du Lecteur audio** : déplacement du curseur de volume, de l'icône muet et du pourcentage sonore dans la barre supérieure de la page, directement à côté du titre « Lecteur audio », libérant ainsi l'espace visuel sous la carte principale.
   - **Épuration de la page Lecteur** : retrait complet du bloc de configuration du Blind Test qui n'apparaît plus sous le lecteur audio.

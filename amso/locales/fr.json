@@ -274,6 +274,7 @@
   "blind_test.fade_label": "Durée du fondu :",
   "blind_test.total_duration": "Durée d'une manche : {total}s ({countdown}s recherche + {reveal}s découverte dont {fade}s de fondu)",
   "settings.blind_test_desc": "Configurez les durées du décompte de recherche, de découverte du titre et du fondu sonore de fin de manche.",
+  "blind_test.btn_prev": "⏮️  Morceau précédent",
   "blind_test.btn_reveal": "👁️  Révéler",
   "blind_test.btn_next": "⏭️  Morceau suivant",
   "blind_test.mystery_title": "Titre mystère",

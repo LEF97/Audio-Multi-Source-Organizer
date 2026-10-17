@@ -274,6 +274,7 @@
   "blind_test.fade_label": "Durata dissolvenza:",
   "blind_test.total_duration": "Durata round: {total}s ({countdown}s indovina + {reveal}s svelamento con {fade}s dissolvenza)",
   "settings.blind_test_desc": "Configura le durate per il conto alla rovescia, lo svelamento del brano e la dissolvenza audio.",
+  "blind_test.btn_prev": "⏮️  Brano precedente",
   "blind_test.btn_reveal": "👁️  Svela",
   "blind_test.btn_next": "⏭️  Brano successivo",
   "blind_test.mystery_title": "Brano misterioso",

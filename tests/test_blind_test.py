@@ -4,7 +4,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-from PySide6.QtGui import QHideEvent
+from PySide6.QtGui import QHideEvent, QShowEvent
 from PySide6.QtWidgets import QApplication
 
 from amso.core.config import ConfigManager
@@ -357,3 +357,186 @@ def test_main_window_blind_test_integration(qapp: QApplication, tmp_path: Path):
     # 5. Retranscription de langue
     window.retranslate_ui()
     assert window.btn_blind_test.text() != ""
+
+
+def test_zoom_fade_label_dynamic_zoom(qapp: QApplication):
+    """Vérifie l'animation combinée d'opacité et de zoom dynamique sur ZoomFadeLabel."""
+    lbl = ZoomFadeLabel()
+    assert hasattr(lbl, "_anim_scale")
+    assert hasattr(lbl, "_anim_opacity")
+    assert hasattr(lbl, "scale_factor")
+
+    # Déclenchement de l'animation
+    lbl.trigger_tick_animation()
+    assert lbl._anim_scale.state() == lbl._anim_scale.State.Running
+    assert lbl._anim_opacity.state() == lbl._anim_opacity.State.Running
+
+    # Propriété scale_factor
+    lbl.scale_factor = 1.25
+    assert lbl.scale_factor == 1.25
+
+
+def test_blind_test_top_bar_volume(qapp: QApplication):
+    """Vérifie que la réglette de volume est positionnée dans la barre supérieure."""
+    player_mock = MagicMock(spec=PlayerService)
+    player_mock.current_track = None
+    player_mock.state = "stopped"
+    player_mock.is_vlc_available = True
+    player_mock.is_playing = False
+    player_mock.volume = 65
+    player_mock.is_muted = False
+
+    view = BlindTestView(player_mock)
+    assert hasattr(view, "slider_volume")
+    assert hasattr(view, "btn_mute")
+    assert hasattr(view, "lbl_volume")
+    assert view.slider_volume.value() == 65
+    # Contrôle de volume dans la top_bar et non dans la carte
+    assert view.slider_volume.parent() == view.top_bar
+    assert view.btn_mute.parent() == view.top_bar
+
+
+def test_blind_test_no_autoplay_on_entry_and_start_at_zero(qapp: QApplication, sample_track: TrackRecord):
+    """Vérifie que la musique ne démarre pas automatiquement lors de l'accès à la page blindtest."""
+    player_mock = MagicMock(spec=PlayerService)
+    player_mock.current_track = sample_track
+    player_mock.current_index = 0
+    player_mock.playlist = [sample_track]
+    player_mock.current_time_ms = 42000
+    player_mock.is_playing = True
+    player_mock.state = "playing"
+    player_mock.is_vlc_available = True
+
+    view = BlindTestView(player_mock)
+    # L'utilisateur arrive sur la page
+    view.showEvent(QShowEvent())
+
+    # La lecture en cours a été mise en pause immédiatement
+    player_mock.pause.assert_called()
+    # Le chrono de manche n'a pas démarré tout seul
+    assert not view._game_timer.isActive()
+    assert view.btn_play_pause.text() == "▶"
+    # La lecture a été calée à 0 seconde
+    player_mock.seek_ratio.assert_called_with(0.0)
+
+    # Lorsque l'utilisateur clique sur play : le morceau démarre bien à 0s
+    player_mock.is_playing = False
+    view._on_play_pause_clicked()
+    player_mock.play.assert_called()
+    assert view._game_timer.isActive()
+    assert view.btn_play_pause.text() == "⏸"
+
+
+def test_blind_test_previous_button_logic(qapp: QApplication, sample_track: TrackRecord):
+    """Vérifie le fonctionnement du bouton Morceau précédent :
+    - Si écoulé > 2s ou révélé : remet à zéro la manche courante à 0s.
+    - Si écoulé <= 2s : passe réellement au morceau précédent dans la playlist.
+    """
+    player_mock = MagicMock(spec=PlayerService)
+    player_mock.current_track = sample_track
+    player_mock.playlist = [sample_track]
+    player_mock.is_playing = True
+    player_mock.state = "playing"
+    player_mock.is_vlc_available = True
+
+    view = BlindTestView(player_mock)
+    view._is_active_page = True
+    view._on_track_loaded(sample_track)
+    assert view.btn_previous is not None
+    assert view.btn_prev is not None
+
+    # Cas 1 : La manche a déjà tourné plus de 2s (ex: 6s)
+    view._current_round_elapsed = 6
+    view._countdown_remain = 14
+    view._on_prev_track_clicked()
+    # Ne doit pas appeler previous() sur le player, mais réinitialiser la manche à 0
+    player_mock.previous.assert_not_called()
+    assert view._current_round_elapsed == 0
+    assert view._countdown_remain == view._configured_countdown
+    assert not view._is_revealed
+    player_mock.seek_ratio.assert_called_with(0.0)
+
+    # Cas 2 : La manche a été révélée
+    view._trigger_reveal()
+    assert view._is_revealed
+    view._on_prev_track_clicked()
+    player_mock.previous.assert_not_called()
+    assert view._current_round_elapsed == 0
+    assert not view._is_revealed
+    assert view._countdown_remain == view._configured_countdown
+
+    # Cas 3 : La manche est au tout début (<= 2s)
+    view._current_round_elapsed = 1
+    view._on_prev_track_clicked()
+    player_mock.previous.assert_called_once()
+
+
+def test_blind_test_reveal_guarantees_full_reveal_duration(qapp: QApplication, sample_track: TrackRecord):
+    """Vérifie que le clic sur 'Révéler' garantit la durée complète de découverte (10s par défaut)."""
+    player_mock = MagicMock(spec=PlayerService)
+    player_mock.current_track = sample_track
+    player_mock.is_playing = True
+    player_mock.state = "playing"
+    player_mock.is_vlc_available = True
+
+    view = BlindTestView(player_mock)
+    view._is_active_page = True
+    view.set_durations(countdown_seconds=20, reveal_seconds=10)
+    view._on_track_loaded(sample_track)
+
+    # 7 secondes se sont écoulées
+    for _ in range(7):
+        view._tick()
+    assert view._current_round_elapsed == 7
+    assert view._countdown_remain == 13
+
+    # L'utilisateur clique sur Révéler
+    view._on_reveal_clicked()
+    assert view._is_revealed
+    # Le temps restant de découverte doit être exactement de 10 secondes (durée configurée)
+    assert view._remaining_seconds == 10
+    assert view._reveal_remain == 10
+    # Le temps écoulé total est calé sur le seuil de début de découverte
+    assert view._current_round_elapsed == 20
+
+
+def test_blind_test_state_restoration_on_exit(qapp: QApplication, sample_track: TrackRecord):
+    """Vérifie que quitter la page blindtest restaure fidèlement la piste et la position initiales du lecteur."""
+    track1 = sample_track
+    track2 = TrackRecord(
+        source_ref="D:/Music/track2.mp3",
+        source_path="D:/Music/track2.mp3",
+        title="Another One Bites the Dust",
+        artist="Queen",
+        album="The Game",
+        duration_seconds=215.0,
+    )
+
+    player_mock = MagicMock(spec=PlayerService)
+    player_mock.playlist = [track1, track2]
+    player_mock.current_track = track1
+    player_mock.current_index = 0
+    player_mock.current_time_ms = 73000
+    player_mock.is_playing = True
+    player_mock.state = "playing"
+    player_mock.is_vlc_available = True
+
+    view = BlindTestView(player_mock)
+
+    # 1. Arrivée sur Blind Test
+    view.showEvent(QShowEvent())
+    assert view._saved_player_index == 0
+    assert view._saved_player_position_ms == 73000
+    assert view._saved_player_was_playing is True
+
+    # 2. Simulation de passages de titres pendant le Blind Test
+    player_mock.current_index = 1
+    player_mock.current_track = track2
+    player_mock.current_time_ms = 12000
+
+    # 3. Quitter la page Blind Test
+    view.hideEvent(QHideEvent())
+
+    # Le player doit être revenu sur la piste 0 et avoir restauré les 73000 ms
+    player_mock.play_index.assert_called_with(0, resume_pending=True)
+

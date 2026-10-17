@@ -274,6 +274,7 @@
   "blind_test.fade_label": "Ausblenddauer:",
   "blind_test.total_duration": "Rundendauer: {total}s ({countdown}s Raten + {reveal}s Auflösung inkl. {fade}s Ausblenden)",
   "settings.blind_test_desc": "Konfigurieren Sie die Dauern für Such-Countdown, Titel-Aufdeckung und Audio-Ausblendung.",
+  "blind_test.btn_prev": "⏮️  Vorheriger Titel",
   "blind_test.btn_reveal": "👁️  Aufdecken",
   "blind_test.btn_next": "⏭️  Nächster Titel",
   "blind_test.mystery_title": "Geheimnisvoller Titel",
