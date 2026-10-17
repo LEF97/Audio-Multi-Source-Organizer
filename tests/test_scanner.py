@@ -1,13 +1,13 @@
 """Tests unitaires et d'intégration pour le scanner local AMSO."""
 
-from pathlib import Path
 import time
-import pytest
+from pathlib import Path
 
+import pytest
 from mutagen.id3 import ID3, TIT2, TPE1
 
 from amso.core.database import DatabaseManager, SourceType
-from amso.core.scanner import LocalScanner, ScanSummary
+from amso.core.scanner import LocalScanner
 
 
 @pytest.fixture
@@ -114,3 +114,46 @@ def test_scan_and_incremental(tmp_path: Path, db: DatabaseManager, scanner: Loca
 
     tracks, count = db.get_tracks(source_id=src.id)
     assert count == 2
+
+
+def test_two_phase_scan(tmp_path: Path, db: DatabaseManager, scanner: LocalScanner):
+    """Vérifie le découpage précis entre Phase 1 (inventaire rapide) et Phase 2 (enrichissement audio)."""
+    p = tmp_path / "song.mp3"
+    p.write_bytes(b"\x00" * 1024)
+    id3 = ID3()
+    id3.add(TIT2(encoding=3, text=["My Song Title"]))
+    id3.add(TPE1(encoding=3, text=["My Artist"]))
+    id3.save(str(p))
+
+    src = db.add_source(SourceType.LOCAL, "Test 2-Phase", str(tmp_path))
+
+    # 1. Exécution de la Phase 1 uniquement
+    inv_sum, files = scanner.scan_inventory(src)
+    assert inv_sum.total_found == 1
+    assert inv_sum.added == 1
+    assert inv_sum.phase == 1
+
+    # Morceau présent en BDD mais non extrait
+    t = db.get_track_by_ref(p.resolve().as_posix())
+    assert t is not None
+    assert t.metadata_extracted is False
+    assert t.title == "song"  # Titre temporaire = nom de fichier sans extension
+    assert db.count_unextracted_tracks(src.id) == 1
+
+    # 2. Exécution de la Phase 2
+    ext_sum = scanner.extract_audio_metadata(src)
+    assert ext_sum.analyzed == 1
+    assert ext_sum.phase == 2
+
+    # Morceau enrichi
+    t_after = db.get_track_by_ref(p.resolve().as_posix())
+    assert t_after is not None
+    assert t_after.metadata_extracted is True
+    assert t_after.title == "My Song Title"
+    assert t_after.artist == "My Artist"
+    assert db.count_unextracted_tracks(src.id) == 0
+
+    # 3. Test callback on_phase1_finished lors du scan global
+    phase1_notified = []
+    scanner.scan_source(src, on_phase1_finished=lambda s: phase1_notified.append(s.phase))
+    assert phase1_notified == [1]

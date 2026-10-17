@@ -1,0 +1,15 @@
+# Outils d'aide au développement et audit qualité de code pour AMSO
+-r requirements.txt
+
+# Tests unitaires et couverture
+pytest>=8.0.0
+pytest-cov>=6.0.0
+
+# Linting et formatage (ultra-rapide en Rust)
+ruff>=0.17.0
+
+# Typage statique
+mypy>=2.4.0
+
+# Mesure de la complexité cyclomatique
+radon>=6.0.1

@@ -7,18 +7,18 @@ avec mode WAL, indexation ciblée et recherche plein texte (FTS5).
 from __future__ import annotations
 
 import contextlib
-from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
-from enum import Enum
-import json
 import os
-from pathlib import Path
 import sqlite3
 import sys
-from typing import Any, Generator, Iterable, Optional, Sequence
+from collections.abc import Generator, Sequence
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from enum import StrEnum
+from pathlib import Path
+from typing import Any
 
 
-class SourceType(str, Enum):
+class SourceType(StrEnum):
     """Types de sources audio prises en charge."""
 
     LOCAL = "local"
@@ -28,9 +28,9 @@ class SourceType(str, Enum):
 
 
 def compute_quality_score(
-    audio_format: Optional[str],
-    bitrate: Optional[int],
-    sample_rate: Optional[int],
+    audio_format: str | None,
+    bitrate: int | None,
+    sample_rate: int | None,
 ) -> int:
     """Calcule un score qualitatif heuristique de 0 à 1000 pour prioriser les doublons.
 
@@ -80,22 +80,71 @@ def compute_quality_score(
 class SourceRecord:
     """Représentation d'une source audio configurée."""
 
-    id: Optional[int] = None
+    id: int | None = None
     source_type: SourceType = SourceType.LOCAL
     name: str = ""
     path_or_uri: str = ""
-    created_at: Optional[str] = None
-    last_scanned_at: Optional[str] = None
+    sync_mode: str = "manual"  # 'manual', 'startup', 'interval', 'realtime'
+    sync_interval_minutes: int = 60
+    sync_interval_seconds: int = 60
+    created_at: str | None = None
+    last_scanned_at: str | None = None
 
     @classmethod
     def from_row(cls, row: sqlite3.Row) -> SourceRecord:
+        keys = row.keys() if hasattr(row, "keys") else ()
         return cls(
             id=row["id"],
             source_type=SourceType(row["source_type"]),
             name=row["name"],
             path_or_uri=row["path_or_uri"],
+            sync_mode=row["sync_mode"] if "sync_mode" in keys and row["sync_mode"] else "manual",
+            sync_interval_minutes=int(row["sync_interval_minutes"])
+            if "sync_interval_minutes" in keys and row["sync_interval_minutes"] is not None
+            else 60,
+            sync_interval_seconds=int(row["sync_interval_seconds"])
+            if "sync_interval_seconds" in keys and row["sync_interval_seconds"] is not None
+            else 60,
             created_at=str(row["created_at"]) if row["created_at"] is not None else None,
             last_scanned_at=str(row["last_scanned_at"]) if row["last_scanned_at"] is not None else None,
+        )
+
+
+@dataclass(slots=True)
+class ActivityLogRecord:
+    """Représentation d'une entrée du journal d'activité."""
+
+    id: int | None = None
+    timestamp: str | None = None
+    level: str = "INFO"  # 'INFO', 'SUCCESS', 'WARNING', 'ERROR'
+    category: str = "SYNC"  # 'SYNC', 'SCAN', 'LIBRARY', 'SYSTEM'
+    source_name: str | None = None
+    action: str = ""
+    details: str | None = None
+    items_added: int = 0
+    items_updated: int = 0
+    items_deleted: int = 0
+    items_errors: int = 0
+
+    @classmethod
+    def from_row(cls, row: sqlite3.Row) -> ActivityLogRecord:
+        keys = row.keys() if hasattr(row, "keys") else ()
+        return cls(
+            id=row["id"],
+            timestamp=str(row["timestamp"]) if "timestamp" in keys and row["timestamp"] is not None else None,
+            level=str(row["level"]) if "level" in keys and row["level"] else "INFO",
+            category=str(row["category"]) if "category" in keys and row["category"] else "SYNC",
+            source_name=str(row["source_name"]) if "source_name" in keys and row["source_name"] is not None else None,
+            action=str(row["action"]) if "action" in keys and row["action"] else "",
+            details=str(row["details"]) if "details" in keys and row["details"] is not None else None,
+            items_added=int(row["items_added"]) if "items_added" in keys and row["items_added"] is not None else 0,
+            items_updated=int(row["items_updated"])
+            if "items_updated" in keys and row["items_updated"] is not None
+            else 0,
+            items_deleted=int(row["items_deleted"])
+            if "items_deleted" in keys and row["items_deleted"] is not None
+            else 0,
+            items_errors=int(row["items_errors"]) if "items_errors" in keys and row["items_errors"] is not None else 0,
         )
 
 
@@ -105,54 +154,78 @@ class TrackRecord:
 
     source_ref: str
     source_type: SourceType = SourceType.LOCAL
-    id: Optional[int] = None
-    source_id: Optional[int] = None
-    source_path: Optional[str] = None
+    id: int | None = None
+    source_id: int | None = None
+    # Fichier & Chemins
+    source_path: str | None = None
+    file_name: str | None = None
+    folder_path: str | None = None
+    folder_name: str | None = None
 
     # Métadonnées audio
-    title: Optional[str] = None
-    artist: Optional[str] = None
-    album_artist: Optional[str] = None
-    album: Optional[str] = None
-    genre: Optional[str] = None
-    year: Optional[int] = None
-    track_number: Optional[int] = None
-    disc_number: Optional[int] = None
+    title: str | None = None
+    artist: str | None = None
+    album_artist: str | None = None
+    album: str | None = None
+    genre: str | None = None
+    year: int | None = None
+    track_number: int | None = None
+    disc_number: int | None = None
 
     # Propriétés techniques
-    duration_seconds: Optional[float] = None
-    bitrate: Optional[int] = None
-    sample_rate: Optional[int] = None
-    channels: Optional[int] = None
-    format: Optional[str] = None
+    duration_seconds: float | None = None
+    bitrate: int | None = None
+    sample_rate: int | None = None
+    channels: int | None = None
+    format: str | None = None
 
     # Fichier & Empreintes
-    file_size: Optional[int] = None
-    file_mtime: Optional[float] = None
-    file_hash: Optional[str] = None
-    audio_fingerprint: Optional[str] = None
-    isrc: Optional[str] = None
+    file_size: int | None = None
+    file_mtime: float | None = None
+    file_hash: str | None = None
+    audio_fingerprint: str | None = None
+    isrc: str | None = None
 
-    # Gestion des doublons & Score
+    # Gestion des doublons, statut & score
     quality_score: int = 0
-    duplicate_cluster_id: Optional[int] = None
+    duplicate_cluster_id: int | None = None
+    metadata_extracted: bool = False
 
     # Dates
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
+    created_at: str | None = None
+    updated_at: str | None = None
 
     def __post_init__(self) -> None:
+        if self.source_path:
+            clean_path = str(self.source_path).replace("\\", "/")
+            if not self.file_name:
+                parts = clean_path.rsplit("/", 1)
+                self.file_name = parts[-1] if parts else ""
+            if not self.folder_path:
+                parts = clean_path.rsplit("/", 1)
+                self.folder_path = parts[0] if len(parts) > 1 else ""
+            if not self.folder_name and self.folder_path:
+                self.folder_name = self.folder_path.rsplit("/", 1)[-1] or self.folder_path
+
         if self.quality_score == 0 and (self.format or self.bitrate):
             self.quality_score = compute_quality_score(self.format, self.bitrate, self.sample_rate)
 
     @classmethod
     def from_row(cls, row: sqlite3.Row) -> TrackRecord:
+        keys = row.keys() if hasattr(row, "keys") else ()
+        file_name = row["file_name"] if "file_name" in keys else None
+        folder_path = row["folder_path"] if "folder_path" in keys else None
+        folder_name = row["folder_name"] if "folder_name" in keys else None
+
         return cls(
             id=row["id"],
             source_ref=row["source_ref"],
             source_type=SourceType(row["source_type"]),
             source_id=row["source_id"],
             source_path=row["source_path"],
+            file_name=file_name,
+            folder_path=folder_path,
+            folder_name=folder_name,
             title=row["title"],
             artist=row["artist"],
             album_artist=row["album_artist"],
@@ -173,8 +246,89 @@ class TrackRecord:
             isrc=row["isrc"],
             quality_score=row["quality_score"] or 0,
             duplicate_cluster_id=row["duplicate_cluster_id"],
+            metadata_extracted=bool(row["metadata_extracted"])
+            if "metadata_extracted" in keys and row["metadata_extracted"] is not None
+            else False,
             created_at=row["created_at"],
             updated_at=row["updated_at"],
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convertit le TrackRecord en dictionnaire sérialisable."""
+        return {
+            "id": self.id,
+            "source_ref": self.source_ref,
+            "source_type": self.source_type.value if hasattr(self.source_type, "value") else str(self.source_type),
+            "source_id": self.source_id,
+            "source_path": self.source_path,
+            "file_name": self.file_name,
+            "folder_path": self.folder_path,
+            "folder_name": self.folder_name,
+            "title": self.title,
+            "artist": self.artist,
+            "album_artist": self.album_artist,
+            "album": self.album,
+            "genre": self.genre,
+            "year": self.year,
+            "track_number": self.track_number,
+            "disc_number": self.disc_number,
+            "duration_seconds": self.duration_seconds,
+            "bitrate": self.bitrate,
+            "sample_rate": self.sample_rate,
+            "channels": self.channels,
+            "format": self.format,
+            "file_size": self.file_size,
+            "file_mtime": self.file_mtime,
+            "file_hash": self.file_hash,
+            "audio_fingerprint": self.audio_fingerprint,
+            "isrc": self.isrc,
+            "quality_score": self.quality_score,
+            "duplicate_cluster_id": self.duplicate_cluster_id,
+            "metadata_extracted": self.metadata_extracted,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> TrackRecord:
+        """Reconstruit un TrackRecord à partir d'un dictionnaire."""
+        st = data.get("source_type", "local")
+        try:
+            source_type = SourceType(st)
+        except Exception:
+            source_type = SourceType.LOCAL
+        return cls(
+            id=data.get("id"),
+            source_ref=data.get("source_ref", data.get("source_path", "")),
+            source_type=source_type,
+            source_id=data.get("source_id"),
+            source_path=data.get("source_path"),
+            file_name=data.get("file_name"),
+            folder_path=data.get("folder_path"),
+            folder_name=data.get("folder_name"),
+            title=data.get("title"),
+            artist=data.get("artist"),
+            album_artist=data.get("album_artist"),
+            album=data.get("album"),
+            genre=data.get("genre"),
+            year=data.get("year"),
+            track_number=data.get("track_number"),
+            disc_number=data.get("disc_number"),
+            duration_seconds=data.get("duration_seconds"),
+            bitrate=data.get("bitrate"),
+            sample_rate=data.get("sample_rate"),
+            channels=data.get("channels"),
+            format=data.get("format"),
+            file_size=data.get("file_size"),
+            file_mtime=data.get("file_mtime"),
+            file_hash=data.get("file_hash"),
+            audio_fingerprint=data.get("audio_fingerprint"),
+            isrc=data.get("isrc"),
+            quality_score=data.get("quality_score", 0),
+            duplicate_cluster_id=data.get("duplicate_cluster_id"),
+            metadata_extracted=data.get("metadata_extracted", False),
+            created_at=data.get("created_at"),
+            updated_at=data.get("updated_at"),
         )
 
 
@@ -208,18 +362,28 @@ def get_database_path() -> Path:
     return db_file
 
 
+def get_saved_playlist_path() -> Path:
+    """Détermine l'emplacement standardisé du fichier de sauvegarde de la playlist courante."""
+    custom = os.getenv("AMSO_PLAYLIST_PATH")
+    if custom and custom.strip():
+        p = Path(custom.strip()).resolve()
+        p.parent.mkdir(parents=True, exist_ok=True)
+        return p
+    return get_default_data_dir() / "saved_playlist.json"
+
+
 class DatabaseManager:
     """Gestionnaire de persistance SQLite pour la bibliothèque AMSO."""
 
     SCHEMA_VERSION = 1
 
-    def __init__(self, db_path: Optional[str | Path] = None) -> None:
+    def __init__(self, db_path: str | Path | None = None) -> None:
         if db_path is None:
             self.db_path = str(get_database_path())
         else:
             self.db_path = str(db_path)
 
-        self._memory_conn: Optional[sqlite3.Connection] = None
+        self._memory_conn: sqlite3.Connection | None = None
         if self.db_path == ":memory:":
             self._memory_conn = sqlite3.connect(":memory:", check_same_thread=False)
             self._memory_conn.row_factory = sqlite3.Row
@@ -279,6 +443,9 @@ class DatabaseManager:
                     source_type TEXT NOT NULL,
                     name TEXT NOT NULL,
                     path_or_uri TEXT NOT NULL UNIQUE,
+                    sync_mode TEXT NOT NULL DEFAULT 'manual',
+                    sync_interval_minutes INTEGER DEFAULT 60,
+                    sync_interval_seconds INTEGER DEFAULT 60,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     last_scanned_at TIMESTAMP
                 );
@@ -294,6 +461,9 @@ class DatabaseManager:
                     source_type TEXT NOT NULL,
                     source_id INTEGER REFERENCES sources(id) ON DELETE CASCADE,
                     source_path TEXT,
+                    file_name TEXT,
+                    folder_path TEXT,
+                    folder_name TEXT,
 
                     title TEXT,
                     artist TEXT,
@@ -318,6 +488,7 @@ class DatabaseManager:
 
                     quality_score INTEGER DEFAULT 0,
                     duplicate_cluster_id INTEGER,
+                    metadata_extracted INTEGER DEFAULT 0,
 
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -325,13 +496,61 @@ class DatabaseManager:
                 """
             )
 
+            # Migration incrémentale sources
+            cur_s = conn.execute("PRAGMA table_info(sources);")
+            cols_s = {r["name"] for r in cur_s.fetchall()}
+            if "sync_mode" not in cols_s:
+                conn.execute("ALTER TABLE sources ADD COLUMN sync_mode TEXT NOT NULL DEFAULT 'manual';")
+            if "sync_interval_minutes" not in cols_s:
+                conn.execute("ALTER TABLE sources ADD COLUMN sync_interval_minutes INTEGER DEFAULT 60;")
+            if "sync_interval_seconds" not in cols_s:
+                conn.execute("ALTER TABLE sources ADD COLUMN sync_interval_seconds INTEGER DEFAULT 60;")
+
+            # Migration incrémentale tracks
+            cur = conn.execute("PRAGMA table_info(tracks);")
+            cols = {r["name"] for r in cur.fetchall()}
+            if "file_name" not in cols:
+                conn.execute("ALTER TABLE tracks ADD COLUMN file_name TEXT;")
+            if "folder_path" not in cols:
+                conn.execute("ALTER TABLE tracks ADD COLUMN folder_path TEXT;")
+            if "folder_name" not in cols:
+                conn.execute("ALTER TABLE tracks ADD COLUMN folder_name TEXT;")
+            if "metadata_extracted" not in cols:
+                conn.execute("ALTER TABLE tracks ADD COLUMN metadata_extracted INTEGER DEFAULT 0;")
+                # Les pistes préexistantes ayant déjà une durée sont considérées comme analysées
+                conn.execute(
+                    "UPDATE tracks SET metadata_extracted = 1 WHERE duration_seconds IS NOT NULL OR file_hash IS NOT NULL;"
+                )
+
+            # Backfill des colonnes de chemin/nom pour les enregistrements existants
+            existing_unfilled = conn.execute(
+                "SELECT id, source_path FROM tracks WHERE source_path IS NOT NULL AND (file_name IS NULL OR folder_path IS NULL);"
+            ).fetchall()
+            for r in existing_unfilled:
+                sp = str(r["source_path"]).replace("\\", "/")
+                parts = sp.rsplit("/", 1)
+                fn = parts[-1] if parts else ""
+                fp = parts[0] if len(parts) > 1 else ""
+                f_parent = fp.rsplit("/", 1)[-1] if fp else ""
+                conn.execute(
+                    "UPDATE tracks SET file_name = ?, folder_path = ?, folder_name = ? WHERE id = ?;",
+                    (fn, fp, f_parent, r["id"]),
+                )
+
             # 3. Index de performance
             conn.execute("CREATE INDEX IF NOT EXISTS idx_tracks_source ON tracks(source_id, source_type);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_tracks_folder ON tracks(source_id, folder_path);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_tracks_file_name ON tracks(file_name);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_tracks_folder_name ON tracks(folder_name);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_tracks_artist_album ON tracks(artist, album);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_tracks_title ON tracks(title);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_tracks_file_hash ON tracks(file_hash);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_tracks_cluster ON tracks(duplicate_cluster_id);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_tracks_isrc ON tracks(isrc);")
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_tracks_meta_extracted ON tracks(metadata_extracted, source_id);"
+            )
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_sources_sync_mode ON sources(sync_mode);")
 
             # 4. Table virtuelle FTS5 pour recherche plein texte ultra-rapide
             conn.execute(
@@ -389,16 +608,26 @@ class DatabaseManager:
                 );
                 """
             )
+            # 7. Activity Logs
             conn.execute(
                 """
-                CREATE TABLE IF NOT EXISTS playlist_tracks (
-                    playlist_id INTEGER REFERENCES playlists(id) ON DELETE CASCADE,
-                    track_id INTEGER REFERENCES tracks(id) ON DELETE CASCADE,
-                    position INTEGER NOT NULL,
-                    PRIMARY KEY (playlist_id, track_id, position)
+                CREATE TABLE IF NOT EXISTS activity_logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    level TEXT NOT NULL DEFAULT 'INFO',
+                    category TEXT NOT NULL DEFAULT 'SYNC',
+                    source_name TEXT,
+                    action TEXT NOT NULL,
+                    details TEXT,
+                    items_added INTEGER DEFAULT 0,
+                    items_updated INTEGER DEFAULT 0,
+                    items_deleted INTEGER DEFAULT 0,
+                    items_errors INTEGER DEFAULT 0
                 );
                 """
             )
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_activity_logs_ts ON activity_logs(timestamp DESC);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_activity_logs_level ON activity_logs(level);")
 
     # -------------------------------------------------------------------------
     # Sources CRUD
@@ -409,19 +638,25 @@ class DatabaseManager:
         source_type: SourceType | str,
         name: str,
         path_or_uri: str,
+        sync_mode: str = "manual",
+        sync_interval_minutes: int = 60,
+        sync_interval_seconds: int = 60,
     ) -> SourceRecord:
-        """Ajoute ou récupère une source audio."""
+        """Ajoute ou récupère une source audio avec sa stratégie de synchronisation."""
         st = source_type.value if isinstance(source_type, SourceType) else source_type
         with self.get_connection() as conn:
             conn.execute(
                 """
-                INSERT INTO sources (source_type, name, path_or_uri)
-                VALUES (?, ?, ?)
+                INSERT INTO sources (source_type, name, path_or_uri, sync_mode, sync_interval_minutes, sync_interval_seconds)
+                VALUES (?, ?, ?, ?, ?, ?)
                 ON CONFLICT(path_or_uri) DO UPDATE SET
                     name = excluded.name,
-                    source_type = excluded.source_type;
+                    source_type = excluded.source_type,
+                    sync_mode = excluded.sync_mode,
+                    sync_interval_minutes = excluded.sync_interval_minutes,
+                    sync_interval_seconds = excluded.sync_interval_seconds;
                 """,
-                (st, name, path_or_uri),
+                (st, name, path_or_uri, sync_mode, sync_interval_minutes, sync_interval_seconds),
             )
             row = conn.execute(
                 "SELECT * FROM sources WHERE path_or_uri = ?;",
@@ -429,13 +664,35 @@ class DatabaseManager:
             ).fetchone()
             return SourceRecord.from_row(row)
 
+    def update_source_sync_config(
+        self,
+        source_id: int,
+        sync_mode: str,
+        sync_interval_minutes: int = 60,
+        sync_interval_seconds: int = 60,
+        name: str | None = None,
+    ) -> bool:
+        """Met à jour le mode et l'intervalle de synchronisation d'une source."""
+        with self.get_connection() as conn:
+            if name is not None:
+                cur = conn.execute(
+                    "UPDATE sources SET sync_mode = ?, sync_interval_minutes = ?, sync_interval_seconds = ?, name = ? WHERE id = ?;",
+                    (sync_mode, sync_interval_minutes, sync_interval_seconds, name, source_id),
+                )
+            else:
+                cur = conn.execute(
+                    "UPDATE sources SET sync_mode = ?, sync_interval_minutes = ?, sync_interval_seconds = ? WHERE id = ?;",
+                    (sync_mode, sync_interval_minutes, sync_interval_seconds, source_id),
+                )
+            return cur.rowcount > 0
+
     def get_sources(self) -> list[SourceRecord]:
         """Retourne la liste de toutes les sources configurées."""
         with self.get_connection() as conn:
             rows = conn.execute("SELECT * FROM sources ORDER BY id ASC;").fetchall()
             return [SourceRecord.from_row(r) for r in rows]
 
-    def get_source(self, source_id: int) -> Optional[SourceRecord]:
+    def get_source(self, source_id: int) -> SourceRecord | None:
         """Retourne une source par son identifiant."""
         with self.get_connection() as conn:
             row = conn.execute("SELECT * FROM sources WHERE id = ?;", (source_id,)).fetchone()
@@ -443,7 +700,7 @@ class DatabaseManager:
 
     def update_source_scanned(self, source_id: int) -> None:
         """Met à jour l'horodatage du dernier scan d'une source."""
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         with self.get_connection() as conn:
             conn.execute(
                 "UPDATE sources SET last_scanned_at = ? WHERE id = ?;",
@@ -470,28 +727,33 @@ class DatabaseManager:
         if not tracks:
             return []
 
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         query = """
             INSERT INTO tracks (
                 source_ref, source_type, source_id, source_path,
+                file_name, folder_path, folder_name,
                 title, artist, album_artist, album, genre, year,
                 track_number, disc_number, duration_seconds, bitrate,
                 sample_rate, channels, format, file_size, file_mtime,
                 file_hash, audio_fingerprint, isrc, quality_score,
-                duplicate_cluster_id, created_at, updated_at
+                duplicate_cluster_id, metadata_extracted, created_at, updated_at
             )
             VALUES (
                 :source_ref, :source_type, :source_id, :source_path,
+                :file_name, :folder_path, :folder_name,
                 :title, :artist, :album_artist, :album, :genre, :year,
                 :track_number, :disc_number, :duration_seconds, :bitrate,
                 :sample_rate, :channels, :format, :file_size, :file_mtime,
                 :file_hash, :audio_fingerprint, :isrc, :quality_score,
-                :duplicate_cluster_id, :now, :now
+                :duplicate_cluster_id, :metadata_extracted, :now, :now
             )
             ON CONFLICT(source_ref) DO UPDATE SET
                 source_type = excluded.source_type,
                 source_id = excluded.source_id,
                 source_path = excluded.source_path,
+                file_name = excluded.file_name,
+                folder_path = excluded.folder_path,
+                folder_name = excluded.folder_name,
                 title = excluded.title,
                 artist = excluded.artist,
                 album_artist = excluded.album_artist,
@@ -511,6 +773,7 @@ class DatabaseManager:
                 audio_fingerprint = excluded.audio_fingerprint,
                 isrc = excluded.isrc,
                 quality_score = excluded.quality_score,
+                metadata_extracted = excluded.metadata_extracted,
                 updated_at = :now
             RETURNING id;
         """
@@ -525,6 +788,9 @@ class DatabaseManager:
                     "source_type": st,
                     "source_id": t.source_id,
                     "source_path": t.source_path,
+                    "file_name": t.file_name,
+                    "folder_path": t.folder_path,
+                    "folder_name": t.folder_name,
                     "title": t.title,
                     "artist": t.artist,
                     "album_artist": t.album_artist,
@@ -545,6 +811,7 @@ class DatabaseManager:
                     "isrc": t.isrc,
                     "quality_score": score,
                     "duplicate_cluster_id": t.duplicate_cluster_id,
+                    "metadata_extracted": 1 if t.metadata_extracted else 0,
                     "now": now,
                 }
             )
@@ -557,13 +824,104 @@ class DatabaseManager:
                     returned_ids.append(res[0])
             return returned_ids
 
-    def get_track(self, track_id: int) -> Optional[TrackRecord]:
+    def get_unextracted_tracks(
+        self,
+        source_id: int | None = None,
+        limit: int | None = None,
+    ) -> list[TrackRecord]:
+        """Retourne les pistes dont les métadonnées audio n'ont pas encore été extraites."""
+        where = ["(metadata_extracted = 0 OR metadata_extracted IS NULL)"]
+        params: list[Any] = []
+        if source_id is not None:
+            where.append("source_id = ?")
+            params.append(source_id)
+
+        sql = f"SELECT * FROM tracks WHERE {' AND '.join(where)} ORDER BY id ASC"
+        if limit and limit > 0:
+            sql += f" LIMIT {int(limit)}"
+        sql += ";"
+
+        with self.get_connection() as conn:
+            rows = conn.execute(sql, params).fetchall()
+            return [TrackRecord.from_row(r) for r in rows]
+
+    def count_unextracted_tracks(self, source_id: int | None = None) -> int:
+        """Retourne le nombre de pistes restant à analyser."""
+        where = ["(metadata_extracted = 0 OR metadata_extracted IS NULL)"]
+        params: list[Any] = []
+        if source_id is not None:
+            where.append("source_id = ?")
+            params.append(source_id)
+
+        sql = f"SELECT COUNT(*) FROM tracks WHERE {' AND '.join(where)};"
+        with self.get_connection() as conn:
+            return conn.execute(sql, params).fetchone()[0]
+
+    def update_track_metadata_batch(self, tracks: Sequence[TrackRecord]) -> int:
+        """Met à jour les métadonnées audio extraites lors de la Phase 2."""
+        if not tracks:
+            return 0
+        now = datetime.now(UTC).isoformat()
+        sql = """
+            UPDATE tracks SET
+                title = :title,
+                artist = :artist,
+                album_artist = :album_artist,
+                album = :album,
+                genre = :genre,
+                year = :year,
+                track_number = :track_number,
+                disc_number = :disc_number,
+                duration_seconds = :duration_seconds,
+                bitrate = :bitrate,
+                sample_rate = :sample_rate,
+                channels = :channels,
+                format = :format,
+                file_hash = :file_hash,
+                audio_fingerprint = :audio_fingerprint,
+                isrc = :isrc,
+                quality_score = :quality_score,
+                metadata_extracted = 1,
+                updated_at = :now
+            WHERE source_ref = :source_ref;
+        """
+        param_list = []
+        for t in tracks:
+            score = t.quality_score or compute_quality_score(t.format, t.bitrate, t.sample_rate)
+            param_list.append(
+                {
+                    "source_ref": t.source_ref,
+                    "title": t.title,
+                    "artist": t.artist,
+                    "album_artist": t.album_artist,
+                    "album": t.album,
+                    "genre": t.genre,
+                    "year": t.year,
+                    "track_number": t.track_number,
+                    "disc_number": t.disc_number,
+                    "duration_seconds": t.duration_seconds,
+                    "bitrate": t.bitrate,
+                    "sample_rate": t.sample_rate,
+                    "channels": t.channels,
+                    "format": t.format,
+                    "file_hash": t.file_hash,
+                    "audio_fingerprint": t.audio_fingerprint,
+                    "isrc": t.isrc,
+                    "quality_score": score,
+                    "now": now,
+                }
+            )
+        with self.get_connection() as conn:
+            conn.executemany(sql, param_list)
+            return len(param_list)
+
+    def get_track(self, track_id: int) -> TrackRecord | None:
         """Récupère une piste par son ID."""
         with self.get_connection() as conn:
             row = conn.execute("SELECT * FROM tracks WHERE id = ?;", (track_id,)).fetchone()
             return TrackRecord.from_row(row) if row else None
 
-    def get_track_by_ref(self, source_ref: str) -> Optional[TrackRecord]:
+    def get_track_by_ref(self, source_ref: str) -> TrackRecord | None:
         """Récupère une piste par sa référence unique (chemin local ou ID distant)."""
         with self.get_connection() as conn:
             row = conn.execute("SELECT * FROM tracks WHERE source_ref = ?;", (source_ref,)).fetchone()
@@ -573,15 +931,42 @@ class DatabaseManager:
         self,
         limit: int = 100,
         offset: int = 0,
-        source_type: Optional[SourceType | str] = None,
-        source_id: Optional[int] = None,
+        source_type: SourceType | str | None = None,
+        source_id: int | None = None,
         sort_by: str = "title",
         sort_order: str = "ASC",
     ) -> tuple[list[TrackRecord], int]:
         """Retourne une liste paginée de pistes avec le total global pour le modèle virtuel Qt."""
         allowed_sort = {
-            "id", "title", "artist", "album", "year", "duration_seconds",
-            "bitrate", "format", "quality_score", "created_at"
+            "id",
+            "file_name",
+            "title",
+            "artist",
+            "album_artist",
+            "album",
+            "genre",
+            "year",
+            "track_number",
+            "disc_number",
+            "duration_seconds",
+            "bitrate",
+            "sample_rate",
+            "channels",
+            "format",
+            "file_size",
+            "file_mtime",
+            "file_hash",
+            "audio_fingerprint",
+            "isrc",
+            "quality_score",
+            "duplicate_cluster_id",
+            "source_type",
+            "source_id",
+            "folder_name",
+            "folder_path",
+            "source_path",
+            "created_at",
+            "updated_at",
         }
         col = sort_by if sort_by in allowed_sort else "title"
         direction = "DESC" if sort_order.upper() == "DESC" else "ASC"
@@ -625,7 +1010,7 @@ class DatabaseManager:
             return self.get_tracks(limit=limit, offset=offset)
 
         # Échappe les caractères FTS spéciaux et ajoute un wildcard pour recherche incrémentale
-        fts_query = ' '.join(f'"{token}"*' for token in cleaned_query.split())
+        fts_query = " ".join(f'"{token}"*' for token in cleaned_query.split())
 
         with self.get_connection() as conn:
             try:
@@ -662,6 +1047,24 @@ class DatabaseManager:
                 """
                 rows = conn.execute(fallback_data, (like_term, like_term, like_term, limit, offset)).fetchall()
                 return [TrackRecord.from_row(r) for r in rows], total
+
+    def get_track_by_id(self, track_id: int) -> TrackRecord | None:
+        """Récupère une piste unique par son identifiant SQLite."""
+        with self.get_connection() as conn:
+            row = conn.execute("SELECT * FROM tracks WHERE id = ?;", (track_id,)).fetchone()
+            if row:
+                return TrackRecord.from_row(row)
+        return None
+
+    def get_tracks_by_ids(self, track_ids: Sequence[int]) -> list[TrackRecord]:
+        """Récupère une liste de pistes par leurs identifiants en préservant l'ordre."""
+        if not track_ids:
+            return []
+        placeholders = ",".join("?" for _ in track_ids)
+        with self.get_connection() as conn:
+            rows = conn.execute(f"SELECT * FROM tracks WHERE id IN ({placeholders});", list(track_ids)).fetchall()
+            tracks_by_id = {r["id"]: TrackRecord.from_row(r) for r in rows}
+            return [tracks_by_id[tid] for tid in track_ids if tid in tracks_by_id]
 
     def delete_track(self, track_id: int) -> bool:
         """Supprime une piste unique."""
@@ -801,3 +1204,286 @@ class DatabaseManager:
                 "by_source_type": {r["source_type"]: r["count"] for r in source_counts},
                 "by_format": {r["fmt"]: r["count"] for r in format_counts},
             }
+
+    # -------------------------------------------------------------------------
+    # Exploration & Navigation par Dossiers
+    # -------------------------------------------------------------------------
+
+    def get_folders_summary(self, source_id: int | None = None) -> list[dict[str, Any]]:
+        """Retourne la liste des répertoires contenant des pistes avec le décompte de morceaux."""
+        query = """
+            SELECT source_id, folder_path, folder_name, COUNT(*) as track_count
+            FROM tracks
+            WHERE folder_path IS NOT NULL AND (:source_id IS NULL OR source_id = :source_id)
+            GROUP BY source_id, folder_path
+            ORDER BY folder_path ASC;
+        """
+        with self.get_connection() as conn:
+            rows = conn.execute(query, {"source_id": source_id}).fetchall()
+            return [
+                {
+                    "source_id": r["source_id"],
+                    "folder_path": r["folder_path"],
+                    "folder_name": r["folder_name"],
+                    "track_count": int(r["track_count"]),
+                }
+                for r in rows
+            ]
+
+    def get_tracks_by_folder(
+        self,
+        folder_path: str,
+        source_id: int | None = None,
+        recursive: bool = False,
+        sort_by: str = "file_name",
+        sort_order: str = "ASC",
+    ) -> list[TrackRecord]:
+        """Retourne les pistes audio situées dans un dossier (ou sous-dossiers si recursive=True)."""
+        fp_clean = folder_path.replace("\\", "/").rstrip("/")
+        fp_alt = fp_clean.replace("/", "\\")
+        direction = "DESC" if str(sort_order).upper() == "DESC" else "ASC"
+        allowed_sorts = {
+            "id",
+            "file_name",
+            "title",
+            "artist",
+            "album_artist",
+            "album",
+            "genre",
+            "year",
+            "track_number",
+            "disc_number",
+            "duration_seconds",
+            "bitrate",
+            "sample_rate",
+            "channels",
+            "format",
+            "file_size",
+            "file_mtime",
+            "file_hash",
+            "audio_fingerprint",
+            "isrc",
+            "quality_score",
+            "duplicate_cluster_id",
+            "source_type",
+            "source_id",
+            "folder_name",
+            "folder_path",
+            "source_path",
+            "created_at",
+            "updated_at",
+        }
+        sort_col = sort_by if sort_by in allowed_sorts else "file_name"
+
+        with self.get_connection() as conn:
+            if not recursive:
+                query = f"""
+                    SELECT * FROM tracks
+                    WHERE (:source_id IS NULL OR source_id = :source_id)
+                      AND (folder_path = :fp OR folder_path = :fp_alt)
+                    ORDER BY {sort_col} {direction};
+                """
+                rows = conn.execute(
+                    query,
+                    {
+                        "source_id": source_id,
+                        "fp": fp_clean,
+                        "fp_alt": fp_alt,
+                    },
+                ).fetchall()
+            else:
+                query = f"""
+                    SELECT * FROM tracks
+                    WHERE (:source_id IS NULL OR source_id = :source_id)
+                      AND (
+                          folder_path = :fp
+                          OR folder_path = :fp_alt
+                          OR folder_path LIKE :p1
+                          OR folder_path LIKE :p2
+                          OR folder_path LIKE :p3
+                          OR folder_path LIKE :p4
+                      )
+                    ORDER BY {sort_col} {direction};
+                """
+                rows = conn.execute(
+                    query,
+                    {
+                        "source_id": source_id,
+                        "fp": fp_clean,
+                        "fp_alt": fp_alt,
+                        "p1": f"{fp_clean}/%",
+                        "p2": f"{fp_clean}\\%",
+                        "p3": f"{fp_alt}/%",
+                        "p4": f"{fp_alt}\\%",
+                    },
+                ).fetchall()
+
+            return [TrackRecord.from_row(r) for r in rows]
+
+    def count_tracks_by_folder(
+        self,
+        folder_path: str,
+        source_id: int | None = None,
+        recursive: bool = False,
+    ) -> int:
+        """Compte le nombre de pistes dans un dossier donné."""
+        fp_clean = folder_path.replace("\\", "/").rstrip("/")
+        fp_alt = fp_clean.replace("/", "\\")
+        with self.get_connection() as conn:
+            if not recursive:
+                query = """
+                    SELECT COUNT(*) FROM tracks
+                    WHERE (:source_id IS NULL OR source_id = :source_id)
+                      AND (folder_path = :fp OR folder_path = :fp_alt);
+                """
+                res = conn.execute(
+                    query,
+                    {"source_id": source_id, "fp": fp_clean, "fp_alt": fp_alt},
+                ).fetchone()
+            else:
+                query = """
+                    SELECT COUNT(*) FROM tracks
+                    WHERE (:source_id IS NULL OR source_id = :source_id)
+                      AND (
+                          folder_path = :fp
+                          OR folder_path = :fp_alt
+                          OR folder_path LIKE :p1
+                          OR folder_path LIKE :p2
+                      );
+                """
+                res = conn.execute(
+                    query,
+                    {
+                        "source_id": source_id,
+                        "fp": fp_clean,
+                        "fp_alt": fp_alt,
+                        "p1": f"{fp_clean}/%",
+                        "p2": f"{fp_clean}\\%",
+                    },
+                ).fetchone()
+            return int(res[0] if res else 0)
+
+    # -------------------------------------------------------------------------
+    # Journal d'activité (Logs)
+    # -------------------------------------------------------------------------
+
+    def add_activity_log(
+        self,
+        action: str,
+        level: str = "INFO",
+        category: str = "SYNC",
+        source_name: str | None = None,
+        details: str | None = None,
+        items_added: int = 0,
+        items_updated: int = 0,
+        items_deleted: int = 0,
+        items_errors: int = 0,
+        timestamp: str | None = None,
+    ) -> int:
+        """Insère une nouvelle entrée dans le journal d'activité."""
+        now = timestamp or datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
+        with self.get_connection() as conn:
+            cur = conn.execute(
+                """
+                INSERT INTO activity_logs (
+                    timestamp, level, category, source_name, action, details,
+                    items_added, items_updated, items_deleted, items_errors
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                """,
+                (
+                    now,
+                    level.upper(),
+                    category.upper(),
+                    source_name,
+                    action,
+                    details,
+                    items_added,
+                    items_updated,
+                    items_deleted,
+                    items_errors,
+                ),
+            )
+            return cur.lastrowid or 0
+
+    def get_activity_logs(
+        self,
+        limit: int = 200,
+        offset: int = 0,
+        level: str | None = None,
+        category: str | None = None,
+        search: str | None = None,
+    ) -> list[ActivityLogRecord]:
+        """Récupère les logs avec filtres facultatifs par niveau, catégorie et mot-clé."""
+        clauses: list[str] = []
+        params: list[Any] = []
+
+        if level and level.upper() != "ALL":
+            clauses.append("level = ?")
+            params.append(level.upper())
+
+        if category and category.upper() != "ALL":
+            clauses.append("category = ?")
+            params.append(category.upper())
+
+        if search and search.strip():
+            kw = f"%{search.strip()}%"
+            clauses.append("(action LIKE ? OR details LIKE ? OR source_name LIKE ?)")
+            params.extend([kw, kw, kw])
+
+        where_sql = ("WHERE " + " AND ".join(clauses)) if clauses else ""
+        query = f"""
+            SELECT * FROM activity_logs
+            {where_sql}
+            ORDER BY id DESC
+            LIMIT ? OFFSET ?;
+        """
+        params.extend([limit, offset])
+
+        with self.get_connection() as conn:
+            rows = conn.execute(query, params).fetchall()
+            return [ActivityLogRecord.from_row(r) for r in rows]
+
+    def count_activity_logs(
+        self,
+        level: str | None = None,
+        category: str | None = None,
+        search: str | None = None,
+    ) -> int:
+        """Compte le nombre de logs répondant aux critères."""
+        clauses: list[str] = []
+        params: list[Any] = []
+
+        if level and level.upper() != "ALL":
+            clauses.append("level = ?")
+            params.append(level.upper())
+
+        if category and category.upper() != "ALL":
+            clauses.append("category = ?")
+            params.append(category.upper())
+
+        if search and search.strip():
+            kw = f"%{search.strip()}%"
+            clauses.append("(action LIKE ? OR details LIKE ? OR source_name LIKE ?)")
+            params.extend([kw, kw, kw])
+
+        where_sql = ("WHERE " + " AND ".join(clauses)) if clauses else ""
+        query = f"SELECT COUNT(*) FROM activity_logs {where_sql};"
+
+        with self.get_connection() as conn:
+            res = conn.execute(query, params).fetchone()
+            return int(res[0] if res else 0)
+
+    def clear_activity_logs(self, before_days: int | None = None) -> int:
+        """Supprime tout ou partie des logs (ex: logs de plus de N jours)."""
+        with self.get_connection() as conn:
+            if before_days is not None and before_days > 0:
+                cur = conn.execute(
+                    """
+                    DELETE FROM activity_logs
+                    WHERE timestamp < datetime('now', ?);
+                    """,
+                    (f"-{before_days} days",),
+                )
+            else:
+                cur = conn.execute("DELETE FROM activity_logs;")
+            return cur.rowcount

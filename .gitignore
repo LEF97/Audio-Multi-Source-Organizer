@@ -64,6 +64,7 @@ test_audio/
 temp/
 scratch/
 cache/
+_work/
 *.tmp
 *.log
 

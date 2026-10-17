@@ -15,11 +15,9 @@ Description:
 from __future__ import annotations
 
 import argparse
-import io
 import json
-from pathlib import Path
 import sys
-from typing import Any
+from pathlib import Path
 
 # Forcer UTF-8 sur stdout pour éviter les erreurs charmap cp1252 sous Windows
 if sys.stdout and hasattr(sys.stdout, "reconfigure"):
@@ -35,7 +33,7 @@ def get_locales_dir() -> Path:
 
 
 def load_json(path: Path) -> dict[str, str]:
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -55,7 +53,7 @@ def sync_locales(locales_dir: Path, check_only: bool = False) -> int:
     ref_keys = list(ref_data.keys())
 
     print("=" * 60)
-    print(f"  AMSO — Synchronisation i18n sur la base de la VF (fr.json)")
+    print("  AMSO — Synchronisation i18n sur la base de la VF (fr.json)")
     print(f"  Répertoire : {locales_dir}")
     print(f"  Nombre de clés dans la référence VF : {len(ref_keys)}")
     print("=" * 60)
@@ -84,9 +82,13 @@ def sync_locales(locales_dir: Path, check_only: bool = False) -> int:
 
         has_diff = True
         if missing_keys:
-            print(f"  + {len(missing_keys)} clé(s) manquante(s) : {', '.join(missing_keys[:5])}{'...' if len(missing_keys) > 5 else ''}")
+            print(
+                f"  + {len(missing_keys)} clé(s) manquante(s) : {', '.join(missing_keys[:5])}{'...' if len(missing_keys) > 5 else ''}"
+            )
         if obsolete_keys:
-            print(f"  - {len(obsolete_keys)} clé(s) obsolète(s) : {', '.join(obsolete_keys[:5])}{'...' if len(obsolete_keys) > 5 else ''}")
+            print(
+                f"  - {len(obsolete_keys)} clé(s) obsolète(s) : {', '.join(obsolete_keys[:5])}{'...' if len(obsolete_keys) > 5 else ''}"
+            )
 
         if not check_only:
             # Construction du nouveau dictionnaire dans l'ordre strict de fr.json

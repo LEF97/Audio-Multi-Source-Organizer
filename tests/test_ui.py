@@ -1,7 +1,7 @@
 """Tests unitaires pour les composants PySide6 (modèles virtualisés et interface)."""
 
 import os
-from pathlib import Path
+
 import pytest
 
 # Exécution en mode headless pour assurer la compatibilité CI (Linux/macOS/Windows)
@@ -10,9 +10,15 @@ os.environ["QT_QPA_PLATFORM"] = "offscreen"
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
+from amso import __version__
 from amso.core.database import DatabaseManager, SourceType, TrackRecord
-from amso.core.i18n import get_i18n, tr
-from amso.ui.models import TrackTableModel, format_duration, format_quality
+from amso.core.i18n import get_i18n
+from amso.ui.models import (
+    FolderTrackTableModel,
+    TrackTableModel,
+    format_duration,
+    format_quality,
+)
 from amso.ui.views.main_window import MainWindow
 
 
@@ -77,7 +83,7 @@ def test_format_helpers():
 
 
 def test_track_table_model(qapp: QApplication, db: DatabaseManager):
-    """Vérifie le fonctionnement du modèle virtualisé QAbstractTableModel."""
+    """Vérifie le fonctionnement du modèle virtualisé QAbstractTableModel harmonisé."""
     i18n = get_i18n()
     i18n.set_language("fr")
 
@@ -85,42 +91,44 @@ def test_track_table_model(qapp: QApplication, db: DatabaseManager):
     model.reload_data()
 
     assert model.rowCount() == 2
-    assert model.columnCount() == 9
+    assert model.columnCount() == 29
 
     # Vérification des en-têtes en français
-    assert model.headerData(0, Qt.Orientation.Horizontal) == "Titre"
-    assert model.headerData(1, Qt.Orientation.Horizontal) == "Artiste"
-    assert model.headerData(3, Qt.Orientation.Horizontal) == "Durée"
+    assert model.headerData(0, Qt.Orientation.Horizontal) == "Nom de fichier"
+    assert model.headerData(1, Qt.Orientation.Horizontal) == "Titre"
+    assert model.headerData(2, Qt.Orientation.Horizontal) == "Artiste"
+    assert model.headerData(9, Qt.Orientation.Horizontal) == "Durée"
 
     # Vérification de la dynamique de changement de langue
     i18n.set_language("en")
     model.notify_language_changed()
-    assert model.headerData(0, Qt.Orientation.Horizontal) == "Title"
-    assert model.headerData(1, Qt.Orientation.Horizontal) == "Artist"
-    assert model.headerData(3, Qt.Orientation.Horizontal) == "Duration"
+    assert model.headerData(0, Qt.Orientation.Horizontal) == "Filename"
+    assert model.headerData(1, Qt.Orientation.Horizontal) == "Title"
+    assert model.headerData(2, Qt.Orientation.Horizontal) == "Artist"
+    assert model.headerData(9, Qt.Orientation.Horizontal) == "Duration"
 
     # Retour au français
     i18n.set_language("fr")
     model.notify_language_changed()
 
     # Vérification des cellules (ligne 0 : Queen)
-    idx_title = model.index(0, 0)
+    idx_title = model.index(0, 1)
     assert model.data(idx_title, Qt.ItemDataRole.DisplayRole) == "Bohemian Rhapsody"
 
-    idx_artist = model.index(0, 1)
+    idx_artist = model.index(0, 2)
     assert model.data(idx_artist, Qt.ItemDataRole.DisplayRole) == "Queen"
 
-    idx_duration = model.index(0, 3)
+    idx_duration = model.index(0, 9)
     assert model.data(idx_duration, Qt.ItemDataRole.DisplayRole) == "5:54"
 
-    # Tri par titre décroissant
-    model.sort(0, Qt.SortOrder.DescendingOrder)
-    assert model.data(model.index(0, 0), Qt.ItemDataRole.DisplayRole) == "Stairway to Heaven"
+    # Tri par titre décroissant (colonne 1 = titre)
+    model.sort(1, Qt.SortOrder.DescendingOrder)
+    assert model.data(model.index(0, 1), Qt.ItemDataRole.DisplayRole) == "Stairway to Heaven"
 
     # Filtre recherche FTS
     model.set_filter(search_query="Queen")
     assert model.rowCount() == 1
-    assert model.data(model.index(0, 0), Qt.ItemDataRole.DisplayRole) == "Bohemian Rhapsody"
+    assert model.data(model.index(0, 1), Qt.ItemDataRole.DisplayRole) == "Bohemian Rhapsody"
 
 
 def test_main_window_instantiation(qapp: QApplication, db: DatabaseManager):
@@ -130,6 +138,7 @@ def test_main_window_instantiation(qapp: QApplication, db: DatabaseManager):
 
     window = MainWindow(db=db)
     assert "AMSO" in window.windowTitle()
+    assert __version__ in window.windowTitle()
     assert window.table_model.rowCount() == 2
     assert window.search_edit is not None
     assert window.btn_all_tracks.isChecked() is True
@@ -144,7 +153,7 @@ def test_main_window_instantiation(qapp: QApplication, db: DatabaseManager):
     assert en_idx >= 0
     window.combo_language.setCurrentIndex(en_idx)
     assert "All Tracks" in window.btn_all_tracks.text()
-    assert "Scan Sources" in window.btn_scan_all.text()
+    assert "Duplicates" in window.btn_duplicates.text()
 
     # Retour au français
     fr_idx = window.combo_language.findData("fr")
@@ -167,17 +176,220 @@ def test_main_window_instantiation(qapp: QApplication, db: DatabaseManager):
     assert window.btn_settings_general.isChecked() is True
     assert window.stacked_widget.currentIndex() == 2
 
+    # Test clic sur Paramètres > Sources (page dédiée avec sources)
+    window.btn_settings_sources.click()
+    assert window.btn_settings_sources.isChecked() is True
+    assert window.stacked_widget.currentIndex() == 4
+
     # Test retour sur Tous les morceaux
     window.btn_all_tracks.click()
     assert window.btn_all_tracks.isChecked() is True
     assert window.stacked_widget.currentIndex() == 0
 
-    # Test repliement / dépliement d'un tiroir
+    # Test état des tiroirs par défaut : Lecteur ouvert, Bibliothèque fermée
+    assert window.drawer_player._is_expanded is True
+    assert window.drawer_library._is_expanded is False
+    assert window.drawer_library.content_widget.isHidden() is True
+    window.drawer_library.toggle()
     assert window.drawer_library._is_expanded is True
+    assert window.drawer_library.content_widget.isHidden() is False
     window.drawer_library.toggle()
     assert window.drawer_library._is_expanded is False
-    assert window.drawer_library.content_widget.isVisible() is False
-    window.drawer_library.toggle()
-    assert window.drawer_library._is_expanded is True
 
     window.close()
+
+
+def test_folder_track_table_model(qapp: QApplication, db: DatabaseManager):
+    """Vérifie le modèle virtualisé spécifique à la vue par dossiers."""
+    i18n = get_i18n()
+    i18n.set_language("fr")
+
+    # Ajouter des morceaux dans des dossiers distincts
+    src = db.get_sources()[0]
+    db.upsert_tracks_batch(
+        [
+            TrackRecord(
+                source_ref="D:/Music/Rock/Queen/Bohemian.mp3",
+                source_path="D:/Music/Rock/Queen/Bohemian.mp3",
+                source_id=src.id,
+                title="Bohemian Rhapsody",
+                artist="Queen",
+                album="A Night at the Opera",
+                duration_seconds=354.0,
+                format="mp3",
+                file_size=12_500_000,
+            ),
+            TrackRecord(
+                source_ref="D:/Music/Rock/Queen/RadioGaGa.mp3",
+                source_path="D:/Music/Rock/Queen/RadioGaGa.mp3",
+                source_id=src.id,
+                title="Radio Ga Ga",
+                artist="Queen",
+                album="The Works",
+                duration_seconds=345.0,
+                format="mp3",
+                file_size=11_200_000,
+            ),
+        ]
+    )
+
+    model = FolderTrackTableModel(db=db)
+    model.set_folder("D:/Music/Rock/Queen", source_id=src.id, recursive=False)
+
+    # Vérification de l'harmonisation stricte des colonnes entre les deux modèles
+    assert FolderTrackTableModel.COLUMNS == TrackTableModel.COLUMNS
+
+    assert model.rowCount() == 2
+    assert model.columnCount() == 29
+
+    # Colonnes harmonisées : Nom de fichier, Titre, Artiste, Album, Taille (colonne 15)...
+    assert model.headerData(0, Qt.Orientation.Horizontal) == "Nom de fichier"
+    assert model.headerData(1, Qt.Orientation.Horizontal) == "Titre"
+    assert model.headerData(15, Qt.Orientation.Horizontal) == "Taille"
+
+    # Vérification des cellules
+    assert model.data(model.index(0, 0), Qt.ItemDataRole.DisplayRole) == "Bohemian.mp3"
+    assert "Mo" in str(model.data(model.index(0, 15), Qt.ItemDataRole.DisplayRole))
+
+    # Test recherche dans le dossier
+    model.set_search_query("Radio")
+    assert model.rowCount() == 1
+    assert model.data(model.index(0, 0), Qt.ItemDataRole.DisplayRole) == "RadioGaGa.mp3"
+
+    model.set_search_query("")
+    assert model.rowCount() == 2
+
+
+def test_main_window_folder_navigation(qapp: QApplication, db: DatabaseManager):
+    """Vérifie la navigation par dossiers dans la fenêtre principale."""
+    i18n = get_i18n()
+    i18n.set_language("fr")
+
+    src = db.get_sources()[0]
+    db.upsert_tracks_batch(
+        [
+            TrackRecord(
+                source_ref="D:/Music/Pop/Abba/Waterloo.mp3",
+                source_path="D:/Music/Pop/Abba/Waterloo.mp3",
+                source_id=src.id,
+                title="Waterloo",
+                artist="Abba",
+                format="mp3",
+                duration_seconds=165.0,
+                file_size=5_000_000,
+            ),
+        ]
+    )
+
+    window = MainWindow(db=db)
+
+    # 1. Clic sur le bouton "Par dossiers" dans Bibliothèque
+    assert window.btn_by_folder is not None
+    assert "Par dossiers" in window.btn_by_folder.text()
+
+    window.btn_by_folder.click()
+    assert window.btn_by_folder.isChecked() is True
+    assert window.stacked_widget.currentIndex() == 3
+
+    # 2. Vérification de l'arborescence
+    assert window.folder_tree.topLevelItemCount() >= 1
+    root_item = window.folder_tree.topLevelItem(0)
+    assert "Dossier Test" in root_item.text(0)
+
+    # 3. Vérification de la présence de sous-dossiers dans l'arborescence (Pop -> Abba)
+    child_count = root_item.childCount()
+    assert child_count >= 1
+    pop_node = root_item.child(0)
+    assert "Pop" in pop_node.text(0)
+    abba_node = pop_node.child(0)
+    assert "Abba" in abba_node.text(0)
+
+    # Sélectionner le dossier Abba (qui contient le fichier direct)
+    window.folder_tree.setCurrentItem(abba_node)
+    assert window.right_stack.currentIndex() == 1
+    assert "Abba" in window.lbl_folder_breadcrumb.text()
+    assert window.folder_table_model.rowCount() == 1
+
+    # 4. Sélectionner le dossier parent Pop (0 direct, 1 récursif)
+    window.folder_tree.setCurrentItem(pop_node)
+    assert window.folder_table_model.rowCount() == 0
+    window.cb_recursive.setChecked(True)
+    assert window.folder_table_model.rowCount() == 1
+
+    # 5. Test changement de langue dynamique sur la page Par dossiers
+    window.combo_language.setCurrentIndex(window.combo_language.findData("en"))
+    assert "By Folders" in window.btn_by_folder.text()
+    assert "Folder Explorer" in window.lbl_folders_page_title.text()
+    assert "Include subfolders" in window.cb_recursive.text()
+    window.combo_language.setCurrentIndex(window.combo_language.findData("fr"))
+    assert "Par dossiers" in window.btn_by_folder.text()
+
+    # 6. Vérification de la hauteur fixe du panneau haut et du redimensionnement interactif des colonnes
+    from PySide6.QtWidgets import QHeaderView
+
+    folders_page = window.stacked_widget.widget(3)
+    assert folders_page is not None
+    # Vérifier que les colonnes de l'arborescence et du tableau sont interactives (permettent la réduction)
+    assert window.folder_tree.header().stretchLastSection() is False
+    assert window.folder_tree.header().sectionResizeMode(0) == QHeaderView.ResizeMode.Interactive
+    assert window.folder_tree.header().sectionResizeMode(1) == QHeaderView.ResizeMode.Interactive
+
+    # 7. Vérification que les colonnes sont déplaçables et masquables
+    assert window.table_view.horizontalHeader().sectionsMovable() is True
+    assert window.folder_table_view.horizontalHeader().sectionsMovable() is True
+
+    # Test masquage / réaffichage d'une colonne
+    window._toggle_table_column(window.table_view, 1, False, "all_tracks")
+    assert window.table_view.isColumnHidden(1) is True
+    window._toggle_table_column(window.table_view, 1, True, "all_tracks")
+    assert window.table_view.isColumnHidden(1) is False
+
+    # Test afficher toutes les colonnes
+    window._show_all_columns(window.table_view, "all_tracks")
+    for c in range(29):
+        assert window.table_view.isColumnHidden(c) is False
+
+    # Test réinitialisation colonnes par défaut
+    window._reset_default_columns(window.table_view, "all_tracks")
+    assert window.table_view.isColumnHidden(0) is False  # file_name visible
+    assert window.table_view.isColumnHidden(1) is False  # title visible
+    assert window.table_view.isColumnHidden(4) is True  # album_artist masqué par défaut
+    assert window.table_view.isColumnHidden(28) is True  # id masqué par défaut
+
+    # 8. Vérification du fil d'Ariane cliquable
+    assert hasattr(window.lbl_folder_breadcrumb, "clicked")
+    from unittest.mock import patch
+
+    with patch.object(window, "_on_open_current_folder_explorer") as mock_open:
+        window.lbl_folder_breadcrumb.clicked.emit()
+        assert mock_open.called
+
+    # 9. Vérification du menu contextuel de la source (Synchroniser)
+    sources = window.db.get_sources()
+    assert len(sources) >= 1
+    src_menu = window._create_source_context_menu(sources[0])
+    action_texts = [a.text() for a in src_menu.actions()]
+    assert any("Synchroniser" in t for t in action_texts)
+    assert any("Explorateur" in t for t in action_texts)
+
+    window.close()
+
+
+def test_splash_screen(qapp: QApplication):
+    """Vérifie le cycle de vie de l'écran de chargement SplashScreen."""
+    from PySide6.QtWidgets import QWidget
+
+    from amso.ui.views.splash_screen import SplashScreen
+
+    splash = SplashScreen()
+    assert splash.progress_bar.value() == 0
+    assert "0%" in splash.lbl_percent.text()
+
+    splash.set_progress(45, "Chargement en cours...")
+    assert splash.progress_bar.value() == 45
+    assert "45%" in splash.lbl_percent.text()
+    assert splash.lbl_status.text() == "Chargement en cours..."
+
+    dummy_win = QWidget()
+    splash.finish(dummy_win)
+    assert not splash.isVisible()

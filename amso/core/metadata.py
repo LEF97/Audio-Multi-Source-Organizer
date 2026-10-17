@@ -8,15 +8,15 @@ from __future__ import annotations
 
 import hashlib
 import os
-from pathlib import Path
 import re
-from typing import Any, Optional, Sequence
+from collections.abc import Sequence
+from pathlib import Path
+from typing import Any
 
 import mutagen
 from mutagen.flac import FLAC
 from mutagen.id3 import (
     ID3,
-    ID3NoHeaderError,
     TALB,
     TCON,
     TDRC,
@@ -25,29 +25,31 @@ from mutagen.id3 import (
     TPE2,
     TPOS,
     TRCK,
-    TSRC,
+    ID3NoHeaderError,
 )
-from mutagen.mp4 import MP4, MP4Tags
+from mutagen.mp4 import MP4
 
 from amso.core.database import SourceType, TrackRecord, compute_quality_score
 
 # Extensions audio prises en charge
-SUPPORTED_AUDIO_EXTENSIONS: frozenset[str] = frozenset({
-    ".mp3",
-    ".flac",
-    ".m4a",
-    ".aac",
-    ".ogg",
-    ".oga",
-    ".opus",
-    ".wav",
-    ".wave",
-    ".wma",
-    ".aiff",
-    ".aif",
-    ".alac",
-    ".ape",
-})
+SUPPORTED_AUDIO_EXTENSIONS: frozenset[str] = frozenset(
+    {
+        ".mp3",
+        ".flac",
+        ".m4a",
+        ".aac",
+        ".ogg",
+        ".oga",
+        ".opus",
+        ".wav",
+        ".wave",
+        ".wma",
+        ".aiff",
+        ".aif",
+        ".alac",
+        ".ape",
+    }
+)
 
 
 def is_audio_file(file_path: str | Path) -> bool:
@@ -74,7 +76,7 @@ def compute_file_hash(file_path: str | Path, chunk_size: int = 65536) -> str:
     return sha256.hexdigest()
 
 
-def _clean_str(val: Any) -> Optional[str]:
+def _clean_str(val: Any) -> str | None:
     """Nettoie une chaîne de caractères ou retourne None si vide."""
     if val is None:
         return None
@@ -86,7 +88,7 @@ def _clean_str(val: Any) -> Optional[str]:
     return s if s else None
 
 
-def _parse_int_pair(val: Any) -> Optional[int]:
+def _parse_int_pair(val: Any) -> int | None:
     """Extrait un numéro entier à partir de formats divers (ex: 5, '05', '5/12', (5, 12))."""
     if val is None:
         return None
@@ -108,7 +110,7 @@ def _parse_int_pair(val: Any) -> Optional[int]:
     return None
 
 
-def _parse_year(val: Any) -> Optional[int]:
+def _parse_year(val: Any) -> int | None:
     """Extrait une année à 4 chiffres à partir d'une chaîne ou date (ex: '2023-05-14', 2023)."""
     if val is None:
         return None
@@ -130,7 +132,7 @@ def _parse_year(val: Any) -> Optional[int]:
     return None
 
 
-def _get_tag_value(tags: Any, keys: Sequence[str]) -> Optional[str]:
+def _get_tag_value(tags: Any, keys: Sequence[str]) -> str | None:
     """Recherche la première valeur non nulle parmi une liste de clés de tags."""
     if not tags:
         return None
@@ -148,7 +150,7 @@ def _get_tag_value(tags: Any, keys: Sequence[str]) -> Optional[str]:
 
 def extract_metadata(
     file_path: str | Path,
-    source_id: Optional[int] = None,
+    source_id: int | None = None,
     source_type: SourceType = SourceType.LOCAL,
     compute_hash: bool = True,
 ) -> TrackRecord:
@@ -166,7 +168,7 @@ def extract_metadata(
     file_size = stat.st_size
     file_mtime = stat.st_mtime
 
-    file_hash: Optional[str] = None
+    file_hash: str | None = None
     if compute_hash:
         try:
             file_hash = compute_file_hash(path)
@@ -175,18 +177,18 @@ def extract_metadata(
 
     # Valeurs par défaut
     title = path.stem
-    artist: Optional[str] = None
-    album_artist: Optional[str] = None
-    album: Optional[str] = None
-    genre: Optional[str] = None
-    year: Optional[int] = None
-    track_number: Optional[int] = None
-    disc_number: Optional[int] = None
-    duration_seconds: Optional[float] = None
-    bitrate: Optional[int] = None
-    sample_rate: Optional[int] = None
-    channels: Optional[int] = None
-    isrc: Optional[str] = None
+    artist: str | None = None
+    album_artist: str | None = None
+    album: str | None = None
+    genre: str | None = None
+    year: int | None = None
+    track_number: int | None = None
+    disc_number: int | None = None
+    duration_seconds: float | None = None
+    bitrate: int | None = None
+    sample_rate: int | None = None
+    channels: int | None = None
+    isrc: str | None = None
 
     # Analyse Mutagen
     try:
@@ -233,7 +235,9 @@ def extract_metadata(
         artist = _get_tag_value(tags, ["TPE1", "artist", "ARTIST", "\xa9ART", "Author"])
 
         # Artiste de l'album
-        album_artist = _get_tag_value(tags, ["TPE2", "albumartist", "ALBUMARTIST", "album_artist", "aART", "WM/AlbumArtist"])
+        album_artist = _get_tag_value(
+            tags, ["TPE2", "albumartist", "ALBUMARTIST", "album_artist", "aART", "WM/AlbumArtist"]
+        )
 
         # Album
         album = _get_tag_value(tags, ["TALB", "album", "ALBUM", "\xa9alb", "WM/AlbumTitle"])
@@ -276,11 +280,19 @@ def extract_metadata(
 
     quality_score = compute_quality_score(fmt, bitrate, sample_rate)
 
+    p_resolved = Path(path).resolve()
+    file_name = p_resolved.name
+    folder_path = p_resolved.parent.as_posix()
+    folder_name = p_resolved.parent.name
+
     return TrackRecord(
         source_ref=source_ref,
         source_type=source_type,
         source_id=source_id,
         source_path=str(path),
+        file_name=file_name,
+        folder_path=folder_path,
+        folder_name=folder_name,
         title=title,
         artist=artist,
         album_artist=album_artist,
@@ -305,14 +317,14 @@ def extract_metadata(
 def save_metadata(
     file_path: str | Path,
     *,
-    title: Optional[str] = None,
-    artist: Optional[str] = None,
-    album: Optional[str] = None,
-    album_artist: Optional[str] = None,
-    genre: Optional[str] = None,
-    year: Optional[int] = None,
-    track_number: Optional[int] = None,
-    disc_number: Optional[int] = None,
+    title: str | None = None,
+    artist: str | None = None,
+    album: str | None = None,
+    album_artist: str | None = None,
+    genre: str | None = None,
+    year: int | None = None,
+    track_number: int | None = None,
+    disc_number: int | None = None,
 ) -> bool:
     """Enregistre les métadonnées dans le fichier audio (MP3, FLAC, M4A).
 
@@ -378,22 +390,26 @@ def save_metadata(
             if mp4.tags is None:
                 mp4.add_tags()
 
+            mp4_tags = mp4.tags
+            if mp4_tags is None:
+                return False
+
             if title is not None:
-                mp4.tags["\xa9nam"] = [title]
+                mp4_tags["\xa9nam"] = [title]
             if artist is not None:
-                mp4.tags["\xa9ART"] = [artist]
+                mp4_tags["\xa9ART"] = [artist]
             if album is not None:
-                mp4.tags["\xa9alb"] = [album]
+                mp4_tags["\xa9alb"] = [album]
             if album_artist is not None:
-                mp4.tags["aART"] = [album_artist]
+                mp4_tags["aART"] = [album_artist]
             if genre is not None:
-                mp4.tags["\xa9gen"] = [genre]
+                mp4_tags["\xa9gen"] = [genre]
             if year is not None:
-                mp4.tags["\xa9day"] = [str(year)]
+                mp4_tags["\xa9day"] = [str(year)]
             if track_number is not None:
-                mp4.tags["trkn"] = [(track_number, 0)]
+                mp4_tags["trkn"] = [(track_number, 0)]
             if disc_number is not None:
-                mp4.tags["disk"] = [(disc_number, 0)]
+                mp4_tags["disk"] = [(disc_number, 0)]
 
             mp4.save()
             return True
@@ -401,3 +417,191 @@ def save_metadata(
         return False
     except Exception:
         return False
+
+
+SUPPORTED_IMAGE_EXTENSIONS = (
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".webp",
+    ".bmp",
+    ".jfif",
+    ".gif",
+    ".tiff",
+    ".tif",
+    ".avif",
+    ".ico",
+)
+
+
+def find_cover_image_in_folder(folder: Path, audio_stem: str = "") -> bytes | None:
+    """Recherche la meilleure image de pochette disponible dans le dossier spécifié.
+
+    Prend en compte folder.png, folder.jpg, cover, front, album, le nom du fichier audio,
+    ou toute autre image présente dans le répertoire.
+    Gère également les sous-dossiers multi-disques (CD1, Disc 2, etc.) en remontant au parent.
+    """
+    if not folder.is_dir():
+        return None
+
+    try:
+        candidates = [f for f in folder.iterdir() if f.is_file() and f.suffix.lower() in SUPPORTED_IMAGE_EXTENSIONS]
+    except OSError:
+        candidates = []
+
+    # Si aucun fichier image n'est présent dans le sous-dossier, tester le parent si CD1/Disc 1
+    if not candidates and folder.parent != folder:
+        folder_lower = folder.name.strip().lower()
+        if folder_lower in {
+            "cd1",
+            "cd2",
+            "cd3",
+            "cd4",
+            "cd5",
+            "disc 1",
+            "disc 2",
+            "disc 3",
+            "disc 4",
+            "disc 5",
+            "disc1",
+            "disc2",
+            "disc3",
+            "disc4",
+            "disk 1",
+            "disk 2",
+            "disk 3",
+        }:
+            try:
+                candidates = [
+                    f for f in folder.parent.iterdir() if f.is_file() and f.suffix.lower() in SUPPORTED_IMAGE_EXTENSIONS
+                ]
+            except OSError:
+                candidates = []
+
+    if not candidates:
+        return None
+
+    def _score_image(file_path: Path) -> int:
+        stem = file_path.stem.strip().lower()
+        # 1. Priorité absolue : "folder" (folder.png, folder.jpg, etc.)
+        if stem == "folder":
+            score = 1000
+        # 2. Pochette standard ("cover", "front")
+        elif stem == "cover":
+            score = 950
+        elif stem == "front":
+            score = 900
+        # 3. Image portant le même nom que le fichier audio
+        elif audio_stem and stem == audio_stem:
+            score = 850
+        # 4. Album / Artwork / Jacket / AlbumArt / CD / Disc
+        elif stem in {"album", "artwork", "albumart", "albumartsmall", "jacket", "disc", "cd"}:
+            score = 800
+        # 5. Mots-clés dans le nom du fichier
+        elif "folder" in stem:
+            score = 750
+        elif "cover" in stem or "front" in stem:
+            score = 700
+        elif "album" in stem or "artwork" in stem or "jacket" in stem:
+            score = 650
+        # 6. Mots-clés secondaires (scan, art, poster, image)
+        elif any(k in stem for k in ("scan", "art", "poster", "image")):
+            score = 500
+        else:
+            # 7. N'importe quelle autre image présente dans le répertoire
+            score = 300
+
+        # Bonus pour formats courants et bonus taille de fichier
+        ext = file_path.suffix.lower()
+        if ext in {".png", ".jpg", ".jpeg", ".webp", ".ico"}:
+            score += 15
+        try:
+            sz = file_path.stat().st_size
+            if sz > 1024:
+                score += min(50, sz // 10240)
+        except OSError:
+            pass
+        return score
+
+    candidates.sort(key=_score_image, reverse=True)
+    for cand in candidates:
+        try:
+            data = cand.read_bytes()
+            if data and len(data) > 0:
+                return data
+        except OSError:
+            continue
+    return None
+
+
+def extract_cover_art(file_path: str | Path) -> bytes | None:
+    """Extrait l'image de couverture (pochette) d'un fichier audio ou de son dossier.
+
+    1. Vérifie en priorité les tags intégrés (ID3 APIC, FLAC pictures, MP4 covr, OGG/Opus metadata_block_picture, WMA).
+    2. Si aucune pochette n'est intégrée dans le fichier, recherche automatiquement dans le répertoire
+       du fichier (folder.png, folder.jpg, cover, front, ou tout autre format image disponible).
+    """
+    try:
+        path = Path(file_path).resolve()
+    except Exception:
+        return None
+
+    # Si on passe directement un dossier
+    if path.is_dir():
+        return find_cover_image_in_folder(path)
+
+    if not path.is_file():
+        return None
+
+    # 1. Tentative d'extraction depuis les métadonnées intégrées via Mutagen
+    try:
+        audio = mutagen.File(str(path))
+        if audio is not None:
+            # FLAC et formats compatibles avec audio.pictures
+            if hasattr(audio, "pictures") and audio.pictures:
+                data = bytes(audio.pictures[0].data)
+                if data:
+                    return data
+
+            # MP3 / AIFF avec tags ID3
+            if hasattr(audio, "tags") and audio.tags:
+                tags = audio.tags
+                # Recherche de frames APIC (ID3v2)
+                for key in tags.keys():
+                    if key.startswith("APIC"):
+                        frame = tags[key]
+                        if hasattr(frame, "data") and frame.data:
+                            return bytes(frame.data)
+
+                # MP4 / M4A (tag covr)
+                if "covr" in tags:
+                    covr = tags["covr"]
+                    if covr and len(covr) > 0 and len(covr[0]) > 0:
+                        return bytes(covr[0])
+
+                # OGG / Opus / Vorbis Comment (metadata_block_picture)
+                if "metadata_block_picture" in tags:
+                    mbp = tags["metadata_block_picture"]
+                    if mbp and len(mbp) > 0:
+                        import base64
+
+                        from mutagen.flac import Picture
+
+                        pic = Picture(base64.b64decode(mbp[0]))
+                        if pic and pic.data:
+                            return bytes(pic.data)
+
+                # WMA / ASF (WM/Picture)
+                if "WM/Picture" in tags:
+                    pic = tags["WM/Picture"]
+                    if pic and len(pic) > 0:
+                        raw = getattr(pic[0], "value", pic[0])
+                        if isinstance(raw, (bytes, bytearray)) and len(raw) > 0:
+                            return bytes(raw)
+    except Exception:
+        pass
+
+    # 2. Fallback automatique : recherche dans le dossier du fichier audio
+    parent = path.parent
+    audio_stem = path.stem.strip().lower()
+    return find_cover_image_in_folder(parent, audio_stem=audio_stem)

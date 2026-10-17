@@ -1,7 +1,6 @@
 """Tests unitaires pour l'extraction et l'écriture des métadonnées audio."""
 
 from pathlib import Path
-import pytest
 
 from mutagen.id3 import ID3, TALB, TCON, TDRC, TIT2, TPE1, TRCK
 

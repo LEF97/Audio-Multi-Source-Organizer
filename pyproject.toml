@@ -32,12 +32,16 @@ dependencies = [
     "google-api-python-client>=2.110.0",
     "google-auth-oauthlib>=1.2.0",
     "google-auth-httplib2>=0.2.0",
+    "python-vlc>=3.0.20123",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0.0",
     "pytest-cov>=4.0.0",
+    "ruff>=0.17.0",
+    "mypy>=2.4.0",
+    "radon>=6.0.1",
 ]
 
 [project.scripts]
@@ -53,4 +57,30 @@ where = ["."]
 include = ["amso*"]
 
 [tool.setuptools.package-data]
-amso = ["locales/*.json"]
+amso = ["locales/*.json", "resources/*.*"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+extend-exclude = ["_work"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes (imports non utilisés, variables non définies)
+    "I",   # isort (tri des imports)
+    "UP",  # pyupgrade (idiomes Python modernes)
+    "B",   # flake8-bugbear (bugs potentiels)
+    "C4",  # flake8-comprehensions
+]
+ignore = [
+    "E501",  # Longueur de ligne (les styles Qt et textes i18n sont souvent longs)
+    "B008",  # Do not perform function call in argument defaults
+]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+warn_unused_ignores = true
+show_error_codes = true

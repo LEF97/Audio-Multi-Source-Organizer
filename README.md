@@ -1,85 +1,116 @@
 # Audio Multi-Source Organizer (AMSO)
 
+<p align="right">
+  <a href="README.fr.md">Français</a> • <b>English</b> • <a href="README.es.md">Español</a> • <a href="README.de.md">Deutsch</a> • <a href="README.it.md">Italiano</a>
+</p>
+
 [![CI Tests](https://github.com/LEF97/Audio-Multi-Source-Organizer/actions/workflows/tests.yml/badge.svg)](https://github.com/LEF97/Audio-Multi-Source-Organizer/actions)
+[![Release](https://img.shields.io/github/v/release/LEF97/Audio-Multi-Source-Organizer?include_prereleases&color=orange)](https://github.com/LEF97/Audio-Multi-Source-Organizer/releases)
+[![Changelog](https://img.shields.io/badge/Changelog-Keep%20a%20Changelog-blue.svg)](CHANGELOG.md)
+[![Roadmap](https://img.shields.io/badge/Roadmap-Future%20Milestones-purple.svg)](ROADMAP.md)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
-> **AMSO** est une application de bureau open-source et multiplateforme conçue pour unifier, dédoublonner et synchroniser vos bibliothèques musicales hybrides réparties entre vos disques locaux, vos archives cloud (Google Drive) et vos plateformes de streaming (Spotify, Deezer).
+> **AMSO** is an open-source, cross-platform desktop application designed to unify, deduplicate, and synchronize hybrid music collections spanning local hard drives, cloud archives (Google Drive), and streaming platforms (Spotify, Deezer, and Amazon Music).
 
 ---
 
-## 📌 Fonctionnalités & Statut du projet
+## 📌 Features & Project Status
 
-| Fonctionnalité | Description | Statut |
+| Feature | Description | Status |
 | :--- | :--- | :---: |
-| **Scanner local multithreadé** | Découverte récursive et rapide des fichiers audio locaux (MP3, FLAC, AAC, OGG...) | 🟢 Implémenté |
-| **Extraction de métadonnées** | Lecture/écriture ID3, Vorbis Comments et calcul d'empreinte audio (`mutagen`) | 🟢 Implémenté |
-| **Base de données SQLite3** | Stockage persistant optimisé avec schéma relationnel dédié (sans ORM lourd) | 🟢 Implémenté |
-| **Interface graphique PySide6** | Modèle tabulaire virtualisé (`QAbstractTableModel`) pour > 50 000 morceaux | 🟢 Implémenté |
-| **Connecteur Google Drive** | Scan et synchronisation de collections audio distantes via OAuth 2.0 | ⚪ Prévu |
-| **Connecteur Spotify / Streaming** | Importation de playlists et correspondance de pistes | ⚪ Prévu |
-| **Dédoublonnage intelligent** | Détection de doublons (titre/artiste flous + empreintes audio) | ⚪ Prévu |
+| **High-Speed Multithreaded Scanner** | Fast recursive traversal and indexing of local audio files (MP3, FLAC, AAC, OGG...) | 🟢 Implemented |
+| **Metadata & Artwork Extraction** | ID3 tags, Vorbis Comments, and audio fingerprinting extraction (`mutagen`) | 🟢 Implemented |
+| **Integrated VLC Playback Engine** | Lightweight, standalone audio player with automatic portable VLC setup and smooth volume control | 🟢 Implemented |
+| **Playlist & Queue Management** | Virtualized queue table, drag & drop reordering, shuffle, and repeat modes | 🟢 Implemented |
+| **Modern PySide6 GUI** | Sleek Dark Mode, live responsive audio visualizers, 5-language internationalization | 🟢 Implemented |
+| **In-App Update Checker** | Automatic and manual version checking via GitHub Releases | 🟢 Implemented |
+| **Artists & Discography Hub** | Dedicated artist overview with albums, singles, and full discographies | 🟡 Planned |
+| **Graphical Equalizer (EQ)** | Curated sound presets and multi-band parametric equalizer | 🟡 Planned |
+| **Google Drive Cloud Connector** | Remote audio library indexing and streaming via OAuth 2.0 | ⚪ Planned |
+| **Amazon Music Connector** | Remote music folder scanning and cloud sync via OAuth 2.0 | ⚪ Planned |
+| **Spotify / Deezer Streaming Integration** | Playlist import and hybrid collection track matching | ⚪ Planned |
+| **Intelligent Deduplication** | Duplicate detection based on fuzzy metadata and acoustic audio fingerprints | ⚪ Planned |
+
+> 💡 *For detailed milestones and version planning, refer to the [Project Roadmap](ROADMAP.md).*
 
 ---
 
-## 🚀 Démarrage rapide
+## 🚀 Quick Start
 
-### Prérequis
-- **Python 3.11** ou supérieur installé
+### Prerequisites
+- **Python 3.11** or newer
 - Git
 
 ### Installation
 
 ```bash
-# 1. Cloner le dépôt
+# 1. Clone the repository
 git clone https://github.com/LEF97/Audio-Multi-Source-Organizer.git
 cd audio-multi-source-organizer
 
-# 2. Créer l'environnement virtuel
+# 2. Create virtual environment
 python -m venv .venv
 
-# 3. Activer l'environnement
-# Sous Windows (PowerShell) :
+# 3. Activate virtual environment
+# Windows (PowerShell):
 .venv\Scripts\Activate.ps1
-# Sous Linux / macOS :
+# Linux / macOS:
 source .venv/bin/activate
 
-# 4. Installer les dépendances
+# 4. Install dependencies
 pip install -r requirements.txt
 
-# Pour le développement et les tests :
+# For development & running tests:
 pip install -e .[dev]
 
-# 5. Configurer les variables d'environnement
+# 5. Configure environment variables
 cp .env.example .env
-# Renseignez vos identifiants dans .env si vous utilisez Google Drive ou Spotify
 
-# 6. Lancer l'application
+# 6. Launch AMSO
 python main.py
 ```
 
 ---
 
-## 🧪 Lancement des tests
+## 🧪 Running Tests
 
-Le projet utilise `pytest` avec une suite de tests unitaires et d'intégration :
+The test suite is built with `pytest` covering unit and integration scenarios:
 
 ```bash
 pytest -v
 ```
 
-Les tests s'exécutent automatiquement sur **Windows, macOS et Ubuntu** à chaque push via GitHub Actions.
+Tests run automatically across **Windows, macOS, and Ubuntu** on every push via GitHub Actions.
 
 ---
 
-## 🔒 Sécurité & Clés d'API
+## 🔒 Security & API Keys
 
-- **Ne commitez jamais de clés d'API ni de tokens d'authentification réels.**
-- Le fichier `.gitignore` est pré-configuré pour bloquer `.env`, `credentials.json`, `token.json` et toutes les bases de données SQLite locales.
-- Utilisez `.env.example` comme modèle pour votre environnement de développement.
+- **Never commit real API keys, secrets, or OAuth tokens.**
+- The project `.gitignore` file is pre-configured to exclude `.env`, `credentials.json`, `token.json`, and local SQLite database files.
+- Use `.env.example` as a template for your local development environment.
 
 ---
 
-## 📄 Licence
+## 📋 Documentation & Project Tracking
 
-Ce projet est sous licence **GNU General Public License v3.0 (GPL-3.0)** — consultez le fichier [LICENSE](LICENSE) pour plus de détails.
+- 📜 **[CHANGELOG.md](CHANGELOG.md)** ([Version Française](CHANGELOG.fr.md)): Detailed version logs, new features, and bug fixes.
+- 🗺️ **[ROADMAP.md](ROADMAP.md)** ([Version Française](ROADMAP.fr.md)): Upcoming development milestones (Artists, Cloud, Spotify, Deduplication).
+- 📐 **[CODE_QUALITY.md](CODE_QUALITY.md)**: Software architecture principles and code quality standards.
+
+---
+
+## 💖 Support the Project & Distribution
+
+AMSO is 100% free and open-source software. If you enjoy the project and want to support ongoing development:
+
+* 🎮 **Download & Pay What You Want:** [AMSO on Itch.io](https://lef97.itch.io/audio-multi-source-organizer) (precompiled portable standalone executable)
+* ☕ **Direct Donation:** [Ko-fi (@lef97)](https://ko-fi.com/lef97)
+* ⭐ **GitHub Sponsors:** [Sponsor LEF97](https://github.com/sponsors/LEF97)
+
+---
+
+## 📄 License
+
+This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)** — see the [LICENSE](LICENSE) file for full details.

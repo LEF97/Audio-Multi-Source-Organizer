@@ -14,9 +14,10 @@ import ctypes
 import json
 import locale
 import os
-from pathlib import Path
 import sys
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from pathlib import Path
+from typing import Any
 
 from amso.core.config import ConfigManager, get_config_manager
 
@@ -39,15 +40,41 @@ REFERENCE_LANGUAGE: str = "fr"
 def get_locales_dir() -> Path:
     """Retourne le chemin absolu du répertoire des fichiers de traduction.
 
-    Prend en compte le mode exécutable autonome PyInstaller (sys._MEIPASS).
+    Prend en compte le mode exécutable autonome PyInstaller (sys._MEIPASS et onedir _internal).
     """
-    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
-        # Mode binaire packagé PyInstaller
-        base = Path(sys._MEIPASS) / "amso" / "locales"
-        if base.exists():
-            return base
+    candidates: list[Path] = []
 
-    # Mode script Python normal
+    if getattr(sys, "frozen", False):
+        if hasattr(sys, "_MEIPASS"):
+            meipass = Path(sys._MEIPASS)
+            candidates.extend(
+                [
+                    meipass / "amso" / "locales",
+                    meipass / "locales",
+                ]
+            )
+        exe_dir = Path(sys.executable).parent
+        candidates.extend(
+            [
+                exe_dir / "_internal" / "amso" / "locales",
+                exe_dir / "_internal" / "locales",
+                exe_dir / "amso" / "locales",
+                exe_dir / "locales",
+            ]
+        )
+
+    # Mode script Python normal ou développement
+    candidates.extend(
+        [
+            Path(__file__).parent.parent / "locales",
+            Path.cwd() / "amso" / "locales",
+        ]
+    )
+
+    for p in candidates:
+        if p.exists() and (p / "fr.json").exists():
+            return p
+
     return Path(__file__).parent.parent / "locales"
 
 
@@ -57,7 +84,7 @@ def detect_os_language() -> str:
     Si la langue de l'OS figure dans SUPPORTED_LANGUAGES, elle est retournée.
     Sinon, DEFAULT_LANGUAGE ("en") est retourné.
     """
-    detected_code: Optional[str] = None
+    detected_code: str | None = None
 
     # 1. Sous Windows : interroger l'API native GetUserDefaultUILanguage via ctypes
     if sys.platform == "win32":
@@ -101,7 +128,7 @@ def detect_os_language() -> str:
 class I18nManager:
     """Gestionnaire centralisé des traductions et de la langue active."""
 
-    def __init__(self, config_manager: Optional[ConfigManager] = None) -> None:
+    def __init__(self, config_manager: ConfigManager | None = None) -> None:
         self.config_manager = config_manager or get_config_manager()
         self.locales_dir = get_locales_dir()
         self._current_language: str = DEFAULT_LANGUAGE
@@ -119,7 +146,7 @@ class I18nManager:
         path = self.locales_dir / f"{lang_code}.json"
         if path.exists() and path.is_file():
             try:
-                with open(path, "r", encoding="utf-8") as f:
+                with open(path, encoding="utf-8") as f:
                     return json.load(f)
             except Exception as e:
                 print(f"[i18n] Erreur de lecture de {path} : {e}", file=sys.stderr)
@@ -183,7 +210,7 @@ class I18nManager:
         if callback in self._listeners:
             self._listeners.remove(callback)
 
-    def tr(self, key: str, default: Optional[str] = None, **kwargs: Any) -> str:
+    def tr(self, key: str, default: str | None = None, **kwargs: Any) -> str:
         """Traduit une clé selon la langue active avec repli et interpolation."""
         template = self._translations.get(key)
         if template is None:
@@ -200,10 +227,10 @@ class I18nManager:
 
 
 # Instance singleton globale
-_global_i18n: Optional[I18nManager] = None
+_global_i18n: I18nManager | None = None
 
 
-def get_i18n(config_manager: Optional[ConfigManager] = None) -> I18nManager:
+def get_i18n(config_manager: ConfigManager | None = None) -> I18nManager:
     """Fournit l'instance globale d'I18nManager."""
     global _global_i18n
     if _global_i18n is None:
@@ -211,6 +238,6 @@ def get_i18n(config_manager: Optional[ConfigManager] = None) -> I18nManager:
     return _global_i18n
 
 
-def tr(key: str, default: Optional[str] = None, **kwargs: Any) -> str:
+def tr(key: str, default: str | None = None, **kwargs: Any) -> str:
     """Raccourci global de traduction pour faciliter l'usage dans tout le projet."""
     return get_i18n().tr(key, default=default, **kwargs)
