@@ -146,18 +146,22 @@ class SplashScreen(QWidget):
         card_layout.addLayout(status_box)
 
         # Barre de progression personnalisée
-        self.progress_bar = QProgressBar()
+        self.progress_bar = QProgressBar(self.card)
+        self.progress_bar.setObjectName("splashProgressBar")
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
         self.progress_bar.setTextVisible(False)
         self.progress_bar.setFixedHeight(8)
         self.progress_bar.setStyleSheet("""
-            QProgressBar {
+            QProgressBar#splashProgressBar {
                 background-color: #1E2430;
                 border: none;
                 border-radius: 4px;
+                max-width: 5000px;
+                min-width: 0px;
+                height: 8px;
             }
-            QProgressBar::chunk {
+            QProgressBar#splashProgressBar::chunk {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
                     stop:0 #0284C7, stop:1 #38BDF8);
                 border-radius: 4px;
@@ -192,7 +196,7 @@ class SplashScreen(QWidget):
 
     def set_progress(self, value: int, message: str, step_delay_ms: int = 10) -> None:
         """Met à jour le pourcentage de manière fluide pas-à-pas (1% en 1%) et rafraîchit l'affichage en continu."""
-        target = max(0, min(100, value))
+        target = max(self._current_value, min(100, value))
         self.lbl_status.setText(message)
 
         # En environnement sans affichage (CI / tests) ou sans délai, mise à jour immédiate
@@ -204,10 +208,6 @@ class SplashScreen(QWidget):
             return
 
         if target <= self._current_value:
-            self._current_value = target
-            self.progress_bar.setValue(target)
-            self.lbl_percent.setText(f"{target}%")
-            QApplication.processEvents()
             return
 
         # Progression fluide continue pas à pas de 1% en 1%

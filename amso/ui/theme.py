@@ -231,12 +231,15 @@ QProgressBar {
     color: #F8FAFC;
     font-size: 11px;
     height: 14px;
-    max-width: 220px;
 }
 
 QProgressBar::chunk {
     background-color: #0284C7;
     border-radius: 3px;
+}
+
+QStatusBar QProgressBar {
+    max-width: 220px;
 }
 
 /* --- Sélecteur de langue (QComboBox) --- */
