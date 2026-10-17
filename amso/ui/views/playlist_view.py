@@ -28,6 +28,74 @@ from amso.ui.views.cover_helper import load_cover_async
 from amso.ui.views.player_view import ClickableSlider
 
 
+class PlaylistTableView(QTableView):
+    """Tableau de playlist avec prise en charge complète du Drag & Drop pour réordonner les pistes."""
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setDragEnabled(True)
+        self.setAcceptDrops(True)
+        self.setDragDropMode(QTableView.DragDropMode.InternalMove)
+        self.setDropIndicatorShown(True)
+        self.setDragDropOverwriteMode(False)
+
+    def dragEnterEvent(self, event) -> None:
+        if event.source() == self:
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dragMoveEvent(self, event) -> None:
+        if event.source() == self:
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event) -> None:
+        if event.source() != self:
+            event.ignore()
+            return
+
+        selection = self.selectionModel()
+        if not selection:
+            event.ignore()
+            return
+
+        selected_rows = sorted({idx.row() for idx in selection.selectedRows()})
+        if not selected_rows:
+            event.ignore()
+            return
+
+        model = self.model()
+        if not hasattr(model, "player") or not model.player:
+            event.ignore()
+            return
+
+        total_rows = model.rowCount()
+        pos = event.position().toPoint()
+        drop_index = self.indexAt(pos)
+
+        if drop_index.isValid():
+            rect = self.visualRect(drop_index)
+            mid_y = rect.top() + rect.height() // 2
+            if pos.y() > mid_y:
+                target_row = drop_index.row() + 1
+            else:
+                target_row = drop_index.row()
+        else:
+            target_row = total_rows
+
+        offset = sum(1 for r in selected_rows if r < target_row)
+        new_start = max(0, min(target_row - offset, total_rows - len(selected_rows)))
+
+        model.player.move_tracks(selected_rows, target_row)
+        event.accept()
+
+        self.clearSelection()
+        for i in range(len(selected_rows)):
+            self.selectRow(new_start + i)
+
+
 class PlaylistView(QWidget):
     """Page Playlist : Mini-lecteur en haut + Tableau de la file d'attente en dessous."""
 
@@ -64,6 +132,28 @@ class PlaylistView(QWidget):
         self.lbl_playlist_stats = QLabel("")
         self.lbl_playlist_stats.setStyleSheet("color: #94A3B8; font-size: 13px; font-weight: 500; margin-right: 12px;")
         top_layout.addWidget(self.lbl_playlist_stats)
+
+        self.btn_shuffle_below = QPushButton(tr("playlist.btn_shuffle_below"))
+        self.btn_shuffle_below.setProperty("class", "secondary-btn")
+        self.btn_shuffle_below.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_shuffle_below.setStyleSheet("""
+            QPushButton {
+                background-color: #20242D;
+                color: #38BDF8;
+                border: 1px solid #333846;
+                border-radius: 6px;
+                padding: 6px 12px;
+                font-size: 12px;
+                font-weight: 500;
+                margin-right: 8px;
+            }
+            QPushButton:hover {
+                background-color: #1E293B;
+                border-color: #38BDF8;
+                color: #7DD3FC;
+            }
+        """)
+        top_layout.addWidget(self.btn_shuffle_below)
 
         self.btn_clear_playlist = QPushButton(tr("player.btn_clear_playlist"))
         self.btn_clear_playlist.setProperty("class", "secondary-btn")
@@ -267,7 +357,7 @@ class PlaylistView(QWidget):
         main_layout.addWidget(player_banner)
 
         # 3. Tableau de la playlist
-        self.table_view = QTableView()
+        self.table_view = PlaylistTableView()
         self.table_view.setModel(self.playlist_model)
         self.table_view.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
         self.table_view.setSelectionMode(QTableView.SelectionMode.ExtendedSelection)
@@ -334,6 +424,7 @@ class PlaylistView(QWidget):
         self.btn_shuffle.clicked.connect(self.player.toggle_shuffle)
         self.btn_repeat.clicked.connect(self.player.toggle_repeat)
         self.btn_mute.clicked.connect(self.player.toggle_mute)
+        self.btn_shuffle_below.clicked.connect(self._on_shuffle_below_clicked)
         self.btn_clear_playlist.clicked.connect(self.player.clear_playlist)
 
         # Seekbar
@@ -434,6 +525,11 @@ class PlaylistView(QWidget):
             curr_sec = (value / 1000.0) * track.duration_seconds
             self.lbl_time_cur.setText(format_duration(curr_sec))
 
+    def _on_shuffle_below_clicked(self) -> None:
+        """Déclenche le mélange des pistes en dessous de la piste en cours et active l'état shuffle."""
+        self.player.set_shuffle(True)
+        self.player.shuffle_playlist(below_current=True)
+
     def _on_table_double_clicked(self, index) -> None:
         if index.isValid():
             self.player.play_index(index.row())
@@ -452,6 +548,12 @@ class PlaylistView(QWidget):
             act_remove.triggered.connect(lambda: self.player.remove_at(row))
             menu.addAction(act_remove)
 
+            menu.addSeparator()
+
+        if len(self.player.playlist) > 1:
+            act_shuffle = QAction(tr("playlist.menu_shuffle_below"), self)
+            act_shuffle.triggered.connect(self._on_shuffle_below_clicked)
+            menu.addAction(act_shuffle)
             menu.addSeparator()
 
         act_clear = QAction(tr("playlist.menu_clear"), self)
@@ -582,6 +684,8 @@ class PlaylistView(QWidget):
     def retranslate_ui(self) -> None:
         """Met à jour l'ensemble des textes, infobulles et en-têtes selon la langue active."""
         self.lbl_page_title.setText(tr("playlist.page_title"))
+        if hasattr(self, "btn_shuffle_below"):
+            self.btn_shuffle_below.setText(tr("playlist.btn_shuffle_below"))
         self.btn_clear_playlist.setText(tr("player.btn_clear_playlist"))
         self._update_stats_label()
 

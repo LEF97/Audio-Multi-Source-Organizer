@@ -243,6 +243,8 @@
   "playlist.stats_count_singular": "📋  {count} track  •  Total duration: {duration}",
   "playlist.menu_play": "▶  Play",
   "playlist.menu_remove": "❌  Remove from Queue",
+  "playlist.menu_shuffle_below": "🎲  Shuffle remaining",
+  "playlist.btn_shuffle_below": "🎲  Shuffle remaining",
   "playlist.menu_clear": "🗑️  Clear Playlist",
   "dialog.file_not_found_title": "Not found",
   "dialog.file_not_found_message": "The local file could not be found on disk.",

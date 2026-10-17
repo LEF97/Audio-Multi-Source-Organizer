@@ -8,11 +8,12 @@ l'intégralité des champs de la table SQLite 'tracks'.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+import json
+from collections.abc import Iterable, Sequence
 from datetime import datetime
 from typing import Any
 
-from PySide6.QtCore import QAbstractTableModel, QModelIndex, QObject, QPersistentModelIndex, Qt
+from PySide6.QtCore import QAbstractTableModel, QByteArray, QMimeData, QModelIndex, QObject, QPersistentModelIndex, Qt
 from PySide6.QtGui import QColor, QFont
 
 from amso.core.database import DatabaseManager, TrackRecord
@@ -565,3 +566,24 @@ class PlaylistTableModel(QAbstractTableModel):
         if 0 <= row < len(playlist):
             return playlist[row]
         return None
+
+    MIME_TYPE = "application/x-amso-playlist-rows"
+
+    def flags(self, index: QModelIndex | QPersistentModelIndex) -> Qt.ItemFlags:
+        default_flags = super().flags(index)
+        if index.isValid():
+            return default_flags | Qt.ItemFlag.ItemIsDragEnabled
+        return default_flags | Qt.ItemFlag.ItemIsDropEnabled
+
+    def supportedDropActions(self) -> Qt.DropActions:
+        return Qt.DropAction.MoveAction
+
+    def mimeTypes(self) -> list[str]:
+        return [self.MIME_TYPE]
+
+    def mimeData(self, indexes: Iterable[QModelIndex | QPersistentModelIndex]) -> QMimeData:
+        mime_data = QMimeData()
+        rows = sorted({idx.row() for idx in indexes if idx.isValid()})
+        mime_data.setData(self.MIME_TYPE, QByteArray(json.dumps(rows).encode("utf-8")))
+        return mime_data
+

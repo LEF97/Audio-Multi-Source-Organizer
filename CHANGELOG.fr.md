@@ -17,10 +17,19 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 
 ### Added
 - **Sauvegarde automatique et ultra-compacte de la playlist en temps réel** :
-  - Sauvegarde automatique en tâche de fond déclenchée à chaque changement de morceau ou modification de la file d'attente, temporisée par un anti-rebond (*debounce* de 500 ms) pour éviter les accès disques inutiles lors des sauts rapides.
+  - Sauvegarde automatique en tâche de fond déclenchée à chaque changement de morceau ou modification de la file d'attente, temporisée par un anti-rebond (*debounce* de 2 secondes) pour éviter les accès disques inutiles lors des sauts rapides.
   - Format compact v2 stockant uniquement les identifiants SQLite ordonnés (`track_ids`), réduisant l'empreinte disque de plus de 99 % (ex. ~78 Ko au lieu de 8,5 Mo pour une bibliothèque de 13 000 titres) et accélérant l'écriture à moins de 4 ms.
   - Écriture asynchrone non-bloquante via un thread d'arrière-plan dédié (`PlaylistSaveThread`) pour garantir une fluidité totale de l'interface utilisateur (60 FPS constants).
   - Découpage par lots de 900 variables dans `get_tracks_by_ids` pour respecter les plafonds SQLite et restaurer instantanément les très grandes playlists tout en maintenant la rétrocompatibilité avec les fichiers de format v1.
+- **Mode Aléatoire physique (Option A — Mélange visible de la playlist sous le titre actif)** :
+  - L'activation du mode aléatoire ou un clic sur le bouton de mélange réorganise physiquement les pistes situées sous le morceau actuellement joué dans la table de la playlist.
+  - Le morceau en cours de lecture reste actif et à sa position, tandis que toute la file d'attente à venir est visible dans son ordre de diffusion réel.
+  - Le bouton « Suivant » avance séquentiellement et de manière infaillible dans la table, supprimant définitivement les arrêts inopinés ou les sauts imprévisibles.
+  - Ajout d'un bouton d'action directe **🎲 Mélanger la suite** dans l'en-tête de la page Playlist et dans le menu contextuel clic-droit du tableau.
+- **Réorganisation intuitive de la playlist par Glisser-Déposer (Drag & Drop)** :
+  - Prise en charge native du réordonnancement par glisser-déposer sur les lignes du tableau de playlist (`PlaylistTableView`).
+  - Déplacement fluide mono ou multi-sélection avec mise à jour automatique de l'index de lecture pour que la piste en cours reste surlignée et continue de jouer sans interruption, peu importe les mouvements effectués autour d'elle.
+  - Persistance asynchrone instantanée du nouvel ordre défini par l'utilisateur.
 
 ### Fixed
 - **Résolution des erreurs `disk I/O error` (SQLite sous Windows)** : configuration du mode WAL une seule fois à l'initialisation du fichier de base de données, ajout de `PRAGMA busy_timeout = 30000`, stockage temporaire en mémoire RAM (`PRAGMA temp_store = MEMORY`) et mécanisme de réessais automatiques avec backoff exponentiel pour éliminer les conflits de verrouillage de fichiers lors des scans multithreadés.

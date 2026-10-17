@@ -1473,4 +1473,78 @@ def test_database_get_tracks_by_ids_chunking(tmp_path: Path) -> None:
     assert [t.id for t in fetched] == reversed_ids
 
 
+def test_shuffle_playlist_below_current(qapp: QApplication) -> None:
+    """Vérifie que shuffle_playlist mélange strictement les pistes situées en dessous du titre en cours."""
+    player = PlayerService()
+    tracks = [
+        TrackRecord(source_ref=f"C:/audio/track_{i}.mp3", title=f"Track {i}")
+        for i in range(20)
+    ]
+    # Jouer à partir de l'index 5
+    player.play_tracks(tracks, start_index=5)
+    assert player.current_index == 5
+    assert player.current_track.title == "Track 5"
+
+    # Vérifier que les pistes 0 à 5 ne bougent pas
+    initial_prefix = [t.title for t in player.playlist[:6]]
+
+    # Mélanger la suite (pistes 6 à 19)
+    player.shuffle_playlist(below_current=True)
+
+    assert player.current_index == 5
+    assert player.current_track.title == "Track 5"
+    assert [t.title for t in player.playlist[:6]] == initial_prefix
+
+    # Les pistes restantes doivent être les mêmes éléments mais permutés
+    remaining_titles = [t.title for t in player.playlist[6:]]
+    assert sorted(remaining_titles, key=lambda s: int(s.split()[1])) == [f"Track {i}" for i in range(6, 20)]
+
+    # "Suivant" avance directement au premier élément mélangé en-dessous
+    player.next()
+    assert player.current_index == 6
+    assert player.current_track.title == remaining_titles[0]
+
+
+def test_drag_and_drop_reorder_playlist(qapp: QApplication) -> None:
+    """Vérifie le réordonnancement de pistes par glisser-déposer (move_tracks) et le suivi de l'index actif."""
+    from amso.ui.views.playlist_view import PlaylistView
+
+    player = PlayerService()
+    tracks = [
+        TrackRecord(source_ref=f"C:/audio/track_{i}.mp3", title=f"Track {i}")
+        for i in range(6)
+    ]
+    player.play_tracks(tracks, start_index=2)  # Track 2 est en cours de lecture
+    assert player.current_track.title == "Track 2"
+
+    view = PlaylistView(player)
+    assert view.table_view.dragEnabled() is True
+    assert view.table_view.acceptDrops() is True
+
+    # 1. Déplacer la piste 4 avant la piste 1 (vers l'index 1)
+    player.move_tracks([4], 1)
+    # Track 4 est maintenant à l'index 1
+    assert [t.title for t in player.playlist] == ["Track 0", "Track 4", "Track 1", "Track 2", "Track 3", "Track 5"]
+    # Track 2 a été décalé à l'index 3 et reste la piste active !
+    assert player.current_index == 3
+    assert player.current_track.title == "Track 2"
+
+    # 2. Déplacer la piste actuellement en lecture (Track 2, index 3) vers la fin (index 6)
+    player.move_tracks([3], 6)
+    assert player.playlist[-1].title == "Track 2"
+    assert player.current_index == 5
+    assert player.current_track.title == "Track 2"
+
+    # 3. Déplacer plusieurs pistes simultanément
+    player.move_tracks([0, 1], 4)
+    assert player.current_track.title == "Track 2"
+
+    # 4. Bouton "Mélanger la suite" dans l'UI
+    view.btn_shuffle_below.click()
+    assert player.is_shuffle is True
+
+    view.close()
+
+
+
 

@@ -243,6 +243,8 @@
   "playlist.stats_count_singular": "📋  {count} brano  •  Durata totale: {duration}",
   "playlist.menu_play": "▶  Riproduci",
   "playlist.menu_remove": "❌  Rimuovi dalla coda",
+  "playlist.menu_shuffle_below": "🎲  Mischia restanti",
+  "playlist.btn_shuffle_below": "🎲  Mischia restanti",
   "playlist.menu_clear": "🗑️  Svuota playlist",
   "dialog.file_not_found_title": "Non trovato",
   "dialog.file_not_found_message": "Il file locale non è stato trovato sul disco.",

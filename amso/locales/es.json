@@ -243,6 +243,8 @@
   "playlist.stats_count_singular": "📋  {count} pista  •  Duración total: {duration}",
   "playlist.menu_play": "▶  Reproducir",
   "playlist.menu_remove": "❌  Quitar de la cola",
+  "playlist.menu_shuffle_below": "🎲  Mezclar siguientes",
+  "playlist.btn_shuffle_below": "🎲  Mezclar siguientes",
   "playlist.menu_clear": "🗑️  Vaciar playlist",
   "dialog.file_not_found_title": "No encontrado",
   "dialog.file_not_found_message": "El archivo local no se encuentra en el disco.",

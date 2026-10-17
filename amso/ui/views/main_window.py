@@ -204,10 +204,10 @@ class MainWindow(QMainWindow):
         self.player_service.track_changed.connect(self._on_player_track_changed_for_save)
         self.player_service.playlist_updated.connect(self._on_playlist_updated_for_save)
 
-        # Sauvegarde automatique asynchrone et debouncée de la playlist (500 ms)
+        # Sauvegarde automatique asynchrone et debouncée de la playlist (2000 ms / 2s)
         self._playlist_save_timer = QTimer(self)
         self._playlist_save_timer.setSingleShot(True)
-        self._playlist_save_timer.setInterval(500)
+        self._playlist_save_timer.setInterval(2000)
         self._playlist_save_timer.timeout.connect(lambda: self._save_current_playlist(immediate=False))
 
         # Planificateur de synchronisation automatique (Démarrage, Périodique, En continu)
