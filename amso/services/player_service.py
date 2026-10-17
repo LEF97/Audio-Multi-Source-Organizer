@@ -683,9 +683,13 @@ class PlayerService(QObject):
             self._media_player.set_media(media)
             self._media_player.play()
 
-            # Enforcer proprement le volume nominal (10 ticks de 100ms = 1 seconde)
-            self._volume_enforce_ticks = 10
-            self._enforce_volume()
+            if getattr(self, "_is_temporary_volume", False):
+                self._volume_enforce_ticks = 0
+                self._media_player.audio_set_volume(0)
+            else:
+                # Enforcer proprement le volume nominal (10 ticks de 100ms = 1 seconde)
+                self._volume_enforce_ticks = 10
+                self._enforce_volume()
 
             self._timer.start()
             self.track_changed.emit(track)
@@ -802,12 +806,17 @@ class PlayerService(QObject):
         if not self._playlist:
             return
 
+        next_idx = self.get_next_index()
+        if next_idx is None:
+            self.stop()
+            return
+
+        # Si la piste suivante est déjà préchargée sur le standby_player
+        if self._standby_player and self._preloaded_index == next_idx:
+            self._complete_transition(next_idx)
+            return
+
         self._reset_standby_player()
-        if self._media_player and not self._is_muted:
-            try:
-                self._media_player.audio_set_volume(self._volume)
-            except Exception:
-                pass
 
         if self._repeat_mode == RepeatMode.ONE and self._current_index >= 0:
             self.play_index(self._current_index)
@@ -828,11 +837,6 @@ class PlayerService(QObject):
             return
 
         self._reset_standby_player()
-        if self._media_player and not self._is_muted:
-            try:
-                self._media_player.audio_set_volume(self._volume)
-            except Exception:
-                pass
 
         # Si on a déjà joué plus de 3 secondes, revenir au début du morceau actuel
         current_time_ms = self._media_player.get_time() if self._media_player else 0
@@ -1032,6 +1036,10 @@ class PlayerService(QObject):
     # Transitions fluides (Gapless & Fondu enchaîné)
     # -------------------------------------------------------------------------
 
+    def preload_track(self, index: int) -> None:
+        """Précharge la piste à l'index donné en mémoire tampon sur le lecteur standby."""
+        self._preload_track(index)
+
     def _preload_track(self, index: int) -> None:
         """Précharge la piste suivante en mémoire tampon sur le lecteur standby."""
         if not self._vlc_instance or not self._standby_player:
@@ -1077,7 +1085,10 @@ class PlayerService(QObject):
             if self._standby_player.get_state() != vlc.State.Playing:
                 self._standby_player.play()
 
-            base_vol = 0 if self._is_muted else self._volume
+            if getattr(self, "_is_temporary_volume", False):
+                base_vol = 0
+            else:
+                base_vol = 0 if self._is_muted else self._volume
             self._standby_player.audio_set_volume(base_vol)
 
             # Arrêter l'ancien lecteur principal
@@ -1097,9 +1108,10 @@ class PlayerService(QObject):
             self._fade_start_time = 0.0
             self._fade_paused_elapsed = 0.0
 
-            # Verrouiller le volume nominal sur le nouveau lecteur principal
-            self._volume_enforce_ticks = 10
-            self._enforce_volume()
+            # Verrouiller le volume nominal sur le nouveau lecteur principal (sauf si volume temporaire)
+            if not getattr(self, "_is_temporary_volume", False):
+                self._volume_enforce_ticks = 10
+                self._enforce_volume()
 
             track = self._playlist[next_idx]
             self.track_changed.emit(track)

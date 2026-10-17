@@ -1,5 +1,6 @@
 """Tests unitaires pour le mode Blind Test d'AMSO."""
 
+import time
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -324,8 +325,8 @@ def test_blind_test_audio_fade_logic(qapp: QApplication, sample_track: TrackReco
 
     # Dernier tick : 0s restante -> fin de la découverte
     view._tick()
-    # Le volume nominal doit être rétabli avant d'enchaîner sur la piste suivante
-    player_mock.restore_volume.assert_called()
+    # Le morceau doit être éteint à 0% sans rebond sonore, et passer au morceau suivant
+    player_mock.audio_set_temporary_volume.assert_called_with(0)
     player_mock.next.assert_called_once()
 
 
@@ -539,4 +540,88 @@ def test_blind_test_state_restoration_on_exit(qapp: QApplication, sample_track: 
 
     # Le player doit être revenu sur la piste 0 et avoir restauré les 73000 ms
     player_mock.play_index.assert_called_with(0, resume_pending=True)
+
+
+def test_blind_test_file_name_display(qapp: QApplication, sample_track: TrackRecord):
+    """Vérifie l'affichage du nom de fichier sous l'artiste (masqué puis révélé)."""
+    player_mock = MagicMock(spec=PlayerService)
+    sample_track.file_name = "Queen_Bohemian_Rhapsody.mp3"
+    player_mock.current_track = sample_track
+    player_mock.playlist = [sample_track]
+    player_mock.current_index = 0
+    player_mock.is_playing = False
+    player_mock.state = "paused"
+    player_mock.is_vlc_available = True
+
+    view = BlindTestView(player_mock)
+    view._is_active_page = True
+    view._on_track_loaded(sample_track)
+
+    # 1. En phase de recherche (countdown) : doit afficher le texte mystère
+    assert "Fichier mystère" in view.lbl_file_name.text() or "Mystery file" in view.lbl_file_name.text()
+    assert not view.lbl_file_name.isHidden()
+
+    # 2. En phase de révélation : doit afficher le vrai nom de fichier
+    view._trigger_reveal()
+    assert view.lbl_file_name.text() == "Queen_Bohemian_Rhapsody.mp3"
+    assert not view.lbl_file_name.isHidden()
+
+
+def test_blind_test_session_progress_label(qapp: QApplication, sample_track: TrackRecord):
+    """Vérifie le calcul et l'affichage de 'Extrait x / y — reste z minutes'."""
+    player_mock = MagicMock(spec=PlayerService)
+    # Playlist de 10 morceaux
+    tracks = [sample_track] * 10
+    player_mock.playlist = tracks
+    player_mock.current_track = sample_track
+    player_mock.current_index = 2  # Morceau 3 sur 10
+    player_mock.is_playing = True
+    player_mock.state = "playing"
+    player_mock.is_vlc_available = True
+
+    view = BlindTestView(player_mock)
+    view._is_active_page = True
+    # 20s + 10s = 30s par manche
+    view.set_durations(countdown_seconds=20, reveal_seconds=10, fade_seconds=2)
+    view._on_track_loaded(sample_track)
+
+    progress_text = view.lbl_session_progress.text()
+    # Morceau courant = index 2 + 1 = 3 sur 10
+    assert "3 / 10" in progress_text
+    assert "reste" in progress_text or "left" in progress_text
+    assert "minutes" in progress_text or "minute" in progress_text
+
+
+def test_blind_test_fade_in_and_preloading(qapp: QApplication, sample_track: TrackRecord):
+    """Vérifie le préchargement anticipé et le fondu d'entrée (Fade-In) de 0% à 100% en 2 secondes."""
+    player_mock = MagicMock(spec=PlayerService)
+    player_mock.playlist = [sample_track, sample_track]
+    player_mock.current_track = sample_track
+    player_mock.current_index = 0
+    player_mock.get_next_index.return_value = 1
+    player_mock.volume = 100
+    player_mock.is_playing = True
+    player_mock.state = "playing"
+    player_mock.is_vlc_available = True
+
+    view = BlindTestView(player_mock)
+    view._is_active_page = True
+
+    # Démarre une manche avec auto_play=True
+    view._start_round_for_track(sample_track, auto_play=True)
+
+    # 1. Vérifier que la piste suivante a été préchargée en avance
+    player_mock.preload_track.assert_called_with(1)
+
+    # 2. Vérifier que le volume a débuté à 0% pour le fondu entrant
+    player_mock.audio_set_temporary_volume.assert_called_with(0)
+    assert view._is_fading_in is True
+
+    # 3. Simuler le passage du temps (2.0s écoulées)
+    view._fade_in_start_time = time.time() - 2.1
+    view._on_fade_in_tick()
+
+    # Le fondu entrant est terminé, le volume nominal est restauré
+    assert view._is_fading_in is False
+    player_mock.restore_volume.assert_called()
 

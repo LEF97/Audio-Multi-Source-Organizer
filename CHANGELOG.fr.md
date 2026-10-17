@@ -24,6 +24,11 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
   - **Animation de zoom dynamique sur le décompte** : effet de zoom vectoriel fluide (redimensionnement dynamique de 1.45 vers 1.0 avec lissage OutCubic) synchronisé avec le fondu d'opacité sur chaque seconde du décompte.
   - **Bouton « ⏮️ Morceau précédent » interactif** : ajout de la commande dans la rangée de contrôle (`btn_prev`). Si la manche est entamée (> 2 s) ou déjà révélée, le bouton remet à zéro la manche en cours à 0:00 (décompte et pochette mystère réinitialisés). Si la manche est au tout début (<= 2 s), il recule réellement vers la piste précédente de la playlist.
   - **Durée complète de découverte lors de la révélation** : un clic sur « 👁️ Révéler » bascule directement au début de la phase de découverte, garantissant toujours les 10 secondes complètes restantes (ou la durée configurée) avant le titre suivant, avec application du fondu sonore de fin de manche.
+  - **Affichage du nom de fichier sous l'artiste** : ajout du libellé de fichier sous l'artiste/album, affichant « 📁 Fichier mystère... » pendant la recherche et le nom réel du fichier audio lors de la révélation (avec infobulle complète).
+  - **Indicateur de session globale « Extrait x / y — reste z minutes »** : affichage d'un badge épuré centré directement sous la barre supérieure informant en direct du numéro d'extrait courant, du total et de la durée restante estimée de la session.
+  - **Préchargement transparent du fichier suivant** : préchargement en tâche de fond sur le lecteur secondaire LibVLC dès le début de la manche pour une transition instantanée et sans à-coups à l'extrait suivant.
+  - **Fondu entrant doux (Fade-in 0% à 100% en 2 secondes)** : la piste suivante démarre désormais dans le silence (0%) et gagne progressivement son volume nominal sur 2.0 secondes via une courbe de lissage à 50 ms.
+  - **Extinction acoustique propre en fin de manche** : éradication du retour brutal de volume à 100% à la fin des 30 secondes, garantissant que le morceau s'éteint totalement dans le silence à 0% avant de basculer vers l'extrait suivant.
 
 ### Fixed
 - **Résolution du blocage/gel critique de l'interface (écran blanc / « Ne répond pas »)** :
