@@ -393,3 +393,53 @@ def test_splash_screen(qapp: QApplication):
     dummy_win = QWidget()
     splash.finish(dummy_win)
     assert not splash.isVisible()
+
+
+def test_delete_track_dialog(qapp: QApplication, tmp_path) -> None:
+    """Vérifie le dialogue de suppression de piste et l'envoi à la corbeille."""
+    from amso.ui.dialogs.delete_track_dialog import DeleteTrackDialog, send_file_to_trash
+
+    track = TrackRecord(
+        id=123,
+        source_ref="D:/Music/test.flac",
+        source_path="D:/Music/test.flac",
+        title="Test Song",
+        artist="Test Artist",
+    )
+
+    # 1. Choix 'ignore'
+    dlg_ignore = DeleteTrackDialog(track)
+    assert dlg_ignore.action is None
+    dlg_ignore._on_choose_ignore()
+    assert dlg_ignore.action == "ignore"
+    dlg_ignore.close()
+
+    # 2. Choix 'trash'
+    dlg_trash = DeleteTrackDialog(track)
+    dlg_trash._on_choose_trash()
+    assert dlg_trash.action == "trash"
+    dlg_trash.close()
+
+    # 3. Fonction send_file_to_trash
+    test_file = tmp_path / "sample.mp3"
+    test_file.write_text("audio content")
+    assert test_file.exists()
+    res = send_file_to_trash(str(test_file))
+    assert res is True
+    assert not test_file.exists()
+
+
+def test_folder_tree_collapsed_by_default(qapp: QApplication, db: DatabaseManager) -> None:
+    """Vérifie que l'arborescence des sources dans la vue dossiers est repliée par défaut."""
+    window = MainWindow(db=db)
+    # Vérifie les éléments racines de l'arborescence
+    root_count = window.folder_tree.topLevelItemCount()
+    assert root_count >= 1
+    for i in range(root_count):
+        item = window.folder_tree.topLevelItem(i)
+        assert item is not None
+        assert not item.isExpanded()
+        # L'icône doit être 💾 ou ☁️ et non plus 📁
+        assert "💾" in item.text(0) or "☁️" in item.text(0)
+    window.close()
+

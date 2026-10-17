@@ -30,6 +30,17 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
   - Prise en charge native du réordonnancement par glisser-déposer sur les lignes du tableau de playlist (`PlaylistTableView`).
   - Déplacement fluide mono ou multi-sélection avec mise à jour automatique de l'index de lecture pour que la piste en cours reste surlignée et continue de jouer sans interruption, peu importe les mouvements effectués autour d'elle.
   - Persistance asynchrone instantanée du nouvel ordre défini par l'utilisateur.
+- **Refonte de l'arborescence des dossiers et harmonisation des menus contextuels** :
+  - **Distinction visuelle des sources et dossiers** : les racines de sources affichent désormais une icône dédiée (`💾` pour le stockage local/NAS, `☁️` pour le cloud) les différenciant immédiatement des sous-dossiers (`📁`).
+  - **Arborescence repliée par défaut** : au démarrage de l'application, l'arborescence des sources sur le panneau de gauche est désormais réduite pour une vue propre et dégagée.
+  - **Harmonisation des menus contextuels** : ajout des actions « ⏭️ Suivant » et « ➕ Ajouter à la liste de lecture » par clic-droit sur les dossiers de l'arborescence de gauche, ordonnées de manière identique au tableau des morceaux.
+- **Suppression intelligente de morceau & intégration de la Corbeille Windows** :
+  - Boîte de dialogue de confirmation moderne proposant deux choix clairs lors d'une demande de suppression :
+    1. *Retirer de la bibliothèque (et ignorer lors des futurs scans)* : le fichier est préservé sur le disque mais enregistré dans la table `ignored_tracks` pour ne plus jamais réapparaître lors des synchronisations automatiques ou manuelles.
+    2. *Mettre également le fichier à la corbeille Windows* : déplacement physique direct du fichier dans la corbeille système Windows (`ctypes.windll.shell32.SHFileOperationW`) avec possibilité de restauration ultérieure.
+  - Retrait dynamique et instantané du morceau supprimé de la file d'attente du lecteur audio si celui-ci y figurait.
+- **Ajout en file d'attente sans lecture forcée (*No Autoplay*)** :
+  - Les commandes « Suivant » et « Ajouter à la liste de lecture » n'imposent plus de lecture automatique lorsque le lecteur est arrêté ou la file d'attente vide. Seuls le double-clic sur un morceau ou le clic sur « Play » démarrent la restitution sonore.
 
 ### Fixed
 - **Résolution des erreurs `disk I/O error` (SQLite sous Windows)** : configuration du mode WAL une seule fois à l'initialisation du fichier de base de données, ajout de `PRAGMA busy_timeout = 30000`, stockage temporaire en mémoire RAM (`PRAGMA temp_store = MEMORY`) et mécanisme de réessais automatiques avec backoff exponentiel pour éliminer les conflits de verrouillage de fichiers lors des scans multithreadés.

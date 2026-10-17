@@ -108,6 +108,7 @@ class LocalScanner:
                 meta_done = bool(r["metadata_extracted"])
                 existing_tracks_map[ref] = (mtime, size, meta_done)
 
+        ignored_refs = self.db.get_ignored_tracks_refs()
         audio_files: list[Path] = []
         current_refs: set[str] = set()
         inventory_buffer: list[TrackRecord] = []
@@ -147,6 +148,11 @@ class LocalScanner:
                                 if ext not in SUPPORTED_AUDIO_EXTENSIONS:
                                     continue
 
+                                fpath = Path(entry.path)
+                                ref = fpath.as_posix()
+                                if ref in ignored_refs:
+                                    continue
+
                                 try:
                                     st = entry.stat(follow_symlinks=False)
                                     mtime = st.st_mtime
@@ -154,9 +160,7 @@ class LocalScanner:
                                 except (OSError, PermissionError):
                                     continue
 
-                                fpath = Path(entry.path)
                                 audio_files.append(fpath)
-                                ref = fpath.as_posix()
                                 current_refs.add(ref)
 
                                 if ref in existing_tracks_map:

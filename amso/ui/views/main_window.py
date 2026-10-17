@@ -71,6 +71,7 @@ from amso.core.scheduler import SyncScheduler
 from amso.services.player_service import PlayerService
 from amso.services.sleep_inhibitor import SleepInhibitor
 from amso.services.update_checker import UpdateCheckerWorker
+from amso.ui.dialogs.delete_track_dialog import DeleteTrackDialog, send_file_to_trash
 from amso.ui.dialogs.source_config_dialog import SourceConfigDialog
 from amso.ui.dialogs.vlc_download_dialog import VlcDownloadDialog
 from amso.ui.models import FolderTrackTableModel, TrackTableModel
@@ -2848,7 +2849,7 @@ class MainWindow(QMainWindow):
 
         sources = self.db.get_sources()
         for src in sources:
-            icon_str = "📁" if src.source_type == SourceType.LOCAL else "☁️"
+            icon_str = "💾" if src.source_type == SourceType.LOCAL else "☁️"
             btn = QPushButton(f"{icon_str}  {src.name}")
             btn.setProperty("class", "nav-btn")
             btn.setCheckable(True)
@@ -3028,7 +3029,7 @@ class MainWindow(QMainWindow):
         reselect_item = None
 
         for src in sources:
-            src_icon = "📁" if src.source_type == SourceType.LOCAL else "☁️"
+            src_icon = "💾" if src.source_type == SourceType.LOCAL else "☁️"
             src_root = (src.path_or_uri or "").replace("\\", "/").rstrip("/")
 
             source_item = QTreeWidgetItem(self.folder_tree)
@@ -3109,7 +3110,7 @@ class MainWindow(QMainWindow):
                 return tot
 
             _calc_totals(source_item)
-            source_item.setExpanded(True)
+            source_item.setExpanded(False)
 
             if prev_folder_path:
                 for it in tree_items.values():
@@ -3120,6 +3121,10 @@ class MainWindow(QMainWindow):
 
         if reselect_item:
             self.folder_tree.setCurrentItem(reselect_item)
+            p = reselect_item.parent()
+            while p is not None:
+                p.setExpanded(True)
+                p = p.parent()
         elif self.folder_tree.topLevelItemCount() > 0:
             first_item = self.folder_tree.topLevelItem(0)
             if first_item is not None:
@@ -3175,7 +3180,7 @@ class MainWindow(QMainWindow):
         self.lbl_folder_count_badge.setText(tr(count_key, count=f"{cnt:,}"))
 
     def _on_folder_tree_context_menu(self, pos: QPoint) -> None:
-        """Menu contextuel pour l'arborescence des dossiers (synchroniser source, ouvrir explorer)."""
+        """Menu contextuel pour l'arborescence des dossiers harmonisé avec la vue tableau."""
         item = self.folder_tree.itemAt(pos)
         if not item:
             return
@@ -3189,9 +3194,35 @@ class MainWindow(QMainWindow):
 
         menu = QMenu(self)
 
+        tracks: list[TrackRecord] = []
+        if fp:
+            tracks = self.db.get_tracks_by_folder(
+                folder_path=fp,
+                source_id=source_id,
+                recursive=self.cb_recursive.isChecked(),
+            )
+
+        if tracks:
+            act_next = QAction(tr("context_menu.play_next"), self)
+            act_next.triggered.connect(lambda: self._insert_next_with_vlc_check(tracks))
+            menu.addAction(act_next)
+
+            act_add = QAction(tr("context_menu.add_to_playlist"), self)
+            act_add.triggered.connect(lambda: self._append_tracks_with_vlc_check(tracks))
+            menu.addAction(act_add)
+
+            menu.addSeparator()
+
+        if fp:
+            action_open = QAction(tr("context_menu.open_file_location"), self)
+            action_open.triggered.connect(self._on_open_current_folder_explorer)
+            menu.addAction(action_open)
+
         if is_source_root and source_id:
             src = self.db.get_source(source_id)
             if src:
+                menu.addSeparator()
+
                 sync_title = tr("sources.menu_sync").removeprefix("🔄").strip()
                 action_sync = QAction(f"🔄  {sync_title}", self)
                 action_sync.triggered.connect(lambda: self._start_scan(src, user_initiated=True))
@@ -3201,14 +3232,6 @@ class MainWindow(QMainWindow):
                 action_props = QAction(f"⚙️  {props_title}", self)
                 action_props.triggered.connect(lambda: self._on_edit_source_properties(src))
                 menu.addAction(action_props)
-
-                menu.addSeparator()
-
-        if fp:
-            open_title = tr("folders.btn_open_explorer").removeprefix("📂").removeprefix("📁").strip()
-            action_open = QAction(f"📂  {open_title}", self)
-            action_open.triggered.connect(self._on_open_current_folder_explorer)
-            menu.addAction(action_open)
 
         menu.exec(self.folder_tree.mapToGlobal(pos))
 
@@ -3278,19 +3301,25 @@ class MainWindow(QMainWindow):
     def _delete_track_from_folder_view(self, track: TrackRecord) -> None:
         if track.id is None:
             return
-        reply = QMessageBox.question(
-            self,
-            tr("dialog.delete_confirm_title"),
-            tr("dialog.delete_confirm_message", title=track.title or tr("track.untitled")),
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-        )
-        if reply == QMessageBox.StandardButton.Yes:
-            self.db.delete_track(track.id)
-            self.folder_table_model.reload_data()
-            self.table_model.reload_data()
-            self._update_track_count()
-            self._refresh_stats_view()
-            self._refresh_folders_tree()
+        dlg = DeleteTrackDialog(track, self)
+        if dlg.exec() != QDialog.DialogCode.Accepted or not dlg.action:
+            return
+
+        if dlg.action == "trash":
+            send_file_to_trash(track.source_path)
+
+        # Dans les deux cas (retirer de la bibliothèque ou corbeille), on ignore pour les futurs scans
+        self.db.ignore_track(track.source_ref, track.source_path)
+        self.db.delete_track(track.id)
+
+        # Retirer de la playlist du lecteur s'il y est présent
+        self._remove_track_from_player(track)
+
+        self.folder_table_model.reload_data()
+        self.table_model.reload_data()
+        self._update_track_count()
+        self._refresh_stats_view()
+        self._refresh_folders_tree()
 
     def _on_source_selected(self, source: SourceRecord) -> None:
         self.stacked_widget.setCurrentIndex(0)
@@ -4022,17 +4051,37 @@ class MainWindow(QMainWindow):
     def _delete_track_from_lib(self, track: TrackRecord) -> None:
         if track.id is None:
             return
-        reply = QMessageBox.question(
-            self,
-            tr("dialog.delete_confirm_title"),
-            tr("dialog.delete_confirm_message", title=track.title or tr("track.untitled")),
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-        )
-        if reply == QMessageBox.StandardButton.Yes:
-            self.db.delete_track(track.id)
-            self.table_model.reload_data()
-            self._update_track_count()
-            self._refresh_stats_view()
+        dlg = DeleteTrackDialog(track, self)
+        if dlg.exec() != QDialog.DialogCode.Accepted or not dlg.action:
+            return
+
+        if dlg.action == "trash":
+            send_file_to_trash(track.source_path)
+
+        # Dans les deux cas (retirer de la bibliothèque ou corbeille), on ignore pour les futurs scans
+        self.db.ignore_track(track.source_ref, track.source_path)
+        self.db.delete_track(track.id)
+
+        # Retirer de la playlist du lecteur s'il y est présent
+        self._remove_track_from_player(track)
+
+        self.table_model.reload_data()
+        self.folder_table_model.reload_data()
+        self._update_track_count()
+        self._refresh_stats_view()
+        self._refresh_folders_tree()
+
+    def _remove_track_from_player(self, track: TrackRecord) -> None:
+        """Retire le morceau de la file d'attente du lecteur audio s'il y figure."""
+        if not hasattr(self, "player_service") or not self.player_service:
+            return
+        pl = self.player_service.playlist
+        for i in range(len(pl) - 1, -1, -1):
+            t = pl[i]
+            if (track.id is not None and t.id == track.id) or (
+                track.source_path and t.source_path == track.source_path
+            ):
+                self.player_service.remove_at(i)
 
     # -------------------------------------------------------------------------
     # Interactions du Lecteur Audio (Double-clic, Playlist, Multi-sélection)

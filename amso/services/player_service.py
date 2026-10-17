@@ -423,13 +423,31 @@ class PlayerService(QObject):
         self._current_index = -1
         self.play_index(insert_pos)
 
-    def insert_next(self, tracks: Sequence[TrackRecord]) -> None:
-        """Insère une ou plusieurs pistes juste après la piste en cours de lecture."""
+    def insert_next(self, tracks: Sequence[TrackRecord], auto_play: bool = False) -> None:
+        """Insère une ou plusieurs pistes juste après la piste en cours de lecture sans forcer la lecture."""
         if not tracks:
             return
 
-        if not self._playlist or self._current_index < 0:
-            self.play_tracks(tracks, start_index=0)
+        if not self._playlist:
+            self._playlist = list(tracks)
+            self._current_index = 0
+            self._rebuild_shuffle_order()
+            self.playlist_updated.emit()
+            self.track_changed.emit(self.current_track)
+            if auto_play:
+                self.play_index(0)
+            return
+
+        if self._current_index < 0:
+            insert_pos = 0
+            for i, t in enumerate(tracks):
+                self._playlist.insert(insert_pos + i, t)
+            self._current_index = 0
+            self._rebuild_shuffle_order()
+            self.playlist_updated.emit()
+            self.track_changed.emit(self.current_track)
+            if auto_play:
+                self.play_index(0)
             return
 
         insert_pos = self._current_index + 1
@@ -439,19 +457,22 @@ class PlayerService(QObject):
         self._rebuild_shuffle_order()
         self.playlist_updated.emit()
 
-    def append_tracks(self, tracks: Sequence[TrackRecord]) -> None:
-        """Ajoute des pistes à la fin de la file d'attente."""
+    def append_tracks(self, tracks: Sequence[TrackRecord], auto_play: bool = False) -> None:
+        """Ajoute des pistes à la fin de la file d'attente sans forcer la lecture."""
         if not tracks:
             return
 
         was_empty = len(self._playlist) == 0
         self._playlist.extend(tracks)
         self._rebuild_shuffle_order()
-        self.playlist_updated.emit()
 
-        # Si rien ne jouait, on commence la lecture de la première piste ajoutée
         if was_empty or self._current_index < 0:
-            self.play_index(0)
+            self._current_index = 0
+            self.track_changed.emit(self.current_track)
+            if auto_play:
+                self.play_index(0)
+
+        self.playlist_updated.emit()
 
     def remove_at(self, index: int) -> None:
         """Supprime une piste de la playlist à l'index donné."""

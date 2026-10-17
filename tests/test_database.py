@@ -478,3 +478,28 @@ def test_file_db_wal_mode_and_concurrency(tmp_path):
         assert db_manager.count_activity_logs() == 30
     finally:
         db_manager.close()
+
+
+def test_ignored_tracks(db: DatabaseManager):
+    """Vérifie l'ajout, la lecture et le retrait de morceaux ignorés."""
+    # Au départ, aucun morceau ignoré
+    assert len(db.get_ignored_tracks_refs()) == 0
+
+    # Ignorer deux morceaux
+    db.ignore_track("track_ref_1", "D:/Music/song1.flac")
+    db.ignore_track("track_ref_2", "D:/Music/song2.mp3")
+
+    refs = db.get_ignored_tracks_refs()
+    assert len(refs) == 2
+    assert "track_ref_1" in refs
+    assert "track_ref_2" in refs
+
+    # Ignorer à nouveau le même ref ne doit pas lever d'erreur (INSERT OR IGNORE)
+    db.ignore_track("track_ref_1", "D:/Music/song1.flac")
+    assert len(db.get_ignored_tracks_refs()) == 2
+
+    # Désignorer
+    assert db.unignore_track("track_ref_1") is True
+    assert "track_ref_1" not in db.get_ignored_tracks_refs()
+    assert len(db.get_ignored_tracks_refs()) == 1
+

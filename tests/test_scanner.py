@@ -157,3 +157,24 @@ def test_two_phase_scan(tmp_path: Path, db: DatabaseManager, scanner: LocalScann
     phase1_notified = []
     scanner.scan_source(src, on_phase1_finished=lambda s: phase1_notified.append(s.phase))
     assert phase1_notified == [1]
+
+
+def test_scan_skips_ignored_tracks(tmp_path: Path, db: DatabaseManager, scanner: LocalScanner):
+    """Vérifie que les morceaux répertoriés dans ignored_tracks sont exclus dès l'inventaire."""
+    f1 = tmp_path / "valid.mp3"
+    f1.write_bytes(b"\x00" * 512)
+    f2 = tmp_path / "deleted_ignored.mp3"
+    f2.write_bytes(b"\x00" * 512)
+
+    src = db.add_source(SourceType.LOCAL, "Test Ignored", str(tmp_path))
+
+    # On ignore explicitement f2 avant le scan
+    db.ignore_track(f2.resolve().as_posix(), str(f2.resolve()))
+
+    inv_sum, files = scanner.scan_inventory(src)
+    # Seul f1 doit être inventorié
+    assert inv_sum.total_found == 1
+    assert len(files) == 1
+    assert files[0].name == "valid.mp3"
+    assert db.get_track_by_ref(f2.resolve().as_posix()) is None
+

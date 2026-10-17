@@ -1546,5 +1546,26 @@ def test_drag_and_drop_reorder_playlist(qapp: QApplication) -> None:
     view.close()
 
 
+def test_insert_next_and_append_tracks_no_autoplay(qapp: QApplication) -> None:
+    """Vérifie que l'ajout via 'Suivant' ou 'Ajouter à la liste' ne déclenche jamais la lecture automatique."""
+    player = PlayerService()
+    t1 = TrackRecord(source_ref="C:/audio/1.mp3", title="Track 1")
+    t2 = TrackRecord(source_ref="C:/audio/2.mp3", title="Track 2")
+
+    # 1. append_tracks sur lecteur vide : la playlist s'enrichit mais ne démarre pas la lecture
+    player.append_tracks([t1])
+    assert len(player.playlist) == 1
+    assert player.current_track.title == "Track 1"
+    assert player.is_playing is False
+
+    # 2. insert_next n'active pas non plus la lecture
+    player2 = PlayerService()
+    player2.insert_next([t2])
+    assert len(player2.playlist) == 1
+    assert player2.current_track.title == "Track 2"
+    assert player2.is_playing is False
+
+
+
 
 

@@ -697,6 +697,19 @@ class DatabaseManager:
             conn.execute("CREATE INDEX IF NOT EXISTS idx_activity_logs_ts ON activity_logs(timestamp DESC);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_activity_logs_level ON activity_logs(level);")
 
+            # 8. Table des pistes exclues/ignorées pour éviter leur réimportation lors des synchronisations
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS ignored_tracks (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    source_ref TEXT NOT NULL UNIQUE,
+                    source_path TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+                """
+            )
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_ignored_tracks_ref ON ignored_tracks(source_ref);")
+
     # -------------------------------------------------------------------------
     # Sources CRUD
     # -------------------------------------------------------------------------
@@ -1143,6 +1156,28 @@ class DatabaseManager:
         """Supprime une piste unique."""
         with self.get_connection() as conn:
             cursor = conn.execute("DELETE FROM tracks WHERE id = ?;", (track_id,))
+            return cursor.rowcount > 0
+
+    def ignore_track(self, source_ref: str, source_path: str | None = None) -> bool:
+        """Ajoute une piste à la table des exclusions et la supprime de la table active."""
+        with self.get_connection() as conn:
+            conn.execute(
+                "INSERT OR IGNORE INTO ignored_tracks (source_ref, source_path) VALUES (?, ?);",
+                (source_ref, source_path),
+            )
+            cursor = conn.execute("DELETE FROM tracks WHERE source_ref = ?;", (source_ref,))
+            return cursor.rowcount > 0
+
+    def get_ignored_tracks_refs(self) -> set[str]:
+        """Retourne l'ensemble des source_ref des pistes ignorées pour filtrage lors des scans."""
+        with self.get_connection() as conn:
+            rows = conn.execute("SELECT source_ref FROM ignored_tracks;").fetchall()
+            return {r["source_ref"] for r in rows if r["source_ref"]}
+
+    def unignore_track(self, source_ref: str) -> bool:
+        """Retire une piste de la liste des exclusions."""
+        with self.get_connection() as conn:
+            cursor = conn.execute("DELETE FROM ignored_tracks WHERE source_ref = ?;", (source_ref,))
             return cursor.rowcount > 0
 
     def prune_missing_tracks(self, source_id: int, current_refs: set[str]) -> int:
