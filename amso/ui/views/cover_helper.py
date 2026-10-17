@@ -91,9 +91,9 @@ def get_default_cover_pixmap(size: int = 300, radius: int = 12) -> QPixmap:
     painter.setPen(QPen(QColor("#38BDF8"), 1.5))
     painter.drawEllipse(center, size * 0.12, size * 0.12)
 
-    # Petite note de musique au centre
+    # Petite note de musique au centre (poids normal pour éviter le faux-gras qui rogne le bord droit de l'emoji)
     painter.setPen(QColor("#F8FAFC"))
-    font = QFont("Segoe UI", int(size * 0.12), QFont.Weight.Bold)
+    font = QFont("Segoe UI", max(7, int(size * 0.13)))
     painter.setFont(font)
     painter.drawText(rect, int(Qt.AlignmentFlag.AlignCenter), "🎵")
 
