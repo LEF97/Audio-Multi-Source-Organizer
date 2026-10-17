@@ -58,6 +58,7 @@ def build(onefile: bool = False) -> int:
         f"--add-data={locales_dir}{sep}locales",
         f"--add-data={resources_dir}{sep}amso/resources",
         f"--add-data={resources_dir}{sep}resources",
+        f"--add-data={resources_dir}{sep}.",
         "--collect-all=amso",
         "--hidden-import=sqlite3",
         "--hidden-import=mutagen",

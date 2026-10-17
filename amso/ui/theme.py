@@ -530,8 +530,28 @@ QSlider::handle:horizontal:hover {
 
 def get_resource_path(relative_name: str) -> Path:
     """Retourne le chemin absolu d'une ressource embarquée (gère l'exécution dev et PyInstaller)."""
-    if hasattr(sys, "_MEIPASS"):
-        return Path(sys._MEIPASS) / relative_name
+    candidates: list[Path] = []
+
+    if getattr(sys, "frozen", False) or hasattr(sys, "_MEIPASS"):
+        if hasattr(sys, "_MEIPASS"):
+            meipass = Path(sys._MEIPASS)
+            candidates.extend(
+                [
+                    meipass / "amso" / "resources" / relative_name,
+                    meipass / "resources" / relative_name,
+                    meipass / relative_name,
+                    meipass / "amso" / relative_name,
+                ]
+            )
+        exe_dir = Path(sys.executable).parent
+        candidates.extend(
+            [
+                exe_dir / "_internal" / "amso" / "resources" / relative_name,
+                exe_dir / "_internal" / "resources" / relative_name,
+                exe_dir / "resources" / relative_name,
+                exe_dir / relative_name,
+            ]
+        )
 
     root_dir = Path(__file__).resolve().parent.parent.parent  # racine du projet
     amso_dir = Path(__file__).resolve().parent.parent  # amso/
@@ -543,21 +563,29 @@ def get_resource_path(relative_name: str) -> Path:
     if root_file.exists() and res_file.exists():
         try:
             if root_file.stat().st_mtime >= res_file.stat().st_mtime:
-                return root_file
-            return res_file
+                candidates.insert(0, root_file)
+            else:
+                candidates.insert(0, res_file)
         except OSError:
-            pass
+            candidates.insert(0, res_file)
+    elif res_file.exists():
+        candidates.insert(0, res_file)
+    elif root_file.exists():
+        candidates.insert(0, root_file)
 
-    candidates = [
-        root_file,
-        res_file,
-        root_dir / "resources" / relative_name,
-        amso_dir / relative_name,
-    ]
+    candidates.extend(
+        [
+            res_file,
+            root_file,
+            root_dir / "resources" / relative_name,
+            amso_dir / relative_name,
+        ]
+    )
+
     for p in candidates:
         if p.exists():
             return p
-    return candidates[0]
+    return candidates[0] if candidates else Path(relative_name)
 
 
 def get_app_icon() -> QIcon:
