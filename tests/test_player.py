@@ -1265,3 +1265,71 @@ def test_player_start_at_zero_and_volume_lock_and_immediate_persistence(tmp_path
     player._on_tick()
     # Le tick doit avoir réappliqué et forcé le volume désiré (42)
     assert mock_vlc.applied_vol == 42
+
+
+def test_player_startup_volume_locking_and_countdown(tmp_path: Path, monkeypatch) -> None:
+    """Valide la protection contre la condition de course LibVLC asynchrone au démarrage :
+    1. _volume_enforce_ticks est armé à 25 ticks (2.5s) lors de play_index.
+    2. Les ticks successifs réappliquent audio_set_volume même si audio_get_volume prétendait déjà correspondre.
+    3. _reset_standby_player et stop restaurent le volume nominal du lecteur principal.
+    """
+    cfg_file = tmp_path / "test_config_vol.ini"
+    monkeypatch.setenv("AMSO_CONFIG_PATH", str(cfg_file))
+    cfg = ConfigManager(config_path=cfg_file)
+    cfg.set_player_volume(90)
+
+    player = PlayerService()
+    assert player.volume == 90
+
+    applied_calls = []
+
+    class MockVlcPlayer:
+        def __init__(self):
+            self._vol = 90
+
+        def get_state(self):
+            return vlc.State.Playing
+
+        def audio_get_volume(self):
+            return self._vol
+
+        def audio_set_volume(self, v):
+            applied_calls.append(v)
+            self._vol = v
+
+        def get_time(self):
+            return 500
+
+        def get_length(self):
+            return 120000
+
+        def get_position(self):
+            return 500 / 120000
+
+    mock_vlc = MockVlcPlayer()
+    player._media_player = mock_vlc
+
+    # Simuler le démarrage d'une piste
+    player._volume_enforce_ticks = 3
+    applied_calls.clear()
+
+    # Tick 1 -> doit forcer audio_set_volume(90) même si mock_vlc.audio_get_volume() == 90
+    player._on_tick()
+    assert player._volume_enforce_ticks == 2
+    assert applied_calls == [90]
+
+    # Tick 2 -> doit encore forcer
+    player._on_tick()
+    assert player._volume_enforce_ticks == 1
+    assert applied_calls == [90, 90]
+
+    # Tick 3 -> dernier tick du décompte
+    player._on_tick()
+    assert player._volume_enforce_ticks == 0
+    assert applied_calls == [90, 90, 90]
+
+    # Arrêt du lecteur -> doit rétablir le volume
+    player.stop()
+    assert player._volume_enforce_ticks == 0
+    assert applied_calls[-1] == 90
+

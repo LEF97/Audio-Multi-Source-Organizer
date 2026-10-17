@@ -26,6 +26,70 @@ logger = logging.getLogger(__name__)
 # Configuration de l'environnement VLC local si présent
 setup_vlc_environment()
 
+
+def ensure_windows_audio_session_active() -> None:
+    """S'assure sous Windows que la session audio du processus n'est pas mise en sourdine
+    ou atténuée par le mélangeur de volume Windows (CoreAudio / WASAPI).
+
+    Corrige le problème où Windows Audio Mixer attenue une nouvelle version ou un nouvel
+    exécutable déployé (ex: communications ducking ou ancienne session à 0%).
+    """
+    if sys.platform != "win32":
+        return
+    try:
+        import ctypes
+        from ctypes import POINTER, Structure, byref, c_float, c_int, c_void_p, cast, wintypes
+
+        class GUID(Structure):
+            _fields_ = [
+                ("Data1", wintypes.DWORD),
+                ("Data2", wintypes.WORD),
+                ("Data3", wintypes.WORD),
+                ("Data4", wintypes.BYTE * 8),
+            ]
+
+            def __init__(self, d1, d2, d3, d4):
+                super().__init__(d1, d2, d3, (wintypes.BYTE * 8)(*d4))
+
+        CLSID_MMDeviceEnumerator = GUID(0xBCDE0395, 0xE52F, 0x467C, [0x8E, 0x3D, 0xC4, 0x57, 0x92, 0x91, 0x69, 0x2E])
+        IID_IMMDeviceEnumerator = GUID(0xA95664D2, 0x9614, 0x4F35, [0xA7, 0x46, 0xDE, 0x8D, 0xB6, 0x36, 0x17, 0xE6])
+        IID_IAudioSessionManager2 = GUID(0x77AA99A0, 0x1BD6, 0x484F, [0x8B, 0xC7, 0x2C, 0x65, 0x4C, 0x9A, 0x9B, 0x6F])
+
+        ole32 = ctypes.windll.ole32
+        ole32.CoInitialize(None)
+        enumerator = c_void_p()
+        if ole32.CoCreateInstance(byref(CLSID_MMDeviceEnumerator), None, 1, byref(IID_IMMDeviceEnumerator), byref(enumerator)) == 0:
+            vtable = cast(enumerator, POINTER(POINTER(c_void_p))).contents
+            GetDefaultAudioEndpoint = ctypes.WINFUNCTYPE(c_int, c_void_p, c_int, c_int, POINTER(c_void_p))(vtable[4])
+            device = c_void_p()
+            if GetDefaultAudioEndpoint(enumerator, 0, 0, byref(device)) == 0:
+                dev_vtable = cast(device, POINTER(POINTER(c_void_p))).contents
+                Activate = ctypes.WINFUNCTYPE(c_int, c_void_p, POINTER(GUID), c_int, c_void_p, POINTER(c_void_p))(dev_vtable[3])
+                session_manager = c_void_p()
+                if Activate(device, byref(IID_IAudioSessionManager2), 1, None, byref(session_manager)) == 0:
+                    mgr_vtable = cast(session_manager, POINTER(POINTER(c_void_p))).contents
+                    GetSimpleAudioVolume = ctypes.WINFUNCTYPE(c_int, c_void_p, c_void_p, wintypes.DWORD, POINTER(c_void_p))(mgr_vtable[4])
+                    simple_vol = c_void_p()
+                    if GetSimpleAudioVolume(session_manager, None, 0, byref(simple_vol)) == 0 and simple_vol.value:
+                        vol_vtable = cast(simple_vol, POINTER(POINTER(c_void_p))).contents
+                        GetMasterVolume = ctypes.WINFUNCTYPE(c_int, c_void_p, POINTER(c_float))(vol_vtable[4])
+                        GetMute = ctypes.WINFUNCTYPE(c_int, c_void_p, POINTER(wintypes.BOOL))(vol_vtable[6])
+                        SetMasterVolume = ctypes.WINFUNCTYPE(c_int, c_void_p, c_float, c_void_p)(vol_vtable[3])
+                        SetMute = ctypes.WINFUNCTYPE(c_int, c_void_p, wintypes.BOOL, c_void_p)(vol_vtable[5])
+
+                        curr_vol = c_float()
+                        curr_mute = wintypes.BOOL()
+                        GetMasterVolume(simple_vol, byref(curr_vol))
+                        GetMute(simple_vol, byref(curr_mute))
+
+                        if curr_mute.value:
+                            SetMute(simple_vol, False, None)
+                        if curr_vol.value < 0.8:
+                            SetMasterVolume(simple_vol, 1.0, None)
+    except Exception as exc:
+        logger.debug("Vérification audio session Windows non disponible : %s", exc)
+
+
 # Essai d'import de python-vlc
 try:
     import vlc
@@ -71,10 +135,14 @@ class PlayerService(QObject):
         # Volume et état
         self._volume: int = cfg.get_player_volume()
         self._is_muted: bool = cfg.get_player_muted()
+        self._volume_enforce_ticks: int = 0
         self._is_seeking: bool = False
         self._pending_seek_ms: int = 0
         self._current_time_ms: int = 0
         self._total_time_ms: int = 0
+
+        # Vérification préventive de la session audio Windows (mélangeur système)
+        ensure_windows_audio_session_active()
 
         # État de transition & préchargement (Gapless / Crossfade)
         self._standby_player = None
@@ -100,6 +168,35 @@ class PlayerService(QObject):
         self._fade_timer.setInterval(40)
         self._fade_timer.timeout.connect(self._on_fade_tick)
 
+    def _attach_player_events(self, player) -> None:
+        """Attache un écouteur sur MediaPlayerPlaying pour réappliquer le volume nominal dès l'ouverture matérielle du flux."""
+        if not player or not hasattr(player, "event_manager"):
+            return
+        try:
+            em = player.event_manager()
+            if em and hasattr(em, "event_attach"):
+
+                def _on_playing(event) -> None:
+                    try:
+                        if not self._is_crossfading and self._media_player == player:
+                            target = 0 if self._is_muted else self._volume
+                            player.audio_set_volume(target)
+                    except Exception:
+                        pass
+
+                em.event_attach(vlc.EventType.MediaPlayerPlaying, _on_playing)
+        except Exception as exc:
+            logger.debug("Impossible d'attacher l'événement MediaPlayerPlaying : %s", exc)
+
+    def _enforce_volume(self) -> None:
+        """Applique sans délai le volume nominal vers le lecteur principal s'il n'est pas en fondu."""
+        if self._media_player and not self._is_crossfading:
+            try:
+                target = 0 if self._is_muted else self._volume
+                self._media_player.audio_set_volume(target)
+            except Exception:
+                pass
+
     def _init_vlc(self) -> bool:
         """Initialise l'instance VLC et les lecteurs multimédias principal et standby.
 
@@ -108,12 +205,14 @@ class PlayerService(QObject):
         du processus Windows tout entier, ce qui empêchait les 2 lecteurs d'avoir des
         volumes distincts et provoquait un conflit destructeur (battement/saccades).
         DirectSound fournit des canaux de mixage et de volume logiciel 100% indépendants.
+        On ajoute également '--reset-config' et '--no-volume-save' pour isoler AMSO de toute
+        interférence avec les réglages globaux du VLC de bureau et éviter les volumes corrompus.
         """
         global vlc, VLC_AVAILABLE
         if not VLC_AVAILABLE:
             return False
         try:
-            vlc_args = ["--no-xlib", "--quiet"]
+            vlc_args = ["--no-xlib", "--quiet", "--reset-config", "--no-volume-save"]
             if sys.platform == "win32":
                 vlc_args.append("--aout=directsound")
             try:
@@ -124,10 +223,22 @@ class PlayerService(QObject):
                 raise RuntimeError("Échec de création de l'instance VLC")
             self._media_player = self._vlc_instance.media_player_new()
             if self._media_player is not None:
+                if sys.platform == "win32" and hasattr(self._media_player, "audio_output_set"):
+                    try:
+                        self._media_player.audio_output_set("directsound")
+                    except Exception:
+                        pass
+                self._attach_player_events(self._media_player)
                 self._media_player.audio_set_volume(0 if self._is_muted else self._volume)
             try:
                 self._standby_player = self._vlc_instance.media_player_new()
                 if self._standby_player is not None:
+                    if sys.platform == "win32" and hasattr(self._standby_player, "audio_output_set"):
+                        try:
+                            self._standby_player.audio_output_set("directsound")
+                        except Exception:
+                            pass
+                    self._attach_player_events(self._standby_player)
                     self._standby_player.audio_set_volume(0)
             except Exception:
                 self._standby_player = None
@@ -412,6 +523,12 @@ class PlayerService(QObject):
         self._crossfade_next_index = None
         self._fade_start_time = 0.0
         self._fade_paused_elapsed = 0.0
+        # Rétablir le volume nominal sur le lecteur principal s'il avait été atténué
+        if self._media_player and not self._is_muted:
+            try:
+                self._media_player.audio_set_volume(self._volume)
+            except Exception:
+                pass
 
     def play_index(self, index: int, resume_pending: bool = False) -> None:
         """Charge et joue le morceau à l'index donné dans la playlist."""
@@ -421,6 +538,9 @@ class PlayerService(QObject):
 
         if not (0 <= index < len(self._playlist)):
             return
+
+        # S'assurer que le mélangeur Windows n'est pas sourdine ou ducké
+        ensure_windows_audio_session_active()
 
         seek_ms = self._pending_seek_ms if (resume_pending and index == self._current_index) else 0
         self._pending_seek_ms = 0
@@ -453,8 +573,15 @@ class PlayerService(QObject):
             self._media_player.set_media(media)
             self._media_player.play()
 
-            # Rétablir le volume désiré
-            self._media_player.audio_set_volume(0 if self._is_muted else self._volume)
+            # Enforcer immédiatement et via les ticks/timers le volume nominal
+            # Résout la condition de course LibVLC asynchrone où le volume initial est ignoré
+            self._volume_enforce_ticks = 25  # Force le volume sur les 2.5 premières secondes (25 ticks de 100ms)
+            self._enforce_volume()
+            QTimer.singleShot(50, self._enforce_volume)
+            QTimer.singleShot(150, self._enforce_volume)
+            QTimer.singleShot(300, self._enforce_volume)
+            QTimer.singleShot(600, self._enforce_volume)
+            QTimer.singleShot(1200, self._enforce_volume)
 
             self._timer.start()
             self.track_changed.emit(track)
@@ -494,6 +621,10 @@ class PlayerService(QObject):
             self.state_changed.emit("paused")
         elif state == vlc.State.Paused:
             self._media_player.play()
+            self._volume_enforce_ticks = 15
+            self._enforce_volume()
+            QTimer.singleShot(50, self._enforce_volume)
+            QTimer.singleShot(150, self._enforce_volume)
             if self._is_crossfading:
                 if self._standby_player:
                     try:
@@ -516,6 +647,10 @@ class PlayerService(QObject):
             return
         if self._media_player and self._media_player.get_state() == vlc.State.Paused:
             self._media_player.play()
+            self._volume_enforce_ticks = 15
+            self._enforce_volume()
+            QTimer.singleShot(50, self._enforce_volume)
+            QTimer.singleShot(150, self._enforce_volume)
             if self._is_crossfading:
                 if self._standby_player:
                     try:
@@ -552,8 +687,10 @@ class PlayerService(QObject):
         if self._media_player:
             try:
                 self._media_player.stop()
+                self._media_player.audio_set_volume(0 if self._is_muted else self._volume)
             except Exception:
                 pass
+        self._volume_enforce_ticks = 0
         self._timer.stop()
         self._pending_seek_ms = 0
         self._current_time_ms = 0
@@ -828,6 +965,12 @@ class PlayerService(QObject):
             self._fade_start_time = 0.0
             self._fade_paused_elapsed = 0.0
 
+            # Verrouiller le volume nominal sur le nouveau lecteur principal
+            self._volume_enforce_ticks = 15
+            self._enforce_volume()
+            QTimer.singleShot(50, self._enforce_volume)
+            QTimer.singleShot(150, self._enforce_volume)
+
             track = self._playlist[next_idx]
             self.track_changed.emit(track)
             self.state_changed.emit("playing")
@@ -973,12 +1116,20 @@ class PlayerService(QObject):
                 pass
 
         if not self._is_crossfading:
-            try:
-                target_vol = 0 if self._is_muted else self._volume
-                if self._media_player.audio_get_volume() != target_vol:
+            target_vol = 0 if self._is_muted else self._volume
+            if getattr(self, "_volume_enforce_ticks", 0) > 0:
+                self._volume_enforce_ticks -= 1
+                try:
                     self._media_player.audio_set_volume(target_vol)
-            except Exception:
-                pass
+                except Exception:
+                    pass
+            else:
+                try:
+                    curr_vol = self._media_player.audio_get_volume()
+                    if curr_vol != target_vol and curr_vol != -1:
+                        self._media_player.audio_set_volume(target_vol)
+                except Exception:
+                    pass
 
         current_ms = max(0, self._media_player.get_time())
         total_ms = max(0, self._media_player.get_length())
