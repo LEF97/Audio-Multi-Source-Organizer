@@ -39,6 +39,11 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
     1. *Retirer de la bibliothèque (et ignorer lors des futurs scans)* : le fichier est préservé sur le disque mais enregistré dans la table `ignored_tracks` pour ne plus jamais réapparaître lors des synchronisations automatiques ou manuelles.
     2. *Mettre également le fichier à la corbeille Windows* : déplacement physique direct du fichier dans la corbeille système Windows (`ctypes.windll.shell32.SHFileOperationW`) avec possibilité de restauration ultérieure.
   - Retrait dynamique et instantané du morceau supprimé de la file d'attente du lecteur audio si celui-ci y figurait.
+- **Vue dédiée Corbeille AMSO & Restauration dans la bibliothèque** :
+  - Ajout d'une entrée racine permanente **« 🗑️ Corbeille »** en dessous des sources dans l'arborescence de gauche, avec décompte dynamique des morceaux.
+  - Interface dédiée listant les morceaux retirés de la bibliothèque avec leur nom de fichier, leur emplacement d'origine, leur date de retrait et leur statut physique sur disque (*✅ Présent* ou *❌ Absent / Corbeille Windows*).
+  - Actions de restauration en un clic : bouton d'en-tête « ♻️ Restaurer la sélection », double-clic sur une ligne ou menu contextuel pour retirer l'exclusion et relancer la synchronisation de la source parente afin de réintégrer instantanément les morceaux dans la bibliothèque.
+  - Possibilité de vider la corbeille d'un clic pour réinitialiser les exclusions.
 - **Ajout en file d'attente sans lecture forcée (*No Autoplay*)** :
   - Les commandes « Suivant » et « Ajouter à la liste de lecture » n'imposent plus de lecture automatique lorsque le lecteur est arrêté ou la file d'attente vide. Seuls le double-clic sur un morceau ou le clic sur « Play » démarrent la restitution sonore.
 

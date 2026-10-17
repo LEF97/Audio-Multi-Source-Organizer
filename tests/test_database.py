@@ -503,3 +503,15 @@ def test_ignored_tracks(db: DatabaseManager):
     assert "track_ref_1" not in db.get_ignored_tracks_refs()
     assert len(db.get_ignored_tracks_refs()) == 1
 
+    # Méthodes pour la vue Corbeille
+    assert db.count_ignored_tracks() == 1
+    items = db.get_ignored_tracks()
+    assert len(items) == 1
+    assert items[0]["source_ref"] == "track_ref_2"
+    assert items[0]["source_path"] == "D:/Music/song2.mp3"
+
+    # Vidage de la corbeille
+    assert db.clear_ignored_tracks() == 1
+    assert db.count_ignored_tracks() == 0
+
+

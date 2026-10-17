@@ -2385,6 +2385,112 @@ class MainWindow(QMainWindow):
         self.folder_table_view.doubleClicked.connect(self._on_folder_table_view_double_clicked)
 
         self.right_stack.addWidget(self.folder_table_view)
+
+        # Page 2 : Vue dédiée de la Corbeille (morceaux retirés/ignorés)
+        self.trash_container = QWidget()
+        trash_main_layout = QVBoxLayout(self.trash_container)
+        trash_main_layout.setContentsMargins(0, 0, 0, 0)
+        trash_main_layout.setSpacing(10)
+
+        trash_header_frame = QFrame()
+        trash_header_frame.setStyleSheet("""
+            QFrame {
+                background-color: #1A1D24;
+                border: 1px solid #282C37;
+                border-radius: 8px;
+                padding: 8px 12px;
+            }
+        """)
+        trash_header_layout = QHBoxLayout(trash_header_frame)
+        trash_header_layout.setContentsMargins(4, 4, 4, 4)
+        trash_header_layout.setSpacing(12)
+
+        trash_info_layout = QVBoxLayout()
+        trash_info_layout.setSpacing(2)
+        lbl_trash_title = QLabel(tr("trash.banner_title"))
+        lbl_trash_title.setStyleSheet("color: #F8FAFC; font-size: 13px; font-weight: 700;")
+        trash_info_layout.addWidget(lbl_trash_title)
+
+        lbl_trash_desc = QLabel(tr("trash.banner_desc"))
+        lbl_trash_desc.setStyleSheet("color: #94A3B8; font-size: 11px;")
+        lbl_trash_desc.setWordWrap(True)
+        trash_info_layout.addWidget(lbl_trash_desc)
+        trash_header_layout.addLayout(trash_info_layout, 1)
+
+        self.btn_restore_selected_trash = QPushButton(tr("trash.btn_restore_selected"))
+        self.btn_restore_selected_trash.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_restore_selected_trash.setStyleSheet("""
+            QPushButton {
+                background-color: #0284C7;
+                color: #FFFFFF;
+                border: 1px solid #38BDF8;
+                border-radius: 6px;
+                padding: 6px 14px;
+                font-size: 12px;
+                font-weight: 600;
+            }
+            QPushButton:hover {
+                background-color: #0369A1;
+            }
+        """)
+        self.btn_restore_selected_trash.clicked.connect(self._on_restore_selected_trash)
+        trash_header_layout.addWidget(self.btn_restore_selected_trash)
+
+        self.btn_clear_all_trash = QPushButton(tr("trash.btn_clear_all"))
+        self.btn_clear_all_trash.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_clear_all_trash.setStyleSheet("""
+            QPushButton {
+                background-color: #20242D;
+                color: #F87171;
+                border: 1px solid #333846;
+                border-radius: 6px;
+                padding: 6px 14px;
+                font-size: 12px;
+            }
+            QPushButton:hover {
+                background-color: #7F1D1D;
+                color: #FFFFFF;
+                border-color: #EF4444;
+            }
+        """)
+        self.btn_clear_all_trash.clicked.connect(self._on_clear_all_trash)
+        trash_header_layout.addWidget(self.btn_clear_all_trash)
+
+        trash_main_layout.addWidget(trash_header_frame)
+
+        # Tableau des éléments de la corbeille
+        self.trash_table = QTableWidget()
+        self.trash_table.setColumnCount(4)
+        self.trash_table.setHorizontalHeaderLabels([
+            tr("trash.col_filename"),
+            tr("trash.col_path"),
+            tr("trash.col_deleted_at"),
+            tr("trash.col_status"),
+        ])
+        self.trash_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.trash_table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.trash_table.setAlternatingRowColors(True)
+        self.trash_table.setShowGrid(False)
+        self.trash_table.verticalHeader().setVisible(False)
+        self.trash_table.verticalHeader().setDefaultSectionSize(32)
+
+        th_header = self.trash_table.horizontalHeader()
+        th_header.setStretchLastSection(False)
+        th_header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
+        th_header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        th_header.setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive)
+        th_header.setSectionResizeMode(3, QHeaderView.ResizeMode.Interactive)
+        self.trash_table.setColumnWidth(0, 280)
+        self.trash_table.setColumnWidth(2, 140)
+        self.trash_table.setColumnWidth(3, 140)
+
+        self.trash_table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.trash_table.customContextMenuRequested.connect(self._on_trash_table_context_menu)
+        self.trash_table.doubleClicked.connect(self._on_trash_table_double_clicked)
+
+        trash_main_layout.addWidget(self.trash_table, 1)
+
+        self.right_stack.addWidget(self.trash_container)
         right_layout.addWidget(self.right_stack)
 
         splitter.addWidget(right_widget)
@@ -3119,6 +3225,24 @@ class MainWindow(QMainWindow):
                         reselect_item = it
                         break
 
+        # Ajout de l'entrée Corbeille en dessous de la liste des sources
+        ignored_count = self.db.count_ignored_tracks()
+        trash_item = QTreeWidgetItem(self.folder_tree)
+        trash_item.setText(0, f"🗑️  {tr('folders.tree_trash')}")
+        trash_item.setText(1, f"{ignored_count:,}" if ignored_count > 0 else "")
+        trash_item.setTextAlignment(1, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        trash_item.setData(
+            0,
+            Qt.ItemDataRole.UserRole,
+            {
+                "is_trash": True,
+                "folder_path": "__trash__",
+                "count": ignored_count,
+            },
+        )
+        if prev_folder_path == "__trash__":
+            reselect_item = trash_item
+
         if reselect_item:
             self.folder_tree.setCurrentItem(reselect_item)
             p = reselect_item.parent()
@@ -3143,6 +3267,18 @@ class MainWindow(QMainWindow):
         data = item.data(0, Qt.ItemDataRole.UserRole)
         if not isinstance(data, dict):
             return
+
+        if data.get("is_trash"):
+            self.lbl_folder_breadcrumb.setText(f"🗑️  {tr('folders.tree_trash')}")
+            self.lbl_folder_breadcrumb.setToolTip(tr("trash.breadcrumb_tooltip"))
+            self.cb_recursive.setVisible(False)
+            self.folder_search_edit.setVisible(False)
+            self.right_stack.setCurrentIndex(2)
+            self._load_trash_view()
+            return
+
+        self.cb_recursive.setVisible(True)
+        self.folder_search_edit.setVisible(True)
 
         folder_path = data.get("folder_path")
         source_id = data.get("source_id")
@@ -3186,6 +3322,14 @@ class MainWindow(QMainWindow):
             return
         data = item.data(0, Qt.ItemDataRole.UserRole)
         if not isinstance(data, dict):
+            return
+
+        if data.get("is_trash"):
+            menu = QMenu(self)
+            action_clear = QAction(tr("trash.btn_clear_all"), self)
+            action_clear.triggered.connect(self._on_clear_all_trash)
+            menu.addAction(action_clear)
+            menu.exec(self.folder_tree.mapToGlobal(pos))
             return
 
         fp = data.get("folder_path")
@@ -3243,7 +3387,7 @@ class MainWindow(QMainWindow):
         if not isinstance(data, dict):
             return
         fp = data.get("folder_path")
-        if not fp:
+        if not fp or fp == "__trash__":
             return
         norm_fp = os.path.normpath(fp)
         if os.path.exists(norm_fp):
@@ -3259,6 +3403,171 @@ class MainWindow(QMainWindow):
                 tr("folders.folder_not_found_title"),
                 tr("folders.folder_not_found_message", path=norm_fp),
             )
+
+    # -------------------------------------------------------------------------
+    # Gestionnaire de la Corbeille AMSO (Morceaux retirés / ignorés)
+    # -------------------------------------------------------------------------
+
+    def _load_trash_view(self) -> None:
+        """Charge et affiche les éléments de la corbeille (morceaux ignorés)."""
+        ignored_items = self.db.get_ignored_tracks()
+        cnt = len(ignored_items)
+        count_key = "folders.track_count_singular" if cnt == 1 else "folders.track_count"
+        self.lbl_folder_count_badge.setText(tr(count_key, count=f"{cnt:,}"))
+
+        self.trash_table.setRowCount(cnt)
+        for row, it in enumerate(ignored_items):
+            file_path = it.get("source_path") or it.get("source_ref") or ""
+            norm_path = file_path.replace("\\", "/")
+            file_name = norm_path.rsplit("/", 1)[-1] if norm_path else ""
+            folder_loc = norm_path.rsplit("/", 1)[0] if "/" in norm_path else ""
+            created_at = it.get("created_at") or ""
+
+            exists = os.path.exists(file_path) if file_path else False
+
+            # Col 0: Nom du fichier
+            item_fn = QTableWidgetItem(f"🎵  {file_name}")
+            item_fn.setData(Qt.ItemDataRole.UserRole, it)
+            self.trash_table.setItem(row, 0, item_fn)
+
+            # Col 1: Emplacement source
+            item_dir = QTableWidgetItem(folder_loc)
+            item_dir.setToolTip(file_path)
+            self.trash_table.setItem(row, 1, item_dir)
+
+            # Col 2: Date de retrait
+            item_date = QTableWidgetItem(created_at)
+            item_date.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.trash_table.setItem(row, 2, item_date)
+
+            # Col 3: Statut sur disque
+            status_text = tr("trash.status_present") if exists else tr("trash.status_missing")
+            item_status = QTableWidgetItem(status_text)
+            item_status.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.trash_table.setItem(row, 3, item_status)
+
+    def _on_restore_selected_trash(self) -> None:
+        """Restaure les morceaux sélectionnés dans la corbeille."""
+        selected_indexes = self.trash_table.selectionModel().selectedRows()
+        if not selected_indexes:
+            return
+        items_to_restore: list[dict[str, Any]] = []
+        for idx in selected_indexes:
+            item_0 = self.trash_table.item(idx.row(), 0)
+            if item_0:
+                data = item_0.data(Qt.ItemDataRole.UserRole)
+                if data:
+                    items_to_restore.append(data)
+        if items_to_restore:
+            self._restore_ignored_items(items_to_restore)
+
+    def _on_clear_all_trash(self) -> None:
+        """Vide l'intégralité de la corbeille AMSO."""
+        reply = QMessageBox.question(
+            self,
+            tr("trash.clear_confirm_title"),
+            tr("trash.clear_confirm_message"),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            self.db.clear_ignored_tracks()
+            self._load_trash_view()
+            self._refresh_folders_tree()
+
+    def _on_trash_table_context_menu(self, pos: QPoint) -> None:
+        """Menu contextuel sur un élément de la corbeille."""
+        item = self.trash_table.itemAt(pos)
+        if not item:
+            return
+        row = item.row()
+        item_0 = self.trash_table.item(row, 0)
+        if not item_0:
+            return
+        data = item_0.data(Qt.ItemDataRole.UserRole)
+        if not data:
+            return
+
+        menu = QMenu(self)
+
+        act_restore = QAction(tr("trash.action_restore"), self)
+        act_restore.triggered.connect(lambda: self._restore_ignored_items([data]))
+        menu.addAction(act_restore)
+
+        file_path = data.get("source_path") or data.get("source_ref")
+        if file_path and os.path.exists(file_path):
+            act_open = QAction(tr("context_menu.open_file_location"), self)
+            act_open.triggered.connect(lambda: self._open_file_location(file_path))
+            menu.addAction(act_open)
+
+        menu.addSeparator()
+
+        act_del = QAction(tr("trash.btn_clear_all"), self)
+        act_del.triggered.connect(lambda: self._delete_single_trash_item(data))
+        menu.addAction(act_del)
+
+        menu.exec(self.trash_table.mapToGlobal(pos))
+
+    def _delete_single_trash_item(self, data: dict[str, Any]) -> None:
+        """Retire une seule entrée de la table des ignorés."""
+        source_ref = data.get("source_ref")
+        if source_ref:
+            self.db.unignore_track(source_ref)
+            self._load_trash_view()
+            self._refresh_folders_tree()
+
+    def _on_trash_table_double_clicked(self, index) -> None:
+        """Double-clic sur une ligne de la corbeille : propose de restaurer le morceau."""
+        if not index.isValid():
+            return
+        item_0 = self.trash_table.item(index.row(), 0)
+        if item_0:
+            data = item_0.data(Qt.ItemDataRole.UserRole)
+            if data:
+                self._restore_ignored_items([data])
+
+    def _find_source_for_path(self, file_path: str) -> SourceRecord | None:
+        """Recherche la source configurée correspondant au chemin de fichier fourni."""
+        if not file_path:
+            return None
+        norm_fp = file_path.replace("\\", "/").lower()
+        best_source = None
+        best_len = 0
+        for src in self.db.get_sources():
+            root = (src.path_or_uri or "").replace("\\", "/").rstrip("/").lower()
+            if root and norm_fp.startswith(root) and len(root) > best_len:
+                best_source = src
+                best_len = len(root)
+        return best_source
+
+    def _restore_ignored_items(self, items: list[dict[str, Any]]) -> None:
+        """Restaure les morceaux ignorés et déclenche la synchronisation de leur source."""
+        sources_to_sync: set[int] = set()
+        restored_count = 0
+        for it in items:
+            source_ref = it.get("source_ref")
+            source_path = it.get("source_path")
+            if source_ref:
+                self.db.unignore_track(source_ref)
+                restored_count += 1
+                if source_path:
+                    src = self._find_source_for_path(source_path)
+                    if src and src.id:
+                        sources_to_sync.add(src.id)
+
+        # Déclencher synchronisation pour les sources concernées
+        for s_id in sources_to_sync:
+            src = self.db.get_source(s_id)
+            if src:
+                self._start_scan(src, user_initiated=True)
+
+        self._load_trash_view()
+        self._refresh_folders_tree()
+        self.table_model.reload_data()
+        self.folder_table_model.reload_data()
+        self._update_track_count()
+        self._refresh_stats_view()
+
+        self.status_label.setText(f"♻️ {tr('trash.restore_success', count=restored_count)}")
 
     def _on_folder_table_context_menu(self, pos: QPoint) -> None:
         index = self.folder_table_view.indexAt(pos)

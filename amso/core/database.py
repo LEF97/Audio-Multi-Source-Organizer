@@ -1180,6 +1180,40 @@ class DatabaseManager:
             cursor = conn.execute("DELETE FROM ignored_tracks WHERE source_ref = ?;", (source_ref,))
             return cursor.rowcount > 0
 
+    def count_ignored_tracks(self) -> int:
+        """Retourne le nombre total de pistes ignorées / dans la corbeille."""
+        with self.get_connection() as conn:
+            res = conn.execute("SELECT COUNT(*) FROM ignored_tracks;").fetchone()
+            return int(res[0] if res else 0)
+
+    def get_ignored_tracks(self, limit: int = 1000, offset: int = 0) -> list[dict[str, Any]]:
+        """Retourne la liste ordonnée des pistes ignorées avec leurs métadonnées."""
+        with self.get_connection() as conn:
+            rows = conn.execute(
+                """
+                SELECT id, source_ref, source_path, created_at
+                FROM ignored_tracks
+                ORDER BY created_at DESC, id DESC
+                LIMIT ? OFFSET ?;
+                """,
+                (limit, offset),
+            ).fetchall()
+            return [
+                {
+                    "id": r["id"],
+                    "source_ref": r["source_ref"],
+                    "source_path": r["source_path"],
+                    "created_at": str(r["created_at"]) if r["created_at"] is not None else "",
+                }
+                for r in rows
+            ]
+
+    def clear_ignored_tracks(self) -> int:
+        """Vide l'ensemble des pistes ignorées."""
+        with self.get_connection() as conn:
+            cur = conn.execute("DELETE FROM ignored_tracks;")
+            return cur.rowcount
+
     def prune_missing_tracks(self, source_id: int, current_refs: set[str]) -> int:
         """Supprime de la base les pistes d'une source qui n'existent plus sur le disque/cloud."""
         with self.get_connection() as conn:

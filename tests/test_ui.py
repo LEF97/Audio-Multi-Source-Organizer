@@ -439,7 +439,38 @@ def test_folder_tree_collapsed_by_default(qapp: QApplication, db: DatabaseManage
         item = window.folder_tree.topLevelItem(i)
         assert item is not None
         assert not item.isExpanded()
-        # L'icône doit être 💾 ou ☁️ et non plus 📁
-        assert "💾" in item.text(0) or "☁️" in item.text(0)
+        # L'icône doit être 💾, ☁️ ou 🗑️ (Corbeille)
+        assert "💾" in item.text(0) or "☁️" in item.text(0) or "🗑️" in item.text(0)
+    window.close()
+
+
+def test_trash_view_and_restore(qapp: QApplication, db: DatabaseManager) -> None:
+    """Vérifie l'affichage de la Corbeille sous les sources et la restauration de morceaux."""
+    db.ignore_track("D:/Music/song_a.mp3", "D:/Music/song_a.mp3")
+    db.ignore_track("D:/Music/song_b.mp3", "D:/Music/song_b.mp3")
+
+    window = MainWindow(db=db)
+    root_count = window.folder_tree.topLevelItemCount()
+    assert root_count >= 2
+
+    # Le dernier élément racine est la Corbeille
+    trash_item = window.folder_tree.topLevelItem(root_count - 1)
+    assert trash_item is not None
+    assert "🗑️" in trash_item.text(0)
+    assert trash_item.text(1) == "2"
+
+    # Sélection de la Corbeille
+    window.folder_tree.setCurrentItem(trash_item)
+    assert window.right_stack.currentIndex() == 2
+    assert window.trash_table.rowCount() == 2
+
+    # Restauration d'un morceau
+    item_data = window.trash_table.item(0, 0).data(Qt.ItemDataRole.UserRole)
+    assert item_data is not None
+    window._restore_ignored_items([item_data])
+
+    assert db.count_ignored_tracks() == 1
+    assert window.trash_table.rowCount() == 1
+
     window.close()
 
