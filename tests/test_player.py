@@ -590,7 +590,10 @@ def test_player_service_get_next_index(qapp: QApplication, sample_tracks: list[T
     player.toggle_shuffle()
     assert player.is_shuffle is True
     next_idx = player.get_next_index()
-    assert next_idx is not None or len(sample_tracks) == 1
+    if player.current_index < len(player.playlist) - 1:
+        assert next_idx == player.current_index + 1
+    else:
+        assert next_idx is None
 
     player.clear_playlist()
     assert player.get_next_index() is None
@@ -1539,9 +1542,77 @@ def test_drag_and_drop_reorder_playlist(qapp: QApplication) -> None:
     player.move_tracks([0, 1], 4)
     assert player.current_track.title == "Track 2"
 
-    # 4. Bouton "Mélanger la suite" dans l'UI
-    view.btn_shuffle_below.click()
+    # 4. Bouton "Mélanger les titres" dans l'UI : grisé si shuffle inactif
+    assert view.btn_shuffle_tracks.isEnabled() is False
+    # Activation du mode aléatoire
+    player.set_shuffle(True)
+    assert view.btn_shuffle_tracks.isEnabled() is True
+
+    # Clic sur le bouton de mélange
+    view.btn_shuffle_tracks.click()
     assert player.is_shuffle is True
+    assert player.current_track.title == "Track 2"
+
+    view.close()
+
+
+def test_shuffle_all_tracks_and_restore_order(qapp: QApplication) -> None:
+    """Vérifie le nouveau comportement complet du mode Aléatoire (Shuffle) :
+    1. Si désactivé -> activé : toute la playlist est mélangée, la piste en cours est déplacée.
+    2. Si activé -> désactivé : l'ordre initial des pistes est restauré fidèlement.
+    3. Bouton 'Mélanger les titres' : grisé si shuffle inactif, actif si shuffle actif.
+    4. Clic sur 'Mélanger les titres' : re-mélange tous les titres.
+    """
+    from amso.ui.views.playlist_view import PlaylistView
+
+    player = PlayerService()
+    tracks = [
+        TrackRecord(source_ref=f"C:/audio/track_{i}.mp3", title=f"Track {i:02d}")
+        for i in range(25)
+    ]
+    # Lancer la lecture sur Track 10
+    player.play_tracks(tracks, start_index=10)
+    assert player.current_index == 10
+    assert player.current_track.title == "Track 10"
+    initial_order = [t.title for t in player.playlist]
+
+    view = PlaylistView(player)
+
+    # 1. Le bouton "Mélanger les titres" doit être désactivé (grisé) tant que shuffle est inactif
+    assert player.is_shuffle is False
+    assert view.btn_shuffle_tracks.isEnabled() is False
+
+    # 2. Activation du shuffle : Toute la playlist est mélangée
+    player.set_shuffle(True)
+    assert player.is_shuffle is True
+    assert view.btn_shuffle_tracks.isEnabled() is True
+
+    shuffled_order_1 = [t.title for t in player.playlist]
+    # L'ordre doit avoir changé
+    assert shuffled_order_1 != initial_order
+    # Tous les titres d'origine sont toujours là
+    assert sorted(shuffled_order_1) == sorted(initial_order)
+    # La piste en cours reste Track 10
+    assert player.current_track.title == "Track 10"
+    assert player.playlist[player.current_index].title == "Track 10"
+
+    # 3. Clic sur "Mélanger les titres" : re-mélange à nouveau
+    view.btn_shuffle_tracks.click()
+    shuffled_order_2 = [t.title for t in player.playlist]
+    assert sorted(shuffled_order_2) == sorted(initial_order)
+    assert player.current_track.title == "Track 10"
+    assert player.playlist[player.current_index].title == "Track 10"
+
+    # 4. Désactivation du shuffle : L'ordre initial est fidèlement restauré
+    player.set_shuffle(False)
+    assert player.is_shuffle is False
+    assert view.btn_shuffle_tracks.isEnabled() is False
+
+    restored_order = [t.title for t in player.playlist]
+    assert restored_order == initial_order
+    # L'index de la piste active est bien repositionné à 10
+    assert player.current_index == 10
+    assert player.current_track.title == "Track 10"
 
     view.close()
 

@@ -16,6 +16,14 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 ## [0.2.0-dev] - En cours de développement
 
 ### Added
+- **Refonte et perfectionnement du mode Aléatoire (Shuffle)** :
+  - **Mélange intégral de la playlist** : lorsque l'icône Shuffle passe de désactivé à activé, l'ensemble complet de la file d'attente/tableau est mélangé aléatoirement (et non plus uniquement les titres en dessous). La piste en cours de lecture est elle-même redistribuée aléatoirement (pouvant se retrouver en première comme en dernière position) tout en poursuivant sa lecture sans coupure.
+  - **Restauration fidèle de l'ordre initial** : dès que le mode Shuffle est désactivé, la playlist reprend instantanément son ordre de titres d'origine (avant le mélange), l'index de lecture étant automatiquement recalé sur la position d'origine du morceau actif.
+  - **Bouton et menu contextuel « 🎲 Mélanger les titres »** :
+    - Renommage de « Mélanger la suite » en « 🎲 Mélanger les titres » (`playlist.btn_shuffle_tracks` et `playlist.menu_shuffle_tracks`).
+    - État contextuel strict : le bouton et l'action du menu clic droit ne sont désormais activables que lorsque le mode Shuffle est actif (affichés en grisé/désactivé sinon).
+    - Re-mélange dynamique : un clic sur ce bouton re-mélange l'ensemble des titres avec redistribution fluide de la piste en cours.
+  - **Localisation complète** : traductions synchronisées dans les 5 langues officielles de l'application (FR, EN, ES, DE, IT).
 - **Refonte visuelle et interactive de la page À propos** :
   - **Bannière supérieure unifiée** : fusion harmonieuse du logo AMSO et du bloc de texte descriptif dans une même carte stylisée.
   - **Spectre audio réactif en direct** : les barres de spectre en arrière-plan s'animent en rythme avec la musique en cours de lecture et retombent doucement à plat (*flat*) lorsque la musique est arrêtée ou en pause.

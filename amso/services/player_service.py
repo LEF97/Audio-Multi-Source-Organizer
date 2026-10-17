@@ -127,6 +127,7 @@ class PlayerService(QObject):
 
         # File d'attente
         self._playlist: list[TrackRecord] = []
+        self._unshuffled_playlist: list[TrackRecord] | None = None
         self._current_index: int = -1
         self._shuffle: bool = cfg.get_player_shuffle()
         self._shuffle_order: list[int] = []
@@ -359,11 +360,10 @@ class PlayerService(QObject):
         self._playlist = list(tracks)
         valid_index = max(0, min(start_index, len(self._playlist) - 1))
 
-        if self._shuffle and valid_index < len(self._playlist) - 1:
-            to_shuffle = self._playlist[valid_index + 1 :]
-            if len(to_shuffle) > 1:
-                random.shuffle(to_shuffle)
-                self._playlist = self._playlist[: valid_index + 1] + to_shuffle
+        if self._shuffle:
+            self._unshuffled_playlist = list(tracks)
+        else:
+            self._unshuffled_playlist = None
 
         self._shuffle_order = list(range(len(self._playlist)))
         self._pending_seek_ms = 0
@@ -381,6 +381,7 @@ class PlayerService(QObject):
 
         self._playlist = list(tracks)
         self._current_index = max(0, min(current_index, len(self._playlist) - 1))
+        self._unshuffled_playlist = list(tracks) if self._shuffle else None
         self._shuffle_order = list(range(len(self._playlist)))
         dur_ms = int((self.current_track.duration_seconds or 0) * 1000) if self.current_track else 0
         clamped_pos_ms = max(0, initial_position_ms)
@@ -430,6 +431,8 @@ class PlayerService(QObject):
 
         if not self._playlist:
             self._playlist = list(tracks)
+            if self._shuffle:
+                self._unshuffled_playlist = list(tracks)
             self._current_index = 0
             self._rebuild_shuffle_order()
             self.playlist_updated.emit()
@@ -442,6 +445,9 @@ class PlayerService(QObject):
             insert_pos = 0
             for i, t in enumerate(tracks):
                 self._playlist.insert(insert_pos + i, t)
+            if self._unshuffled_playlist is not None:
+                for i, t in enumerate(tracks):
+                    self._unshuffled_playlist.insert(insert_pos + i, t)
             self._current_index = 0
             self._rebuild_shuffle_order()
             self.playlist_updated.emit()
@@ -454,6 +460,14 @@ class PlayerService(QObject):
         for i, t in enumerate(tracks):
             self._playlist.insert(insert_pos + i, t)
 
+        if self._unshuffled_playlist is not None:
+            cur = self.current_track
+            unshuf_pos = len(self._unshuffled_playlist)
+            if cur and cur in self._unshuffled_playlist:
+                unshuf_pos = self._unshuffled_playlist.index(cur) + 1
+            for i, t in enumerate(tracks):
+                self._unshuffled_playlist.insert(unshuf_pos + i, t)
+
         self._rebuild_shuffle_order()
         self.playlist_updated.emit()
 
@@ -464,6 +478,10 @@ class PlayerService(QObject):
 
         was_empty = len(self._playlist) == 0
         self._playlist.extend(tracks)
+        if self._unshuffled_playlist is not None:
+            self._unshuffled_playlist.extend(tracks)
+        elif self._shuffle and was_empty:
+            self._unshuffled_playlist = list(self._playlist)
         self._rebuild_shuffle_order()
 
         if was_empty or self._current_index < 0:
@@ -479,11 +497,19 @@ class PlayerService(QObject):
         if not (0 <= index < len(self._playlist)):
             return
 
+        track_to_remove = self._playlist[index]
+        if self._unshuffled_playlist is not None and track_to_remove in self._unshuffled_playlist:
+            try:
+                self._unshuffled_playlist.remove(track_to_remove)
+            except ValueError:
+                pass
+
         is_current = index == self._current_index
         del self._playlist[index]
 
         if not self._playlist:
             self.stop()
+            self._unshuffled_playlist = None
             self._current_index = -1
             self.playlist_updated.emit()
             self.track_changed.emit(None)
@@ -504,41 +530,58 @@ class PlayerService(QObject):
         """Vide entièrement la playlist et stoppe la lecture."""
         self.stop()
         self._playlist.clear()
+        self._unshuffled_playlist = None
         self._shuffle_order.clear()
         self._current_index = -1
         self.playlist_updated.emit()
         self.track_changed.emit(None)
 
-    def shuffle_playlist(self, below_current: bool = True) -> None:
-        """Mélange réellement les pistes de la file d'attente (playlist).
+    def shuffle_all_tracks(self) -> None:
+        """Mélange l'ensemble complet des titres de la playlist et repositionne l'index de la piste active."""
+        if len(self._playlist) <= 1:
+            return
+
+        if self._shuffle and self._unshuffled_playlist is None:
+            self._unshuffled_playlist = list(self._playlist)
+
+        current_track = self.current_track
+        random.shuffle(self._playlist)
+
+        if current_track is not None:
+            try:
+                for idx, t in enumerate(self._playlist):
+                    if t is current_track:
+                        self._current_index = idx
+                        break
+                else:
+                    self._current_index = self._playlist.index(current_track)
+            except ValueError:
+                self._current_index = max(0, min(self._current_index, len(self._playlist) - 1))
+
+        self._shuffle_order = list(range(len(self._playlist)))
+        self.playlist_updated.emit()
+
+    def shuffle_playlist(self, below_current: bool = False) -> None:
+        """Mélange les pistes de la file d'attente (playlist).
 
         Si below_current est True et qu'un morceau est en cours de lecture, les morceaux
         situés avant et le morceau en cours restent inchangés, et seuls tous les morceaux
-        en dessous (de current_index + 1 à la fin) sont mélangés aléatoirement.
-        Si aucun morceau n'est en cours ou si on est sur la dernière piste, toute la playlist
-        est mélangée (avec la piste en cours positionnée au début).
+        en dessous sont mélangés aléatoirement.
+        Sinon (comportement par défaut), toute la playlist est mélangée et la piste en cours
+        peut se retrouver à n'importe quelle position.
         """
-        n = len(self._playlist)
-        if n <= 1:
+        if len(self._playlist) <= 1:
             return
 
-        if below_current and 0 <= self._current_index < n - 1:
+        if below_current and 0 <= self._current_index < len(self._playlist) - 1:
             to_shuffle = self._playlist[self._current_index + 1 :]
             if len(to_shuffle) > 1:
                 random.shuffle(to_shuffle)
                 self._playlist = self._playlist[: self._current_index + 1] + to_shuffle
+            self._shuffle_order = list(range(len(self._playlist)))
+            self.playlist_updated.emit()
         else:
-            current_track = self.current_track
-            if current_track and current_track in self._playlist:
-                rem = [t for t in self._playlist if t != current_track]
-                random.shuffle(rem)
-                self._playlist = [current_track] + rem
-                self._current_index = 0
-            else:
-                random.shuffle(self._playlist)
-
-        self._shuffle_order = list(range(len(self._playlist)))
-        self.playlist_updated.emit()
+            self.shuffle_all_tracks()
 
     def move_tracks(self, from_rows: list[int], to_row: int) -> None:
         """Déplace un groupe de pistes vers une nouvelle position dans la playlist (Drag & Drop)."""
@@ -561,6 +604,9 @@ class PlayerService(QObject):
 
         if current_track and current_track in self._playlist:
             self._current_index = self._playlist.index(current_track)
+
+        if self._unshuffled_playlist is not None:
+            self._unshuffled_playlist = list(self._playlist)
 
         self._shuffle_order = list(range(len(self._playlist)))
         self.playlist_updated.emit()
@@ -931,8 +977,31 @@ class PlayerService(QObject):
                 get_config_manager().set_player_shuffle(self._shuffle)
             except Exception:
                 pass
+
             if self._shuffle:
-                self.shuffle_playlist(below_current=True)
+                # Activation : mémorise l'ordre initial et mélange toute la playlist
+                if self._unshuffled_playlist is None:
+                    self._unshuffled_playlist = list(self._playlist)
+                self.shuffle_all_tracks()
+            else:
+                # Désactivation : reprend l'ordre des pistes initial
+                if self._unshuffled_playlist is not None:
+                    current_track = self.current_track
+                    self._playlist = list(self._unshuffled_playlist)
+                    self._unshuffled_playlist = None
+                    if current_track is not None:
+                        try:
+                            for idx, t in enumerate(self._playlist):
+                                if t is current_track:
+                                    self._current_index = idx
+                                    break
+                            else:
+                                self._current_index = self._playlist.index(current_track)
+                        except ValueError:
+                            self._current_index = max(0, min(self._current_index, len(self._playlist) - 1))
+                    self._shuffle_order = list(range(len(self._playlist)))
+                    self.playlist_updated.emit()
+
             self.shuffle_changed.emit(self._shuffle)
 
     def toggle_shuffle(self) -> None:

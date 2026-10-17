@@ -133,10 +133,10 @@ class PlaylistView(QWidget):
         self.lbl_playlist_stats.setStyleSheet("color: #94A3B8; font-size: 13px; font-weight: 500; margin-right: 12px;")
         top_layout.addWidget(self.lbl_playlist_stats)
 
-        self.btn_shuffle_below = QPushButton(tr("playlist.btn_shuffle_below"))
-        self.btn_shuffle_below.setProperty("class", "secondary-btn")
-        self.btn_shuffle_below.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_shuffle_below.setStyleSheet("""
+        self.btn_shuffle_tracks = QPushButton(tr("playlist.btn_shuffle_tracks"))
+        self.btn_shuffle_tracks.setProperty("class", "secondary-btn")
+        self.btn_shuffle_tracks.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_shuffle_tracks.setStyleSheet("""
             QPushButton {
                 background-color: #20242D;
                 color: #38BDF8;
@@ -152,8 +152,14 @@ class PlaylistView(QWidget):
                 border-color: #38BDF8;
                 color: #7DD3FC;
             }
+            QPushButton:disabled {
+                background-color: #161920;
+                border-color: #262B37;
+                color: #4B5563;
+            }
         """)
-        top_layout.addWidget(self.btn_shuffle_below)
+        top_layout.addWidget(self.btn_shuffle_tracks)
+        self.btn_shuffle_below = self.btn_shuffle_tracks
 
         self.btn_clear_playlist = QPushButton(tr("player.btn_clear_playlist"))
         self.btn_clear_playlist.setProperty("class", "secondary-btn")
@@ -424,7 +430,7 @@ class PlaylistView(QWidget):
         self.btn_shuffle.clicked.connect(self.player.toggle_shuffle)
         self.btn_repeat.clicked.connect(self.player.toggle_repeat)
         self.btn_mute.clicked.connect(self.player.toggle_mute)
-        self.btn_shuffle_below.clicked.connect(self._on_shuffle_below_clicked)
+        self.btn_shuffle_tracks.clicked.connect(self._on_shuffle_tracks_clicked)
         self.btn_clear_playlist.clicked.connect(self.player.clear_playlist)
 
         # Seekbar
@@ -525,10 +531,15 @@ class PlaylistView(QWidget):
             curr_sec = (value / 1000.0) * track.duration_seconds
             self.lbl_time_cur.setText(format_duration(curr_sec))
 
+    def _on_shuffle_tracks_clicked(self) -> None:
+        """Déclenche le mélange complet des titres de la playlist."""
+        if not self.player.is_shuffle:
+            return
+        self.player.shuffle_all_tracks()
+
     def _on_shuffle_below_clicked(self) -> None:
-        """Déclenche le mélange des pistes en dessous de la piste en cours et active l'état shuffle."""
-        self.player.set_shuffle(True)
-        self.player.shuffle_playlist(below_current=True)
+        """Alias de rétrocompatibilité."""
+        self._on_shuffle_tracks_clicked()
 
     def _on_table_double_clicked(self, index) -> None:
         if index.isValid():
@@ -550,11 +561,11 @@ class PlaylistView(QWidget):
 
             menu.addSeparator()
 
-        if len(self.player.playlist) > 1:
-            act_shuffle = QAction(tr("playlist.menu_shuffle_below"), self)
-            act_shuffle.triggered.connect(self._on_shuffle_below_clicked)
-            menu.addAction(act_shuffle)
-            menu.addSeparator()
+        act_shuffle = QAction(tr("playlist.menu_shuffle_tracks"), self)
+        act_shuffle.setEnabled(bool(self.player.is_shuffle) and len(self.player.playlist) > 1)
+        act_shuffle.triggered.connect(self._on_shuffle_tracks_clicked)
+        menu.addAction(act_shuffle)
+        menu.addSeparator()
 
         act_clear = QAction(tr("playlist.menu_clear"), self)
         act_clear.triggered.connect(self.player.clear_playlist)
@@ -562,7 +573,14 @@ class PlaylistView(QWidget):
 
         menu.exec(QCursor.pos())
 
+    def _update_shuffle_tracks_state(self) -> None:
+        """Active ou désactive le bouton et actions de mélange selon le mode aléatoire."""
+        can_shuffle = bool(self.player.is_shuffle) and len(self.player.playlist) > 1
+        if hasattr(self, "btn_shuffle_tracks"):
+            self.btn_shuffle_tracks.setEnabled(can_shuffle)
+
     def _update_stats_label(self) -> None:
+        self._update_shuffle_tracks_state()
         tracks = self.player.playlist
         count = len(tracks)
         if count == 0:
@@ -657,6 +675,7 @@ class PlaylistView(QWidget):
             """)
         else:
             self._style_mini_button(self.btn_shuffle)
+        self._update_shuffle_tracks_state()
 
     def update_repeat_ui(self, mode: int) -> None:
         if mode == RepeatMode.OFF:
@@ -684,8 +703,10 @@ class PlaylistView(QWidget):
     def retranslate_ui(self) -> None:
         """Met à jour l'ensemble des textes, infobulles et en-têtes selon la langue active."""
         self.lbl_page_title.setText(tr("playlist.page_title"))
-        if hasattr(self, "btn_shuffle_below"):
-            self.btn_shuffle_below.setText(tr("playlist.btn_shuffle_below"))
+        if hasattr(self, "btn_shuffle_tracks"):
+            self.btn_shuffle_tracks.setText(tr("playlist.btn_shuffle_tracks"))
+        elif hasattr(self, "btn_shuffle_below"):
+            self.btn_shuffle_below.setText(tr("playlist.btn_shuffle_tracks"))
         self.btn_clear_playlist.setText(tr("player.btn_clear_playlist"))
         self._update_stats_label()
 
