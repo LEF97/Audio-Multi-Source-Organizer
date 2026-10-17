@@ -1128,11 +1128,16 @@ class DatabaseManager:
         """Récupère une liste de pistes par leurs identifiants en préservant l'ordre."""
         if not track_ids:
             return []
-        placeholders = ",".join("?" for _ in track_ids)
+        batch_size = 900
+        tracks_by_id: dict[int, TrackRecord] = {}
         with self.get_connection() as conn:
-            rows = conn.execute(f"SELECT * FROM tracks WHERE id IN ({placeholders});", list(track_ids)).fetchall()
-            tracks_by_id = {r["id"]: TrackRecord.from_row(r) for r in rows}
-            return [tracks_by_id[tid] for tid in track_ids if tid in tracks_by_id]
+            for i in range(0, len(track_ids), batch_size):
+                chunk = track_ids[i : i + batch_size]
+                placeholders = ",".join("?" for _ in chunk)
+                rows = conn.execute(f"SELECT * FROM tracks WHERE id IN ({placeholders});", list(chunk)).fetchall()
+                for r in rows:
+                    tracks_by_id[r["id"]] = TrackRecord.from_row(r)
+        return [tracks_by_id[tid] for tid in track_ids if tid in tracks_by_id]
 
     def delete_track(self, track_id: int) -> bool:
         """Supprime une piste unique."""

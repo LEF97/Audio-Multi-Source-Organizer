@@ -1395,3 +1395,82 @@ def test_restore_saved_playlist_ignores_phantom_tracks(qapp: QApplication, tmp_p
     window.close()
 
 
+def test_saved_playlist_v2_format_and_debounced_save(qapp: QApplication, tmp_path: Path, monkeypatch) -> None:
+    """Vérifie la sauvegarde compacte v2 (track_ids), le déclenchement du timer de debounce et la restauration."""
+    import json
+    import time
+
+    db_path = tmp_path / "test_v2.db"
+    playlist_path = tmp_path / "test_playlist_v2.json"
+    monkeypatch.setenv("AMSO_PLAYLIST_PATH", str(playlist_path))
+
+    db = DatabaseManager(str(db_path))
+    tracks = [
+        TrackRecord(source_ref=f"D:/Music/track_{i}.mp3", title=f"Track {i}", duration_seconds=200.0)
+        for i in range(10)
+    ]
+    saved_ids = [db.upsert_track(t) for t in tracks]
+    assert len(saved_ids) == 10
+    saved_tracks = db.get_tracks_by_ids(saved_ids)
+    assert len(saved_tracks) == 10
+    assert all(t.id is not None for t in saved_tracks)
+
+    window = MainWindow(db=db)
+
+    # 1. Vérifier que play_tracks déclenche le timer de sauvegarde
+    window.player_service.play_tracks(saved_tracks, start_index=3)
+    assert window._playlist_save_timer.isActive()
+
+    # Sauvegarde synchrone immédiate
+    window._save_current_playlist(immediate=True)
+    assert playlist_path.exists()
+
+    content = json.loads(playlist_path.read_text(encoding="utf-8"))
+    assert content["version"] == 2
+    assert content["current_index"] == 3
+    assert "track_ids" in content
+    assert content["track_ids"] == [t.id for t in saved_tracks]
+    assert "tracks" not in content  # Format compact sans duplication des métadonnées
+
+    # 2. Vérifier la sauvegarde asynchrone en tâche de fond (immediate=False)
+    window.player_service.play_tracks(saved_tracks, start_index=5)
+    window._save_current_playlist(immediate=False)
+    time.sleep(0.1)  # Laisser le thread terminer l'écriture
+    content_async = json.loads(playlist_path.read_text(encoding="utf-8"))
+    assert content_async["current_index"] == 5
+
+    window.close()
+
+    # 3. Vérifier la restauration v2 dans une nouvelle instance
+    win2 = MainWindow(db=db)
+    assert len(win2.player_service.playlist) == 10
+    assert win2.player_service.current_index == 5
+    assert win2.player_service.playlist[0].id == saved_tracks[0].id
+    assert win2.player_service.playlist[5].id == saved_tracks[5].id
+    win2.close()
+
+
+def test_database_get_tracks_by_ids_chunking(tmp_path: Path) -> None:
+    """Vérifie que get_tracks_by_ids gère plus de 900 éléments (limite de variables SQLite) et préserve l'ordre."""
+    db_path = tmp_path / "test_chunking.db"
+    db = DatabaseManager(str(db_path))
+
+    # Insérer 1050 pistes de test dans une seule transaction pour rapidité d'exécution
+    with db.get_connection() as conn:
+        conn.executemany(
+            "INSERT INTO tracks (source_ref, source_type, title) VALUES (?, 'local', ?);",
+            [(f"C:/audio/test_{i}.mp3", f"Title {i}") for i in range(1050)],
+        )
+        rows = conn.execute("SELECT id FROM tracks ORDER BY id ASC;").fetchall()
+        all_ids = [r["id"] for r in rows]
+
+    assert len(all_ids) == 1050
+
+    # Test avec inversion de l'ordre pour s'assurer que l'ordre des IDs demandés est respecté
+    reversed_ids = list(reversed(all_ids))
+    fetched = db.get_tracks_by_ids(reversed_ids)
+    assert len(fetched) == 1050
+    assert [t.id for t in fetched] == reversed_ids
+
+
+
