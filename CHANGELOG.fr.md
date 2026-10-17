@@ -20,6 +20,7 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 - **Suppression des alertes modales bloquantes en arrière-plan** : les synchronisations automatiques en tâche de fond n'affichent plus de boîte de dialogue modale intrusive en cas d'erreur transitoire, mais consignent proprement l'alerte dans le journal d'activité et la barre d'état cliquable.
 - **Volume audio trop faible au démarrage** : élimination d'une condition de course lors de l'initialisation du moteur de lecture VLC et neutralisation de l'atténuation automatique (*ducking*) du mixeur audio de Windows.
 - **Affichage du logo officiel dans l'exécutable Windows** : correction de la résolution multi-chemins des ressources embarquées PyInstaller (`sys._MEIPASS`) pour afficher le logo AMSO haute définition dans le bandeau latéral et la page À propos au lieu de l'icône de repli 🎵.
+- **Restauration de la playlist et isolation hermétique des tests** : élimination d'une pollution du profil utilisateur où l'exécution des tests automatisés pouvait écraser `saved_playlist.json` avec des pistes factices (*Track 1, Track 2, Track 3*) et une position temporelle erronée (14:10 sur un morceau de 3:00). Isolation complète de `AMSO_DATA_DIR`, `AMSO_PLAYLIST_PATH` et `AMSO_DB_PATH` dans l'environnement de test, filtrage automatique des pistes locales fantômes ou introuvables lors du chargement de la playlist, et sécurisation de la position initiale pour ne jamais dépasser la durée du titre.
 
 ---
 

@@ -376,13 +376,17 @@ class PlayerService(QObject):
         self._playlist = list(tracks)
         self._rebuild_shuffle_order()
         self._current_index = max(0, min(current_index, len(self._playlist) - 1))
-        self._pending_seek_ms = max(0, initial_position_ms)
-        self._current_time_ms = self._pending_seek_ms
+        dur_ms = int((self.current_track.duration_seconds or 0) * 1000) if self.current_track else 0
+        clamped_pos_ms = max(0, initial_position_ms)
+        if dur_ms > 0 and clamped_pos_ms >= dur_ms:
+            clamped_pos_ms = 0
+
+        self._pending_seek_ms = clamped_pos_ms
+        self._current_time_ms = clamped_pos_ms
 
         self.playlist_updated.emit()
         if self.current_track:
             self.track_changed.emit(self.current_track)
-            dur_ms = int((self.current_track.duration_seconds or 0) * 1000)
             self._total_time_ms = dur_ms
             ratio = min(1.0, max(0.0, self._pending_seek_ms / dur_ms)) if dur_ms > 0 else 0.0
             self.position_changed.emit(self._pending_seek_ms, dur_ms, ratio)

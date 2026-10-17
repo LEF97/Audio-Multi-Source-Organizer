@@ -338,6 +338,12 @@ class TrackRecord:
 
 def get_default_data_dir() -> Path:
     """Retourne le répertoire de données standard utilisateur selon l'OS (AppData, etc.)."""
+    custom = os.getenv("AMSO_DATA_DIR")
+    if custom and custom.strip():
+        app_dir = Path(custom.strip()).resolve()
+        app_dir.mkdir(parents=True, exist_ok=True)
+        return app_dir
+
     if sys.platform == "win32":
         base = os.getenv("APPDATA") or (Path.home() / "AppData" / "Roaming")
     elif sys.platform == "darwin":

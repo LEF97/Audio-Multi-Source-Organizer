@@ -5,24 +5,34 @@ import os
 # Forcer Qt en mode offscreen pour tous les tests headless (CI Linux / macOS / Windows)
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-# Isoler le fichier config.ini pour qu'aucun test n'écrase la configuration réelle de l'utilisateur
+# Isoler complètement l'environnement AMSO (data dir, config, playlist, DB)
+# pour qu'aucun test n'écrase ni ne pollue les fichiers réels de l'utilisateur (%APPDATA%\AMSO).
 import tempfile
 from pathlib import Path
 
 import pytest
 
-_isolated_test_cfg = Path(tempfile.gettempdir()) / "amso_pytest_isolated_config.ini"
-os.environ["AMSO_CONFIG_PATH"] = str(_isolated_test_cfg)
+_isolated_test_dir = Path(tempfile.gettempdir()) / "amso_pytest_isolated_global"
+_isolated_test_dir.mkdir(parents=True, exist_ok=True)
+os.environ.setdefault("AMSO_DATA_DIR", str(_isolated_test_dir))
+os.environ.setdefault("AMSO_CONFIG_PATH", str(_isolated_test_dir / "config.ini"))
+os.environ.setdefault("AMSO_PLAYLIST_PATH", str(_isolated_test_dir / "saved_playlist.json"))
+os.environ.setdefault("AMSO_DB_PATH", str(_isolated_test_dir / "isolated_test.db"))
 
 
 @pytest.fixture(autouse=True)
 def isolate_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    """Garantit une configuration vierge et isolée pour chaque test et réinitialise les singletons."""
+    """Garantit un environnement vierge et totalement isolé pour chaque test et réinitialise les singletons."""
     import amso.core.config as cfg_mod
     import amso.core.i18n as i18n_mod
 
-    cfg_file = tmp_path / "config.ini"
-    monkeypatch.setenv("AMSO_CONFIG_PATH", str(cfg_file))
+    test_data_dir = tmp_path / "amso_test_data"
+    test_data_dir.mkdir(parents=True, exist_ok=True)
+
+    monkeypatch.setenv("AMSO_DATA_DIR", str(test_data_dir))
+    monkeypatch.setenv("AMSO_CONFIG_PATH", str(test_data_dir / "config.ini"))
+    monkeypatch.setenv("AMSO_PLAYLIST_PATH", str(test_data_dir / "saved_playlist.json"))
+    monkeypatch.setenv("AMSO_DB_PATH", str(test_data_dir / "amso_library.db"))
 
     # Réinitialisation des singletons
     cfg_mod._default_config_manager = None

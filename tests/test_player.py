@@ -1333,3 +1333,65 @@ def test_player_startup_volume_locking_and_countdown(tmp_path: Path, monkeypatch
     assert player._volume_enforce_ticks == 0
     assert applied_calls[-1] == 90
 
+
+def test_load_playlist_clamps_position_beyond_duration(qapp: QApplication) -> None:
+    """Vérifie que charger une playlist avec une position > durée du morceau réinitialise la position à 0:00."""
+    player = PlayerService()
+    t = TrackRecord(
+        source_ref="C:/dummy/test.mp3",
+        source_path="C:/dummy/test.mp3",
+        title="Test Track",
+        duration_seconds=180.0,  # 3 minutes = 180 000 ms
+    )
+
+    positions = []
+    player.position_changed.connect(lambda cur, tot, ratio: positions.append((cur, tot, ratio)))
+
+    # Position initiale de 14m10s (850 323 ms) sur un morceau de 3m -> doit être réinitialisée à 0 ms
+    player.load_playlist([t], current_index=0, initial_position_ms=850323)
+
+    assert player.current_time_ms == 0
+    assert player._pending_seek_ms == 0
+    assert len(positions) == 1
+    assert positions[0] == (0, 180000, 0.0)
+
+    # Position initiale valide (60s = 60 000 ms) -> conservée
+    player.load_playlist([t], current_index=0, initial_position_ms=60000)
+    assert player.current_time_ms == 60000
+    assert player._pending_seek_ms == 60000
+
+
+def test_restore_saved_playlist_ignores_phantom_tracks(qapp: QApplication, tmp_path: Path) -> None:
+    """Vérifie que MainWindow._restore_saved_playlist ignore les pistes fantômes introuvables."""
+    import json
+
+    db_path = tmp_path / "test_phantom.db"
+    playlist_path = tmp_path / "saved_playlist.json"
+
+    # Écrire une playlist fantôme (fichiers inexistants et non présents en base)
+    phantom_data = {
+        "version": 1,
+        "current_index": 0,
+        "position_ms": 850323,
+        "tracks": [
+            {
+                "id": None,
+                "source_ref": "Z:/NonExistent/ghost1.mp3",
+                "source_type": "local",
+                "source_path": "Z:/NonExistent/ghost1.mp3",
+                "title": "Ghost 1",
+                "duration_seconds": 180.0,
+            }
+        ],
+    }
+    playlist_path.write_text(json.dumps(phantom_data), encoding="utf-8")
+
+    db = DatabaseManager(str(db_path))
+    window = MainWindow(db=db)
+
+    # La playlist du lecteur doit être vide (piste fantôme ignorée)
+    assert len(window.player_service.playlist) == 0
+    assert window.player_service.current_track is None
+    window.close()
+
+

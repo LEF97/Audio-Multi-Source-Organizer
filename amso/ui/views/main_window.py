@@ -457,14 +457,40 @@ class MainWindow(QMainWindow):
                 else:
                     restored_tracks.append(TrackRecord.from_dict(t_dict))
 
-            if restored_tracks:
-                self.player_service.load_playlist(
-                    restored_tracks,
-                    current_index=saved_index,
-                    initial_position_ms=saved_pos_ms,
-                )
-                if hasattr(self, "page_playlist") and self.page_playlist:
-                    self.page_playlist._update_stats_label()
+            # Filtrage des pistes orphelines ou fantômes (ex. mocks de tests ou fichiers locaux inexistants)
+            valid_tracks: list[TrackRecord] = []
+            for trk in restored_tracks:
+                if trk.source_type == SourceType.LOCAL:
+                    path_str = trk.source_path or trk.source_ref
+                    if path_str and Path(path_str).exists():
+                        valid_tracks.append(trk)
+                    elif trk.id is not None and trk.id in db_tracks:
+                        valid_tracks.append(trk)
+                    elif self.db and path_str and self.db.get_track_by_ref(path_str):
+                        valid_tracks.append(trk)
+                else:
+                    valid_tracks.append(trk)
+
+            if not valid_tracks:
+                logger.info("Playlist sauvegardée ignorée : aucun fichier valide trouvé.")
+                return
+
+            saved_index = max(0, min(saved_index, len(valid_tracks) - 1))
+            current_track = valid_tracks[saved_index]
+            if current_track.duration_seconds and current_track.duration_seconds > 0:
+                dur_ms = int(current_track.duration_seconds * 1000)
+                if saved_pos_ms >= dur_ms:
+                    saved_pos_ms = 0
+                else:
+                    saved_pos_ms = max(0, saved_pos_ms)
+
+            self.player_service.load_playlist(
+                valid_tracks,
+                current_index=saved_index,
+                initial_position_ms=saved_pos_ms,
+            )
+            if hasattr(self, "page_playlist") and self.page_playlist:
+                self.page_playlist._update_stats_label()
         except Exception as exc:
             logger.warning("Erreur lors de la restauration de la playlist : %s", exc)
 
