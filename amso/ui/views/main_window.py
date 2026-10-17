@@ -176,7 +176,11 @@ class CollapsibleDrawer(QWidget):
 class MainWindow(QMainWindow):
     """Fenêtre principale de l'organisateur audio multi-source."""
 
-    def __init__(self, db: DatabaseManager) -> None:
+    def __init__(
+        self,
+        db: DatabaseManager,
+        progress_callback: Any | None = None,
+    ) -> None:
         super().__init__()
         self.db = db
         self.scan_worker: ScanWorker | None = None
@@ -197,6 +201,8 @@ class MainWindow(QMainWindow):
         self.folder_table_model = FolderTrackTableModel(db=self.db, parent=self)
 
         # Service audio central python-vlc
+        if progress_callback:
+            progress_callback(45, tr("splash.loading_audio"))
         self.player_service = PlayerService(parent=self)
         self._player_state: str = "stopped"
         self.player_service.error_occurred.connect(self._on_player_error)
@@ -224,6 +230,8 @@ class MainWindow(QMainWindow):
         }
 
         # Construction de l'interface
+        if progress_callback:
+            progress_callback(60, tr("splash.loading_ui"))
         self._setup_ui()
         self._setup_menu_bar()
         self._setup_status_bar()
@@ -256,10 +264,15 @@ class MainWindow(QMainWindow):
         self._last_scan_progress_time: float = 0.0
 
         # Chargement initial
+        if progress_callback:
+            progress_callback(75, tr("splash.loading_library"))
         self._current_active_page: str = "tracks"
         self.refresh_sources_list()
         self.table_model.reload_data()
         self._update_track_count()
+
+        if progress_callback:
+            progress_callback(90, tr("splash.restoring_session"))
         self._restore_saved_playlist()
         self._restore_active_page()
 

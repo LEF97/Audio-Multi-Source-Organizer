@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
+from PySide6.QtCore import QThread
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QApplication
 
@@ -53,28 +54,28 @@ def main() -> int:
     splash.show()
     app.processEvents()
 
-    # Étape 1 : Préférences et internationalisation (20%)
-    splash.set_progress(20, "Chargement des préférences et de la langue...")
+    # Étape 1 : Préférences et internationalisation (15%)
+    splash.set_progress(15, tr("splash.loading_config"))
     i18n = get_i18n()
     i18n.init_language()
     app.setApplicationName(tr("app.name"))
 
-    # Étape 2 : Thème sombre (40%)
-    splash.set_progress(40, tr("splash.loading_theme"))
+    # Étape 2 : Thème sombre et ressources graphiques (25%)
+    splash.set_progress(25, tr("splash.loading_theme"))
     app.setStyleSheet(DARK_THEME_QSS)
 
-    # Étape 3 : Persistance et base de données SQLite3 (60%)
-    splash.set_progress(60, tr("splash.loading_db"))
+    # Étape 3 : Base de données SQLite3 (35%)
+    splash.set_progress(35, tr("splash.loading_db"))
     db_path = get_database_path()
     db = DatabaseManager(db_path=db_path)
 
-    # Étape 4 : Construction de l'interface principale et restauration (85%)
-    splash.set_progress(85, tr("splash.loading_ui"))
-    window = MainWindow(db=db)
+    # Étape 4 : Construction modulaire de l'interface et services (45% -> 90%)
+    window = MainWindow(db=db, progress_callback=splash.set_progress)
     window.setWindowIcon(app_icon)
 
     # Étape 5 : Finalisation (100%)
     splash.set_progress(100, tr("splash.ready"))
+    QThread.msleep(80)
 
     # Affichage fluide de la fenêtre principale
     window.show()

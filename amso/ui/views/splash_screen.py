@@ -163,7 +163,7 @@ class SplashScreen(QWidget):
 
         card_layout.addSpacing(16)
 
-        # Pied de page (version et mentions)
+        # Pied de page (version uniquement)
         footer_box = QHBoxLayout()
         footer_box.setContentsMargins(0, 0, 0, 0)
 
@@ -172,10 +172,6 @@ class SplashScreen(QWidget):
         footer_box.addWidget(lbl_version)
 
         footer_box.addStretch()
-
-        lbl_author = QLabel("LEF97")
-        lbl_author.setStyleSheet("color: #475569; font-size: 11px; font-weight: 500;")
-        footer_box.addWidget(lbl_author)
 
         card_layout.addLayout(footer_box)
 
