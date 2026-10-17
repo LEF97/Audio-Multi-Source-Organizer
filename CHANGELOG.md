@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning (SemVer)](https://semver.org/).
 ## [0.2.0-dev] - In Development
 
 ### Fixed
+- **SQLite `disk I/O error` resolution on Windows**: configured WAL mode once upon database initialization, configured `PRAGMA busy_timeout = 30000`, enabled in-memory temporary store (`PRAGMA temp_store = MEMORY`), and added automatic retry with exponential backoff to eliminate file locking contention during multithreaded scans.
+- **Suppression of disruptive modal alerts during background sync**: automated background scans no longer pop up intrusive modal dialogs on transient errors, logging issues cleanly into the activity log and clickable status bar instead.
+- **Startup low volume issue**: eliminated race condition during VLC engine initialization and prevented Windows audio mixer automatic ducking.
 - **Official logo display in compiled Windows executable**: fixed multi-path resolution of embedded PyInstaller resources (`sys._MEIPASS`) to ensure the high-definition AMSO logo renders properly in the sidebar and About page instead of the fallback 🎵 icon.
 
 ---

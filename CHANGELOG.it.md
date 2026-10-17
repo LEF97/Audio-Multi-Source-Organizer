@@ -15,6 +15,9 @@ Il formato si basa su [Keep a Changelog](https://keepachangelog.com/it/1.0.0/) e
 ## [0.2.0-dev] - In sviluppo
 
 ### Fixed
+- **Risoluzione degli errori `disk I/O error` (SQLite su Windows)**: configurazione della modalità WAL una sola volta all'inizializzazione del database, `PRAGMA busy_timeout = 30000`, archiviazione temporanea in memoria RAM (`PRAGMA temp_store = MEMORY`) e meccanismo di tentativi automatici con backoff esponenziale per eliminare i conflitti di blocco dei file durante le scansioni multithread.
+- **Eliminazione degli avvisi modali bloccanti in background**: le sincronizzazioni automatiche non mostrano più finestre modali di errore invadenti in caso di problemi temporanei, registrando l'evento nel registro attività e nella barra di stato cliccabile.
+- **Volume audio troppo basso all'avvio**: rimozione di una race condition durante l'inizializzazione del motore VLC e neutralizzazione dell'attenuazione automatica (*ducking*) del mixer audio di Windows.
 - **Visualizzazione del logo ufficiale nell'eseguibile Windows**: correzione della risoluzione multi-percorso delle risorse incorporate PyInstaller (`sys._MEIPASS`) per visualizzare il logo AMSO ad alta definizione nella barra laterale e nella pagina Info invece dell'icona di fallback 🎵.
 
 ---
