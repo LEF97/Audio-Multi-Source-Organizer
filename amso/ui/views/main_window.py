@@ -516,18 +516,20 @@ class MainWindow(QMainWindow):
                         restored_tracks.append(TrackRecord.from_dict(t_dict))
 
             # Filtrage des pistes orphelines ou fantômes (ex. mocks de tests ou fichiers locaux inexistants)
+            # Optimisation majeure : si la piste provient de la base SQLite active (db_tracks),
+            # elle est déjà validée en mémoire (O(1)) et on évite des milliers d'I/O disque bloquantes (Path.exists).
             valid_tracks: list[TrackRecord] = []
             for trk in restored_tracks:
-                if trk.source_type == SourceType.LOCAL:
+                if trk.id is not None and trk.id in db_tracks:
+                    valid_tracks.append(trk)
+                elif trk.source_type != SourceType.LOCAL:
+                    valid_tracks.append(trk)
+                else:
                     path_str = trk.source_path or trk.source_ref
                     if path_str and Path(path_str).exists():
                         valid_tracks.append(trk)
-                    elif trk.id is not None and trk.id in db_tracks:
-                        valid_tracks.append(trk)
                     elif self.db and path_str and self.db.get_track_by_ref(path_str):
                         valid_tracks.append(trk)
-                else:
-                    valid_tracks.append(trk)
 
             if not valid_tracks:
                 logger.info("Playlist sauvegardée ignorée : aucun fichier valide trouvé.")
