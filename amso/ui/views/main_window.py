@@ -283,6 +283,11 @@ class MainWindow(QMainWindow):
             self.scan_worker.cancel()
             self.scan_worker.wait(2000)
         self.i18n.remove_listener(self._on_language_changed)
+        if hasattr(self, "db") and self.db:
+            try:
+                self.db.close()
+            except Exception:
+                pass
         super().closeEvent(event)
 
     def _save_active_page(self) -> None:
@@ -3599,6 +3604,7 @@ class MainWindow(QMainWindow):
                 QMessageBox.warning(self, tr("dialog.scan_running_title"), tr("dialog.scan_running_message"))
             return False
 
+        self._current_scan_user_initiated = user_initiated
         self._current_scanning_source_id = source.id
         if hasattr(self, "scheduler") and self.scheduler and source.id:
             self.scheduler.notify_scan_started(source.id)
@@ -3768,11 +3774,12 @@ class MainWindow(QMainWindow):
                 details="\n".join(summary.errors),
                 items_errors=len(summary.errors),
             )
-            QMessageBox.warning(
-                self,
-                tr("dialog.scan_errors_title"),
-                tr("dialog.scan_errors_message", count=len(summary.errors), error=summary.errors[0]),
-            )
+            if getattr(self, "_current_scan_user_initiated", False):
+                QMessageBox.warning(
+                    self,
+                    tr("dialog.scan_errors_title"),
+                    tr("dialog.scan_errors_message", count=len(summary.errors), error=summary.errors[0]),
+                )
         else:
             self.status_label.setText(
                 tr(
@@ -3847,11 +3854,12 @@ class MainWindow(QMainWindow):
         if hasattr(self, "page_logs") and self.page_logs:
             self.page_logs.mark_dirty()
 
-        QMessageBox.critical(
-            self,
-            tr("dialog.scan_error_title"),
-            tr("dialog.scan_error_message", error=err_msg),
-        )
+        if getattr(self, "_current_scan_user_initiated", False):
+            QMessageBox.critical(
+                self,
+                tr("dialog.scan_error_title"),
+                tr("dialog.scan_error_message", error=err_msg),
+            )
 
     # -------------------------------------------------------------------------
     # Menu contextuel du tableau

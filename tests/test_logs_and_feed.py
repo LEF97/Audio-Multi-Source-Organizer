@@ -32,7 +32,10 @@ def temp_db():
         db_path = Path(tmp_dir) / "test_logs.db"
         db = DatabaseManager(db_path=db_path)
         db.init_schema()
-        yield db
+        try:
+            yield db
+        finally:
+            db.close()
 
 
 def test_activity_logs_crud(temp_db: DatabaseManager):

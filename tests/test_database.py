@@ -433,3 +433,48 @@ def test_folders_summary_and_tracks_by_folder(db: DatabaseManager):
     # Navigation récursive depuis la racine D:/Music
     all_recursive = db.get_tracks_by_folder("D:/Music", source_id=src.id, recursive=True)
     assert len(all_recursive) == 6
+
+
+def test_file_db_wal_mode_and_concurrency(tmp_path):
+    """Vérifie le mode WAL persistant, les pragmas et la concurrence multi-threads sur fichier réel."""
+    import concurrent.futures
+    import sqlite3
+
+    db_file = tmp_path / "test_concurrency.db"
+    db_manager = DatabaseManager(db_path=db_file)
+
+    try:
+        # 1. Vérification du journal_mode persistant
+        with sqlite3.connect(str(db_file)) as raw_conn:
+            mode = raw_conn.execute("PRAGMA journal_mode;").fetchone()[0]
+            assert mode.lower() == "wal"
+
+        # 2. Test de lectures et écritures concurrentes
+        db_manager.add_source(SourceType.LOCAL, "Concurrent Source", "D:/Concur")
+
+        def worker_write(idx: int):
+            db_manager.add_activity_log(
+                action=f"Action {idx}",
+                level="INFO",
+                category="SYNC",
+                source_name="Concurrent Source",
+            )
+            return True
+
+        def worker_read():
+            logs = db_manager.get_activity_logs(limit=50)
+            return len(logs)
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+            write_futures = [executor.submit(worker_write, i) for i in range(30)]
+            read_futures = [executor.submit(worker_read) for _ in range(30)]
+
+            for f in concurrent.futures.as_completed(write_futures + read_futures):
+                res = f.result()
+                assert res is not None
+
+        # 3. Checkpoint et fermeture propre
+        db_manager.checkpoint()
+        assert db_manager.count_activity_logs() == 30
+    finally:
+        db_manager.close()
