@@ -26,6 +26,7 @@ from amso.services.player_service import PlayerService, RepeatMode
 from amso.ui.models import format_duration
 from amso.ui.views.cover_helper import (
     get_default_cover_pixmap,
+    invalidate_cover_cache,
     load_cover_async,
 )
 from amso.ui.views.visual_effects import VisualEffectWidget
@@ -461,6 +462,7 @@ class PlayerView(QWidget):
     def _on_folder_change_debounced(self) -> None:
         """Recharge la pochette du morceau en cours après modification du dossier."""
         if self.player.current_track:
+            invalidate_cover_cache(self.player.current_track)
             load_cover_async(
                 self.player.current_track,
                 size=320,

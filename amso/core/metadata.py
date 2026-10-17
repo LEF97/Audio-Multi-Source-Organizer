@@ -478,12 +478,11 @@ def find_cover_image_in_folder(folder: Path, audio_stem: str = "") -> bytes | No
             except OSError:
                 candidates = []
 
-    if not candidates:
-        return None
+    norm_audio_stem = audio_stem.strip().lower()
 
     def _score_image(file_path: Path) -> int:
         stem = file_path.stem.strip().lower()
-        # 1. Priorité absolue : "folder" (folder.png, folder.jpg, etc.)
+        # 1. Priorité absolue : nom exact "folder" (folder.png, folder.jpg, etc.)
         if stem == "folder":
             score = 1000
         # 2. Pochette standard ("cover", "front")
@@ -491,25 +490,30 @@ def find_cover_image_in_folder(folder: Path, audio_stem: str = "") -> bytes | No
             score = 950
         elif stem == "front":
             score = 900
-        # 3. Image portant le même nom que le fichier audio
-        elif audio_stem and stem == audio_stem:
+        # 3. Image portant exactement le même nom que le fichier audio (insensible à la casse)
+        elif norm_audio_stem and stem == norm_audio_stem:
             score = 850
         # 4. Album / Artwork / Jacket / AlbumArt / CD / Disc
         elif stem in {"album", "artwork", "albumart", "albumartsmall", "jacket", "disc", "cd"}:
             score = 800
-        # 5. Mots-clés dans le nom du fichier
-        elif "folder" in stem:
-            score = 750
-        elif "cover" in stem or "front" in stem:
-            score = 700
-        elif "album" in stem or "artwork" in stem or "jacket" in stem:
-            score = 650
-        # 6. Mots-clés secondaires (scan, art, poster, image)
-        elif any(k in stem for k in ("scan", "art", "poster", "image")):
-            score = 500
         else:
-            # 7. N'importe quelle autre image présente dans le répertoire
-            score = 300
+            # 5. Mots-clés composés séparés par des délimiteurs (_ - . ou espace)
+            # Ex: "front_cover", "album-art", "soundtrack_artwork", "folder_1"
+            # Ne matche JAMAIS des préfixes arbitraires sans délimiteur comme "exfolder"
+            tokens = set(re.split(r"[\s_\-\.]+", stem))
+            if "folder" in tokens:
+                score = 750
+            elif "cover" in tokens or "front" in tokens:
+                score = 700
+            elif "artwork" in tokens or "album" in tokens or "jacket" in tokens:
+                score = 650
+            elif "albumart" in tokens:
+                score = 650
+            elif "disc" in tokens or "cd" in tokens:
+                score = 600
+            else:
+                # Aucune correspondance avec un nom de pochette audio -> image ignorée
+                return 0
 
         # Bonus pour formats courants et bonus taille de fichier
         ext = file_path.suffix.lower()
@@ -523,8 +527,17 @@ def find_cover_image_in_folder(folder: Path, audio_stem: str = "") -> bytes | No
             pass
         return score
 
-    candidates.sort(key=_score_image, reverse=True)
+    valid_candidates = []
     for cand in candidates:
+        sc = _score_image(cand)
+        if sc > 0:
+            valid_candidates.append((sc, cand))
+
+    if not valid_candidates:
+        return None
+
+    valid_candidates.sort(key=lambda x: x[0], reverse=True)
+    for _, cand in valid_candidates:
         try:
             data = cand.read_bytes()
             if data and len(data) > 0:

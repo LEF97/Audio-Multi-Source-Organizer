@@ -48,14 +48,22 @@ def invalidate_cover_cache(track_or_path: TrackRecord | str | None = None) -> No
         _COVER_HASH_CACHE.clear()
         return
 
-    path = track_or_path.source_path if isinstance(track_or_path, TrackRecord) else track_or_path
-    if not path:
-        return
+    targets: list[str] = []
+    if isinstance(track_or_path, TrackRecord):
+        resolved = _resolve_track_target(track_or_path)
+        if resolved:
+            targets.append(resolved)
+        for p in (track_or_path.source_path, track_or_path.source_ref, track_or_path.folder_path):
+            if p and p not in targets:
+                targets.append(p)
+    elif isinstance(track_or_path, str) and track_or_path:
+        targets.append(track_or_path)
 
-    _COVER_HASH_CACHE.pop(path, None)
-    keys_to_remove = [k for k in _COVER_CACHE if k[0] == path]
-    for k in keys_to_remove:
-        _COVER_CACHE.pop(k, None)
+    for path in targets:
+        _COVER_HASH_CACHE.pop(path, None)
+        keys_to_remove = [k for k in _COVER_CACHE if k[0] == path]
+        for k in keys_to_remove:
+            _COVER_CACHE.pop(k, None)
 
 
 def get_default_cover_pixmap(size: int = 300, radius: int = 12) -> QPixmap:

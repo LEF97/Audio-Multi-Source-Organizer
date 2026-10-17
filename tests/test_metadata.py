@@ -115,3 +115,35 @@ def test_extract_and_save_mp3_metadata(tmp_path: Path):
     assert updated_record.artist == "Queen"
     assert updated_record.year == 2011
     assert updated_record.album == "Hot Space"  # Préservé
+
+
+def test_find_cover_image_in_folder_rejection_of_unrelated_images(tmp_path: Path):
+    """Vérifie que find_cover_image_in_folder n'accepte QUE les noms de pochettes reconnus (folder, cover, etc.) et rejette exfolder, photos, etc."""
+    from amso.core.metadata import find_cover_image_in_folder
+
+    folder = tmp_path / "test_album"
+    folder.mkdir()
+
+    # Images avec préfixes arbitraires ou sans rapport
+    (folder / "exfolder.webp").write_bytes(b"dummy_webp_content_longer_than_1024" * 50)
+    (folder / "exfolder.jpg").write_bytes(b"dummy_jpg_content" * 50)
+    (folder / "vacation_photo.jpg").write_bytes(b"dummy_vacation" * 50)
+    (folder / "screenshot.png").write_bytes(b"dummy_screenshot" * 50)
+
+    # Aucune image reconnue -> doit impérativement retourner None
+    assert find_cover_image_in_folder(folder, audio_stem="Song Title") is None
+
+    # Ajout d'une image nommée "folder.jpg" -> doit être reconnue en priorité
+    folder_jpg = folder / "folder.jpg"
+    folder_jpg.write_bytes(b"legit_folder_cover" * 50)
+    res = find_cover_image_in_folder(folder, audio_stem="Song Title")
+    assert res is not None
+    assert res == folder_jpg.read_bytes()
+
+    # Si on supprime folder.jpg et qu'on a Song Title.png (même nom que la musique)
+    folder_jpg.unlink()
+    song_png = folder / "Song Title.png"
+    song_png.write_bytes(b"legit_song_stem_cover" * 50)
+    res_stem = find_cover_image_in_folder(folder, audio_stem="Song Title")
+    assert res_stem == song_png.read_bytes()
+
