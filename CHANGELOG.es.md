@@ -14,8 +14,8 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ## [0.2.0-dev] - En desarrollo
 
-### En curso / Planificado
-- Consultar la [Hoja de ruta (ROADMAP.es.md)](ROADMAP.es.md) para conocer los hitos y funciones planificadas para v0.2.0.
+### Fixed
+- **Visualización del logotipo oficial en el ejecutable de Windows**: corrección de la resolución multirruta de recursos incrustados en PyInstaller (`sys._MEIPASS`) para mostrar el logo AMSO en la barra lateral y la página Acerca de en lugar del icono alternativo 🎵.
 
 ---
 

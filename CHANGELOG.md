@@ -15,8 +15,8 @@ and this project adheres to [Semantic Versioning (SemVer)](https://semver.org/).
 
 ## [0.2.0-dev] - In Development
 
-### In Progress / Planned
-- Refer to the [Roadmap (ROADMAP.md)](ROADMAP.md) for details on milestones and targeted v0.2.0 features.
+### Fixed
+- **Official logo display in compiled Windows executable**: fixed multi-path resolution of embedded PyInstaller resources (`sys._MEIPASS`) to ensure the high-definition AMSO logo renders properly in the sidebar and About page instead of the fallback 🎵 icon.
 
 ---
 

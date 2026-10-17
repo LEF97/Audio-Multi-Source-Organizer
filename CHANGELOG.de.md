@@ -14,8 +14,8 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/) 
 
 ## [0.2.0-dev] - In Entwicklung
 
-### In Arbeit / Geplant
-- Siehe [Roadmap (ROADMAP.de.md)](ROADMAP.de.md) für geplante Meilensteine und v0.2.0-Features.
+### Fixed
+- **Anzeige des offiziellen Logos in der Windows-EXE**: Korrektur der Pfadauflösung für eingebettete PyInstaller-Ressourcen (`sys._MEIPASS`), damit das hochauflösende AMSO-Logo in der Seitenleiste und auf der Über-Seite anstelle des Fallback-Icons 🎵 geladen wird.
 
 ---
 

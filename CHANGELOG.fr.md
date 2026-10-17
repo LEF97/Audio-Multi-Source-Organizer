@@ -15,8 +15,8 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 
 ## [0.2.0-dev] - En cours de développement
 
-### En cours / Prévu
-- Consulter la [Feuille de route (ROADMAP.fr.md)](ROADMAP.fr.md) pour le détail des chantiers ciblés en v0.2.0.
+### Fixed
+- **Affichage du logo officiel dans l'exécutable Windows** : correction de la résolution multi-chemins des ressources embarquées PyInstaller (`sys._MEIPASS`) pour afficher le logo AMSO haute définition dans le bandeau latéral et la page À propos au lieu de l'icône de repli 🎵.
 
 ---
 
