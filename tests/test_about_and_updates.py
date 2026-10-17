@@ -55,8 +55,8 @@ def test_funding_yaml_exists_and_valid():
 
     content = funding_path.read_text(encoding="utf-8")
     assert "github: [LEF97]" in content or "github: LEF97" in content
-    assert "ko_fi: lef97" in content
-    assert "https://lef97.itch.io/audio-multi-source-organizer" in content
+    assert "ko_fi: arnaudlef97" in content or "ko_fi: lef97" in content
+    assert "https://arnaudlef97.itch.io/amso" in content or "https://lef97.itch.io/audio-multi-source-organizer" in content
 
 
 def test_constants_and_version():
@@ -300,15 +300,27 @@ def test_about_page_ui_and_visual_effect(qapp: QApplication, db: DatabaseManager
     assert window.lbl_settings_about_page_title.text() == "About"
     get_i18n().set_language("fr")
 
-    # 2. Présence de l'animation rétro-bars en mode démo
+    # 2. Présence de l'animation rétro-bars synchronisée avec la musique (non-démo)
     assert hasattr(window, "about_visual_effect")
-    assert window.about_visual_effect._demo_mode is True
+    assert window.about_visual_effect._demo_mode is False
     assert window.about_visual_effect._effect_type == window.about_visual_effect.EFFECT_BARS
 
     # 3. Éléments d'interface et boutons de mise à jour
     assert hasattr(window, "btn_check_updates_about")
     assert hasattr(window, "lbl_update_status_about")
     assert hasattr(window, "btn_update_download")
+
+    # 4. Nouveaux sous-titres et boutons réorganisés
+    assert hasattr(window, "lbl_about_credits_title")
+    assert "👍" in window.lbl_about_credits_title.text()
+    assert hasattr(window, "lbl_about_support_title")
+    assert "💖" in window.lbl_about_support_title.text()
+    assert hasattr(window, "lbl_about_official_title")
+    assert "🌐" in window.lbl_about_official_title.text()
+    assert hasattr(window, "btn_about_kofi")
+    assert hasattr(window, "btn_about_sponsors")
+    assert hasattr(window, "btn_about_github")
+    assert hasattr(window, "btn_about_itch")
 
     window.close()
 

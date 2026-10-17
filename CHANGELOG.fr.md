@@ -16,6 +16,17 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 ## [0.2.0-dev] - En cours de développement
 
 ### Added
+- **Refonte visuelle et interactive de la page À propos** :
+  - **Bannière supérieure unifiée** : fusion harmonieuse du logo AMSO et du bloc de texte descriptif dans une même carte stylisée.
+  - **Spectre audio réactif en direct** : les barres de spectre en arrière-plan s'animent en rythme avec la musique en cours de lecture et retombent doucement à plat (*flat*) lorsque la musique est arrêtée ou en pause.
+  - **Section Remerciements enrichie** : ajout de l'icône de reconnaissance (`👍 Remerciements & Technologies Open Source`).
+  - **Section Soutien & Financement restructurée** :
+    - Sous-titre dédié `💖 Soutenir le projet (Faire un don)`.
+    - Bouton Ko-fi aux couleurs officielles (`☕ Faire un don sur Ko-fi`) pointant vers `https://ko-fi.com/arnaudlef97`.
+    - Bouton GitHub Sponsors (`💖 GitHub Sponsors`) pointant vers `https://github.com/sponsors/ArnaudLEF97`.
+  - **Nouvelle section Pages officielles** :
+    - Sous-titre dédié `🌐 Pages officielles`.
+    - Boutons d'accès direct au Dépôt GitHub (`⭐ Dépôt GitHub`) et à la page Itch.io (`🎮 Page Itch.io`) mis à jour avec le lien officiel `https://arnaudlef97.itch.io/amso`.
 - **Mode « 🎭 Blind Test » interactif avec animations et enchaînement automatique** :
   - **Nouvelle vue dédiée « 🎭 Blind Test »** insérée dans le tiroir Lecteur de la barre latérale, entre les pages Lecteur et Playlist.
   - **Affichage mystère immersif** : effets visuels en haut synchronisés avec le moteur graphique, cadre central au format vinyle avec pochette masquée et métadonnées cachées (titre et artiste affichés sous forme de mystère).

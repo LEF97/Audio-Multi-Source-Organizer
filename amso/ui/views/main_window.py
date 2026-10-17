@@ -1900,78 +1900,84 @@ class MainWindow(QMainWindow):
         content_layout.setSpacing(16)
         content_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        # 1. En-tête Identité AMSO & Version (Icône x2 + Bloc informations de même hauteur avec rétro-bars)
-        top_identity_layout = QHBoxLayout()
-        top_identity_layout.setSpacing(16)
-
-        # Conteneur Icône AMSO (x2 plus gros : pixmap 144x144 dans un cadre 164x164)
-        icon_box = QFrame()
-        icon_box.setFixedSize(164, 164)
-        icon_box.setStyleSheet("""
-            QFrame {
+        # 1. En-tête Identité AMSO & Version unifié (Logo + Titre + Version + Description avec rétro-bars intégrées)
+        top_card = QFrame()
+        top_card.setFixedHeight(164)
+        top_card.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        top_card.setStyleSheet("""
+            QFrame#aboutTopCard {
                 background-color: #15181E;
                 border: 1px solid #282C37;
                 border-radius: 18px;
             }
         """)
-        icon_layout = QVBoxLayout(icon_box)
-        icon_layout.setContentsMargins(0, 0, 0, 0)
-        icon_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        top_card.setObjectName("aboutTopCard")
 
-        icon_pm = get_app_logo_pixmap()
+        # Layout empilé (QStackedLayout en mode StackAll) :
+        # - Couche 0 (Arrière-plan) : Animation rétro-bars réagissant à la musique en cours
+        # - Couche 1 (Premier plan) : Logo AMSO à gauche et textes à droite
+        top_stacked = QStackedLayout(top_card)
+        top_stacked.setStackingMode(QStackedLayout.StackingMode.StackAll)
+
+        self.about_visual_effect = VisualEffectWidget(
+            VisualEffectWidget.EFFECT_BARS,
+            parent=top_card,
+        )
+        self.about_visual_effect.set_demo_mode(False)
+        self.about_visual_effect.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self.about_visual_effect.setStyleSheet("background: transparent; border: none; border-radius: 18px;")
+        top_stacked.addWidget(self.about_visual_effect)
+
+        # Synchronisation immédiate avec l'état actuel de lecture
+        if self.player_service.is_playing:
+            self.about_visual_effect.set_playback_state("playing")
+        else:
+            self.about_visual_effect.set_playback_state("stopped")
+        self.about_visual_effect.update_audio_volume(
+            self.player_service.volume,
+            getattr(self.player_service, "is_muted", False),
+        )
+        if self.player_service.current_track:
+            self.about_visual_effect.set_track(self.player_service.current_track)
+
+        # Écoute réactive des événements de lecture audio
+        self.player_service.state_changed.connect(self.about_visual_effect.set_playback_state)
+        self.player_service.position_changed.connect(self.about_visual_effect.update_audio_time)
+        self.player_service.track_changed.connect(self.about_visual_effect.set_track)
+        self.player_service.volume_changed.connect(self.about_visual_effect.update_audio_volume)
+
+        # Premier plan : Logo à gauche + Textes à droite
+        fg_widget = QWidget()
+        fg_widget.setStyleSheet("background: transparent; border: none;")
+        fg_layout = QHBoxLayout(fg_widget)
+        fg_layout.setContentsMargins(20, 16, 24, 16)
+        fg_layout.setSpacing(22)
+        fg_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+
+        # Logo officiel AMSO
         lbl_logo = QLabel()
+        icon_pm = get_app_logo_pixmap()
         if not icon_pm.isNull():
             lbl_logo.setPixmap(
                 icon_pm.scaled(
-                    144,
-                    144,
+                    132,
+                    132,
                     Qt.AspectRatioMode.KeepAspectRatio,
                     Qt.TransformationMode.SmoothTransformation,
                 )
             )
         else:
             lbl_logo.setText("🎵")
-            lbl_logo.setStyleSheet("font-size: 72px;")
+            lbl_logo.setStyleSheet("font-size: 64px;")
         lbl_logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         lbl_logo.setStyleSheet("background: transparent; border: none;")
-        icon_layout.addWidget(lbl_logo)
-        top_identity_layout.addWidget(icon_box, 0)
+        fg_layout.addWidget(lbl_logo, 0, Qt.AlignmentFlag.AlignVCenter)
 
-        # Bloc d'information droit (même hauteur que l'icône : 164px, avec animation rétro bars en arrière-plan)
-        right_box = QFrame()
-        right_box.setFixedHeight(164)
-        right_box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        right_box.setStyleSheet("""
-            QFrame#aboutRightBox {
-                background-color: #15181E;
-                border: 1px solid #282C37;
-                border-radius: 18px;
-            }
-        """)
-        right_box.setObjectName("aboutRightBox")
-
-        # Layout empilé (QStackedLayout en mode StackAll) :
-        # - Couche 0 (Arrière-plan) : Animation rétro-bars autonome (demo_mode=True)
-        # - Couche 1 (Premier plan) : Titres, badges, description et mise à jour
-        right_stacked = QStackedLayout(right_box)
-        right_stacked.setStackingMode(QStackedLayout.StackingMode.StackAll)
-
-        self.about_visual_effect = VisualEffectWidget(
-            VisualEffectWidget.EFFECT_BARS,
-            parent=right_box,
-        )
-        self.about_visual_effect.set_demo_mode(True)
-        self.about_visual_effect.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
-        self.about_visual_effect.setStyleSheet("background: transparent; border: none; border-radius: 18px;")
-        right_stacked.addWidget(self.about_visual_effect)
-
-        # Premier plan interactif
-        fg_widget = QWidget()
-        fg_widget.setStyleSheet("background: transparent; border: none;")
-        fg_layout = QVBoxLayout(fg_widget)
-        fg_layout.setContentsMargins(22, 18, 22, 18)
-        fg_layout.setSpacing(10)
-        fg_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        # Textes descriptifs
+        text_layout = QVBoxLayout()
+        text_layout.setContentsMargins(0, 0, 0, 0)
+        text_layout.setSpacing(10)
+        text_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
 
         # Ligne 1 : Nom complet + AMSO + Badge Version
         title_row = QHBoxLayout()
@@ -1999,7 +2005,7 @@ class MainWindow(QMainWindow):
         """)
         title_row.addWidget(ver_badge)
         title_row.addStretch()
-        fg_layout.addLayout(title_row)
+        text_layout.addLayout(title_row)
 
         # Ligne 2 : Description
         self.lbl_about_desc = QLabel(tr("dialog.about_description"))
@@ -2007,12 +2013,12 @@ class MainWindow(QMainWindow):
         self.lbl_about_desc.setStyleSheet(
             "color: #CBD5E1; font-size: 13px; line-height: 1.45;"
         )
-        fg_layout.addWidget(self.lbl_about_desc)
+        text_layout.addWidget(self.lbl_about_desc)
 
-        right_stacked.addWidget(fg_widget)
-        top_identity_layout.addWidget(right_box, 1)
+        fg_layout.addLayout(text_layout, 1)
+        top_stacked.addWidget(fg_widget)
 
-        content_layout.addLayout(top_identity_layout)
+        content_layout.addWidget(top_card)
 
         # 2. Carte de vérification des mises à jour & statut
         card_update = QFrame()
@@ -2078,7 +2084,7 @@ class MainWindow(QMainWindow):
         l_credits.setContentsMargins(22, 20, 22, 20)
         l_credits.setSpacing(10)
 
-        self.lbl_about_credits_title = QLabel(tr("dialog.about_credits_title"))
+        self.lbl_about_credits_title = QLabel("👍  " + tr("dialog.about_credits_title"))
         self.lbl_about_credits_title.setStyleSheet("color: #F1F5F9; font-size: 14px; font-weight: 700;")
         l_credits.addWidget(self.lbl_about_credits_title)
 
@@ -2093,61 +2099,104 @@ class MainWindow(QMainWindow):
 
         content_layout.addWidget(card_credits)
 
-        # 4. Carte Liens externes & Soutien
+        # 4. Carte Soutien & Pages officielles
         card_links = QFrame()
         card_links.setProperty("class", "dashboard-card")
         l_links = QVBoxLayout(card_links)
         l_links.setContentsMargins(22, 20, 22, 20)
         l_links.setSpacing(14)
 
-        # Bouton principal Don Ko-fi (style violet/indigo pour faire ressortir le cœur rose/rouge 💖)
-        self.btn_about_donate = QPushButton(tr("dialog.about_btn_donate"))
-        self.btn_about_donate.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_about_donate.setMaximumWidth(300)
-        self.btn_about_donate.setStyleSheet("""
+        # Sous-titre Soutien
+        self.lbl_about_support_title = QLabel("💖  " + tr("dialog.about_support_title"))
+        self.lbl_about_support_title.setStyleSheet("color: #F1F5F9; font-size: 14px; font-weight: 700;")
+        l_links.addWidget(self.lbl_about_support_title)
+
+        # Ligne de dons : Ko-fi et GitHub Sponsors
+        donate_row = QHBoxLayout()
+        donate_row.setSpacing(12)
+
+        # Bouton Ko-fi
+        self.btn_about_kofi = QPushButton(tr("dialog.about_btn_kofi"))
+        self.btn_about_kofi.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_about_kofi.setStyleSheet("""
             QPushButton {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #4F46E5, stop:1 #3730A3);
+                    stop:0 #FF5E5B, stop:1 #D9413E);
                 color: #FFFFFF;
                 font-size: 13px;
                 font-weight: 700;
-                padding: 10px 20px;
-                border: 1px solid #6366F1;
+                padding: 10px 22px;
+                border: 1px solid #FFA4A2;
                 border-radius: 8px;
             }
             QPushButton:hover {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #6366F1, stop:1 #4F46E5);
-                border: 1px solid #A5B4FC;
+                    stop:0 #FF7673, stop:1 #FF5E5B);
+                border-color: #FFFFFF;
             }
         """)
-        self.btn_about_donate.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(URL_KO_FI)))
-        l_links.addWidget(self.btn_about_donate)
+        self.btn_about_kofi.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(URL_KO_FI)))
+        donate_row.addWidget(self.btn_about_kofi)
 
-        # Ligne de boutons secondaires : GitHub, Itch.io, GitHub Sponsors
-        sub_links = QHBoxLayout()
-        sub_links.setSpacing(10)
+        # Bouton GitHub Sponsors
+        self.btn_about_sponsors = QPushButton(tr("dialog.about_btn_sponsors"))
+        self.btn_about_sponsors.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_about_sponsors.setStyleSheet("""
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #EA4AAA, stop:1 #C5288B);
+                color: #FFFFFF;
+                font-size: 13px;
+                font-weight: 700;
+                padding: 10px 22px;
+                border: 1px solid #F9A8D4;
+                border-radius: 8px;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #F062BA, stop:1 #EA4AAA);
+                border-color: #FFFFFF;
+            }
+        """)
+        self.btn_about_sponsors.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(URL_GITHUB_SPONSORS)))
+        donate_row.addWidget(self.btn_about_sponsors)
+
+        donate_row.addStretch()
+        l_links.addLayout(donate_row)
+
+        # Alias de compatibilité
+        self.btn_about_donate = self.btn_about_kofi
+
+        # Séparateur subtil
+        sep = QFrame()
+        sep.setFrameShape(QFrame.Shape.HLine)
+        sep.setFixedHeight(1)
+        sep.setStyleSheet("background-color: #282C37; border: none; margin-top: 6px; margin-bottom: 4px;")
+        l_links.addWidget(sep)
+
+        # Sous-titre Pages officielles
+        self.lbl_about_official_title = QLabel("🌐  " + tr("dialog.about_official_pages_title"))
+        self.lbl_about_official_title.setStyleSheet("color: #F1F5F9; font-size: 14px; font-weight: 700;")
+        l_links.addWidget(self.lbl_about_official_title)
+
+        # Ligne de pages officielles : Dépôt GitHub et Page Itch.io
+        official_row = QHBoxLayout()
+        official_row.setSpacing(12)
 
         self.btn_about_github = QPushButton(tr("dialog.about_btn_github"))
         self.btn_about_github.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_about_github.setProperty("class", "secondary-btn")
         self.btn_about_github.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(URL_GITHUB_REPO)))
-        sub_links.addWidget(self.btn_about_github)
+        official_row.addWidget(self.btn_about_github)
 
         self.btn_about_itch = QPushButton(tr("dialog.about_btn_itch"))
         self.btn_about_itch.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_about_itch.setProperty("class", "secondary-btn")
         self.btn_about_itch.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(URL_ITCH_IO)))
-        sub_links.addWidget(self.btn_about_itch)
+        official_row.addWidget(self.btn_about_itch)
 
-        self.btn_about_sponsors = QPushButton(tr("dialog.about_btn_sponsors"))
-        self.btn_about_sponsors.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_about_sponsors.setProperty("class", "secondary-btn")
-        self.btn_about_sponsors.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(URL_GITHUB_SPONSORS)))
-        sub_links.addWidget(self.btn_about_sponsors)
-
-        sub_links.addStretch()
-        l_links.addLayout(sub_links)
+        official_row.addStretch()
+        l_links.addLayout(official_row)
 
         content_layout.addWidget(card_links)
         content_layout.addStretch(1)
@@ -2854,19 +2903,25 @@ class MainWindow(QMainWindow):
             self.btn_update_download.setText(tr("settings.btn_download_update"))
         self._refresh_update_ui()
         if hasattr(self, "lbl_about_credits_title"):
-            self.lbl_about_credits_title.setText(tr("dialog.about_credits_title"))
+            self.lbl_about_credits_title.setText("👍  " + tr("dialog.about_credits_title"))
         if hasattr(self, "lbl_about_credits_tech"):
             self.lbl_about_credits_tech.setText(tr("dialog.about_credits_tech"))
         if hasattr(self, "lbl_about_license"):
             self.lbl_about_license.setText(tr("dialog.about_license"))
+        if hasattr(self, "lbl_about_support_title"):
+            self.lbl_about_support_title.setText("💖  " + tr("dialog.about_support_title"))
+        if hasattr(self, "btn_about_kofi"):
+            self.btn_about_kofi.setText(tr("dialog.about_btn_kofi"))
         if hasattr(self, "btn_about_donate"):
-            self.btn_about_donate.setText(tr("dialog.about_btn_donate"))
+            self.btn_about_donate.setText(tr("dialog.about_btn_kofi"))
+        if hasattr(self, "btn_about_sponsors"):
+            self.btn_about_sponsors.setText(tr("dialog.about_btn_sponsors"))
+        if hasattr(self, "lbl_about_official_title"):
+            self.lbl_about_official_title.setText("🌐  " + tr("dialog.about_official_pages_title"))
         if hasattr(self, "btn_about_github"):
             self.btn_about_github.setText(tr("dialog.about_btn_github"))
         if hasattr(self, "btn_about_itch"):
             self.btn_about_itch.setText(tr("dialog.about_btn_itch"))
-        if hasattr(self, "btn_about_sponsors"):
-            self.btn_about_sponsors.setText(tr("dialog.about_btn_sponsors"))
 
         if hasattr(self, "btn_quick_about"):
             self.btn_quick_about.setToolTip(tr("dialog.about_title") + " (F1)")
