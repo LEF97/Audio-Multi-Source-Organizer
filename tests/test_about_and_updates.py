@@ -65,7 +65,7 @@ def test_constants_and_version():
     assert "github.com/LEF97" in URL_GITHUB_REPO
     assert "itch.io" in URL_ITCH_IO
     assert "ko-fi.com" in URL_KO_FI
-    assert "sponsors" in URL_GITHUB_SPONSORS
+    assert URL_GITHUB_SPONSORS == "https://github.com/sponsors/lef97"
     assert "api.github.com" in URL_GITHUB_API_LATEST_RELEASE
 
 
@@ -304,6 +304,7 @@ def test_about_page_ui_and_visual_effect(qapp: QApplication, db: DatabaseManager
     assert hasattr(window, "about_visual_effect")
     assert window.about_visual_effect._demo_mode is False
     assert window.about_visual_effect._effect_type == window.about_visual_effect.EFFECT_BARS
+    assert window.about_visual_effect._bars_align_left is True
 
     # 3. Éléments d'interface et boutons de mise à jour
     assert hasattr(window, "btn_check_updates_about")

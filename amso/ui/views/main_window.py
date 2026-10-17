@@ -36,7 +36,6 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QSlider,
     QSplitter,
-    QStackedLayout,
     QStackedWidget,
     QStatusBar,
     QTableView,
@@ -1900,9 +1899,9 @@ class MainWindow(QMainWindow):
         content_layout.setSpacing(16)
         content_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        # 1. En-tête Identité AMSO & Version unifié (Logo + Titre + Version + Description avec rétro-bars intégrées)
+        # 1. En-tête Identité AMSO & Version unifié (Logo à gauche + Colonne droite : Titre + Description + Rétro-bars sous le texte)
         top_card = QFrame()
-        top_card.setFixedHeight(164)
+        top_card.setFixedHeight(172)
         top_card.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         top_card.setStyleSheet("""
             QFrame#aboutTopCard {
@@ -1913,20 +1912,85 @@ class MainWindow(QMainWindow):
         """)
         top_card.setObjectName("aboutTopCard")
 
-        # Layout empilé (QStackedLayout en mode StackAll) :
-        # - Couche 0 (Arrière-plan) : Animation rétro-bars réagissant à la musique en cours
-        # - Couche 1 (Premier plan) : Logo AMSO à gauche et textes à droite
-        top_stacked = QStackedLayout(top_card)
-        top_stacked.setStackingMode(QStackedLayout.StackingMode.StackAll)
+        top_layout = QHBoxLayout(top_card)
+        top_layout.setContentsMargins(20, 16, 16, 16)
+        top_layout.setSpacing(22)
+        top_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
+        # Logo officiel AMSO (aligné tout en haut)
+        lbl_logo = QLabel()
+        icon_pm = get_app_logo_pixmap()
+        if not icon_pm.isNull():
+            lbl_logo.setPixmap(
+                icon_pm.scaled(
+                    132,
+                    132,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
+                )
+            )
+        else:
+            lbl_logo.setText("🎵")
+            lbl_logo.setStyleSheet("font-size: 64px;")
+        lbl_logo.setFixedSize(132, 132)
+        lbl_logo.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
+        lbl_logo.setStyleSheet("background: transparent; border: none; padding: 0px; margin: 0px;")
+        top_layout.addWidget(lbl_logo, 0, Qt.AlignmentFlag.AlignTop)
+
+        # Colonne droite : Titre aligné en haut avec l'icône, puis description, puis barres en dessous
+        right_col = QVBoxLayout()
+        right_col.setContentsMargins(0, 0, 0, 0)
+        right_col.setSpacing(6)
+        right_col.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        # Ligne 1 : Nom complet + AMSO + Badge Version (aligné tout en haut du cadre)
+        title_row = QHBoxLayout()
+        title_row.setContentsMargins(0, 0, 0, 0)
+        title_row.setSpacing(10)
+        title_row.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+
+        self.lbl_about_app_name = QLabel(tr("dialog.about_app_name"))
+        self.lbl_about_app_name.setStyleSheet(
+            "color: #F8FAFC; font-size: 20px; font-weight: 800; letter-spacing: 0.5px; padding: 0px; margin: 0px;"
+        )
+        title_row.addWidget(self.lbl_about_app_name)
+
+        acronym_lbl = QLabel("AMSO")
+        acronym_lbl.setStyleSheet("color: #38BDF8; font-size: 14px; font-weight: 700; padding: 0px; margin: 0px;")
+        title_row.addWidget(acronym_lbl)
+
+        ver_badge = QLabel(f"v{__version__}")
+        ver_badge.setStyleSheet("""
+            background-color: #0369A1;
+            color: #FFFFFF;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 700;
+        """)
+        title_row.addWidget(ver_badge)
+        title_row.addStretch()
+        right_col.addLayout(title_row)
+
+        # Ligne 2 : Description
+        self.lbl_about_desc = QLabel(tr("dialog.about_description"))
+        self.lbl_about_desc.setWordWrap(True)
+        self.lbl_about_desc.setStyleSheet(
+            "color: #CBD5E1; font-size: 13px; line-height: 1.45; padding: 0px; margin: 0px;"
+        )
+        right_col.addWidget(self.lbl_about_desc)
+
+        # Ligne 3 : Barres de spectre rétro sous le texte (alignées à gauche avec le texte, collant au cadre à droite)
         self.about_visual_effect = VisualEffectWidget(
             VisualEffectWidget.EFFECT_BARS,
             parent=top_card,
         )
         self.about_visual_effect.set_demo_mode(False)
+        self.about_visual_effect.set_bars_aligned_left(True)
+        self.about_visual_effect.setFixedHeight(62)
+        self.about_visual_effect.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.about_visual_effect.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
-        self.about_visual_effect.setStyleSheet("background: transparent; border: none; border-radius: 18px;")
-        top_stacked.addWidget(self.about_visual_effect)
+        self.about_visual_effect.setStyleSheet("background: transparent; border: none;")
 
         # Synchronisation immédiate avec l'état actuel de lecture
         if self.player_service.is_playing:
@@ -1946,77 +2010,8 @@ class MainWindow(QMainWindow):
         self.player_service.track_changed.connect(self.about_visual_effect.set_track)
         self.player_service.volume_changed.connect(self.about_visual_effect.update_audio_volume)
 
-        # Premier plan : Logo à gauche + Textes à droite
-        fg_widget = QWidget()
-        fg_widget.setStyleSheet("background: transparent; border: none;")
-        fg_layout = QHBoxLayout(fg_widget)
-        fg_layout.setContentsMargins(20, 16, 24, 16)
-        fg_layout.setSpacing(22)
-        fg_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
-
-        # Logo officiel AMSO
-        lbl_logo = QLabel()
-        icon_pm = get_app_logo_pixmap()
-        if not icon_pm.isNull():
-            lbl_logo.setPixmap(
-                icon_pm.scaled(
-                    132,
-                    132,
-                    Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation,
-                )
-            )
-        else:
-            lbl_logo.setText("🎵")
-            lbl_logo.setStyleSheet("font-size: 64px;")
-        lbl_logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        lbl_logo.setStyleSheet("background: transparent; border: none;")
-        fg_layout.addWidget(lbl_logo, 0, Qt.AlignmentFlag.AlignVCenter)
-
-        # Textes descriptifs
-        text_layout = QVBoxLayout()
-        text_layout.setContentsMargins(0, 0, 0, 0)
-        text_layout.setSpacing(10)
-        text_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
-
-        # Ligne 1 : Nom complet + AMSO + Badge Version
-        title_row = QHBoxLayout()
-        title_row.setSpacing(10)
-        title_row.setAlignment(Qt.AlignmentFlag.AlignVCenter)
-
-        self.lbl_about_app_name = QLabel(tr("dialog.about_app_name"))
-        self.lbl_about_app_name.setStyleSheet(
-            "color: #F8FAFC; font-size: 20px; font-weight: 800; letter-spacing: 0.5px;"
-        )
-        title_row.addWidget(self.lbl_about_app_name)
-
-        acronym_lbl = QLabel("AMSO")
-        acronym_lbl.setStyleSheet("color: #38BDF8; font-size: 14px; font-weight: 700;")
-        title_row.addWidget(acronym_lbl)
-
-        ver_badge = QLabel(f"v{__version__}")
-        ver_badge.setStyleSheet("""
-            background-color: #0369A1;
-            color: #FFFFFF;
-            padding: 2px 10px;
-            border-radius: 10px;
-            font-size: 11px;
-            font-weight: 700;
-        """)
-        title_row.addWidget(ver_badge)
-        title_row.addStretch()
-        text_layout.addLayout(title_row)
-
-        # Ligne 2 : Description
-        self.lbl_about_desc = QLabel(tr("dialog.about_description"))
-        self.lbl_about_desc.setWordWrap(True)
-        self.lbl_about_desc.setStyleSheet(
-            "color: #CBD5E1; font-size: 13px; line-height: 1.45;"
-        )
-        text_layout.addWidget(self.lbl_about_desc)
-
-        fg_layout.addLayout(text_layout, 1)
-        top_stacked.addWidget(fg_widget)
+        right_col.addWidget(self.about_visual_effect, 0, Qt.AlignmentFlag.AlignBottom)
+        top_layout.addLayout(right_col, 1)
 
         content_layout.addWidget(top_card)
 
@@ -2077,39 +2072,17 @@ class MainWindow(QMainWindow):
         update_row.addStretch()
         content_layout.addWidget(card_update)
 
-        # 3. Carte Crédits & Technologies Open Source
-        card_credits = QFrame()
-        card_credits.setProperty("class", "dashboard-card")
-        l_credits = QVBoxLayout(card_credits)
-        l_credits.setContentsMargins(22, 20, 22, 20)
-        l_credits.setSpacing(10)
-
-        self.lbl_about_credits_title = QLabel("👍  " + tr("dialog.about_credits_title"))
-        self.lbl_about_credits_title.setStyleSheet("color: #F1F5F9; font-size: 14px; font-weight: 700;")
-        l_credits.addWidget(self.lbl_about_credits_title)
-
-        self.lbl_about_credits_tech = QLabel(tr("dialog.about_credits_tech"))
-        self.lbl_about_credits_tech.setWordWrap(True)
-        self.lbl_about_credits_tech.setStyleSheet("color: #94A3B8; font-size: 13px; line-height: 1.4;")
-        l_credits.addWidget(self.lbl_about_credits_tech)
-
-        self.lbl_about_license = QLabel(tr("dialog.about_license"))
-        self.lbl_about_license.setStyleSheet("color: #64748B; font-size: 11px; font-style: italic; margin-top: 4px;")
-        l_credits.addWidget(self.lbl_about_license)
-
-        content_layout.addWidget(card_credits)
-
-        # 4. Carte Soutien & Pages officielles
-        card_links = QFrame()
-        card_links.setProperty("class", "dashboard-card")
-        l_links = QVBoxLayout(card_links)
-        l_links.setContentsMargins(22, 20, 22, 20)
-        l_links.setSpacing(14)
+        # 3. Carte Soutenir le projet (Faire un don)
+        card_support = QFrame()
+        card_support.setProperty("class", "dashboard-card")
+        l_support = QVBoxLayout(card_support)
+        l_support.setContentsMargins(22, 18, 22, 18)
+        l_support.setSpacing(14)
 
         # Sous-titre Soutien
         self.lbl_about_support_title = QLabel("💖  " + tr("dialog.about_support_title"))
         self.lbl_about_support_title.setStyleSheet("color: #F1F5F9; font-size: 14px; font-weight: 700;")
-        l_links.addWidget(self.lbl_about_support_title)
+        l_support.addWidget(self.lbl_about_support_title)
 
         # Ligne de dons : Ko-fi et GitHub Sponsors
         donate_row = QHBoxLayout()
@@ -2162,22 +2135,23 @@ class MainWindow(QMainWindow):
         donate_row.addWidget(self.btn_about_sponsors)
 
         donate_row.addStretch()
-        l_links.addLayout(donate_row)
+        l_support.addLayout(donate_row)
 
         # Alias de compatibilité
         self.btn_about_donate = self.btn_about_kofi
+        content_layout.addWidget(card_support)
 
-        # Séparateur subtil
-        sep = QFrame()
-        sep.setFrameShape(QFrame.Shape.HLine)
-        sep.setFixedHeight(1)
-        sep.setStyleSheet("background-color: #282C37; border: none; margin-top: 6px; margin-bottom: 4px;")
-        l_links.addWidget(sep)
+        # 4. Carte Pages officielles (séparée par l'espacement standard, sans ligne horizontale)
+        card_official = QFrame()
+        card_official.setProperty("class", "dashboard-card")
+        l_official = QVBoxLayout(card_official)
+        l_official.setContentsMargins(22, 18, 22, 18)
+        l_official.setSpacing(14)
 
         # Sous-titre Pages officielles
         self.lbl_about_official_title = QLabel("🌐  " + tr("dialog.about_official_pages_title"))
         self.lbl_about_official_title.setStyleSheet("color: #F1F5F9; font-size: 14px; font-weight: 700;")
-        l_links.addWidget(self.lbl_about_official_title)
+        l_official.addWidget(self.lbl_about_official_title)
 
         # Ligne de pages officielles : Dépôt GitHub et Page Itch.io
         official_row = QHBoxLayout()
@@ -2196,9 +2170,30 @@ class MainWindow(QMainWindow):
         official_row.addWidget(self.btn_about_itch)
 
         official_row.addStretch()
-        l_links.addLayout(official_row)
+        l_official.addLayout(official_row)
+        content_layout.addWidget(card_official)
 
-        content_layout.addWidget(card_links)
+        # 5. Carte Crédits & Technologies Open Source (placée après Pages officielles)
+        card_credits = QFrame()
+        card_credits.setProperty("class", "dashboard-card")
+        l_credits = QVBoxLayout(card_credits)
+        l_credits.setContentsMargins(22, 18, 22, 18)
+        l_credits.setSpacing(10)
+
+        self.lbl_about_credits_title = QLabel("👍  " + tr("dialog.about_credits_title"))
+        self.lbl_about_credits_title.setStyleSheet("color: #F1F5F9; font-size: 14px; font-weight: 700;")
+        l_credits.addWidget(self.lbl_about_credits_title)
+
+        self.lbl_about_credits_tech = QLabel(tr("dialog.about_credits_tech"))
+        self.lbl_about_credits_tech.setWordWrap(True)
+        self.lbl_about_credits_tech.setStyleSheet("color: #94A3B8; font-size: 13px; line-height: 1.4;")
+        l_credits.addWidget(self.lbl_about_credits_tech)
+
+        self.lbl_about_license = QLabel(tr("dialog.about_license"))
+        self.lbl_about_license.setStyleSheet("color: #64748B; font-size: 11px; font-style: italic; margin-top: 4px;")
+        l_credits.addWidget(self.lbl_about_license)
+
+        content_layout.addWidget(card_credits)
         content_layout.addStretch(1)
 
         scroll.setWidget(scroll_content)

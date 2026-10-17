@@ -178,6 +178,7 @@ class VisualEffectWidget(QWidget):
         self._warp_dyn_target_roll: float = 0.0
 
         # Barres de son rétro (Égaliseur de spectre audio)
+        self._bars_align_left: bool = False
         self._bar_count: int = 32
         self._bar_levels: list[float] = [0.0] * 48
         self._bar_targets: list[float] = [0.0] * 48
@@ -281,6 +282,11 @@ class VisualEffectWidget(QWidget):
             self._speed_multiplier = 1.0
         else:
             self._speed_multiplier = 0.4
+        self.update()
+
+    def set_bars_aligned_left(self, align_left: bool = True) -> None:
+        """Définit si les barres démarrent à gauche et s'étendent jusqu'au bord droit."""
+        self._bars_align_left = align_left
         self.update()
 
     def update_audio_time(self, current_ms: int, ratio: float) -> None:
@@ -838,7 +844,9 @@ class VisualEffectWidget(QWidget):
 
     def _update_bars_tick(self, dt: float, w: float, h: float) -> None:
         """Anime les barres de spectre rétro et la dynamique des pics de crête."""
-        if self._effect_type == self.EFFECT_BARS_FULL:
+        if self._bars_align_left:
+            target_count = max(20, min(56, int(w / 18.0))) if w > 50 else 24
+        elif self._effect_type == self.EFFECT_BARS_FULL:
             target_count = max(32, min(64, int(w / 18.0))) if w > 100 else 40
         else:
             target_count = max(24, min(48, int(w / 24.0))) if w > 100 else 32
@@ -933,18 +941,33 @@ class VisualEffectWidget(QWidget):
             painter.setOpacity(0.35)
 
         baseline_y = h - 12.0
-        max_bar_h = min(170.0, max(55.0, h * 0.42))
-        seg_h = 3.2
-        seg_gap = 1.2
-        step_h = seg_h + seg_gap
-        total_segs = max(10, int(max_bar_h / step_h))
+        if self._bars_align_left:
+            available_h = max(24.0, baseline_y - 2.0)
+            max_bar_h = min(available_h, max(28.0, h * 0.72))
+            seg_h = max(2.2, min(3.0, max_bar_h / 13.0))
+            seg_gap = 1.0
+            step_h = seg_h + seg_gap
+            total_segs = max(8, int(max_bar_h / step_h))
 
-        spacing = max(2.5, min(5.0, w / 260.0))
-        total_spacing = (n - 1) * spacing
-        total_span = min(w * 0.92, n * 24.0)
-        bar_w = max(6.0, min(16.0, (total_span - total_spacing) / n))
-        actual_total_w = n * bar_w + total_spacing
-        start_x = (w - actual_total_w) / 2.0
+            spacing = max(2.5, min(4.5, w / 200.0))
+            total_spacing = (n - 1) * spacing
+            total_span = max(10.0, w - 2.0)
+            bar_w = max(4.0, (total_span - total_spacing) / n)
+            actual_total_w = total_span
+            start_x = 0.0
+        else:
+            max_bar_h = min(170.0, max(55.0, h * 0.42))
+            seg_h = 3.2
+            seg_gap = 1.2
+            step_h = seg_h + seg_gap
+            total_segs = max(10, int(max_bar_h / step_h))
+
+            spacing = max(2.5, min(5.0, w / 260.0))
+            total_spacing = (n - 1) * spacing
+            total_span = min(w * 0.92, n * 24.0)
+            bar_w = max(6.0, min(16.0, (total_span - total_spacing) / n))
+            actual_total_w = n * bar_w + total_spacing
+            start_x = (w - actual_total_w) / 2.0
 
         painter.setPen(Qt.PenStyle.NoPen)
 
@@ -996,43 +1019,46 @@ class VisualEffectWidget(QWidget):
                 painter.drawRoundedRect(QRectF(bx, py, bar_w, seg_h), 1.0, 1.0)
 
             # 2. Reflet miroir en dessous du socle (verre acrylique fumé)
-            ref_segs = min(4, lit_segs)
-            for r in range(ref_segs):
-                ry = baseline_y + (r + 1) * step_h - 2.0
-                alpha = 0.16 * (1.0 - r / 4.0)
-                ref_c = QColor(34, 197, 94) if r < 2 else QColor(56, 189, 248)
-                ref_c.setAlphaF(alpha)
-                painter.setBrush(QBrush(ref_c))
-                painter.drawRoundedRect(QRectF(bx, ry, bar_w, seg_h), 1.0, 1.0)
+            if not self._bars_align_left:
+                ref_segs = min(4, lit_segs)
+                for r in range(ref_segs):
+                    ry = baseline_y + (r + 1) * step_h - 2.0
+                    alpha = 0.16 * (1.0 - r / 4.0)
+                    ref_c = QColor(34, 197, 94) if r < 2 else QColor(56, 189, 248)
+                    ref_c.setAlphaF(alpha)
+                    painter.setBrush(QBrush(ref_c))
+                    painter.drawRoundedRect(QRectF(bx, ry, bar_w, seg_h), 1.0, 1.0)
 
         # 3. Ligne de socle lumineuse et repères rétro
         line_y = baseline_y + 1.0
-        grad = QLinearGradient(start_x - 15.0, line_y, start_x + actual_total_w + 15.0, line_y)
-        grad.setColorAt(0.0, QColor(56, 189, 248, 0))
-        grad.setColorAt(0.15, QColor(56, 189, 248, 80))
+        x_left = start_x if self._bars_align_left else (start_x - 15.0)
+        x_right = (start_x + actual_total_w) if self._bars_align_left else (start_x + actual_total_w + 15.0)
+        grad = QLinearGradient(x_left, line_y, x_right, line_y)
+        grad.setColorAt(0.0, QColor(56, 189, 248, 60 if self._bars_align_left else 0))
+        grad.setColorAt(0.15, QColor(56, 189, 248, 120))
         grad.setColorAt(0.5, QColor(56, 189, 248, 140))
-        grad.setColorAt(0.85, QColor(56, 189, 248, 80))
-        grad.setColorAt(1.0, QColor(56, 189, 248, 0))
+        grad.setColorAt(0.85, QColor(56, 189, 248, 120))
+        grad.setColorAt(1.0, QColor(56, 189, 248, 60 if self._bars_align_left else 0))
 
         painter.setPen(QPen(QBrush(grad), 1.2))
-        painter.drawLine(QPointF(start_x - 15.0, line_y), QPointF(start_x + actual_total_w + 15.0, line_y))
+        painter.drawLine(QPointF(x_left, line_y), QPointF(x_right, line_y))
 
         # Repères typographiques subtils (BASS / MID / TREBLE)
-        painter.setPen(QColor(148, 163, 184, 110))
+        painter.setPen(QColor(148, 163, 184, 120))
         font = painter.font()
-        font.setPointSize(8)
+        font.setPointSize(7 if self._bars_align_left else 8)
         font.setBold(True)
         painter.setFont(font)
 
-        lbl_y = baseline_y + 14.0
+        lbl_y = min(h - 2.0, baseline_y + 10.0)
         # Bass à 12%
-        x_bass = start_x + actual_total_w * 0.12 - 12.0
+        x_bass = start_x + (actual_total_w * 0.08 if self._bars_align_left else (actual_total_w * 0.12 - 12.0))
         painter.drawText(QPointF(x_bass, lbl_y), "BASS")
         # Mid à 50%
         x_mid = start_x + actual_total_w * 0.50 - 10.0
         painter.drawText(QPointF(x_mid, lbl_y), "MID")
         # Treble à 88%
-        x_treb = start_x + actual_total_w * 0.88 - 18.0
+        x_treb = start_x + (actual_total_w * 0.90 if self._bars_align_left else (actual_total_w * 0.88 - 18.0))
         painter.drawText(QPointF(x_treb, lbl_y), "TREBLE")
 
     def _paint_bars_full(self, painter: QPainter, w: float, h: float) -> None:
