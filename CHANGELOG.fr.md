@@ -16,6 +16,18 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 ## [0.2.0-dev] - En cours de développement
 
 ### Added
+- **Mode « 🎭 Blind Test » interactif avec animations et enchaînement automatique** :
+  - **Nouvelle vue dédiée « 🎭 Blind Test »** insérée dans le tiroir Lecteur de la barre latérale, entre les pages Lecteur et Playlist.
+  - **Affichage mystère immersif** : effets visuels en haut synchronisés avec le moteur graphique, cadre central au format vinyle avec pochette masquée et métadonnées cachées (titre et artiste affichés sous forme de mystère).
+  - **Décompte dynamique animé par pulsation (Zoom & Fade)** : affichage d'un décompte géant au centre de la pochette qui effectue un zoom et un fondu doux à chaque seconde.
+  - **Révélation progressive et douce** : à 0 seconde (ou par clic anticipé sur le bouton « 👁️ Révéler »), la pochette émerge en fondu doux (*fade-in* progressif), le titre, l'artiste et l'album s'affichent clairement tout en dissimulant les données techniques (bitrate, format, chemin de fichier).
+  - **Enchaînement automatique et calage parfait** : la piste reste révélée pendant la durée de découverte configurée, puis passe automatiquement à la piste suivante en repartant systématiquement de 00:00.
+  - **Section de réglages intégrée dans la page Lecteur** : deux commandes configurables (*spinboxes*) avec calcul dynamique en direct de la durée totale d'une manche :
+    - *Durée du décompte* : 20 secondes par défaut (ajustable de 5 à 120 s).
+    - *Durée de la découverte* : 10 secondes par défaut (ajustable de 3 à 60 s).
+    - Durée totale par défaut : 30 secondes par manche.
+  - **Contrôles du jeu** : boutons Lecture/Pause, Révéler manuellement et Suivant, ainsi que maintien actif de l'écran (inhibition de mise en veille) pendant la session de jeu.
+  - **Internationalisation complète** : 100 % des libellés et textes d'états traduits et synchronisés en 5 langues (FR, EN, ES, DE, IT).
 - **Sauvegarde automatique et ultra-compacte de la playlist en temps réel** :
   - Sauvegarde automatique en tâche de fond déclenchée à chaque changement de morceau ou modification de la file d'attente, temporisée par un anti-rebond (*debounce* de 2 secondes) pour éviter les accès disques inutiles lors des sauts rapides.
   - Format compact v2 stockant uniquement les identifiants SQLite ordonnés (`track_ids`), réduisant l'empreinte disque de plus de 99 % (ex. ~78 Ko au lieu de 8,5 Mo pour une bibliothèque de 13 000 titres) et accélérant l'écriture à moins de 4 ms.

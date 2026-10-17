@@ -33,6 +33,8 @@ KEY_VOLUME = "volume"
 KEY_MUTED = "muted"
 KEY_VISUAL_EFFECT = "visual_effect"
 KEY_POSITION_MS = "position_ms"
+KEY_BLIND_TEST_COUNTDOWN = "blind_test_countdown"
+KEY_BLIND_TEST_REVEAL = "blind_test_reveal"
 
 
 def get_config_path() -> Path:
@@ -246,6 +248,31 @@ class ConfigManager:
     def set_player_position_ms(self, pos_ms: int) -> None:
         """Définit la dernière position temporelle de lecture en ms."""
         self.set(SECTION_PLAYER, KEY_POSITION_MS, str(max(0, pos_ms)))
+
+    def get_blind_test_countdown(self) -> int:
+        """Retourne la durée en secondes du décompte Blind Test (20s par défaut)."""
+        val = self.get(SECTION_PLAYER, KEY_BLIND_TEST_COUNTDOWN, "20")
+        try:
+            return max(5, min(120, int(val)))
+        except Exception:
+            return 20
+
+    def set_blind_test_countdown(self, seconds: int) -> None:
+        """Définit la durée du décompte Blind Test en secondes."""
+        self.set(SECTION_PLAYER, KEY_BLIND_TEST_COUNTDOWN, str(max(5, min(120, seconds))))
+
+    def get_blind_test_reveal(self) -> int:
+        """Retourne la durée en secondes de la découverte Blind Test (10s par défaut)."""
+        val = self.get(SECTION_PLAYER, KEY_BLIND_TEST_REVEAL, "10")
+        try:
+            return max(3, min(60, int(val)))
+        except Exception:
+            return 10
+
+    def set_blind_test_reveal(self, seconds: int) -> None:
+        """Définit la durée de la découverte Blind Test en secondes."""
+        self.set(SECTION_PLAYER, KEY_BLIND_TEST_REVEAL, str(max(3, min(60, seconds))))
+
 
 
 # Instance singleton globale pour simplifier l'accès à travers l'application

@@ -77,6 +77,7 @@ from amso.ui.dialogs.vlc_download_dialog import VlcDownloadDialog
 from amso.ui.models import FolderTrackTableModel, TrackTableModel
 from amso.ui.theme import DARK_THEME_QSS, get_app_logo_pixmap
 from amso.ui.views.activity_feed_popover import ActivityFeedPopover
+from amso.ui.views.blind_test_view import BlindTestView
 from amso.ui.views.logs_view import LogsView
 from amso.ui.views.player_view import PlayerView
 from amso.ui.views.playlist_view import PlaylistView
@@ -352,6 +353,11 @@ class MainWindow(QMainWindow):
                 getattr(self, "btn_player", None),
                 getattr(self, "drawer_player", None),
                 self._on_player_nav_clicked,
+            ),
+            "blind_test": (
+                getattr(self, "btn_blind_test", None),
+                getattr(self, "drawer_player", None),
+                self._on_blind_test_nav_clicked,
             ),
             "playlist": (
                 getattr(self, "btn_playlist", None),
@@ -665,6 +671,13 @@ class MainWindow(QMainWindow):
         self.nav_button_group.addButton(self.btn_player)
         self.drawer_player.add_widget(self.btn_player)
 
+        self.btn_blind_test = QPushButton(tr("sidebar.nav_blind_test"))
+        self.btn_blind_test.setProperty("class", "nav-btn")
+        self.btn_blind_test.setCheckable(True)
+        self.btn_blind_test.clicked.connect(self._on_blind_test_nav_clicked)
+        self.nav_button_group.addButton(self.btn_blind_test)
+        self.drawer_player.add_widget(self.btn_blind_test)
+
         self.btn_playlist = QPushButton(tr("sidebar.nav_playlist"))
         self.btn_playlist.setProperty("class", "nav-btn")
         self.btn_playlist.setCheckable(True)
@@ -809,6 +822,12 @@ class MainWindow(QMainWindow):
         self.page_player = PlayerView(self.player_service, parent=self)
         self.page_player.effect_changed.connect(self._sync_visual_effect_radio)
         self.stacked_widget.addWidget(self.page_player)
+
+        # Page 5b : Vue Blind Test (Intercalée entre Lecteur et Playlist)
+        self.page_blind_test = BlindTestView(self.player_service, parent=self)
+        self.page_blind_test.effect_changed.connect(self._sync_visual_effect_radio)
+        self.page_player.blind_test_settings_changed.connect(self.page_blind_test.set_durations)
+        self.stacked_widget.addWidget(self.page_blind_test)
 
         # Page 6 : Vue Playlist (Mini-lecteur + Tableau de file d'attente)
         self.page_playlist = PlaylistView(self.player_service, parent=self)
@@ -2740,6 +2759,8 @@ class MainWindow(QMainWindow):
         # Boutons de tiroir
         if hasattr(self, "btn_player"):
             self.btn_player.setText(tr("sidebar.nav_player"))
+        if hasattr(self, "btn_blind_test"):
+            self.btn_blind_test.setText(tr("sidebar.nav_blind_test"))
         if hasattr(self, "btn_playlist"):
             self.btn_playlist.setText(tr("sidebar.nav_playlist"))
         self.btn_all_tracks.setText(tr("sidebar.nav_all_tracks"))
@@ -2920,9 +2941,11 @@ class MainWindow(QMainWindow):
                 f"• <b>{tr('settings.player_engine_status')}</b> <span style='color: {status_color}; font-weight: 600;'>{status_txt}</span>"
             )
 
-        # Vues Lecteur et Playlist
+        # Vues Lecteur, Blind Test et Playlist
         if hasattr(self, "page_player") and self.page_player:
             self.page_player.retranslate_ui()
+        if hasattr(self, "page_blind_test") and self.page_blind_test:
+            self.page_blind_test.retranslate_ui()
         if hasattr(self, "page_playlist") and self.page_playlist:
             self.page_playlist.retranslate_ui()
 
@@ -3088,6 +3111,13 @@ class MainWindow(QMainWindow):
         if not self.player_service.is_vlc_available:
             self._ensure_vlc_available()
         self.stacked_widget.setCurrentWidget(self.page_player)
+
+    def _on_blind_test_nav_clicked(self) -> None:
+        """Active la page du mode Blind Test."""
+        self._current_active_page = "blind_test"
+        if not self.player_service.is_vlc_available:
+            self._ensure_vlc_available()
+        self.stacked_widget.setCurrentWidget(self.page_blind_test)
 
     def _on_playlist_nav_clicked(self) -> None:
         """Active la page de la Liste de lecture (Playlist)."""
@@ -3735,6 +3765,7 @@ class MainWindow(QMainWindow):
         curr_widget = self.stacked_widget.currentWidget() if hasattr(self, "stacked_widget") else None
         is_player_or_playlist = curr_widget in (
             getattr(self, "page_player", None),
+            getattr(self, "page_blind_test", None),
             getattr(self, "page_playlist", None),
         )
         SleepInhibitor.inhibit(prevent_display=is_player_or_playlist)
@@ -3746,6 +3777,8 @@ class MainWindow(QMainWindow):
             curr_widget = self.stacked_widget.currentWidget()
             if curr_widget == getattr(self, "page_player", None):
                 self._current_active_page = "player"
+            elif curr_widget == getattr(self, "page_blind_test", None):
+                self._current_active_page = "blind_test"
             elif curr_widget == getattr(self, "page_playlist", None):
                 self._current_active_page = "playlist"
             elif curr_widget == getattr(self, "page_folders", None):
@@ -3846,9 +3879,25 @@ class MainWindow(QMainWindow):
         cfg.set_visual_effect(eff)
         if hasattr(self, "page_player") and self.page_player:
             self.page_player.set_effect_type(eff)
+        if hasattr(self, "page_blind_test") and self.page_blind_test:
+            self.page_blind_test.set_effect_type(eff)
+
+    def set_visual_effect(self, eff: str) -> None:
+        """Applique l'effet visuel à l'ensemble de l'application (Lecteur, Blind Test et réglages)."""
+        cfg = get_config_manager()
+        cfg.set_visual_effect(eff)
+        self._sync_visual_effect_radio(eff)
 
     def _sync_visual_effect_radio(self, eff: str) -> None:
         """Synchronise l'état des boutons radio Paramètres > Lecteur avec le lecteur sans boucle."""
+        if hasattr(self, "page_blind_test") and self.page_blind_test:
+            if getattr(self.page_blind_test, "current_effect", None) != eff:
+                self.page_blind_test.set_effect_type(eff)
+        if hasattr(self, "page_player") and self.page_player:
+            if getattr(self.page_player, "current_effect", None) != eff:
+                self.page_player.blockSignals(True)
+                self.page_player.set_effect_type(eff)
+                self.page_player.blockSignals(False)
         if not hasattr(self, "effect_group"):
             return
         radio_map = {
