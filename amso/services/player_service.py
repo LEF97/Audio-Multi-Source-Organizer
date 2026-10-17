@@ -136,6 +136,8 @@ class PlayerService(QObject):
         # Volume et état
         self._volume: int = cfg.get_player_volume()
         self._is_muted: bool = cfg.get_player_muted()
+        self._is_temporary_volume: bool = False
+        self._last_set_volume: int = -1
         self._volume_enforce_ticks: int = 0
         self._is_seeking: bool = False
         self._pending_seek_ms: int = 0
@@ -169,32 +171,14 @@ class PlayerService(QObject):
         self._fade_timer.setInterval(40)
         self._fade_timer.timeout.connect(self._on_fade_tick)
 
-    def _attach_player_events(self, player) -> None:
-        """Attache un écouteur sur MediaPlayerPlaying pour réappliquer le volume nominal dès l'ouverture matérielle du flux."""
-        if not player or not hasattr(player, "event_manager"):
-            return
-        try:
-            em = player.event_manager()
-            if em and hasattr(em, "event_attach"):
-
-                def _on_playing(event) -> None:
-                    try:
-                        if not self._is_crossfading and self._media_player == player:
-                            target = 0 if self._is_muted else self._volume
-                            player.audio_set_volume(target)
-                    except Exception:
-                        pass
-
-                em.event_attach(vlc.EventType.MediaPlayerPlaying, _on_playing)
-        except Exception as exc:
-            logger.debug("Impossible d'attacher l'événement MediaPlayerPlaying : %s", exc)
-
     def _enforce_volume(self) -> None:
         """Applique sans délai le volume nominal vers le lecteur principal s'il n'est pas en fondu."""
-        if self._media_player and not self._is_crossfading:
+        if self._media_player and not self._is_crossfading and not self._is_temporary_volume:
             try:
                 target = 0 if self._is_muted else self._volume
-                self._media_player.audio_set_volume(target)
+                if self._last_set_volume != target:
+                    self._last_set_volume = target
+                    self._media_player.audio_set_volume(target)
             except Exception:
                 pass
 
@@ -229,8 +213,9 @@ class PlayerService(QObject):
                         self._media_player.audio_output_set("directsound")
                     except Exception:
                         pass
-                self._attach_player_events(self._media_player)
-                self._media_player.audio_set_volume(0 if self._is_muted else self._volume)
+                initial_vol = 0 if self._is_muted else self._volume
+                self._last_set_volume = initial_vol
+                self._media_player.audio_set_volume(initial_vol)
             try:
                 self._standby_player = self._vlc_instance.media_player_new()
                 if self._standby_player is not None:
@@ -239,7 +224,6 @@ class PlayerService(QObject):
                             self._standby_player.audio_output_set("directsound")
                         except Exception:
                             pass
-                    self._attach_player_events(self._standby_player)
                     self._standby_player.audio_set_volume(0)
             except Exception:
                 self._standby_player = None
@@ -699,15 +683,9 @@ class PlayerService(QObject):
             self._media_player.set_media(media)
             self._media_player.play()
 
-            # Enforcer immédiatement et via les ticks/timers le volume nominal
-            # Résout la condition de course LibVLC asynchrone où le volume initial est ignoré
-            self._volume_enforce_ticks = 25  # Force le volume sur les 2.5 premières secondes (25 ticks de 100ms)
+            # Enforcer proprement le volume nominal (10 ticks de 100ms = 1 seconde)
+            self._volume_enforce_ticks = 10
             self._enforce_volume()
-            QTimer.singleShot(50, self._enforce_volume)
-            QTimer.singleShot(150, self._enforce_volume)
-            QTimer.singleShot(300, self._enforce_volume)
-            QTimer.singleShot(600, self._enforce_volume)
-            QTimer.singleShot(1200, self._enforce_volume)
 
             self._timer.start()
             self.track_changed.emit(track)
@@ -747,10 +725,8 @@ class PlayerService(QObject):
             self.state_changed.emit("paused")
         elif state == vlc.State.Paused:
             self._media_player.play()
-            self._volume_enforce_ticks = 15
+            self._volume_enforce_ticks = 10
             self._enforce_volume()
-            QTimer.singleShot(50, self._enforce_volume)
-            QTimer.singleShot(150, self._enforce_volume)
             if self._is_crossfading:
                 if self._standby_player:
                     try:
@@ -773,10 +749,8 @@ class PlayerService(QObject):
             return
         if self._media_player and self._media_player.get_state() == vlc.State.Paused:
             self._media_player.play()
-            self._volume_enforce_ticks = 15
+            self._volume_enforce_ticks = 10
             self._enforce_volume()
-            QTimer.singleShot(50, self._enforce_volume)
-            QTimer.singleShot(150, self._enforce_volume)
             if self._is_crossfading:
                 if self._standby_player:
                     try:
@@ -944,11 +918,14 @@ class PlayerService(QObject):
     def set_volume(self, volume: int) -> None:
         """Définit le volume sonore (0 à 100)."""
         self._volume = max(0, min(100, volume))
+        self._is_temporary_volume = False
         if self._media_player and not self._is_muted and not self._is_crossfading:
-            try:
-                self._media_player.audio_set_volume(self._volume)
-            except Exception:
-                pass
+            if self._last_set_volume != self._volume:
+                self._last_set_volume = self._volume
+                try:
+                    self._media_player.audio_set_volume(self._volume)
+                except Exception:
+                    pass
         try:
             get_config_manager().set_player_volume(self._volume)
         except Exception:
@@ -958,28 +935,38 @@ class PlayerService(QObject):
     def audio_set_temporary_volume(self, volume: int) -> None:
         """Applique temporairement un volume matériel (ex: fondu Blind Test) sans altérer la configuration."""
         vol = max(0, min(100, volume))
+        self._is_temporary_volume = True
         if self._media_player and not self._is_muted and not self._is_crossfading:
-            try:
-                self._media_player.audio_set_volume(vol)
-            except Exception:
-                pass
+            if self._last_set_volume != vol:
+                self._last_set_volume = vol
+                try:
+                    self._media_player.audio_set_volume(vol)
+                except Exception:
+                    pass
 
     def restore_volume(self) -> None:
         """Rétablit le volume nominal enregistré après un fondu temporaire."""
+        self._is_temporary_volume = False
         if self._media_player and not self._is_muted and not self._is_crossfading:
-            try:
-                self._media_player.audio_set_volume(self._volume)
-            except Exception:
-                pass
+            target = self._volume
+            if self._last_set_volume != target:
+                self._last_set_volume = target
+                try:
+                    self._media_player.audio_set_volume(target)
+                except Exception:
+                    pass
 
     def toggle_mute(self) -> None:
         """Bascule le mode silencieux (Mute/Unmute)."""
         self._is_muted = not self._is_muted
         if self._media_player:
-            try:
-                self._media_player.audio_set_volume(0 if self._is_muted else self._volume)
-            except Exception:
-                pass
+            target = 0 if self._is_muted else self._volume
+            if self._last_set_volume != target:
+                self._last_set_volume = target
+                try:
+                    self._media_player.audio_set_volume(target)
+                except Exception:
+                    pass
         if self._standby_player and self._is_muted:
             try:
                 self._standby_player.audio_set_volume(0)
@@ -1111,10 +1098,8 @@ class PlayerService(QObject):
             self._fade_paused_elapsed = 0.0
 
             # Verrouiller le volume nominal sur le nouveau lecteur principal
-            self._volume_enforce_ticks = 15
+            self._volume_enforce_ticks = 10
             self._enforce_volume()
-            QTimer.singleShot(50, self._enforce_volume)
-            QTimer.singleShot(150, self._enforce_volume)
 
             track = self._playlist[next_idx]
             self.track_changed.emit(track)
@@ -1260,7 +1245,7 @@ class PlayerService(QObject):
             except Exception:
                 pass
 
-        if not self._is_crossfading:
+        if not self._is_crossfading and not self._is_temporary_volume:
             target_vol = 0 if self._is_muted else self._volume
             if getattr(self, "_volume_enforce_ticks", 0) > 0:
                 self._volume_enforce_ticks -= 1

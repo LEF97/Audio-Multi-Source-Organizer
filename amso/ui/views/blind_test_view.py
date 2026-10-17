@@ -744,15 +744,13 @@ class BlindTestView(QWidget):
                 self._game_timer.stop()
                 self._stop_fade_and_restore_volume()
                 self.player.next()
-                self.player.seek_ratio(0.0)
-                if self.player.current_track:
-                    self._start_round_for_track(self.player.current_track, auto_play=True)
 
     def _start_fade(self, duration_sec: int | float) -> None:
         """Déclenche le fondu progressif de fin de manche."""
         self._is_fading = True
         self._fade_duration = float(duration_sec)
         self._fade_start_time = time.time()
+        self._last_fade_vol = -1
         self._fade_timer.start(50)
 
     def _on_fade_tick(self) -> None:
@@ -765,7 +763,9 @@ class BlindTestView(QWidget):
         progress = max(0.0, min(1.0, elapsed / self._fade_duration))
         remaining_ratio = 1.0 - progress
         target_vol = max(0, int(round(self._nominal_volume * remaining_ratio)))
-        self._apply_temporary_volume(target_vol)
+        if getattr(self, "_last_fade_vol", -1) != target_vol:
+            self._last_fade_vol = target_vol
+            self._apply_temporary_volume(target_vol)
         if progress >= 1.0:
             self._fade_timer.stop()
 
@@ -773,24 +773,15 @@ class BlindTestView(QWidget):
         """Transmet le volume atténué au lecteur sans écraser la configuration."""
         if hasattr(self.player, "audio_set_temporary_volume"):
             self.player.audio_set_temporary_volume(vol)
-        elif hasattr(self.player, "_media_player") and self.player._media_player:
-            try:
-                self.player._media_player.audio_set_volume(vol)
-            except Exception:
-                pass
 
     def _stop_fade_and_restore_volume(self) -> None:
         """Arrête le fondu et rétablit instantanément 100% du volume nominal."""
         if hasattr(self, "_fade_timer"):
             self._fade_timer.stop()
         self._is_fading = False
+        self._last_fade_vol = -1
         if hasattr(self.player, "restore_volume"):
             self.player.restore_volume()
-        elif hasattr(self.player, "_media_player") and self.player._media_player:
-            try:
-                self.player._media_player.audio_set_volume(self.player.volume)
-            except Exception:
-                pass
 
     def _trigger_reveal(self) -> None:
         """Déclenche l'animation de révélation (Fade-In de la pochette et textes)."""
@@ -862,18 +853,12 @@ class BlindTestView(QWidget):
             self._stop_fade_and_restore_volume()
             self._game_timer.stop()
             self.player.previous()
-            self.player.seek_ratio(0.0)
-            if self.player.current_track:
-                self._start_round_for_track(self.player.current_track, auto_play=self.player.is_playing)
 
     def _on_next_track_clicked(self) -> None:
         """Passe immédiatement au titre suivant dans le Blind Test (démarre à 0s)."""
         self._game_timer.stop()
         self._stop_fade_and_restore_volume()
         self.player.next()
-        self.player.seek_ratio(0.0)
-        if self.player.current_track:
-            self._start_round_for_track(self.player.current_track, auto_play=True)
 
     def _on_play_pause_clicked(self) -> None:
         """Met en pause ou reprend la lecture et le décompte."""
@@ -898,8 +883,6 @@ class BlindTestView(QWidget):
             if self._current_round_elapsed == 0 and self._state == "countdown":
                 self.player.seek_ratio(0.0)
             self.player.play()
-            if self._current_round_elapsed == 0 and self._state == "countdown":
-                self.player.seek_ratio(0.0)
             if self._is_active_page:
                 self._game_timer.start(1000)
                 if self._is_fading and hasattr(self, "_fade_timer"):
