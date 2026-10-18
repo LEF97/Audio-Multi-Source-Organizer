@@ -599,70 +599,82 @@ class PlaylistView(QWidget):
 
     def update_track_info(self, track: TrackRecord | None) -> None:
         """Met à jour l'affichage avec la piste en cours de lecture de façon instantanée."""
-        track_path = track.source_path if track else ""
-        self._displayed_track_path = track_path
+        try:
+            track_path = track.source_path if track else ""
+            self._displayed_track_path = track_path
 
-        pixmap = load_cover_async(track, size=56, radius=8, callback=self._on_cover_loaded, force_check=True)
-        self.lbl_thumb.setPixmap(pixmap)
+            pixmap = load_cover_async(track, size=56, radius=8, callback=self._on_cover_loaded, force_check=True)
+            self.lbl_thumb.setPixmap(pixmap)
 
-        if not track:
-            self.lbl_track_title.setText(tr("player.no_track"))
-            self.lbl_track_artist.setText("")
-            self.lbl_time_cur.setText("00:00")
-            self.lbl_time_total.setText("00:00")
-            self.slider_seek.setValue(0)
-            return
+            if not track:
+                self.lbl_track_title.setText(tr("player.no_track"))
+                self.lbl_track_artist.setText("")
+                self.lbl_time_cur.setText("00:00")
+                self.lbl_time_total.setText("00:00")
+                self.slider_seek.setValue(0)
+                return
 
-        title_text = track.title or track.file_name or tr("track.untitled")
-        self.lbl_track_title.setText(title_text)
+            title_text = track.title or track.file_name or tr("track.untitled")
+            self.lbl_track_title.setText(title_text)
 
-        artist_part = track.artist or tr("track.unknown_artist")
-        album_part = f" — {track.album}" if track.album else ""
-        self.lbl_track_artist.setText(f"{artist_part}{album_part}")
+            artist_part = track.artist or tr("track.unknown_artist")
+            album_part = f" — {track.album}" if track.album else ""
+            self.lbl_track_artist.setText(f"{artist_part}{album_part}")
 
-        total_sec = track.duration_seconds or 0
-        self.lbl_time_total.setText(format_duration(total_sec))
+            total_sec = track.duration_seconds or 0
+            self.lbl_time_total.setText(format_duration(total_sec))
 
-        # Faire défiler la table pour que la ligne active soit visible
-        curr_idx = self.player.current_index
-        if 0 <= curr_idx < self.playlist_model.rowCount():
-            model_idx = self.playlist_model.index(curr_idx, 0)
-            self.table_view.scrollTo(model_idx)
+            # Faire défiler la table pour que la ligne active soit visible
+            curr_idx = self.player.current_index
+            if 0 <= curr_idx < self.playlist_model.rowCount():
+                model_idx = self.playlist_model.index(curr_idx, 0)
+                self.table_view.scrollTo(model_idx)
+        except RuntimeError:
+            pass
 
     def update_playback_state(self, state: str) -> None:
-        if state == "playing":
-            self.btn_play_pause.setText("⏸")
-            self.btn_play_pause.setToolTip(tr("player.btn_pause"))
-            if self.player.current_track:
-                load_cover_async(
-                    self.player.current_track,
-                    size=56,
-                    radius=8,
-                    callback=self._on_cover_loaded,
-                    force_check=True,
-                )
-        else:
-            self.btn_play_pause.setText("▶")
-            self.btn_play_pause.setToolTip(tr("player.btn_play"))
+        try:
+            if state == "playing":
+                self.btn_play_pause.setText("⏸")
+                self.btn_play_pause.setToolTip(tr("player.btn_pause"))
+                if self.player.current_track:
+                    load_cover_async(
+                        self.player.current_track,
+                        size=56,
+                        radius=8,
+                        callback=self._on_cover_loaded,
+                        force_check=True,
+                    )
+            else:
+                self.btn_play_pause.setText("▶")
+                self.btn_play_pause.setToolTip(tr("player.btn_play"))
+        except RuntimeError:
+            pass
 
     def update_position(self, current_ms: int, total_ms: int, ratio: float) -> None:
-        self.lbl_time_cur.setText(format_duration(current_ms / 1000.0))
-        if total_ms > 0:
-            self.lbl_time_total.setText(format_duration(total_ms / 1000.0))
-        val = int(ratio * 1000)
-        self.slider_seek.blockSignals(True)
-        self.slider_seek.setValue(val)
-        self.slider_seek.blockSignals(False)
+        try:
+            self.lbl_time_cur.setText(format_duration(current_ms / 1000.0))
+            if total_ms > 0:
+                self.lbl_time_total.setText(format_duration(total_ms / 1000.0))
+            val = int(ratio * 1000)
+            self.slider_seek.blockSignals(True)
+            self.slider_seek.setValue(val)
+            self.slider_seek.blockSignals(False)
+        except RuntimeError:
+            pass
 
     def update_volume(self, volume: int, is_muted: bool) -> None:
-        self.slider_volume.blockSignals(True)
-        self.slider_volume.setValue(volume)
-        self.slider_volume.blockSignals(False)
+        try:
+            self.slider_volume.blockSignals(True)
+            self.slider_volume.setValue(volume)
+            self.slider_volume.blockSignals(False)
 
-        if is_muted or volume == 0:
-            self.btn_mute.setText("🔇")
-        else:
-            self.btn_mute.setText("🔊")
+            if is_muted or volume == 0:
+                self.btn_mute.setText("🔇")
+            else:
+                self.btn_mute.setText("🔊")
+        except RuntimeError:
+            pass
 
     def update_shuffle_ui(self, active: bool) -> None:
         if active:

@@ -646,29 +646,31 @@ class PlayerService(QObject):
             self.error_occurred.emit("VLC n'est pas disponible ou installé sur ce système.")
             return
 
+        if getattr(self, "_is_loading_track", False):
+            return
+
         if not (0 <= index < len(self._playlist)):
             return
 
         # S'assurer que le mélangeur Windows n'est pas sourdine ou ducké
         ensure_windows_audio_session_active()
 
-        seek_ms = self._pending_seek_ms if resume_pending else 0
-        self._pending_seek_ms = 0
-        self._reset_standby_player()
-        self._current_index = index
-        track = self._playlist[index]
-        self.track_changed.emit(track)
-        self.playlist_updated.emit()
-
-        file_path = track.source_path
-        if not file_path or not os.path.exists(file_path):
-            self.error_occurred.emit(f"Fichier audio introuvable : {file_path}")
-            return
-
-        if self._vlc_instance is None or self._media_player is None:
-            return
-
+        self._is_loading_track = True
         try:
+            seek_ms = self._pending_seek_ms if resume_pending else 0
+            self._pending_seek_ms = 0
+            self._reset_standby_player()
+            self._current_index = index
+            track = self._playlist[index]
+
+            file_path = track.source_path
+            if not file_path or not os.path.exists(file_path):
+                self.error_occurred.emit(f"Fichier audio introuvable : {file_path}")
+                return
+
+            if self._vlc_instance is None or self._media_player is None:
+                return
+
             # Préparation du média VLC avec options de mise en cache fluide
             norm_path = os.path.normpath(file_path)
             media = self._vlc_instance.media_new_path(norm_path)
@@ -698,6 +700,8 @@ class PlayerService(QObject):
         except Exception as exc:
             logger.error("Erreur lors de la lecture VLC : %s", exc)
             self.error_occurred.emit(f"Erreur de lecture : {exc}")
+        finally:
+            self._is_loading_track = False
 
     def toggle_play_pause(self) -> None:
         """Bascule entre Lecture et Pause."""
@@ -747,6 +751,8 @@ class PlayerService(QObject):
     def play(self) -> None:
         """Lance ou reprend la lecture."""
         if not self.is_vlc_available:
+            return
+        if getattr(self, "_is_loading_track", False):
             return
         if self._current_index < 0 and self._playlist:
             self.play_index(0)

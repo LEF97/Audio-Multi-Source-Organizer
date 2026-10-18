@@ -27,7 +27,11 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
   - **Aération visuelle de la carte centrale** : espacement vertical accru sous le nom de fichier pour aérer la rangée de boutons de commande.
   - **Repositionnement vertical du badge de session** : le badge « Extrait x / y — reste z minutes » a été légèrement descendu pour une respiration harmonieuse sous la barre supérieure.
   - **Préchargement asynchrone en mémoire vive (RAM)** : mise en cache anticipée de la pochette d'album du morceau suivant dès le lancement de la manche courante (`load_cover_async`), éliminant toute latence d'affichage lors de la transition.
-  - **Résolution du badge « En pause » intempestif pendant le décompte** : fiabilisation de la synchronisation d'état de session (`_session_playing`) évitant l'affichage erroné de « En pause » pendant la lecture.
+  - **Résolution du blocage/gel lors de retours successifs (« Morceau précédent »)** :
+    - Élimination d'une récursion infinie identifiée entre `play()` et `play_index()` causée par une émission anticipée du signal `track_changed` avant le chargement complet du média VLC.
+    - Ajout d'un verrou anti-réentrance (`_is_loading_track`) dans `PlayerService` pour sécuriser les changements rapides de pistes.
+    - Gestion robuste de la première piste (index 0) : lorsque l'utilisateur clique sur « Précédent » au tout début de la liste, la manche 0 redémarre instantanément et proprement (remise à zéro du décompte, son progressif de 0 à 100% et minuterie active), éliminant tout blocage silencieux.
+    - Bouclage automatique sécurisé vers le premier morceau à l'expiration de la dernière manche de découverte.
   - **Correction du volume à 0 lors d'un retour arrière** : rétablissement immédiat du volume sonore et amorçage du fondu entrant doux (2 s) lors du clic sur « Morceau précédent ».
 - **Résolution du blocage/gel critique de l'interface (écran blanc / « Ne répond pas »)** :
   - **Éradication du deadlock LibVLC C-Thread / GIL** : identification via inspection de pile mémoire d'un interblocage (*deadlock*) fatal où un callback d'événement VLC (`MediaPlayerPlaying`) tentait d'appeler `libvlc_audio_set_volume` depuis le thread interne de VLC pendant que le thread principal Qt appelait simultanément VLC avec le verrou GIL. Le rappel d'événement a été supprimé et remplacé par une application sécurisée sur l'event loop Qt.

@@ -31,7 +31,7 @@ from PySide6.QtWidgets import (
 from amso.core.config import get_config_manager
 from amso.core.database import TrackRecord
 from amso.core.i18n import tr
-from amso.services.player_service import PlayerService
+from amso.services.player_service import PlayerService, RepeatMode
 from amso.ui.views.cover_helper import get_default_cover_pixmap, load_cover_async
 from amso.ui.views.player_view import ClickableSlider, EffectContainer
 from amso.ui.views.visual_effects import VisualEffectWidget
@@ -892,7 +892,13 @@ class BlindTestView(QWidget):
                 # S'assurer que le morceau en cours s'éteint complètement à 0% sans rebond sonore
                 self._apply_temporary_volume(0)
                 self._session_playing = True
-                self.player.next()
+                playlist = getattr(self.player, "playlist", None)
+                total = len(playlist) if isinstance(playlist, (list, tuple)) else 0
+                cur = getattr(self.player, "current_index", 0)
+                if isinstance(cur, int) and total > 0 and cur + 1 >= total:
+                    self.player.play_index(0)
+                else:
+                    self.player.next()
 
     def _start_fade_in(self, duration_sec: float = 2.0) -> None:
         """Déclenche la montée progressive du volume sonore de 0% vers 100% sur 2 secondes."""
@@ -1046,9 +1052,15 @@ class BlindTestView(QWidget):
 
     def _on_prev_track_clicked(self) -> None:
         """Revient à 0 d'abord si la manche a déjà démarré (> 2s ou révélée),
-        ou passe réellement au morceau précédent si au tout début."""
+        ou passe réellement au morceau précédent si au tout début.
+        Si on est au premier morceau (index 0) et qu'on ne boucle pas, redémarre la manche 0."""
         self._session_playing = True
-        if self._current_round_elapsed > 2 or self._state == "revealed":
+
+        repeat_all = getattr(self.player, "repeat_mode", None) == RepeatMode.ALL
+        cur_idx = getattr(self.player, "current_index", 0)
+        is_first_track = isinstance(cur_idx, int) and cur_idx <= 0 and not repeat_all
+
+        if self._current_round_elapsed > 2 or self._state == "revealed" or is_first_track:
             self._restart_current_round()
         else:
             self._stop_fade_out()
@@ -1058,13 +1070,22 @@ class BlindTestView(QWidget):
             self.player.previous()
 
     def _on_next_track_clicked(self) -> None:
-        """Passe immédiatement au titre suivant dans le Blind Test (démarre à 0s)."""
+        """Passe immédiatement au titre suivant dans le Blind Test (démarre à 0s).
+        Boucle sur le premier morceau si on est au dernier titre."""
         self._session_playing = True
         self._game_timer.stop()
         self._stop_fade_out()
         self._stop_fade_in()
         self._apply_temporary_volume(0)
-        self.player.next()
+
+        playlist = getattr(self.player, "playlist", None)
+        total = len(playlist) if isinstance(playlist, (list, tuple)) else 0
+        cur = getattr(self.player, "current_index", 0)
+        repeat_all = getattr(self.player, "repeat_mode", None) == RepeatMode.ALL
+        if isinstance(cur, int) and total > 0 and cur + 1 >= total and not repeat_all:
+            self.player.play_index(0)
+        else:
+            self.player.next()
 
     def _on_play_pause_clicked(self) -> None:
         """Met en pause ou reprend la lecture et le décompte."""
