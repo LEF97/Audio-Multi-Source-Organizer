@@ -16,7 +16,11 @@
 ---
 
 <p align="center">
-  <img src="screenshots/2026-10-17%20v0.1.0.png" alt="Captura de pantalla de Audio Multi-Source Organizer (AMSO)" width="850">
+  <img src="screenshots/2026-10-18%20v0.2.0.png" alt="Captura de pantalla de Audio Multi-Source Organizer (AMSO) - Reproductor" width="850">
+</p>
+
+<p align="center">
+  <img src="screenshots/2026-10-18%20v0.2.0%2002.png" alt="Captura de pantalla de Audio Multi-Source Organizer (AMSO) - Espectro y Volumen" width="850">
 </p>
 
 ---
