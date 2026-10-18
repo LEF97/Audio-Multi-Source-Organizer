@@ -16,7 +16,11 @@
 ---
 
 <p align="center">
-  <img src="screenshots/2026-10-17%20v0.1.0.png" alt="Audio Multi-Source Organizer (AMSO) Screenshot" width="850">
+  <img src="screenshots/2026-10-18%20v0.2.0.png" alt="Audio Multi-Source Organizer (AMSO) - Audio Player & Hyperspace Ambience" width="850">
+</p>
+
+<p align="center">
+  <img src="screenshots/2026-10-18%20v0.2.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Retro Spectrum & Header Volume" width="850">
 </p>
 
 ---
@@ -28,8 +32,11 @@
 | **High-Speed Multithreaded Scanner** | Fast recursive traversal and indexing of local audio files (MP3, FLAC, AAC, OGG...) | 🟢 Implemented |
 | **Metadata & Artwork Extraction** | ID3 tags, Vorbis Comments, and audio fingerprinting extraction (`mutagen`) | 🟢 Implemented |
 | **Integrated VLC Playback Engine** | Lightweight, standalone audio player with automatic portable VLC setup and smooth volume control | 🟢 Implemented |
-| **Playlist & Queue Management** | Virtualized queue table, drag & drop reordering, shuffle, and repeat modes | 🟢 Implemented |
-| **Modern PySide6 GUI** | Sleek Dark Mode, live responsive audio visualizers, 5-language internationalization | 🟢 Implemented |
+| **Playlist & Queue Management** | Virtualized queue table, smooth drag & drop reordering, reversible shuffle, and repeat modes | 🟢 Implemented |
+| **Interactive « 🎲 Blind Test » Mode** | Immersive music guessing game with animated pulsing countdown, soft audio fade-out, smooth reveal, and auto-progression | 🟢 Implemented |
+| **Smart Trash & Library Restore** | Permanent track exclusions, native Windows Recycle Bin integration, and dedicated AMSO Trash restoration view | 🟢 Implemented |
+| **Ultra-Fast Asynchronous Saving** | Compact background SQLite persistence (-99% disk footprint) and instantaneous startup | 🟢 Implemented |
+| **Modern PySide6 GUI** | Sleek Dark Mode, live responsive audio visualizers, dedicated Games drawer, 5-language internationalization | 🟢 Implemented |
 | **In-App Update Checker** | Automatic and manual version checking via GitHub Releases | 🟢 Implemented |
 | **Artists & Discography Hub** | Dedicated artist overview with albums, singles, and full discographies | 🟡 Planned |
 | **Graphical Equalizer (EQ)** | Curated sound presets and multi-band parametric equalizer | 🟡 Planned |
