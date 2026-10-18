@@ -6,9 +6,10 @@ et un tableau détaillé de la file d'attente en dessous.
 
 from __future__ import annotations
 
-from PySide6.QtCore import QPoint, QSettings, Qt
-from PySide6.QtGui import QAction, QCursor, QPixmap
+from PySide6.QtCore import QPoint, QSettings, Qt, QTimer
+from PySide6.QtGui import QAction, QCursor, QPixmap, QShowEvent
 from PySide6.QtWidgets import (
+    QAbstractItemView,
     QFrame,
     QHBoxLayout,
     QHeaderView,
@@ -418,7 +419,7 @@ class PlaylistView(QWidget):
         self.player.state_changed.connect(self.update_playback_state)
         self.player.position_changed.connect(self.update_position)
         self.player.volume_changed.connect(self.update_volume)
-        self.player.playlist_updated.connect(self._update_stats_label)
+        self.player.playlist_updated.connect(self._on_playlist_updated)
         self.player.shuffle_changed.connect(self.update_shuffle_ui)
         self.player.repeat_changed.connect(self.update_repeat_ui)
 
@@ -592,6 +593,26 @@ class PlaylistView(QWidget):
         key = "playlist.stats_count_singular" if count == 1 else "playlist.stats_count"
         self.lbl_playlist_stats.setText(tr(key, count=f"{count:,}", duration=dur_str))
 
+    def _on_playlist_updated(self) -> None:
+        """Appelé lorsque la composition de la playlist change."""
+        self._update_stats_label()
+        QTimer.singleShot(60, self.scroll_to_current_track)
+
+    def scroll_to_current_track(self) -> None:
+        """Positionne le défilement de manière à centrer le morceau actif au milieu de l'écran."""
+        try:
+            curr_idx = self.player.current_index
+            if 0 <= curr_idx < self.playlist_model.rowCount():
+                model_idx = self.playlist_model.index(curr_idx, 0)
+                self.table_view.scrollTo(model_idx, QAbstractItemView.ScrollHint.PositionAtCenter)
+        except Exception:
+            pass
+
+    def showEvent(self, event: QShowEvent) -> None:
+        """Centre automatiquement la vue sur le titre en cours de lecture lorsqu'on accède à la page."""
+        super().showEvent(event)
+        QTimer.singleShot(60, self.scroll_to_current_track)
+
     def _on_cover_loaded(self, path: str, pixmap: QPixmap) -> None:
         """Appelé dès que la vignette asynchrone a fini de charger."""
         if getattr(self, "_displayed_track_path", None) == path:
@@ -624,11 +645,8 @@ class PlaylistView(QWidget):
             total_sec = track.duration_seconds or 0
             self.lbl_time_total.setText(format_duration(total_sec))
 
-            # Faire défiler la table pour que la ligne active soit visible
-            curr_idx = self.player.current_index
-            if 0 <= curr_idx < self.playlist_model.rowCount():
-                model_idx = self.playlist_model.index(curr_idx, 0)
-                self.table_view.scrollTo(model_idx)
+            # Faire défiler la table pour que la ligne active soit centrée
+            self.scroll_to_current_track()
         except RuntimeError:
             pass
 

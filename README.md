@@ -11,16 +11,20 @@
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
-> **AMSO** is an open-source, cross-platform desktop application designed to unify, deduplicate, and synchronize hybrid music collections spanning local hard drives, cloud archives (Google Drive), and streaming platforms (Spotify, Deezer, and Amazon Music).
+> **AMSO** (Audio Multi-Source Organizer) is a modern, responsive, cross-platform desktop audio player (Windows, Linux, macOS). Built to give audiophiles complete control over their local music library (MP3, FLAC, OGG…), it now supports playlist files (M3U, PLS, XSPF, WPL) and features an interactive audio blind test game! The project is expanding to become a unified command center capable of organizing, deduplicating, and synchronizing hybrid music collections across local storage, cloud services (Google Drive), and streaming platforms (Spotify, Deezer, Amazon Music).
 
 ---
 
 <p align="center">
-  <img src="screenshots/2026-10-18%20v0.2.0.png" alt="Audio Multi-Source Organizer (AMSO) - Audio Player & Hyperspace Ambience" width="850">
+  <img src="screenshots/2026-10-18%20v0.3.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Folder Tree & Playlists 🎶" width="850">
 </p>
 
 <p align="center">
-  <img src="screenshots/2026-10-18%20v0.2.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Retro Spectrum & Header Volume" width="850">
+  <img src="screenshots/2026-10-18%20v0.3.0.png" alt="Audio Multi-Source Organizer (AMSO) - Audio Player & Hyperspace Ambience" width="850">
+</p>
+
+<p align="center">
+  <img src="screenshots/2026-10-18%20v0.3.0%20blind%20test.png" alt="Audio Multi-Source Organizer (AMSO) - Interactive Blind Test Mini-game" width="850">
 </p>
 
 ---
@@ -29,14 +33,12 @@
 
 | Feature | Description | Status |
 | :--- | :--- | :---: |
+| **Integrated VLC Playback Engine** | Lightweight, standalone audio player with automatic portable VLC setup and smooth volume control | 🟢 Implemented |
 | **High-Speed Multithreaded Scanner** | Fast recursive traversal and indexing of local audio files (MP3, FLAC, AAC, OGG...) | 🟢 Implemented |
 | **Metadata & Artwork Extraction** | ID3 tags, Vorbis Comments, and audio fingerprinting extraction (`mutagen`) | 🟢 Implemented |
-| **Integrated VLC Playback Engine** | Lightweight, standalone audio player with automatic portable VLC setup and smooth volume control | 🟢 Implemented |
+| **Playlist Files Support (M3U, PLS, XSPF, WPL)** | Tree-based indexing (🎶), natural sequential track ordering, and visual missing track alerts | 🟢 Implemented |
 | **Playlist & Queue Management** | Virtualized queue table, smooth drag & drop reordering, reversible shuffle, and repeat modes | 🟢 Implemented |
 | **Interactive « 🎲 Blind Test » Mode** | Immersive music guessing game with animated pulsing countdown, soft audio fade-out, smooth reveal, and auto-progression | 🟢 Implemented |
-| **Smart Trash & Library Restore** | Permanent track exclusions, native Windows Recycle Bin integration, and dedicated AMSO Trash restoration view | 🟢 Implemented |
-| **Ultra-Fast Asynchronous Saving** | Compact background SQLite persistence (-99% disk footprint) and instantaneous startup | 🟢 Implemented |
-| **Modern PySide6 GUI** | Sleek Dark Mode, live responsive audio visualizers, dedicated Games drawer, 5-language internationalization | 🟢 Implemented |
 | **In-App Update Checker** | Automatic and manual version checking via GitHub Releases | 🟢 Implemented |
 | **Artists & Discography Hub** | Dedicated artist overview with albums, singles, and full discographies | 🟡 Planned |
 | **Graphical Equalizer (EQ)** | Curated sound presets and multi-band parametric equalizer | 🟡 Planned |

@@ -13,115 +13,53 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 
 ---
 
-## [0.3.0-dev] - En cours de développement
+## [0.3.0] - 2026-10-18
 
 ### Added
-- Début du cycle de développement pour la version 0.3.0.
+- **Prise en charge complète des fichiers de playlist** :
+  - Indexation automatique des formats de listes de lecture : `.m3u`, `.m3u8`, `.pls`, `.xspf` et `.wpl`.
+  - Intégration dans l'arborescence « Par dossier » sous forme de nœuds dédiés arborant l'icône **`🎶`**.
+  - Respect de l'ordre séquentiel d'écoute défini dans la playlist (colonne `#` avec l'ordre 1, 2, 3...) sans tri alphabétique automatique forcé.
+  - Gestion et détection visuelle des morceaux manquants ou déplacés : indication par un préfixe **`⚠️`**, coloration d'avertissement douce et infobulle descriptive, sans bloquer la lecture des autres pistes.
+  - Menu contextuel enrichi sur les nœuds de playlist : lecture directe, ajout en file d'attente et ouverture de l'emplacement du fichier playlist dans l'Explorateur Windows.
+- **Fondu sonore entrant doux (*Fade-in*)** :
+  - Transition progressive du volume de 0% au volume défini sur 1 seconde lors du démarrage ou de la reprise d'une lecture audio (hors mode Blind Test).
+- **Stabilité et fluidité de la synchronisation** :
+  - Suppression de la boîte de dialogue bloquante « Scan already running » au profit d'un enchaînement silencieux en file d'attente.
+  - Préservation de la sélection et non-rechargement inutile de l'arborescence des dossiers si aucun changement de dossier n'est détecté.
+- **Affichage dynamique des pochettes** :
+  - Correction du redimensionnement et du repositionnement de la pochette lors du passage plein écran / fenêtré ou du redimensionnement libre de la fenêtre.
 
 ---
 
 ## [0.2.0] - 2026-10-18
 
 ### Added
-- **Nouveau tiroir dédié « 🎲 Jeux » dans la barre latérale** :
-  - Création d'une catégorie repliable dédiée « JEUX » (positionnée directement sous le tiroir « LECTEUR ») accueillant la page **Blind Test**.
-  - Localisation du libellé dans les 5 langues officielles (FR: *Jeux*, EN: *Games*, DE: *Spiele*, ES: *Juegos*, IT: *Giochi*).
-- **Perfectionnements et corrections ergonomiques du Blind Test (Session v2)** :
-  - **Arrêt immédiat de la musique en quittant le Blind Test** : la musique s'arrête systématiquement dès que l'utilisateur navigue vers une autre page (Lecteur, Playlist, Paramètres, etc.).
-  - **Démarrage systématique sur la page « Lecteur »** : l'application s'ouvre désormais toujours sur la page principale du Lecteur au lancement. La persistance de l'ancienne page active dans `config.ini` a été supprimée et nettoyée.
-  - **Zoom dynamique accentué sur le décompte** : agrandissement du facteur d'échelle à x2.2 avec courbe d'amortissement fluide `OutCubic`, conférant un impact visuel immersif à chaque seconde.
-  - **Harmonisation esthétique du bouton « 👁️ Révéler »** : habillage sobre et élégant avec bordure et fond sombre (`#20242D` / `#333846`) s'accordant parfaitement avec les boutons « Précédent » et « Suivant ».
-  - **Aération visuelle de la carte centrale** : espacement vertical accru sous le nom de fichier pour aérer la rangée de boutons de commande.
-  - **Repositionnement vertical du badge de session** : le badge « Extrait x / y — reste z minutes » a été légèrement descendu pour une respiration harmonieuse sous la barre supérieure.
-  - **Préchargement asynchrone en mémoire vive (RAM)** : mise en cache anticipée de la pochette d'album du morceau suivant dès le lancement de la manche courante (`load_cover_async`), éliminant toute latence d'affichage lors de la transition.
-  - **Résolution du blocage/gel lors de retours successifs (« Morceau précédent »)** :
-    - Élimination d'une récursion infinie identifiée entre `play()` et `play_index()` causée par une émission anticipée du signal `track_changed` avant le chargement complet du média VLC.
-    - Ajout d'un verrou anti-réentrance (`_is_loading_track`) dans `PlayerService` pour sécuriser les changements rapides de pistes.
-    - Gestion robuste de la première piste (index 0) : lorsque l'utilisateur clique sur « Précédent » au tout début de la liste, la manche 0 redémarre instantanément et proprement (remise à zéro du décompte, son progressif de 0 à 100% et minuterie active), éliminant tout blocage silencieux.
-    - Bouclage automatique sécurisé vers le premier morceau à l'expiration de la dernière manche de découverte.
-  - **Correction du volume à 0 lors d'un retour arrière** : rétablissement immédiat du volume sonore et amorçage du fondu entrant doux (2 s) lors du clic sur « Morceau précédent ».
-- **Résolution du blocage/gel critique de l'interface (écran blanc / « Ne répond pas »)** :
-  - **Éradication du deadlock LibVLC C-Thread / GIL** : identification via inspection de pile mémoire d'un interblocage (*deadlock*) fatal où un callback d'événement VLC (`MediaPlayerPlaying`) tentait d'appeler `libvlc_audio_set_volume` depuis le thread interne de VLC pendant que le thread principal Qt appelait simultanément VLC avec le verrou GIL. Le rappel d'événement a été supprimé et remplacé par une application sécurisée sur l'event loop Qt.
-  - **Dissociation et non-ingérence des volumes temporaires** : ajout d'un drapeau `_is_temporary_volume` dans `PlayerService` pour empêcher la boucle de contrôle principale (100 ms) d'écraser et de combattre l'atténuation sonore du Blind Test (50 ms).
-  - **Élimination des rafales d'appels DirectSound** : mise en cache du dernier volume appliqué (`_last_set_volume`) et suppression des multiples `QTimer.singleShot` concurrents sur l'initialisation du périphérique audio DirectSound.
-  - **Suppression des appels dupliqués lors des enchaînements de manche** : clarification de la transition de fin de manche dans le Blind Test, évitant les déclenchements multiples et simultanés de `next()`, `seek_ratio(0.0)` et `_start_round_for_track()`.
-- **Optimisations et corrections ergonomiques du Lecteur et du Blind Test** :
-  - **Intégration du volume en haut du Lecteur audio** : déplacement du curseur de volume, de l'icône muet et du pourcentage sonore dans la barre supérieure de la page, directement à côté du titre « Lecteur audio », libérant ainsi l'espace visuel sous la carte principale.
-  - **Épuration de la page Lecteur** : retrait complet du bloc de configuration du Blind Test qui n'apparaît plus sous le lecteur audio.
-  - **Délocalisation des paramètres Blind Test dans Paramètres > Lecteur** :
-    - Nouvelle carte dédiée « 🎭 Paramètres du Blind Test » ajoutée à la fin de la page `Paramètres > Lecteur`.
-    - Configuration de la durée du décompte (5 à 120 s, 20 s par défaut) et de la durée de découverte (3 à 60 s, 10 s par défaut).
-    - **Nouveau paramètre : Durée du fondu sonore (*Fade-out*)** : réglable de 0 à 10 secondes (2 secondes par défaut, plafonné dynamiquement à la durée de découverte).
-    - Calcul et résumé en direct de la manche : `Durée d'une manche : {total}s ({countdown}s recherche + {reveal}s découverte dont {fade}s de fondu)`.
-  - **Gestion acoustique du fondu de découverte** :
-    - La durée totale de découverte reste inchangée (ex: 10 s par défaut).
-    - La lecture audio s'effectue à 100 % du volume nominal défini pendant `découverte - fondu` (ex: 10 - 2 = 8 secondes), puis s'atténue de manière fluide et progressive jusqu'à 0 pendant les 2 dernières secondes.
-    - Dès le passage au morceau suivant (nouvelle manche), le volume sonore est instantanément et automatiquement rétabli à 100 % dès la première milliseconde.
-    - Rétablissement immédiat du volume nominal en cas de clic manuel sur « Morceau suivant », pause ou changement de vue.
-  - **Internationalisation intégrale** : libellés et textes d'explication traduits et synchronisés en 5 langues (FR, EN, ES, DE, IT).
-- **Refonte et perfectionnement du mode Aléatoire (Shuffle)** :
-  - **Mélange intégral de la playlist** : lorsque l'icône Shuffle passe de désactivé à activé, l'ensemble complet de la file d'attente/tableau est mélangé aléatoirement (et non plus uniquement les titres en dessous). La piste en cours de lecture est elle-même redistribuée aléatoirement (pouvant se retrouver en première comme en dernière position) tout en poursuivant sa lecture sans coupure.
-  - **Restauration fidèle de l'ordre initial** : dès que le mode Shuffle est désactivé, la playlist reprend instantanément son ordre de titres d'origine (avant le mélange), l'index de lecture étant automatiquement recalé sur la position d'origine du morceau actif.
-  - **Bouton et menu contextuel « 🎲 Mélanger les titres »** :
-    - Renommage de « Mélanger la suite » en « 🎲 Mélanger les titres » (`playlist.btn_shuffle_tracks` et `playlist.menu_shuffle_tracks`).
-    - État contextuel strict : le bouton et l'action du menu clic droit ne sont désormais activables que lorsque le mode Shuffle est actif (affichés en grisé/désactivé sinon).
-    - Re-mélange dynamique : un clic sur ce bouton re-mélange l'ensemble des titres avec redistribution fluide de la piste en cours.
-  - **Localisation complète** : traductions synchronisées dans les 5 langues officielles de l'application (FR, EN, ES, DE, IT).
-- **Refonte visuelle et interactive de la page À propos** :
-  - **Bannière supérieure unifiée et alignée** :
-    - Alignement parfait du titre « Audio Multi-Source Organizer » et du badge de version tout en haut du cadre avec le sommet du logo officiel AMSO.
-    - Égaliseur de spectre audio rétro intégré directement **sous le texte descriptif** : barres calées sur le bord gauche du texte (ne touchant pas l'icône) et s'étirant jusqu'au bord droit du cadre, réagissant en temps réel à la musique jouée.
-  - **Section Soutien & Financement restructurée** :
-    - Carte dédiée avec sous-titre `💖 Soutenir le projet (Faire un don)`.
-    - Bouton Ko-fi aux couleurs officielles (`☕ Faire un don sur Ko-fi`) pointant vers `https://ko-fi.com/arnaudlef97`.
-    - Bouton GitHub Sponsors (`💖 GitHub Sponsors`) pointant vers l'URL officielle corrigée `https://github.com/sponsors/lef97`.
-  - **Section Pages officielles distincte** :
-    - Carte dédiée avec sous-titre `🌐 Pages officielles` séparée par un espacement naturel (sans trait horizontal de séparation).
-    - Boutons d'accès direct au Dépôt GitHub (`⭐ Dépôt GitHub`) et à la page Itch.io (`🎮 Page Itch.io` : `https://arnaudlef97.itch.io/amso`).
-  - **Section Remerciements repositionnée en clôture** :
-    - Carte dédiée `👍 Remerciements & Technologies Open Source` positionnée après les Pages officielles pour une hiérarchie d'information optimale.
-- **Mode « 🎭 Blind Test » interactif avec animations et enchaînement automatique** :
-  - **Nouvelle vue dédiée « 🎭 Blind Test »** insérée dans le tiroir Lecteur de la barre latérale, entre les pages Lecteur et Playlist.
-  - **Affichage mystère immersif** : effets visuels en haut synchronisés avec le moteur graphique, cadre central au format vinyle avec pochette masquée et métadonnées cachées (titre et artiste affichés sous forme de mystère).
-  - **Décompte dynamique animé par pulsation (Zoom & Fade)** : affichage d'un décompte géant au centre de la pochette qui effectue un zoom et un fondu doux à chaque seconde.
-  - **Révélation progressive et douce** : à 0 seconde (ou par clic anticipé sur le bouton « 👁️ Révéler »), la pochette émerge en fondu doux (*fade-in* progressif), le titre, l'artiste et l'album s'affichent clairement tout en dissimulant les données techniques (bitrate, format, chemin de fichier).
-  - **Enchaînement automatique et calage parfait** : la piste reste révélée pendant la durée de découverte configurée, puis passe automatiquement à la piste suivante en repartant systématiquement de 00:00.
-  - **Section de réglages intégrée dans la page Lecteur** : deux commandes configurables (*spinboxes*) avec calcul dynamique en direct de la durée totale d'une manche :
-    - *Durée du décompte* : 20 secondes par défaut (ajustable de 5 à 120 s).
-    - *Durée de la découverte* : 10 secondes par défaut (ajustable de 3 à 60 s).
-    - Durée totale par défaut : 30 secondes par manche.
-  - **Contrôles du jeu** : boutons Lecture/Pause, Révéler manuellement et Suivant, ainsi que maintien actif de l'écran (inhibition de mise en veille) pendant la session de jeu.
-  - **Internationalisation complète** : 100 % des libellés et textes d'états traduits et synchronisés en 5 langues (FR, EN, ES, DE, IT).
-- **Sauvegarde automatique et ultra-compacte de la playlist en temps réel** :
-  - Sauvegarde automatique en tâche de fond déclenchée à chaque changement de morceau ou modification de la file d'attente, temporisée par un anti-rebond (*debounce* de 2 secondes) pour éviter les accès disques inutiles lors des sauts rapides.
-  - Format compact v2 stockant uniquement les identifiants SQLite ordonnés (`track_ids`), réduisant l'empreinte disque de plus de 99 % (ex. ~78 Ko au lieu de 8,5 Mo pour une bibliothèque de 13 000 titres) et accélérant l'écriture à moins de 4 ms.
-  - Écriture asynchrone non-bloquante via un thread d'arrière-plan dédié (`PlaylistSaveThread`) pour garantir une fluidité totale de l'interface utilisateur (60 FPS constants).
-  - Découpage par lots de 900 variables dans `get_tracks_by_ids` pour respecter les plafonds SQLite et restaurer instantanément les très grandes playlists tout en maintenant la rétrocompatibilité avec les fichiers de format v1.
-- **Mode Aléatoire physique (Option A — Mélange visible de la playlist sous le titre actif)** :
-  - L'activation du mode aléatoire ou un clic sur le bouton de mélange réorganise physiquement les pistes situées sous le morceau actuellement joué dans la table de la playlist.
-  - Le morceau en cours de lecture reste actif et à sa position, tandis que toute la file d'attente à venir est visible dans son ordre de diffusion réel.
-  - Le bouton « Suivant » avance séquentiellement et de manière infaillible dans la table, supprimant définitivement les arrêts inopinés ou les sauts imprévisibles.
-  - Ajout d'un bouton d'action directe **🎲 Mélanger la suite** dans l'en-tête de la page Playlist et dans le menu contextuel clic-droit du tableau.
-- **Réorganisation intuitive de la playlist par Glisser-Déposer (Drag & Drop)** :
-  - Prise en charge native du réordonnancement par glisser-déposer sur les lignes du tableau de playlist (`PlaylistTableView`).
-  - Déplacement fluide mono ou multi-sélection avec mise à jour automatique de l'index de lecture pour que la piste en cours reste surlignée et continue de jouer sans interruption, peu importe les mouvements effectués autour d'elle.
-  - Persistance asynchrone instantanée du nouvel ordre défini par l'utilisateur.
-- **Refonte de l'arborescence des dossiers et harmonisation des menus contextuels** :
-  - **Distinction visuelle des sources et dossiers** : les racines de sources affichent désormais une icône dédiée (`💾` pour le stockage local/NAS, `☁️` pour le cloud) les différenciant immédiatement des sous-dossiers (`📁`).
-  - **Arborescence repliée par défaut** : au démarrage de l'application, l'arborescence des sources sur le panneau de gauche est désormais réduite pour une vue propre et dégagée.
-  - **Harmonisation des menus contextuels** : ajout des actions « ⏭️ Suivant » et « ➕ Ajouter à la liste de lecture » par clic-droit sur les dossiers de l'arborescence de gauche, ordonnées de manière identique au tableau des morceaux.
-- **Suppression intelligente de morceau & intégration de la Corbeille Windows** :
-  - Boîte de dialogue de confirmation moderne proposant deux choix clairs lors d'une demande de suppression :
-    1. *Retirer de la bibliothèque (et ignorer lors des futurs scans)* : le fichier est préservé sur le disque mais enregistré dans la table `ignored_tracks` pour ne plus jamais réapparaître lors des synchronisations automatiques ou manuelles.
-    2. *Mettre également le fichier à la corbeille Windows* : déplacement physique direct du fichier dans la corbeille système Windows (`ctypes.windll.shell32.SHFileOperationW`) avec possibilité de restauration ultérieure.
-  - Retrait dynamique et instantané du morceau supprimé de la file d'attente du lecteur audio si celui-ci y figurait.
-- **Vue dédiée Corbeille AMSO & Restauration dans la bibliothèque** :
-  - Ajout d'une entrée racine permanente **« 🗑️ Corbeille »** en dessous des sources dans l'arborescence de gauche, avec décompte dynamique des morceaux.
-  - Interface dédiée listant les morceaux retirés de la bibliothèque avec leur nom de fichier, leur emplacement d'origine, leur date de retrait et leur statut physique sur disque (*✅ Présent* ou *❌ Absent / Corbeille Windows*).
-  - Actions de restauration en un clic : bouton d'en-tête « ♻️ Restaurer la sélection », double-clic sur une ligne ou menu contextuel pour retirer l'exclusion et relancer la synchronisation de la source parente afin de réintégrer instantanément les morceaux dans la bibliothèque.
-  - Possibilité de vider la corbeille d'un clic pour réinitialiser les exclusions.
-- **Ajout en file d'attente sans lecture forcée (*No Autoplay*)** :
-  - Les commandes « Suivant » et « Ajouter à la liste de lecture » n'imposent plus de lecture automatique lorsque le lecteur est arrêté ou la file d'attente vide. Seuls le double-clic sur un morceau ou le clic sur « Play » démarrent la restitution sonore.
+### Mode Blind Test & Section Jeux
+- **Nouveau tiroir « 🎲 Jeux »** : Catégorie dédiée repliable dans la barre latérale accueillant la vue Blind Test (localisée en 5 langues).
+- **Expérience de jeu immersive** : Décompte visuel dynamique au centre de la pochette masquée, révélation progressive en fondu doux et enchaînement automatique des manches.
+- **Gestion acoustique avancée** : Réglage précis des temps de recherche, de découverte et du fondu sonore sortant (*fade-out*).
+- **Configuration dédiée** : Délocalisation des réglages du Blind Test dans `Paramètres > Lecteur`.
+
+### Ergonomie & Gestion de Playlist
+- **Refonte du mode Aléatoire (Shuffle)** : Mélange visuel intégral de la file d'attente préservant la piste active, bouton d'action directe « 🎲 Mélanger les titres » et restauration fidèle de l'ordre d'origine dès désactivation.
+- **Réorganisation par Glisser-Déposer** : Réordonnancement fluide des morceaux à la souris dans le tableau sans interrompre la lecture.
+- **Sauvegarde asynchrone v2** : Format compact par identifiants SQLite réduisant l'empreinte disque de 99 % (accès non-bloquants, 60 FPS constants).
+- **Comportement « No Autoplay »** : L'ajout de morceaux en file d'attente ne force plus le démarrage intempestif de la lecture.
+
+### Gestion de bibliothèque & Corbeille intelligente
+- **Suppression à double niveau** : Choix entre le simple retrait de la bibliothèque (avec exclusion mémorisée pour les futurs scans) et la suppression physique vers la Corbeille Windows.
+- **Vue dédiée « 🗑️ Corbeille »** : Consultation des pistes exclues et restauration en un clic avec réintégration automatique dans la base de données.
+- **Arborescence clarifiée** : Distinction visuelle entre sources locales et cloud, arborescence repliée par défaut au démarrage et menus contextuels uniformisés.
+
+### Stabilité du moteur audio (LibVLC) & Performances
+- **Éradication des blocages critiques** : Suppression du deadlock entre le thread C interne de LibVLC et la boucle d'événements Qt (fin des gels d'interface et écrans blancs).
+- **Robustesse des transitions** : Verrou anti-réentrance sur les changements rapides de pistes et résolution des blocages lors des retours arrière successifs (« Morceau précédent »).
+- **Contrôles de volume fiabilisés** : Intégration du curseur de volume dans la barre supérieure du lecteur et suppression des conflits d'atténuation sonore DirectSound.
+
+### Interface & Liens officiels
+- **Modernisation de la page « À propos »** : En-tête réaligné, analyseur de spectre rétro interactif intégré sous le texte et ajout des boutons officiels (Ko-fi, GitHub Sponsors, GitHub, Itch.io).
+- **Internationalisation intégrale** : Synchronisation complète de l'ensemble des libellés et options en 5 langues (FR, EN, ES, DE, IT).
 
 ### Fixed
 - **Résolution des erreurs `disk I/O error` (SQLite sous Windows)** : configuration du mode WAL une seule fois à l'initialisation du fichier de base de données, ajout de `PRAGMA busy_timeout = 30000`, stockage temporaire en mémoire RAM (`PRAGMA temp_store = MEMORY`) et mécanisme de réessais automatiques avec backoff exponentiel pour éliminer les conflits de verrouillage de fichiers lors des scans multithreadés.

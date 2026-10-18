@@ -16,7 +16,7 @@ Pour toute demande concernant la préparation, la finalisation ou le déploiemen
 - Exécuter `python scripts/sync_translations.py` pour valider l'i18n.
 - Mettre à jour les 3 fichiers Markdown : `CHANGELOG.fr.md`, `README.fr.md`, `ROADMAP.fr.md`.
 - Compiler avec `python scripts/build_exe.py` et préparer le dossier `dist/AMSO-Windows-vX.Y.Z/` contenant l'exe et les 3 `.md`.
-- Créer l'archive `dist/AMSO-Windows-vX.Y.Z.zip`.
+- Créer l'archive `dist/AMSO-Windows-vX.Y.Z.zip` (à partir de v0.4.0+, étendre la GitHub Action pour packager également Linux `.AppImage` et macOS `.dmg`).
 - Demander la validation manuelle de l'exécutable compilé à l'utilisateur.
 
 ### 3. Release (Publication)

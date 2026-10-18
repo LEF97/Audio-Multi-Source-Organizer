@@ -72,6 +72,7 @@ from amso.services.player_service import PlayerService
 from amso.services.sleep_inhibitor import SleepInhibitor
 from amso.services.update_checker import UpdateCheckerWorker
 from amso.ui.dialogs.delete_track_dialog import DeleteTrackDialog, send_file_to_trash
+from amso.ui.dialogs.large_selection_dialog import LargeSelectionDialog
 from amso.ui.dialogs.source_config_dialog import SourceConfigDialog
 from amso.ui.dialogs.vlc_download_dialog import VlcDownloadDialog
 from amso.ui.models import FolderTrackTableModel, TrackTableModel
@@ -270,6 +271,7 @@ class MainWindow(QMainWindow):
             progress_callback(75, tr("splash.loading_library"))
         self._current_active_page: str = "player"
         self.refresh_sources_list()
+        self._refresh_folders_tree()
         self.table_model.reload_data()
         self._update_track_count()
 
@@ -822,6 +824,7 @@ class MainWindow(QMainWindow):
         # Page 5 : Vue Lecteur audio grand format
         self.page_player = PlayerView(self.player_service, parent=self)
         self.page_player.effect_changed.connect(self._sync_visual_effect_radio)
+        self.page_player.add_folder_requested.connect(self._on_add_local_folder)
         self.stacked_widget.addWidget(self.page_player)
 
         # Page 5b : Vue Blind Test (Intercalée entre Lecteur et Playlist)
@@ -3178,6 +3181,9 @@ class MainWindow(QMainWindow):
                     w.deleteLater()
 
         sources = self.db.get_sources()
+        if hasattr(self, "page_player") and self.page_player:
+            self.page_player.set_has_sources(len(sources) > 0)
+
         for src in sources:
             icon_str = "💾" if src.source_type == SourceType.LOCAL else "☁️"
             btn = QPushButton(f"{icon_str}  {src.name}")
@@ -3189,8 +3195,6 @@ class MainWindow(QMainWindow):
             btn.customContextMenuRequested.connect(lambda pos, s=src, b=btn: self._on_source_context_menu(pos, s, b))
             self.nav_button_group.addButton(btn)
             self.sources_layout.addWidget(btn)
-
-        self._refresh_folders_tree()
 
     def _create_source_context_menu(self, source: SourceRecord) -> QMenu:
         """Crée le menu contextuel pour une source (synchroniser, ouvrir explorer, propriétés, supprimer)."""
@@ -3432,8 +3436,70 @@ class MainWindow(QMainWindow):
                         data["count"] = f_count
                         parent_node.setData(0, Qt.ItemDataRole.UserRole, data)
 
+            # Intégration des playlists indexées dans l'arborescence (icône 🎶)
+            playlists = self.db.get_playlists(source_id=src.id)
+            for pl in playlists:
+                pl_fp = (pl.folder_path or src_root).replace("\\", "/").rstrip("/")
+
+                if pl_fp.lower() != src_root.lower() and pl_fp.lower() not in tree_items:
+                    if pl_fp.lower().startswith(src_root.lower() + "/"):
+                        rel = pl_fp[len(src_root) + 1 :]
+                    else:
+                        rel = pl_fp
+
+                    parts = rel.split("/")
+                    current_accum = src_root
+                    p_node = source_item
+
+                    for part in parts:
+                        current_accum += "/" + part
+                        acc_key = current_accum.lower()
+
+                        if acc_key not in tree_items:
+                            node = QTreeWidgetItem(p_node)
+                            node.setText(0, f"📁  {part}")
+                            node.setData(
+                                0,
+                                Qt.ItemDataRole.UserRole,
+                                {
+                                    "source_id": src.id,
+                                    "folder_path": current_accum,
+                                    "is_source_root": False,
+                                    "count": 0,
+                                },
+                            )
+                            tree_items[acc_key] = node
+                            p_node = node
+                        else:
+                            p_node = tree_items[acc_key]
+
+                parent_node = tree_items.get(pl_fp.lower(), source_item)
+
+                pl_node = QTreeWidgetItem(parent_node)
+                pl_node.setText(0, f"🎶  {pl.file_name}")
+                pl_node.setText(1, f"{pl.track_count:,}" if pl.track_count > 0 else "")
+                pl_node.setTextAlignment(1, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+                pl_node.setToolTip(0, f"Playlist {pl.format.upper()}\n{pl.file_path}")
+                pl_node.setData(
+                    0,
+                    Qt.ItemDataRole.UserRole,
+                    {
+                        "source_id": src.id,
+                        "is_playlist": True,
+                        "playlist_id": pl.id,
+                        "folder_path": pl.file_path,
+                        "file_name": pl.file_name,
+                        "file_path": pl.file_path,
+                        "format": pl.format,
+                        "count": pl.track_count,
+                    },
+                )
+                tree_items[pl.file_path.lower()] = pl_node
+
             def _calc_totals(node: QTreeWidgetItem) -> int:
                 d = node.data(0, Qt.ItemDataRole.UserRole) or {}
+                if d.get("is_playlist"):
+                    return 0
                 direct = d.get("count", 0)
                 tot = direct
                 for c_idx in range(node.childCount()):
@@ -3508,6 +3574,21 @@ class MainWindow(QMainWindow):
             self._load_trash_view()
             return
 
+        if data.get("is_playlist"):
+            pl_id = data.get("playlist_id")
+            pl_name = data.get("file_name", "Playlist")
+            pl_path = data.get("file_path", "")
+            self.lbl_folder_breadcrumb.setText(f"🎶  {pl_name}")
+            self.lbl_folder_breadcrumb.setToolTip(f"Playlist {str(data.get('format', '')).upper()}\n{pl_path}")
+            self.cb_recursive.setVisible(False)
+            self.folder_search_edit.setVisible(True)
+            self.right_stack.setCurrentIndex(1)
+            self.folder_table_model.set_playlist(pl_id)
+            cnt = self.folder_table_model.rowCount()
+            count_key = "folders.track_count_singular" if cnt == 1 else "folders.track_count"
+            self.lbl_folder_count_badge.setText(tr(count_key, count=f"{cnt:,}"))
+            return
+
         self.cb_recursive.setVisible(True)
         self.folder_search_edit.setVisible(True)
 
@@ -3563,13 +3644,42 @@ class MainWindow(QMainWindow):
             menu.exec(self.folder_tree.mapToGlobal(pos))
             return
 
+        if data.get("is_playlist"):
+            pl_id = data.get("playlist_id")
+            pl_path = data.get("file_path")
+            tracks = self.db.get_playlist_tracks(pl_id) if pl_id else []
+
+            menu = QMenu(self)
+            if tracks:
+                act_play = QAction(tr("context_menu.play_playlist"), self)
+                act_play.triggered.connect(lambda: self.player_service.play_tracks(tracks, start_index=0))
+                menu.addAction(act_play)
+
+                act_next = QAction(tr("context_menu.play_next"), self)
+                act_next.triggered.connect(lambda: self._insert_next_with_vlc_check(tracks))
+                menu.addAction(act_next)
+
+                act_add = QAction(tr("context_menu.add_to_playlist"), self)
+                act_add.triggered.connect(lambda: self._append_tracks_with_vlc_check(tracks))
+                menu.addAction(act_add)
+
+                menu.addSeparator()
+
+            if pl_path:
+                action_open = QAction(tr("context_menu.open_file_location"), self)
+                action_open.triggered.connect(lambda: self._open_file_location(pl_path))
+                menu.addAction(action_open)
+
+            menu.exec(self.folder_tree.mapToGlobal(pos))
+            return
+
         fp = data.get("folder_path")
         source_id = data.get("source_id")
         is_source_root = data.get("is_source_root", False)
 
         menu = QMenu(self)
 
-        tracks: list[TrackRecord] = []
+        tracks = []
         if fp:
             tracks = self.db.get_tracks_by_folder(
                 folder_path=fp,
@@ -3616,6 +3726,11 @@ class MainWindow(QMainWindow):
             return
         data = item.data(0, Qt.ItemDataRole.UserRole)
         if not isinstance(data, dict):
+            return
+        if data.get("is_playlist"):
+            pl_path = data.get("file_path")
+            if pl_path:
+                self._open_file_location(pl_path)
             return
         fp = data.get("folder_path")
         if not fp or fp == "__trash__":
@@ -3973,9 +4088,13 @@ class MainWindow(QMainWindow):
 
     def _on_current_page_changed(self, index: int) -> None:
         """Appelé lors du basculement d'onglet pour adapter l'inhibition de veille de l'écran et la page active."""
+        prev_page = getattr(self, "_current_active_page", None)
         self._update_sleep_inhibition()
         if hasattr(self, "stacked_widget"):
             curr_widget = self.stacked_widget.currentWidget()
+            if prev_page == "blind_test" and curr_widget != getattr(self, "page_blind_test", None):
+                if hasattr(self, "player_service") and self.player_service and self.player_service.is_playing:
+                    self.player_service.pause()
             if curr_widget == getattr(self, "page_player", None):
                 self._current_active_page = "player"
             elif curr_widget == getattr(self, "page_blind_test", None):
@@ -4244,16 +4363,8 @@ class MainWindow(QMainWindow):
         if hasattr(self, "page_logs") and self.page_logs:
             self.page_logs.mark_dirty()
 
-        reply = QMessageBox.question(
-            self,
-            tr("dialog.scan_prompt_title"),
-            tr("dialog.scan_prompt_message", name=source.name),
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-        )
-        if reply == QMessageBox.StandardButton.Yes:
-            self._start_scan(source, user_initiated=True)
-        elif source.sync_mode == "realtime" and hasattr(self, "scheduler") and self.scheduler and source.id:
-            self.scheduler.enqueue_source(source.id)
+        # Lancement immédiat de l'indexation de la nouvelle source en arrière-plan
+        self._start_scan(source, user_initiated=True)
 
     def _on_scan_current_source(self) -> None:
         """Lance le scan sur toutes les sources locales."""
@@ -4287,8 +4398,8 @@ class MainWindow(QMainWindow):
     def _start_scan(self, source: SourceRecord, user_initiated: bool = False) -> bool:
         """Démarre le worker asynchrone de scan (Étape 1 inventaire rapide + Étape 2 analyse audio)."""
         if self.scan_worker and self.scan_worker.isRunning():
-            if user_initiated:
-                QMessageBox.warning(self, tr("dialog.scan_running_title"), tr("dialog.scan_running_message"))
+            if hasattr(self, "scheduler") and self.scheduler and source.id:
+                self.scheduler.enqueue_source(source.id)
             return False
 
         self._current_scan_user_initiated = user_initiated
@@ -4361,53 +4472,69 @@ class MainWindow(QMainWindow):
 
     def _on_phase1_scan_finished(self, summary: ScanSummary) -> None:
         """Appelé dès que l'étape 1 (inventaire rapide des fichiers) est achevée."""
-        # Marquer les données comme modifiées (lazy update pour ne pas bloquer l'écran)
-        self._tracks_dirty = True
-        self._folders_dirty = True
-        self._stats_dirty = True
-        self._sources_dirty = True
+        has_structural_changes = summary.added > 0 or summary.deleted > 0
+        has_any_changes = has_structural_changes or summary.updated > 0
+
+        if has_any_changes:
+            self._tracks_dirty = True
+            self._folders_dirty = True
+            self._stats_dirty = True
+            self._sources_dirty = True
 
         total_indexed = summary.added + summary.updated + summary.unchanged
         self.status_label.setText(tr("status.phase1_done", count=total_indexed))
         if hasattr(self, "activity_popover") and self.activity_popover:
             self.activity_popover.update_progress(tr("status.phase1_done", count=total_indexed), pct=50)
 
-        # Si l'utilisateur consulte activement la vue Morceaux (0) ou Dossiers (3), rafraîchir uniquement cette vue
+        # Si l'utilisateur consulte activement la vue Morceaux (0) ou Dossiers (3), rafraîchir intelligemment
         curr_page = self.stacked_widget.currentIndex()
         if curr_page == 0:
-            self.table_model.reload_data()
+            if has_any_changes:
+                self.table_model.reload_data()
+                self._update_track_count()
             self._tracks_dirty = False
-            self._update_track_count()
         elif curr_page == 3:
-            self._refresh_folders_tree()
-            self.folder_table_model.reload_data()
+            if has_structural_changes:
+                self._refresh_folders_tree()
+            if has_any_changes:
+                self.folder_table_model.reload_data()
             self._folders_dirty = False
 
     def _on_scan_finished(self, summary: ScanSummary) -> None:
         self.progress_bar.setVisible(False)
         self.btn_cancel_scan.setVisible(False)
 
-        # Marquer les vues pour un rafraîchissement à la demande (dissociation totale des vues)
-        self._tracks_dirty = True
-        self._folders_dirty = True
-        self._stats_dirty = True
-        self._sources_dirty = True
+        has_structural_changes = summary.added > 0 or summary.deleted > 0
+        has_any_changes = has_structural_changes or summary.updated > 0
 
-        # Rafraîchir UNIQUEMENT la vue actuellement visible
+        # Marquer les vues pour un rafraîchissement à la demande uniquement si des changements existent
+        if has_any_changes:
+            self._tracks_dirty = True
+            self._folders_dirty = True
+            self._stats_dirty = True
+            self._sources_dirty = True
+
+        # Rafraîchir UNIQUEMENT la vue actuellement visible s'il y a eu des modifications
         curr_page = self.stacked_widget.currentIndex()
         if curr_page == 0:
-            self.table_model.reload_data()
+            if has_any_changes:
+                self.table_model.reload_data()
+                self._update_track_count()
             self._tracks_dirty = False
-            self._update_track_count()
         elif curr_page == 3:
-            self._refresh_folders_tree()
-            self.folder_table_model.reload_data()
+            # Ne rafraîchir l'arborescence des dossiers que si un dossier a été ajouté ou supprimé
+            if has_structural_changes:
+                self._refresh_folders_tree()
+            if has_any_changes:
+                self.folder_table_model.reload_data()
             self._folders_dirty = False
         elif curr_page == 4:
-            self._refresh_settings_sources_table()
+            if has_any_changes:
+                self._refresh_settings_sources_table()
             self._sources_dirty = False
 
-        self.refresh_sources_list()
+        if has_any_changes:
+            self.refresh_sources_list()
 
         # Récupération du nom de la source scannée
         source_name = "Source"
@@ -4670,27 +4797,96 @@ class MainWindow(QMainWindow):
         """Double-clic sur un morceau dans la table principale."""
         if not index.isValid():
             return
+        self.table_view.scrollTo(index, QAbstractItemView.ScrollHint.PositionAtCenter)
         self._play_from_table(self.table_model, index.row())
 
     def _on_folder_table_view_double_clicked(self, index) -> None:
         """Double-clic sur un morceau dans la table par dossier."""
         if not index.isValid():
             return
+        self.folder_table_view.scrollTo(index, QAbstractItemView.ScrollHint.PositionAtCenter)
         self._play_from_table(self.folder_table_model, index.row())
 
     def _play_from_table(self, model: Any, start_row: int) -> None:
-        """Lance immédiatement la lecture du morceau cliqué et injecte tous les morceaux suivants dans la playlist."""
+        """Lance la lecture du morceau cliqué et charge la sélection dans la playlist (avec confirmation si > 1 000 morceaux)."""
         if not self.player_service.is_vlc_available:
             if not self._ensure_vlc_available():
                 return
-        tracks: list[TrackRecord] = []
+
+        clicked_track = model.get_track_at(start_row)
+        if clicked_track is None:
+            return
+
         total_rows = model.rowCount()
-        for r in range(start_row, total_rows):
+
+        # Si la sélection dépasse 1 000 titres, afficher le dialogue de décision
+        if total_rows > 1000:
+            folder_count = 0
+            if clicked_track.folder_path:
+                try:
+                    folder_count = self.db.count_tracks_by_folder(
+                        clicked_track.folder_path,
+                        source_id=clicked_track.source_id,
+                        recursive=False,
+                    )
+                except Exception:
+                    folder_count = 0
+
+            dialog = LargeSelectionDialog(
+                track=clicked_track,
+                total_count=total_rows,
+                folder_track_count=folder_count,
+                parent=self,
+            )
+            if dialog.exec() != QDialog.DialogCode.Accepted:
+                return
+
+            choice = dialog.get_choice()
+            if choice == "folder":
+                tracks_to_play = self.db.get_tracks_by_folder(
+                    folder_path=clicked_track.folder_path,
+                    source_id=clicked_track.source_id,
+                    recursive=False,
+                )
+                if not tracks_to_play:
+                    tracks_to_play = [clicked_track]
+                target_idx = 0
+                for idx, t in enumerate(tracks_to_play):
+                    if (t.id is not None and t.id == clicked_track.id) or (t.source_path and t.source_path == clicked_track.source_path):
+                        target_idx = idx
+                        break
+                self.player_service.play_tracks(tracks_to_play, start_index=target_idx)
+                return
+
+            elif choice == "limit_1000":
+                limit_tracks: list[TrackRecord] = []
+                end_row = min(total_rows, start_row + 1000)
+                for r in range(start_row, end_row):
+                    t = model.get_track_at(r)
+                    if t is not None:
+                        limit_tracks.append(t)
+                if limit_tracks:
+                    self.player_service.play_tracks(limit_tracks, start_index=0)
+                return
+
+            elif choice == "play_all":
+                # Poursuit vers le chargement complet ci-dessous
+                pass
+            else:
+                return
+
+        # Cas <= 1 000 ou choix "play_all" : tous les titres du modèle sont ajoutés, lecture démarrant au titre cliqué
+        all_tracks: list[TrackRecord] = []
+        target_index = 0
+        for r in range(total_rows):
             t = model.get_track_at(r)
             if t is not None:
-                tracks.append(t)
-        if tracks:
-            self.player_service.play_tracks(tracks, start_index=0)
+                if r == start_row:
+                    target_index = len(all_tracks)
+                all_tracks.append(t)
+
+        if all_tracks:
+            self.player_service.play_tracks(all_tracks, start_index=target_index)
 
     def _insert_next_with_vlc_check(self, tracks: list[TrackRecord]) -> None:
         if not self.player_service.is_vlc_available:

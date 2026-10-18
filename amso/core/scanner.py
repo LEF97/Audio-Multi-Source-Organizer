@@ -18,6 +18,7 @@ from pathlib import Path
 
 from amso.core.database import DatabaseManager, SourceRecord, SourceType, TrackRecord
 from amso.core.metadata import SUPPORTED_AUDIO_EXTENSIONS, extract_metadata
+from amso.core.playlist_parser import SUPPORTED_PLAYLIST_EXTENSIONS, parse_playlist_file
 
 
 @dataclass(slots=True)
@@ -110,6 +111,7 @@ class LocalScanner:
 
         ignored_refs = self.db.get_ignored_tracks_refs()
         audio_files: list[Path] = []
+        playlist_files: list[tuple[Path, str, str, str, float, int]] = []
         current_refs: set[str] = set()
         inventory_buffer: list[TrackRecord] = []
 
@@ -145,6 +147,17 @@ class LocalScanner:
                                 if dot_idx == -1:
                                     continue
                                 ext = fn[dot_idx:].lower()
+
+                                if ext in SUPPORTED_PLAYLIST_EXTENSIONS:
+                                    try:
+                                        st = entry.stat(follow_symlinks=False)
+                                        playlist_files.append(
+                                            (Path(entry.path), fn, clean_folder_path, ext, st.st_mtime, st.st_size)
+                                        )
+                                    except (OSError, PermissionError):
+                                        pass
+                                    continue
+
                                 if ext not in SUPPORTED_AUDIO_EXTENSIONS:
                                     continue
 
@@ -222,6 +235,43 @@ class LocalScanner:
         # 3. Nettoyage des fichiers supprimés du disque
         if not summary.cancelled and source.id is not None:
             summary.deleted = self.db.prune_missing_tracks(source.id, current_refs)
+
+        # 4. Traitement et indexation des fichiers de playlist (M3U, M3U8, PLS, XSPF, WPL)
+        current_playlist_paths: set[str] = set()
+        for pl_path, pl_name, pl_folder, pl_ext, pl_mtime, pl_size in playlist_files:
+            if self._cancel_event.is_set():
+                summary.cancelled = True
+                break
+            clean_pl_path = str(pl_path).replace("\\", "/")
+            current_playlist_paths.add(clean_pl_path)
+
+            existing_pl = self.db.get_playlist_by_path(clean_pl_path)
+            if existing_pl and abs(existing_pl.file_mtime - pl_mtime) < 0.001 and existing_pl.file_size == pl_size:
+                continue
+
+            try:
+                parsed_entries = parse_playlist_file(pl_path)
+                src_type_str = "local"
+                if hasattr(source, "source_type") and source.source_type:
+                    src_type_str = getattr(source.source_type, "value", str(source.source_type))
+                self.db.upsert_playlist(
+                    source_id=source.id or 0,
+                    file_path=clean_pl_path,
+                    file_name=pl_name,
+                    folder_path=pl_folder,
+                    format_str=pl_ext.lstrip("."),
+                    file_mtime=pl_mtime,
+                    file_size=pl_size,
+                    entries=parsed_entries,
+                    source_type=src_type_str,
+                )
+            except Exception as e:
+                summary.errors.append(f"Erreur d'analyse de la playlist {pl_name} : {e}")
+
+        # Nettoyage des playlists qui n'existent plus sur le disque et liaison automatique avec tracks
+        if not summary.cancelled and source.id is not None:
+            self.db.delete_playlists_not_in(source.id, current_playlist_paths)
+            self.db.link_playlist_entries_to_tracks(source.id)
 
         summary.elapsed_seconds = round(time.perf_counter() - start_time, 2)
         if on_status:
@@ -306,6 +356,9 @@ class LocalScanner:
                 self.db.update_track_metadata_batch(buffer)
                 buffer.clear()
                 time.sleep(0.002)
+
+        if not self._cancel_event.is_set() and source.id is not None:
+            self.db.link_playlist_entries_to_tracks(source.id)
 
         summary.elapsed_seconds = round(time.perf_counter() - start_time, 2)
         if on_status:

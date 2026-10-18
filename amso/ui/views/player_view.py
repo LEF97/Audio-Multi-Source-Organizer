@@ -61,10 +61,12 @@ class PlayerView(QWidget):
     """Page dédiée au Lecteur Audio grand format avec jaquette et contrôles complets."""
 
     effect_changed = Signal(str)
+    add_folder_requested = Signal()
 
     def __init__(self, player_service: PlayerService, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.player = player_service
+        self._has_sources: bool = True
 
         self._setup_ui()
         self._connect_signals()
@@ -148,7 +150,8 @@ class PlayerView(QWidget):
 
         self.combo_effect = QComboBox()
         self.combo_effect.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.combo_effect.setFixedWidth(175)
+        self.combo_effect.setFixedWidth(250)
+        self.combo_effect.view().setMinimumWidth(260)
         self.combo_effect.setStyleSheet("""
             QComboBox {
                 background-color: #20242D;
@@ -266,6 +269,7 @@ class PlayerView(QWidget):
 
         # 3. Barre de progression temporelle (Seekbar)
         seek_container = QWidget()
+        self.seek_container = seek_container
         seek_layout = QHBoxLayout(seek_container)
         seek_layout.setContentsMargins(0, 2, 0, 0)
         seek_layout.setSpacing(8)
@@ -309,7 +313,9 @@ class PlayerView(QWidget):
         card_layout.addWidget(seek_container)
 
         # 4. Commandes principales de lecture
-        ctrl_layout = QHBoxLayout()
+        self.ctrl_container = QWidget()
+        ctrl_layout = QHBoxLayout(self.ctrl_container)
+        ctrl_layout.setContentsMargins(0, 0, 0, 0)
         ctrl_layout.setSpacing(12)
         ctrl_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -370,7 +376,70 @@ class PlayerView(QWidget):
         self._style_icon_button(self.btn_repeat)
         ctrl_layout.addWidget(self.btn_repeat)
 
-        card_layout.addLayout(ctrl_layout)
+        card_layout.addWidget(self.ctrl_container)
+
+        # 5. État vide accueillant (quand aucune source audio n'est configurée)
+        self.empty_container = QWidget()
+        empty_layout = QVBoxLayout(self.empty_container)
+        empty_layout.setContentsMargins(16, 20, 16, 20)
+        empty_layout.setSpacing(12)
+        empty_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.lbl_empty_icon = QLabel("📁")
+        self.lbl_empty_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.lbl_empty_icon.setStyleSheet("""
+            QLabel {
+                font-size: 50px;
+                background-color: rgba(56, 189, 248, 0.08);
+                border: 2px dashed rgba(56, 189, 248, 0.35);
+                border-radius: 20px;
+                padding: 18px;
+                min-width: 90px;
+                min-height: 90px;
+            }
+        """)
+        empty_layout.addWidget(self.lbl_empty_icon, 0, Qt.AlignmentFlag.AlignCenter)
+
+        self.lbl_empty_title = QLabel(tr("player.empty_title"))
+        self.lbl_empty_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.lbl_empty_title.setStyleSheet("color: #F8FAFC; font-size: 18px; font-weight: 700;")
+        self.lbl_empty_title.setWordWrap(True)
+        empty_layout.addWidget(self.lbl_empty_title)
+
+        self.lbl_empty_desc = QLabel(tr("player.empty_desc"))
+        self.lbl_empty_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.lbl_empty_desc.setStyleSheet("color: #94A3B8; font-size: 13px; line-height: 1.5;")
+        self.lbl_empty_desc.setWordWrap(True)
+        empty_layout.addWidget(self.lbl_empty_desc)
+
+        empty_layout.addSpacing(6)
+
+        self.btn_add_first_folder = QPushButton(tr("player.btn_add_first_folder"))
+        self.btn_add_first_folder.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_add_first_folder.setStyleSheet("""
+            QPushButton {
+                background-color: #0284C7;
+                color: #FFFFFF;
+                border: 1px solid #38BDF8;
+                border-radius: 8px;
+                font-size: 13.5px;
+                font-weight: 600;
+                padding: 10px 22px;
+            }
+            QPushButton:hover {
+                background-color: #38BDF8;
+                color: #0F172A;
+            }
+            QPushButton:pressed {
+                background-color: #0369A1;
+                color: #FFFFFF;
+            }
+        """)
+        self.btn_add_first_folder.clicked.connect(self._on_add_folder_clicked)
+        empty_layout.addWidget(self.btn_add_first_folder, 0, Qt.AlignmentFlag.AlignCenter)
+
+        self.empty_container.setVisible(False)
+        card_layout.addWidget(self.empty_container)
 
         center_layout.addWidget(self.card)
         scroll.setWidget(center_container)
@@ -493,6 +562,8 @@ class PlayerView(QWidget):
         pour garantir un affichage intégral (titre et auteur multi-lignes, commandes,
         curseur de volume) sans coupure ni défilement superflu."""
         if not hasattr(self, "scroll_area") or not hasattr(self, "card"):
+            return
+        if not getattr(self, "_has_sources", True):
             return
 
         viewport_h = self.scroll_area.viewport().height()
@@ -765,6 +836,26 @@ class PlayerView(QWidget):
                 font-size: 14px;
             """)
 
+    def _on_add_folder_clicked(self) -> None:
+        """Déclenché par le bouton de premier accueil dans la carte du lecteur."""
+        self.add_folder_requested.emit()
+
+    def set_has_sources(self, has_sources: bool) -> None:
+        """Bascule entre la vue lecteur standard et l'état d'accueil incitatif."""
+        self._has_sources = has_sources
+        show_empty = not has_sources
+        if hasattr(self, "empty_container"):
+            self.empty_container.setVisible(show_empty)
+        if hasattr(self, "lbl_cover"):
+            self.lbl_cover.setVisible(not show_empty)
+        if hasattr(self, "info_container"):
+            self.info_container.setVisible(not show_empty)
+        if hasattr(self, "seek_container"):
+            self.seek_container.setVisible(not show_empty)
+        if hasattr(self, "ctrl_container"):
+            self.ctrl_container.setVisible(not show_empty)
+        self._adjust_layout()
+
     def retranslate_ui(self) -> None:
         """Met à jour l'ensemble des textes et infobulles du lecteur selon la langue active."""
         self.lbl_page_title.setText(tr("player.title"))
@@ -772,6 +863,13 @@ class PlayerView(QWidget):
             self.lbl_effect_badge.setText(tr("player.visual_effect"))
         if hasattr(self, "combo_effect"):
             self._populate_effects_combo()
+
+        if hasattr(self, "lbl_empty_title"):
+            self.lbl_empty_title.setText(tr("player.empty_title"))
+        if hasattr(self, "lbl_empty_desc"):
+            self.lbl_empty_desc.setText(tr("player.empty_desc"))
+        if hasattr(self, "btn_add_first_folder"):
+            self.btn_add_first_folder.setText(tr("player.btn_add_first_folder"))
 
         if not self.player.current_track:
             self.lbl_title.setText(tr("player.no_track"))

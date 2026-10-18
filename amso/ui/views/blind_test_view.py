@@ -13,11 +13,12 @@ from PySide6.QtCore import (
     QTimer,
     Signal,
 )
-from PySide6.QtGui import QColor, QFont, QHideEvent, QPainter, QPixmap
+from PySide6.QtGui import QColor, QFont, QHideEvent, QPainter, QPixmap, QResizeEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QFrame,
     QGraphicsOpacityEffect,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QProgressBar,
@@ -100,6 +101,12 @@ class ZoomFadeLabel(QLabel):
         painter.setPen(QColor("#38BDF8"))
         painter.drawText(self.rect(), int(self.alignment()), self.text())
         painter.end()
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+        if hasattr(self, "_opacity_effect") and self._opacity_effect:
+            self._opacity_effect.updateBoundingRect()
+            self._opacity_effect.update()
 
 
 class BlindTestView(QWidget):
@@ -226,7 +233,8 @@ class BlindTestView(QWidget):
 
         self.combo_effect = QComboBox()
         self.combo_effect.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.combo_effect.setFixedWidth(175)
+        self.combo_effect.setFixedWidth(250)
+        self.combo_effect.view().setMinimumWidth(260)
         self.combo_effect.setStyleSheet("""
             QComboBox {
                 background-color: #20242D;
@@ -313,10 +321,7 @@ class BlindTestView(QWidget):
         card_layout.setSpacing(12)
 
         # Zone d'affichage de la Pochette / Décompte
-        cover_container = QWidget()
-        cover_container.setFixedSize(280, 280)
-
-        self.cover_box = QFrame(cover_container)
+        self.cover_box = QFrame()
         self.cover_box.setFixedSize(280, 280)
         self.cover_box.setStyleSheet("""
             QFrame {
@@ -326,17 +331,22 @@ class BlindTestView(QWidget):
             }
         """)
 
+        cover_layout = QGridLayout(self.cover_box)
+        cover_layout.setContentsMargins(0, 0, 0, 0)
+        cover_layout.setSpacing(0)
+
         # Label de la pochette réelle (initialement cachée avec opacité 0.0)
-        self.lbl_cover = QLabel(self.cover_box)
+        self.lbl_cover = QLabel()
         self.lbl_cover.setFixedSize(280, 280)
         self.lbl_cover.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_cover.setStyleSheet("border-radius: 16px;")
         self.cover_opacity = QGraphicsOpacityEffect(self.lbl_cover)
         self.cover_opacity.setOpacity(0.0)
         self.lbl_cover.setGraphicsEffect(self.cover_opacity)
+        cover_layout.addWidget(self.lbl_cover, 0, 0)
 
         # Chiffre géant animé superposé
-        self.lbl_countdown = ZoomFadeLabel(self.cover_box)
+        self.lbl_countdown = ZoomFadeLabel()
         self.lbl_countdown.setFixedSize(280, 280)
         font = self.lbl_countdown.font()
         font.setPixelSize(88)
@@ -349,8 +359,9 @@ class BlindTestView(QWidget):
             font-weight: 800;
             background: transparent;
         """)
+        cover_layout.addWidget(self.lbl_countdown, 0, 0)
 
-        card_layout.addWidget(cover_container, 0, Qt.AlignmentFlag.AlignCenter)
+        card_layout.addWidget(self.cover_box, 0, Qt.AlignmentFlag.AlignCenter)
 
         # Jauge de manche
         self.round_progress = QProgressBar()
@@ -544,7 +555,12 @@ class BlindTestView(QWidget):
         self.player.track_changed.connect(self._on_track_changed)
         self.player.state_changed.connect(self._on_playback_state_changed)
         self.player.volume_changed.connect(self._on_player_volume_changed)
+        self.player.position_changed.connect(self._on_player_position_changed)
         self.player.playlist_updated.connect(self._on_playlist_updated)
+
+    def _on_player_position_changed(self, current_ms: int, total_ms: int, ratio: float) -> None:
+        if hasattr(self, "effect_canvas") and self.effect_canvas:
+            self.effect_canvas.update_audio_time(current_ms, ratio)
 
     def _on_playlist_updated(self) -> None:
         if self._is_active_page:
@@ -556,6 +572,21 @@ class BlindTestView(QWidget):
         super().showEvent(event)
         self._is_active_page = True
         self._session_playing = False
+
+        if self._state == "revealed" and hasattr(self, "cover_opacity") and self.cover_opacity:
+            self.cover_opacity.setEnabled(False)
+        if hasattr(self, "lbl_cover") and self.lbl_cover:
+            self.lbl_cover.update()
+        if hasattr(self, "cover_box") and self.cover_box:
+            self.cover_box.update()
+
+        if hasattr(self, "effect_canvas") and self.effect_canvas:
+            self.effect_canvas.showEvent(event)
+            eff_state = "playing" if self.player.is_playing else "stopped"
+            self.effect_canvas.set_playback_state(eff_state)
+            self.effect_canvas.update_audio_volume(self.player.volume, self.player.is_muted)
+            if self.player.current_track:
+                self.effect_canvas.set_track(self.player.current_track)
 
         # Sauvegarder l'état exact du lecteur (piste sélectionnée, position, lecture en cours)
         # pour le restaurer fidèlement lorsqu'on quitte le Blind Test
@@ -576,8 +607,11 @@ class BlindTestView(QWidget):
         if self.player.current_track:
             self._start_round_for_track(self.player.current_track, auto_play=False)
         elif self.player.playlist:
-            self.player.play_index(0)
-            self.player.pause()
+            if hasattr(self.player, "load_index"):
+                self.player.load_index(0)
+            else:
+                self.player.play_index(0)
+                self.player.pause()
             self._start_round_for_track(self.player.current_track, auto_play=False)
         else:
             self._reset_to_empty_state()
@@ -589,6 +623,10 @@ class BlindTestView(QWidget):
         La musique doit impérativement s'arrêter dès qu'on sort du Blind Test."""
         self._is_active_page = False
         self._session_playing = False
+        if hasattr(self, "effect_canvas") and self.effect_canvas:
+            self.effect_canvas.set_playback_state("stopped")
+            self.effect_canvas.hideEvent(event)
+
         # Stopper les timers et rétablir le volume nominal
         self._game_timer.stop()
         self._stop_fade_out()
@@ -596,23 +634,40 @@ class BlindTestView(QWidget):
         self._stop_fade_and_restore_volume()
 
         # Arrêter la lecture immédiatement
+        self.player.pause()
+
+        # Restauration de l'état du lecteur enregistré avant le Blind Test (en pause silencieuse garantie)
+        self._restore_saved_player_state()
+
+        # Garantie absolue : s'assurer que le lecteur est bien en pause
         if self.player.is_playing:
             self.player.pause()
-
-        # Restauration de l'état du lecteur enregistré avant le Blind Test (en pause)
-        self._restore_saved_player_state()
 
         try:
             super().hideEvent(event)
         except Exception:
             pass
 
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        """Gère le redimensionnement de la vue (bascule plein écran / fenêtré)
+        en forçant la synchronisation géométrique de la pochette pour éviter tout décalage d'affichage."""
+        super().resizeEvent(event)
+        if hasattr(self, "cover_opacity") and self.cover_opacity:
+            if self._state == "revealed":
+                self.cover_opacity.setEnabled(False)
+            else:
+                self.cover_opacity.updateBoundingRect()
+                self.cover_opacity.update()
+        if hasattr(self, "lbl_cover") and self.lbl_cover:
+            self.lbl_cover.update()
+        if hasattr(self, "cover_box") and self.cover_box:
+            self.cover_box.update()
+
     def _restore_saved_player_state(self) -> None:
         """Restaure la piste et la position de lecture qui étaient actives avant d'entrer en Blind Test.
         La musique est impérativement mise en pause dès qu'on sort du Blind Test."""
         if not hasattr(self, "_saved_player_index") or self._saved_player_index is None:
-            if self.player.is_playing:
-                self.player.pause()
+            self.player.pause()
             return
 
         saved_idx = self._saved_player_index
@@ -620,22 +675,15 @@ class BlindTestView(QWidget):
         self._saved_player_index = None
 
         if not self.player.playlist or saved_idx < 0 or saved_idx >= len(self.player.playlist):
-            if self.player.is_playing:
-                self.player.pause()
+            self.player.pause()
             return
 
         # Si le Blind Test a changé de piste ou si la position a changé :
-        if self.player.current_index != saved_idx:
-            if saved_ms > 0:
-                self.player._pending_seek_ms = saved_ms
-                self.player.play_index(saved_idx, resume_pending=True)
-            else:
-                self.player.play_index(saved_idx)
-            self.player.pause()
+        # Utiliser load_index pour repositionner le lecteur SANS JAMAIS lancer de lecture audio
+        if hasattr(self.player, "load_index"):
+            self.player.load_index(saved_idx, seek_ms=saved_ms)
         else:
-            self.player.seek_ms(saved_ms)
-            if self.player.is_playing:
-                self.player.pause()
+            self.player.pause()
 
     def set_durations(
         self, countdown_seconds: int, reveal_seconds: int, fade_seconds: int | None = None
@@ -718,6 +766,7 @@ class BlindTestView(QWidget):
         self.lbl_countdown.show_number(self._countdown_remain)
 
         # Pochette masquée
+        self.cover_opacity.setEnabled(True)
         self.cover_opacity.setOpacity(0.0)
         self.cover_box.setStyleSheet("""
             QFrame {
@@ -751,6 +800,11 @@ class BlindTestView(QWidget):
         # Précharger immédiatement le fichier suivant en mémoire tampon
         self._preload_next_track()
         self._update_session_progress()
+
+        if hasattr(self, "effect_canvas") and self.effect_canvas:
+            self.effect_canvas.set_track(track)
+            eff_state = "playing" if auto_play else "stopped"
+            self.effect_canvas.set_playback_state(eff_state)
 
         if auto_play:
             self._session_playing = True
@@ -799,6 +853,7 @@ class BlindTestView(QWidget):
         self.round_progress.setValue(0)
         self.lbl_countdown.setVisible(True)
         self.lbl_countdown.show_number(self._countdown_remain)
+        self.cover_opacity.setEnabled(True)
         self.cover_opacity.setOpacity(0.0)
         self.cover_box.setStyleSheet("""
             QFrame {
@@ -818,6 +873,8 @@ class BlindTestView(QWidget):
         self._update_session_progress()
 
         self._session_playing = True
+        if hasattr(self, "effect_canvas") and self.effect_canvas:
+            self.effect_canvas.set_playback_state("playing")
         self._apply_temporary_volume(0)
         if not self.player.is_playing:
             self.player.play()
@@ -929,6 +986,8 @@ class BlindTestView(QWidget):
             self._is_fading_in = False
             if hasattr(self.player, "restore_volume"):
                 self.player.restore_volume()
+            if hasattr(self, "effect_canvas") and self.effect_canvas:
+                self.effect_canvas.update_audio_volume(self._nominal_volume, self.player.is_muted)
 
     def _stop_fade_in(self) -> None:
         """Arrête le timer de montée progressive sans forcer le volume nominal."""
@@ -973,6 +1032,8 @@ class BlindTestView(QWidget):
         """Transmet le volume atténué au lecteur sans écraser la configuration."""
         if hasattr(self.player, "audio_set_temporary_volume"):
             self.player.audio_set_temporary_volume(vol)
+        if hasattr(self, "effect_canvas") and self.effect_canvas:
+            self.effect_canvas.update_audio_volume(vol, self.player.is_muted)
 
     def _stop_fade_and_restore_volume(self) -> None:
         """Arrête les fondus et rétablit instantanément 100% du volume nominal."""
@@ -980,6 +1041,8 @@ class BlindTestView(QWidget):
         self._stop_fade_in()
         if hasattr(self.player, "restore_volume"):
             self.player.restore_volume()
+        if hasattr(self, "effect_canvas") and self.effect_canvas:
+            self.effect_canvas.update_audio_volume(self._nominal_volume, self.player.is_muted)
 
     def _trigger_reveal(self) -> None:
         """Déclenche l'animation de révélation (Fade-In de la pochette et textes)."""
@@ -995,11 +1058,13 @@ class BlindTestView(QWidget):
         self.round_progress.setValue(pct)
 
         # Animation fondu de la pochette
+        self.cover_opacity.setEnabled(True)
         self.anim_cover = QPropertyAnimation(self.cover_opacity, b"opacity", self)
         self.anim_cover.setDuration(450)
         self.anim_cover.setStartValue(0.0)
         self.anim_cover.setEndValue(1.0)
         self.anim_cover.setEasingCurve(QEasingCurve.Type.InOutQuad)
+        self.anim_cover.finished.connect(self._on_cover_fade_in_finished)
         self.anim_cover.start()
 
         self.cover_box.setStyleSheet("""
@@ -1047,6 +1112,14 @@ class BlindTestView(QWidget):
         eff_fade = min(self._configured_fade, self._configured_reveal)
         if eff_fade >= self._reveal_remain and eff_fade > 0 and not self._is_fading:
             self._start_fade(eff_fade)
+
+    def _on_cover_fade_in_finished(self) -> None:
+        """Désactive l'effet d'opacité une fois le fondu terminé pour éviter tout glitch de décalage ou de cache lors du redimensionnement."""
+        if hasattr(self, "cover_opacity") and self.cover_opacity:
+            self.cover_opacity.setOpacity(1.0)
+            self.cover_opacity.setEnabled(False)
+        if hasattr(self, "lbl_cover") and self.lbl_cover:
+            self.lbl_cover.update()
 
     def _on_reveal_clicked(self) -> None:
         """Révèle immédiatement la piste si les joueurs ont trouvé avant la fin des 20s.
@@ -1161,11 +1234,15 @@ class BlindTestView(QWidget):
 
     def _on_track_changed(self, track: TrackRecord | None) -> None:
         """Appelé lors d'un changement de piste dans le PlayerService."""
+        if hasattr(self, "effect_canvas") and self.effect_canvas:
+            self.effect_canvas.set_track(track)
         if self._is_active_page:
             auto_play = self._session_playing or self.player.is_playing
             self._start_round_for_track(track, auto_play=auto_play)
 
     def _on_playback_state_changed(self, state: str) -> None:
+        if hasattr(self, "effect_canvas") and self.effect_canvas:
+            self.effect_canvas.set_playback_state(state)
         if not self._is_active_page:
             return
         is_playing = state == "playing"
@@ -1219,6 +1296,7 @@ class BlindTestView(QWidget):
         self._stop_fade_in()
         self.lbl_countdown.setVisible(False)
         self.lbl_cover.setPixmap(get_default_cover_pixmap())
+        self.cover_opacity.setEnabled(True)
         self.cover_opacity.setOpacity(0.3)
         self.lbl_title.setText(tr("blind_test.no_track"))
         self.lbl_artist_album.setText("")
@@ -1245,6 +1323,8 @@ class BlindTestView(QWidget):
     def _on_player_volume_changed(self, vol: int, muted: bool) -> None:
         if not self._is_fading and not getattr(self, "_is_fading_in", False):
             self._nominal_volume = vol
+            if hasattr(self, "effect_canvas") and self.effect_canvas:
+                self.effect_canvas.update_audio_volume(vol, muted)
         self.slider_volume.blockSignals(True)
         self.slider_volume.setValue(vol)
         self.slider_volume.blockSignals(False)
@@ -1252,27 +1332,29 @@ class BlindTestView(QWidget):
         self.btn_mute.setText("🔇" if (muted or vol == 0) else "🔊")
 
     def _populate_effects_combo(self) -> None:
-        effects = [
-            ("none", "Désactivé"),
-            ("particles", "Particules"),
-            ("waves", "Vagues"),
-            ("stars", "Étoiles"),
-            ("warp", "Warp"),
-            ("warp_dynamic", "Warp dynamique"),
-            ("aurora", "Aurore boréale"),
-            ("bars", "Spectre"),
-            ("bars_full", "Spectre plein"),
-        ]
+        """Remplit le menu déroulant des effets visuels."""
+        current_data = getattr(self, "current_effect", None) or (
+            self.effect_canvas.effect_type if hasattr(self, "effect_canvas") else "particles"
+        )
         self.combo_effect.blockSignals(True)
         self.combo_effect.clear()
-        cfg = get_config_manager()
-        cur_effect = cfg.get_visual_effect()
-        sel_idx = 0
+        effects = [
+            ("particles", f"✨ {tr('effects.particles')}"),
+            ("waves", f"🌊 {tr('effects.waves')}"),
+            ("stars", f"☄️ {tr('effects.stars')}"),
+            ("warp", f"🚀 {tr('effects.warp')}"),
+            ("warp_dynamic", f"🛸 {tr('effects.warp_dynamic')}"),
+            ("aurora", f"🌌 {tr('effects.aurora')}"),
+            ("bars", f"📊 {tr('effects.bars')}"),
+            ("bars_full", f"📶 {tr('effects.bars_full')}"),
+            ("none", f"🚫 {tr('effects.none')}"),
+        ]
+        target_idx = 0
         for i, (key, label) in enumerate(effects):
             self.combo_effect.addItem(label, key)
-            if key == cur_effect:
-                sel_idx = i
-        self.combo_effect.setCurrentIndex(sel_idx)
+            if key == current_data:
+                target_idx = i
+        self.combo_effect.setCurrentIndex(target_idx)
         self.combo_effect.blockSignals(False)
 
     def _on_effect_combo_changed(self, index: int) -> None:
@@ -1292,6 +1374,8 @@ class BlindTestView(QWidget):
                     self.combo_effect.setCurrentIndex(i)
                     break
             self.combo_effect.blockSignals(False)
+        cfg = get_config_manager()
+        cfg.set_visual_effect(effect_name)
 
     # -------------------------------------------------------------------------
     # Alias et accesseurs de compatibilité pour les tests
@@ -1369,6 +1453,7 @@ class BlindTestView(QWidget):
         """Met à jour les textes traduits lors d'un changement de langue."""
         self.lbl_page_title.setText("🎭  " + tr("blind_test.title"))
         self.lbl_effect_badge.setText(tr("player.visual_effect"))
+        self._populate_effects_combo()
         if hasattr(self, "btn_prev"):
             self.btn_prev.setText(tr("blind_test.btn_prev"))
         self.btn_reveal.setText(tr("blind_test.btn_reveal"))

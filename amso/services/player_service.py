@@ -143,6 +143,7 @@ class PlayerService(QObject):
         self._pending_seek_ms: int = 0
         self._current_time_ms: int = 0
         self._total_time_ms: int = 0
+        self._is_paused_requested: bool = False
 
         # Vérification préventive de la session audio Windows (mélangeur système)
         ensure_windows_audio_session_active()
@@ -171,9 +172,68 @@ class PlayerService(QObject):
         self._fade_timer.setInterval(40)
         self._fade_timer.timeout.connect(self._on_fade_tick)
 
+        # Timer dédié au fondu progressif de démarrage/reprise de lecture (1s fade-in)
+        self._is_fading_in: bool = False
+        self._fade_in_start_time: float = 0.0
+        self._fade_in_duration: float = 1.0
+        self._playback_fade_in_timer = QTimer(self)
+        self._playback_fade_in_timer.setInterval(40)
+        self._playback_fade_in_timer.timeout.connect(self._on_playback_fade_in_tick)
+
+    def _start_playback_fade_in(self) -> None:
+        """Démarre une rampe de volume progressive de 0% vers le volume cible sur 1 seconde."""
+        if getattr(self, "_is_temporary_volume", False) or self._is_crossfading:
+            return
+
+        target_vol = 0 if self._is_muted else self._volume
+        if target_vol <= 0 or not self._media_player:
+            return
+
+        self._stop_playback_fade_in()
+        self._is_fading_in = True
+        self._fade_in_start_time = time.time()
+        self._fade_in_duration = 1.0
+
+        try:
+            self._media_player.audio_set_volume(0)
+            self._last_set_volume = 0
+        except Exception:
+            pass
+
+        self._playback_fade_in_timer.start(40)
+
+    def _stop_playback_fade_in(self) -> None:
+        """Arrête le timer de fondu progressif à la lecture."""
+        if hasattr(self, "_playback_fade_in_timer") and self._playback_fade_in_timer.isActive():
+            self._playback_fade_in_timer.stop()
+        self._is_fading_in = False
+
+    def _on_playback_fade_in_tick(self) -> None:
+        """Incrémente le volume du lecteur principal jusqu'au volume nominal."""
+        if not self._is_fading_in or not self._media_player or getattr(self, "_is_temporary_volume", False):
+            self._stop_playback_fade_in()
+            return
+
+        elapsed = time.time() - getattr(self, "_fade_in_start_time", 0.0)
+        dur = max(0.1, getattr(self, "_fade_in_duration", 1.0))
+        progress = max(0.0, min(1.0, elapsed / dur))
+        target_vol = 0 if self._is_muted else self._volume
+        curr_vol = int(round(target_vol * progress))
+
+        try:
+            self._media_player.audio_set_volume(curr_vol)
+            self._last_set_volume = curr_vol
+        except Exception:
+            pass
+
+        if progress >= 1.0:
+            self._stop_playback_fade_in()
+            self._volume_enforce_ticks = 5
+            self._enforce_volume()
+
     def _enforce_volume(self) -> None:
         """Applique sans délai le volume nominal vers le lecteur principal s'il n'est pas en fondu."""
-        if self._media_player and not self._is_crossfading and not self._is_temporary_volume:
+        if self._media_player and not self._is_crossfading and not self._is_temporary_volume and not self._is_fading_in:
             try:
                 target = 0 if self._is_muted else self._volume
                 if self._last_set_volume != target:
@@ -640,6 +700,44 @@ class PlayerService(QObject):
             except Exception:
                 pass
 
+    def load_index(self, index: int, seek_ms: int = 0) -> None:
+        """Charge un morceau à l'index donné sans démarrer la lecture (en pause silencieuse)."""
+        if not (0 <= index < len(self._playlist)):
+            return
+
+        self._reset_standby_player()
+        if self._media_player:
+            try:
+                self._media_player.stop()
+            except Exception:
+                pass
+
+        self._is_paused_requested = True
+        self._current_index = index
+        self._pending_seek_ms = max(0, seek_ms)
+        self._current_time_ms = max(0, seek_ms)
+        track = self._playlist[index]
+
+        file_path = track.source_path
+        if file_path and os.path.exists(file_path) and self._vlc_instance and self._media_player:
+            try:
+                norm_path = os.path.normpath(file_path)
+                media = self._vlc_instance.media_new_path(norm_path)
+                media.add_option(":file-caching=2000")
+                media.add_option(":network-caching=2000")
+                if seek_ms > 0:
+                    start_sec = seek_ms / 1000.0
+                    media.add_option(f":start-time={start_sec:.2f}")
+                self._media_player.set_media(media)
+            except Exception as exc:
+                logger.debug("load_index set_media: %s", exc)
+
+        self.track_changed.emit(track)
+        self.state_changed.emit("paused")
+        if self._total_time_ms > 0:
+            ratio = min(1.0, seek_ms / self._total_time_ms) if self._total_time_ms else 0.0
+            self.position_changed.emit(seek_ms, self._total_time_ms, ratio)
+
     def play_index(self, index: int, resume_pending: bool = False) -> None:
         """Charge et joue le morceau à l'index donné dans la playlist."""
         if not self.is_vlc_available:
@@ -655,6 +753,7 @@ class PlayerService(QObject):
         # S'assurer que le mélangeur Windows n'est pas sourdine ou ducké
         ensure_windows_audio_session_active()
 
+        self._is_paused_requested = False
         self._is_loading_track = True
         try:
             seek_ms = self._pending_seek_ms if resume_pending else 0
@@ -689,9 +788,7 @@ class PlayerService(QObject):
                 self._volume_enforce_ticks = 0
                 self._media_player.audio_set_volume(0)
             else:
-                # Enforcer proprement le volume nominal (10 ticks de 100ms = 1 seconde)
-                self._volume_enforce_ticks = 10
-                self._enforce_volume()
+                self._start_playback_fade_in()
 
             self._timer.start()
             self.track_changed.emit(track)
@@ -720,6 +817,7 @@ class PlayerService(QObject):
 
         state = self._media_player.get_state()
         if state == vlc.State.Playing:
+            self._stop_playback_fade_in()
             self._media_player.pause()
             if self._is_crossfading:
                 if self._standby_player:
@@ -733,8 +831,11 @@ class PlayerService(QObject):
             self.state_changed.emit("paused")
         elif state == vlc.State.Paused:
             self._media_player.play()
-            self._volume_enforce_ticks = 10
-            self._enforce_volume()
+            if not getattr(self, "_is_temporary_volume", False):
+                self._start_playback_fade_in()
+            else:
+                self._volume_enforce_ticks = 10
+                self._enforce_volume()
             if self._is_crossfading:
                 if self._standby_player:
                     try:
@@ -754,13 +855,17 @@ class PlayerService(QObject):
             return
         if getattr(self, "_is_loading_track", False):
             return
+        self._is_paused_requested = False
         if self._current_index < 0 and self._playlist:
             self.play_index(0)
             return
         if self._media_player and self._media_player.get_state() == vlc.State.Paused:
             self._media_player.play()
-            self._volume_enforce_ticks = 10
-            self._enforce_volume()
+            if not getattr(self, "_is_temporary_volume", False):
+                self._start_playback_fade_in()
+            else:
+                self._volume_enforce_ticks = 10
+                self._enforce_volume()
             if self._is_crossfading:
                 if self._standby_player:
                     try:
@@ -778,7 +883,10 @@ class PlayerService(QObject):
         """Met en pause la lecture."""
         if not self.is_vlc_available or not self._media_player:
             return
-        if self._media_player.get_state() == vlc.State.Playing:
+        self._stop_playback_fade_in()
+        state = self._media_player.get_state()
+        if state == vlc.State.Playing:
+            self._is_paused_requested = False
             self._media_player.pause()
             if self._is_crossfading:
                 if self._standby_player:
@@ -790,9 +898,18 @@ class PlayerService(QObject):
                     self._fade_timer.stop()
                     self._fade_paused_elapsed = max(0.0, time.time() - self._fade_start_time)
             self.state_changed.emit("paused")
+        elif state in (vlc.State.Opening, vlc.State.Buffering):
+            try:
+                self._media_player.set_pause(1)
+            except Exception:
+                pass
+            self._is_paused_requested = True
+            self.state_changed.emit("paused")
 
     def stop(self) -> None:
         """Arrête la lecture et réinitialise la position."""
+        self._stop_playback_fade_in()
+        self._is_paused_requested = False
         self._reset_standby_player()
         if self._media_player:
             try:
@@ -1249,6 +1366,16 @@ class PlayerService(QObject):
             return
 
         state = self._media_player.get_state()
+        if getattr(self, "_is_paused_requested", False):
+            if state in (vlc.State.Playing, vlc.State.Buffering):
+                try:
+                    self._media_player.set_pause(1)
+                except Exception:
+                    self._media_player.pause()
+                self._is_paused_requested = False
+                self.state_changed.emit("paused")
+            return
+
         if state == vlc.State.Ended:
             if self._is_crossfading and self._crossfade_next_index is not None:
                 self._complete_transition(self._crossfade_next_index)
@@ -1267,7 +1394,7 @@ class PlayerService(QObject):
             except Exception:
                 pass
 
-        if not self._is_crossfading and not self._is_temporary_volume:
+        if not self._is_crossfading and not self._is_temporary_volume and not self._is_fading_in:
             target_vol = 0 if self._is_muted else self._volume
             if getattr(self, "_volume_enforce_ticks", 0) > 0:
                 self._volume_enforce_ticks -= 1

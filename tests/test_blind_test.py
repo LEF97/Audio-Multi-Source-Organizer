@@ -5,7 +5,8 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-from PySide6.QtGui import QHideEvent, QShowEvent
+from PySide6.QtCore import QSize
+from PySide6.QtGui import QHideEvent, QResizeEvent, QShowEvent
 from PySide6.QtWidgets import QApplication
 
 from amso.core.config import ConfigManager
@@ -539,8 +540,9 @@ def test_blind_test_state_restoration_on_exit(qapp: QApplication, sample_track: 
     # 3. Quitter la page Blind Test
     view.hideEvent(QHideEvent())
 
-    # Le player doit être revenu sur la piste 0 et avoir restauré les 73000 ms, et être mis en pause
-    player_mock.play_index.assert_called_with(0, resume_pending=True)
+    # Le player doit être revenu sur la piste 0 et avoir restauré les 73000 ms sans lancer la lecture
+    player_mock.load_index.assert_called_with(0, seek_ms=73000)
+    player_mock.play_index.assert_not_called()
     player_mock.pause.assert_called()
 
 
@@ -626,4 +628,139 @@ def test_blind_test_fade_in_and_preloading(qapp: QApplication, sample_track: Tra
     # Le fondu entrant est terminé, le volume nominal est restauré
     assert view._is_fading_in is False
     player_mock.restore_volume.assert_called()
+
+
+def test_blind_test_effects_harmonization_and_spectrum(qapp: QApplication, sample_track: TrackRecord):
+    """Vérifie l'harmonisation visuelle de la liste des effets, l'élargissement
+    du menu déroulant et l'animation active du spectre audio en Blind Test."""
+    # Utiliser de vrais signaux pour le test
+    from PySide6.QtCore import QObject, Signal
+
+    player_mock = MagicMock()
+
+    class Emitter(QObject):
+        track_changed = Signal(object)
+        state_changed = Signal(str)
+        volume_changed = Signal(int, bool)
+        position_changed = Signal(int, int, float)
+        playlist_updated = Signal()
+
+    emitter = Emitter()
+    player_mock.track_changed = emitter.track_changed
+    player_mock.state_changed = emitter.state_changed
+    player_mock.volume_changed = emitter.volume_changed
+    player_mock.position_changed = emitter.position_changed
+    player_mock.playlist_updated = emitter.playlist_updated
+    player_mock.playlist = [sample_track]
+    player_mock.current_track = sample_track
+    player_mock.current_index = 0
+    player_mock.volume = 100
+    player_mock.is_muted = False
+    player_mock.is_playing = True
+    player_mock.state = "playing"
+
+    view = BlindTestView(player_mock)
+    view._is_active_page = True
+
+    # 1. Vérification de la largeur élargie du combobox et de son popup
+    assert view.combo_effect.maximumWidth() == 250
+    assert view.combo_effect.view().minimumWidth() == 260
+
+    # 2. Vérification de la liste ordonnée des 9 effets avec émojis
+    expected_keys = [
+        "particles",
+        "waves",
+        "stars",
+        "warp",
+        "warp_dynamic",
+        "aurora",
+        "bars",
+        "bars_full",
+        "none",
+    ]
+    assert view.combo_effect.count() == 9
+    for i, expected_key in enumerate(expected_keys):
+        assert view.combo_effect.itemData(i) == expected_key
+        # Présence d'un émoji au début de chaque libellé
+        label = view.combo_effect.itemText(i)
+        assert len(label) > 3
+
+    # 3. Vérification du bon fonctionnement des effets de spectre audio
+    view.set_effect_type("bars")
+    assert view.effect_canvas.effect_type == "bars"
+
+    # Lancement d'une manche en lecture
+    view._start_round_for_track(sample_track, auto_play=True)
+    assert view.effect_canvas._playback_state == "playing"
+
+    # Synchronisation temporelle
+    emitter.position_changed.emit(5000, 180000, 0.027)
+    assert view.effect_canvas._audio_time_ms == 5000
+
+    # Rétablissement du volume nominal (fin de fondu)
+    view._apply_temporary_volume(100)
+    assert view.effect_canvas._audio_volume > 0.0
+
+    # Calcul de l'animation de spectre : les barres doivent être dynamiquement alimentées
+    from unittest.mock import patch
+    with patch("amso.services.audio_spectrum.AudioSpectrumService.get_spectrum", return_value=[0.7] * 48):
+        view.effect_canvas._update_bars_tick(0.033, 800, 600)
+        assert any(target > 0.0 for target in view.effect_canvas._bar_targets)
+
+    # Vérification avec l'effet bars_full en mode repli procédural (quand get_spectrum renvoie None)
+    view.set_effect_type("bars_full")
+    assert view.effect_canvas.effect_type == "bars_full"
+    with patch("amso.services.audio_spectrum.AudioSpectrumService.get_spectrum", return_value=None):
+        view.effect_canvas._update_bars_tick(0.033, 800, 600)
+        assert any(target > 0.0 for target in view.effect_canvas._bar_targets)
+
+    # Mise en pause : les barres s'abaissent à zéro
+    emitter.state_changed.emit("paused")
+    assert view.effect_canvas._playback_state == "paused"
+    view.effect_canvas._update_bars_tick(0.033, 800, 600)
+    assert all(target == 0.0 for target in view.effect_canvas._bar_targets)
+
+
+def test_blind_test_cover_resize_and_fullscreen(qapp: QApplication, sample_track: TrackRecord):
+    """Vérifie que la pochette reste parfaitement centrée et visible lors du redimensionnement (plein écran / fenêtré)."""
+    player_mock = MagicMock(spec=PlayerService)
+    player_mock.current_track = sample_track
+    player_mock.state = "playing"
+    player_mock.is_vlc_available = True
+    player_mock.is_playing = True
+
+    view = BlindTestView(player_mock)
+    view._is_active_page = True
+    view.resize(1280, 720)
+
+    # Révélation de la piste
+    view._on_track_loaded(sample_track)
+    view._trigger_reveal()
+
+    # Quand le fondu se termine, l'effet d'opacité doit être désactivé pour un rendu natif stable
+    view._on_cover_fade_in_finished()
+    assert not view.cover_opacity.isEnabled()
+
+    # Simulation d'un passage en plein écran (ex: 1920x1080)
+    view.resize(1920, 1080)
+    event_fs = QResizeEvent(QSize(1920, 1080), QSize(1280, 720))
+    view.resizeEvent(event_fs)
+
+    # La pochette doit rester alignée en (0, 0) dans cover_box de 280x280
+    assert view.lbl_cover.width() == 280
+    assert view.lbl_cover.height() == 280
+    assert view.cover_box.width() == 280
+    assert view.cover_box.height() == 280
+    assert not view.cover_opacity.isEnabled()
+
+    # Simulation d'un retour en mode fenêtré (ex: 1024x768)
+    view.resize(1024, 768)
+    event_win = QResizeEvent(QSize(1024, 768), QSize(1920, 1080))
+    view.resizeEvent(event_win)
+
+    assert view.lbl_cover.width() == 280
+    assert view.lbl_cover.height() == 280
+    assert not view.cover_opacity.isEnabled()
+
+
 
