@@ -32,6 +32,12 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
+      - name: Verify Documentation & i18n Sync (5 languages)
+        run: |
+          python scripts/sync_translations.py --check-only
+          python scripts/check_docs_sync.py
+
+
       - name: Build Standalone Executable
         run: |
           python scripts/build_exe.py --onefile

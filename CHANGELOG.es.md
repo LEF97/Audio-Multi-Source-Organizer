@@ -12,13 +12,57 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
-## [0.2.0-dev] - En desarrollo
+## [0.4.0-dev] - En desarrollo
+
+### Added
+- Inicio del ciclo de desarrollo para la versión 0.4.0 (Experiencia de audio avanzada, Hub de artistas y empaquetado multiplataforma para Linux/macOS).
+
+---
+
+## [0.3.0] - 2026-10-18
+
+### Added
+- **Soporte completo de archivos de listas de reproducción**:
+  - Indexación y escaneo automático de formatos `.m3u`, `.m3u8`, `.pls`, `.xspf` y `.wpl`.
+  - Nodos dedicados en el árbol de carpetas identificados con el icono **`🎶`**.
+  - Conservación estricta del orden secuencial natural de reproducción (columna `#` con orden 1, 2, 3...) sin forzar ordenación alfabética.
+  - Detección visual clara de pistas ausentes o movidas (prefijo de advertencia **`⚠️`**, resaltado suave y mensaje explicativo) sin interrumpir la reproducción.
+  - Menú contextual ampliado en los nodos de playlist: reproducción directa, añadir a la cola, reproducir a continuación y mostrar en el Explorador de Windows.
+- **Fundido acústico de entrada (*Fade-in*)**:
+  - Transición suave del volumen de 0% al nivel configurado durante 1 segundo al iniciar o reanudar la reproducción (excepto en modo Blind Test).
+- **Estabilidad y fluidez de la sincronización**:
+  - Sustitución de la ventana emergente intrusiva «Scan already running» por una cola silenciosa en segundo plano.
+  - Conservación de la selección y el estado de despliegue del árbol de carpetas cuando no hay cambios estructurales.
+- **Presentación dinámica de carátulas**:
+  - Corrección del escalado, centrado y alineación al alternar pantalla completa o cambiar el tamaño de ventana.
+
+---
+
+## [0.2.0] - 2026-10-18
+
+### Added
+- **Modo Blind Test y sección de juegos**:
+  - Nuevo panel lateral desplegable « 🎲 JUEGOS » con el minijuego interactivo Blind Test (localizado en 5 idiomas).
+  - Experiencia inmersiva: cuenta atrás dinámica con pulsación animada, revelación suave en fundido, progresión automática de rondas y precarga asíncrona de carátulas en RAM.
+- **Ergonomía de reproducción y gestión de playlists**:
+  - Rediseño del modo aleatorio (*Shuffle*): mezcla visual completa de la cola preservando la pista activa, botón directo « 🎲 Mezclar pistas » y restauración fiel del orden original al desactivarse.
+  - Reordenación fluida mediante arrastrar y soltar (*Drag & Drop*) en la tabla de reproducción sin cortes de audio.
+  - Persistencia asíncrona v2 con identificadores SQLite compactos que reducen el tamaño en disco un 99% (acceso sin bloqueos a 60 FPS).
+  - Deslizador de volumen reubicado en la barra superior de navegación para despejar la vista del reproductor.
+- **Gestión de biblioteca y papelera inteligente**:
+  - Doble nivel de eliminación: exclusión lógica de la biblioteca (recordada en futuros escaneos) o eliminación física hacia la Papelera de reciclaje de Windows.
+  - Vista dedicada « 🗑️ Papelera » con restauración en un solo clic e integración inmediata en la base de datos.
+- **Interfaz y enlaces oficiales**:
+  - Página « Acerca de » modernizada en Configuración con espectro interactivo y botones oficiales de apoyo (Ko-fi, GitHub Sponsors, GitHub, Itch.io).
+  - Soporte completo en 5 idiomas (francés, inglés, español, alemán, italiano).
 
 ### Fixed
 - **Resolución de errores `disk I/O error` (SQLite en Windows)**: configuración del modo WAL una sola vez al inicializar la base de datos, `PRAGMA busy_timeout = 30000`, almacenamiento temporal en memoria RAM (`PRAGMA temp_store = MEMORY`) y mecanismo de reintentos automáticos con retroceso exponencial para eliminar bloqueos de archivos en escaneos multihilo.
 - **Supresión de alertas modales intrusivas en sincronizaciones en segundo plano**: las sincronizaciones automáticas ya no muestran ventanas modales de error que bloqueen la aplicación, registrándolas en el diario de actividad y la barra de estado.
 - **Volumen de audio demasiado bajo al iniciar**: eliminación de una condición de carrera durante la inicialización del motor VLC y anulación de la atenuación automática (*ducking*) del mezclador de audio de Windows.
 - **Visualización del logotipo oficial en el ejecutable de Windows**: corrección de la resolución multirruta de recursos incrustados en PyInstaller (`sys._MEIPASS`) para mostrar el logo AMSO en la barra lateral y la página Acerca de en lugar del icono alternativo 🎵.
+- **Optimización del tiempo de arranque con bibliotecas grandes**: eliminación de comprobaciones síncronas en disco al restaurar sesiones de reproducción, acelerando el arranque instantáneamente en O(1) vía SQLite.
+- **Progresión fluida del Splash Screen**: animación continua y suave paso a paso (1% a 1%) sin retroceso visual de la barra de progreso.
 
 ---
 
