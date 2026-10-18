@@ -115,8 +115,8 @@ class ConfigManager:
         """Persiste le code de langue choisi (ex: 'fr', 'en', 'es', 'it')."""
         self.set(SECTION_GENERAL, KEY_LANGUAGE, lang_code.strip().lower())
 
-    def get_active_page(self, default: str = "tracks") -> str:
-        """Retourne l'identifiant de la dernière page active."""
+    def get_active_page(self, default: str = "player") -> str:
+        """Retourne l'identifiant de la page active (par défaut 'player')."""
         val = self.get(SECTION_GENERAL, KEY_ACTIVE_PAGE, default)
         valid_pages = {
             "tracks",
@@ -124,6 +124,7 @@ class ConfigManager:
             "duplicates",
             "stats",
             "player",
+            "blind_test",
             "playlist",
             "settings_general",
             "settings_sources",
@@ -135,6 +136,12 @@ class ConfigManager:
     def set_active_page(self, page_id: str) -> None:
         """Définit la dernière page active."""
         self.set(SECTION_GENERAL, KEY_ACTIVE_PAGE, page_id)
+
+    def remove_active_page(self) -> None:
+        """Supprime la clé active_page du fichier de configuration ini."""
+        if self._config.has_section(SECTION_GENERAL) and self._config.has_option(SECTION_GENERAL, KEY_ACTIVE_PAGE):
+            self._config.remove_option(SECTION_GENERAL, KEY_ACTIVE_PAGE)
+            self.save()
 
     def get_sleep_mode(self) -> str:
         """Retourne le mode d'inhibition de veille : 'allow', 'player_playlist' (défaut), ou 'always'."""

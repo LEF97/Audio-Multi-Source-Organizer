@@ -55,10 +55,10 @@ class ZoomFadeLabel(QLabel):
         self._anim_opacity.setEndValue(0.4)
         self._anim_opacity.setEasingCurve(QEasingCurve.Type.OutQuad)
 
-        # Animation d'échelle (Zoom dynamique de 1.45 vers 1.0)
+        # Animation d'échelle (Zoom dynamique plus marqué de 2.2 vers 1.0)
         self._anim_scale = QPropertyAnimation(self, b"scale_factor", self)
         self._anim_scale.setDuration(750)
-        self._anim_scale.setStartValue(1.45)
+        self._anim_scale.setStartValue(2.2)
         self._anim_scale.setEndValue(1.0)
         self._anim_scale.setEasingCurve(QEasingCurve.Type.OutCubic)
 
@@ -76,7 +76,7 @@ class ZoomFadeLabel(QLabel):
         self._anim_opacity.stop()
         self._anim_scale.stop()
         self._opacity_effect.setOpacity(1.0)
-        self._scale = 1.45
+        self._scale = 2.2
         self._anim_opacity.start()
         self._anim_scale.start()
 
@@ -133,6 +133,7 @@ class BlindTestView(QWidget):
         self._fade_in_duration: float = 2.0
         self._fade_in_start_time: float = 0.0
         self._fade_in_paused_elapsed: float = 0.0
+        self._session_playing: bool = False
 
         self._setup_ui()
         self._connect_signals()
@@ -251,7 +252,7 @@ class BlindTestView(QWidget):
         sub_bar.setObjectName("subBarFrame")
         self.sub_bar = sub_bar
         sub_layout = QHBoxLayout(sub_bar)
-        sub_layout.setContentsMargins(20, 2, 20, 6)
+        sub_layout.setContentsMargins(20, 10, 20, 8)
         sub_layout.setSpacing(8)
 
         sub_layout.addStretch()
@@ -267,6 +268,7 @@ class BlindTestView(QWidget):
                 border-radius: 12px;
                 background-color: rgba(30, 41, 59, 0.7);
                 border: 1px solid rgba(56, 189, 248, 0.22);
+                margin-top: 2px;
             }
         """)
         sub_layout.addWidget(self.lbl_session_progress)
@@ -399,13 +401,14 @@ class BlindTestView(QWidget):
         info_layout.addWidget(self.lbl_artist_album)
 
         self.lbl_file_name = QLabel("📁  " + tr("blind_test.mystery_file"))
-        self.lbl_file_name.setStyleSheet("color: #64748B; font-size: 12px; margin-top: 2px;")
+        self.lbl_file_name.setStyleSheet("color: #64748B; font-size: 12px; margin-top: 4px; margin-bottom: 12px;")
         self.lbl_file_name.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_file_name.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.lbl_file_name.setWordWrap(True)
         info_layout.addWidget(self.lbl_file_name)
 
         card_layout.addWidget(info_container)
+        card_layout.addSpacing(6)
 
         # 4. Commandes de jeu du Blind Test
         ctrl_layout = QHBoxLayout()
@@ -461,17 +464,22 @@ class BlindTestView(QWidget):
         self.btn_reveal.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_reveal.setStyleSheet("""
             QPushButton {
-                background-color: #0284C7;
-                color: #FFFFFF;
-                border: 1px solid #38BDF8;
+                background-color: #20242D;
+                color: #F8FAFC;
+                border: 1px solid #333846;
                 border-radius: 12px;
                 padding: 0 18px;
-                font-size: 14px;
-                font-weight: 700;
+                font-size: 13px;
+                font-weight: 600;
             }
             QPushButton:hover {
-                background-color: #0369A1;
-                border-color: #7DD3FC;
+                background-color: #2B303C;
+                border-color: #38BDF8;
+            }
+            QPushButton:disabled {
+                background-color: #16181F;
+                color: #475569;
+                border-color: #242832;
             }
         """)
         self.btn_reveal.clicked.connect(self._on_reveal_clicked)
@@ -543,6 +551,7 @@ class BlindTestView(QWidget):
         Sauvegarde l'état du lecteur sans démarrer la musique automatiquement."""
         super().showEvent(event)
         self._is_active_page = True
+        self._session_playing = False
 
         # Sauvegarder l'état exact du lecteur (piste sélectionnée, position, lecture en cours)
         # pour le restaurer fidèlement lorsqu'on quitte le Blind Test
@@ -573,15 +582,20 @@ class BlindTestView(QWidget):
 
     def hideEvent(self, event: QHideEvent) -> None:
         """Déclenché lorsque l'utilisateur quitte la page Blind Test.
-        Restaure fidèlement l'état initial du lecteur (morceau et position d'origine)."""
+        La musique doit impérativement s'arrêter dès qu'on sort du Blind Test."""
         self._is_active_page = False
+        self._session_playing = False
         # Stopper les timers et rétablir le volume nominal
         self._game_timer.stop()
         self._stop_fade_out()
         self._stop_fade_in()
         self._stop_fade_and_restore_volume()
 
-        # Restauration de l'état du lecteur enregistré avant le Blind Test
+        # Arrêter la lecture immédiatement
+        if self.player.is_playing:
+            self.player.pause()
+
+        # Restauration de l'état du lecteur enregistré avant le Blind Test (en pause)
         self._restore_saved_player_state()
 
         try:
@@ -590,16 +604,20 @@ class BlindTestView(QWidget):
             pass
 
     def _restore_saved_player_state(self) -> None:
-        """Restaure la piste et la position de lecture qui étaient actives avant d'entrer en Blind Test."""
+        """Restaure la piste et la position de lecture qui étaient actives avant d'entrer en Blind Test.
+        La musique est impérativement mise en pause dès qu'on sort du Blind Test."""
         if not hasattr(self, "_saved_player_index") or self._saved_player_index is None:
+            if self.player.is_playing:
+                self.player.pause()
             return
 
         saved_idx = self._saved_player_index
         saved_ms = getattr(self, "_saved_player_position_ms", 0)
-        saved_was_playing = getattr(self, "_saved_player_was_playing", False)
         self._saved_player_index = None
 
         if not self.player.playlist or saved_idx < 0 or saved_idx >= len(self.player.playlist):
+            if self.player.is_playing:
+                self.player.pause()
             return
 
         # Si le Blind Test a changé de piste ou si la position a changé :
@@ -609,14 +627,11 @@ class BlindTestView(QWidget):
                 self.player.play_index(saved_idx, resume_pending=True)
             else:
                 self.player.play_index(saved_idx)
-            if not saved_was_playing:
-                self.player.pause()
+            self.player.pause()
         else:
             self.player.seek_ms(saved_ms)
-            if not saved_was_playing and self.player.is_playing:
+            if self.player.is_playing:
                 self.player.pause()
-            elif saved_was_playing and not self.player.is_playing:
-                self.player.play()
 
     def set_durations(
         self, countdown_seconds: int, reveal_seconds: int, fade_seconds: int | None = None
@@ -666,12 +681,18 @@ class BlindTestView(QWidget):
         self.lbl_session_progress.setText(text)
 
     def _preload_next_track(self) -> None:
-        """Précharge en tâche de fond le prochain fichier de la playlist sur le lecteur standby."""
-        if not hasattr(self.player, "get_next_index") or not hasattr(self.player, "preload_track"):
+        """Précharge en tâche de fond le prochain fichier de la playlist sur le lecteur standby et sa pochette en RAM."""
+        if not hasattr(self.player, "get_next_index"):
             return
         next_idx = self.player.get_next_index()
-        if next_idx is not None and next_idx != self.player.current_index:
-            self.player.preload_track(next_idx)
+        if isinstance(next_idx, int) and next_idx != self.player.current_index:
+            if hasattr(self.player, "preload_track"):
+                self.player.preload_track(next_idx)
+            # Précharger également la pochette du morceau suivant dans le cache mémoire pour affichage instantané
+            playlist = getattr(self.player, "playlist", None)
+            if isinstance(playlist, (list, tuple)) and 0 <= next_idx < len(playlist):
+                next_track = playlist[next_idx]
+                load_cover_async(next_track, size=280, radius=16)
 
     def _start_round_for_track(self, track: TrackRecord | None, auto_play: bool = False) -> None:
         """Initialise une manche de Blind Test sur la piste fournie, démarrant à 0 seconde."""
@@ -728,11 +749,12 @@ class BlindTestView(QWidget):
         self._update_session_progress()
 
         if auto_play:
+            self._session_playing = True
             # Démarrer à 0% et monter en fondu progressif de 2 secondes vers 100%
             self._apply_temporary_volume(0)
             if not self.player.is_playing:
                 self.player.play()
-                self.player.seek_ratio(0.0)
+            self.player.seek_ratio(0.0)
             self._start_fade_in(2.0)
             self.btn_play_pause.setText("⏸")
             self.lbl_status_badge.setText(tr("blind_test.status_searching"))
@@ -748,6 +770,7 @@ class BlindTestView(QWidget):
             if self._is_active_page:
                 self._game_timer.start(1000)
         else:
+            self._session_playing = False
             self._game_timer.stop()
             self.btn_play_pause.setText("▶")
             self.lbl_status_badge.setText(tr("blind_test.status_paused"))
@@ -790,31 +813,25 @@ class BlindTestView(QWidget):
         self._preload_next_track()
         self._update_session_progress()
 
-        if self.player.is_playing:
-            self._apply_temporary_volume(0)
-            self._start_fade_in(2.0)
-            self.lbl_status_badge.setText(tr("blind_test.status_searching"))
-            self.lbl_status_badge.setStyleSheet("""
-                color: #38BDF8;
-                font-size: 12px;
-                font-weight: 600;
-                padding: 3px 12px;
-                border-radius: 10px;
-                background-color: rgba(56, 189, 248, 0.12);
-                border: 1px solid rgba(56, 189, 248, 0.3);
-            """)
+        self._session_playing = True
+        self._apply_temporary_volume(0)
+        if not self.player.is_playing:
+            self.player.play()
+        self.player.seek_ratio(0.0)
+        self._start_fade_in(2.0)
+        self.btn_play_pause.setText("⏸")
+        self.lbl_status_badge.setText(tr("blind_test.status_searching"))
+        self.lbl_status_badge.setStyleSheet("""
+            color: #38BDF8;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 3px 12px;
+            border-radius: 10px;
+            background-color: rgba(56, 189, 248, 0.12);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+        """)
+        if self._is_active_page:
             self._game_timer.start(1000)
-        else:
-            self.lbl_status_badge.setText(tr("blind_test.status_paused"))
-            self.lbl_status_badge.setStyleSheet("""
-                color: #94A3B8;
-                font-size: 12px;
-                font-weight: 600;
-                padding: 3px 12px;
-                border-radius: 10px;
-                background-color: rgba(148, 163, 184, 0.12);
-                border: 1px solid rgba(148, 163, 184, 0.3);
-            """)
 
     def _on_cover_loaded(self, target_path: str, pix: QPixmap | None) -> None:
         if not pix or pix.isNull():
@@ -838,6 +855,17 @@ class BlindTestView(QWidget):
         self._update_session_progress()
 
         if self._state == "countdown":
+            if self.lbl_status_badge.text() == tr("blind_test.status_paused"):
+                self.lbl_status_badge.setText(tr("blind_test.status_searching"))
+                self.lbl_status_badge.setStyleSheet("""
+                    color: #38BDF8;
+                    font-size: 12px;
+                    font-weight: 600;
+                    padding: 3px 12px;
+                    border-radius: 10px;
+                    background-color: rgba(56, 189, 248, 0.12);
+                    border: 1px solid rgba(56, 189, 248, 0.3);
+                """)
             self._countdown_remain -= 1
             if self._countdown_remain > 0:
                 self.lbl_countdown.setText(str(self._countdown_remain))
@@ -863,6 +891,7 @@ class BlindTestView(QWidget):
                 self._stop_fade_out()
                 # S'assurer que le morceau en cours s'éteint complètement à 0% sans rebond sonore
                 self._apply_temporary_volume(0)
+                self._session_playing = True
                 self.player.next()
 
     def _start_fade_in(self, duration_sec: float = 2.0) -> None:
@@ -1018,6 +1047,7 @@ class BlindTestView(QWidget):
     def _on_prev_track_clicked(self) -> None:
         """Revient à 0 d'abord si la manche a déjà démarré (> 2s ou révélée),
         ou passe réellement au morceau précédent si au tout début."""
+        self._session_playing = True
         if self._current_round_elapsed > 2 or self._state == "revealed":
             self._restart_current_round()
         else:
@@ -1029,6 +1059,7 @@ class BlindTestView(QWidget):
 
     def _on_next_track_clicked(self) -> None:
         """Passe immédiatement au titre suivant dans le Blind Test (démarre à 0s)."""
+        self._session_playing = True
         self._game_timer.stop()
         self._stop_fade_out()
         self._stop_fade_in()
@@ -1038,6 +1069,7 @@ class BlindTestView(QWidget):
     def _on_play_pause_clicked(self) -> None:
         """Met en pause ou reprend la lecture et le décompte."""
         if self.player.is_playing:
+            self._session_playing = False
             self.player.pause()
             self._game_timer.stop()
             if self._is_fading and hasattr(self, "_fade_timer"):
@@ -1058,6 +1090,7 @@ class BlindTestView(QWidget):
                 border: 1px solid rgba(148, 163, 184, 0.3);
             """)
         else:
+            self._session_playing = True
             # Démarrer ou reprendre la lecture
             is_start_of_round = self._current_round_elapsed == 0 and self._state == "countdown"
             if is_start_of_round:
@@ -1104,15 +1137,55 @@ class BlindTestView(QWidget):
     def _on_track_changed(self, track: TrackRecord | None) -> None:
         """Appelé lors d'un changement de piste dans le PlayerService."""
         if self._is_active_page:
-            self._start_round_for_track(track, auto_play=self.player.is_playing)
+            auto_play = self._session_playing or self.player.is_playing
+            self._start_round_for_track(track, auto_play=auto_play)
 
     def _on_playback_state_changed(self, state: str) -> None:
+        if not self._is_active_page:
+            return
         is_playing = state == "playing"
         self.btn_play_pause.setText("⏸" if is_playing else "▶")
-        if not is_playing:
+        if is_playing:
+            self._session_playing = True
+            if self._state == "countdown":
+                self.lbl_status_badge.setText(tr("blind_test.status_searching"))
+                self.lbl_status_badge.setStyleSheet("""
+                    color: #38BDF8;
+                    font-size: 12px;
+                    font-weight: 600;
+                    padding: 3px 12px;
+                    border-radius: 10px;
+                    background-color: rgba(56, 189, 248, 0.12);
+                    border: 1px solid rgba(56, 189, 248, 0.3);
+                """)
+                if not self._is_fading_in and not self._is_fading:
+                    self._start_fade_in(2.0)
+            elif self._state == "revealed":
+                self.lbl_status_badge.setText(tr("blind_test.status_revealed", remain=self._reveal_remain))
+                self.lbl_status_badge.setStyleSheet("""
+                    color: #4ADE80;
+                    font-size: 12px;
+                    font-weight: 600;
+                    padding: 3px 12px;
+                    border-radius: 10px;
+                    background-color: rgba(74, 222, 128, 0.12);
+                    border: 1px solid rgba(74, 222, 128, 0.3);
+                """)
+            if self._state != "idle":
+                self._game_timer.start(1000)
+        else:
             self._game_timer.stop()
-        elif self._is_active_page and self._state != "idle":
-            self._game_timer.start(1000)
+            if state in ("paused", "stopped"):
+                self.lbl_status_badge.setText(tr("blind_test.status_paused"))
+                self.lbl_status_badge.setStyleSheet("""
+                    color: #94A3B8;
+                    font-size: 12px;
+                    font-weight: 600;
+                    padding: 3px 12px;
+                    border-radius: 10px;
+                    background-color: rgba(148, 163, 184, 0.12);
+                    border: 1px solid rgba(148, 163, 184, 0.3);
+                """)
 
     def _reset_to_empty_state(self) -> None:
         self._state = "idle"

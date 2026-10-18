@@ -3,6 +3,7 @@
   "app.version": "0.2.0-dev",
   "app.window_title": "Audio Multi-Source Organizer (AMSO)",
   "sidebar.drawer_player": "Player",
+  "sidebar.drawer_games": "Spiele",
   "sidebar.nav_player": "🎵  Player",
   "sidebar.nav_blind_test": "🎭  Blind Test",
   "sidebar.nav_playlist": "📜  Playlist",

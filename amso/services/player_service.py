@@ -1057,10 +1057,14 @@ class PlayerService(QObject):
             # Mise en cache 2000ms pour assurer une lecture fluide même sur réseau local/NAS (SMB)
             media.add_option(":file-caching=2000")
             media.add_option(":network-caching=2000")
+            try:
+                media.parse_with_options(vlc.MediaParseFlag.local, 0)
+            except Exception:
+                pass
             self._standby_player.set_media(media)
             self._standby_player.audio_set_volume(0)
             self._preloaded_index = index
-            logger.debug("Piste suivante préchargée en standby (index %d) : %s", index, track.title)
+            logger.info("Piste suivante préchargée en standby (index %d) : %s", index, track.title)
         except Exception as exc:
             logger.warning("Échec du préchargement de la piste standby : %s", exc)
             self._preloaded_index = None

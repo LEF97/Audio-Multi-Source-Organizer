@@ -1092,19 +1092,18 @@ def test_config_active_page_and_position(tmp_path: Path) -> None:
     cfg = ConfigManager(config_path=cfg_file)
 
     # Valeurs par défaut
-    assert cfg.get_active_page() == "tracks"
+    assert cfg.get_active_page() == "player"
     assert cfg.get_player_position_ms() == 0
 
     # Sauvegarde et relecture
-    cfg.set_active_page("player")
+    cfg.set_active_page("tracks")
     cfg.set_player_position_ms(125400)
-    assert cfg.get_active_page() == "player"
+    assert cfg.get_active_page() == "tracks"
     assert cfg.get_player_position_ms() == 125400
 
-    # Nouvelle instance pointant vers le même fichier
-    cfg2 = ConfigManager(config_path=cfg_file)
-    assert cfg2.get_active_page() == "player"
-    assert cfg2.get_player_position_ms() == 125400
+    # Suppression de la clé active_page
+    cfg.remove_active_page()
+    assert cfg.get_active_page() == "player"
 
 
 def test_player_load_playlist_with_initial_position(qapp: QApplication, sample_tracks: list[TrackRecord]) -> None:
@@ -1138,7 +1137,7 @@ def test_player_load_playlist_with_initial_position(qapp: QApplication, sample_t
 
 
 def test_main_window_active_page_and_position_restore(qapp: QApplication, tmp_path: Path, monkeypatch) -> None:
-    """Vérifie que MainWindow sauvegarde et restaure fidèlement la page active et la position du lecteur."""
+    """Vérifie que MainWindow démarre systématiquement sur la page Lecteur sans persister la page dans le ini."""
     cfg_file = tmp_path / "config.ini"
     playlist_file = tmp_path / "saved_playlist.json"
     db_file = tmp_path / "test.db"
@@ -1146,9 +1145,8 @@ def test_main_window_active_page_and_position_restore(qapp: QApplication, tmp_pa
     monkeypatch.setenv("AMSO_CONFIG_PATH", str(cfg_file))
     monkeypatch.setenv("AMSO_SAVED_PLAYLIST_PATH", str(playlist_file))
 
-    # Configuration initiale avec page active "player" et position 45000ms
+    # Configuration initiale avec position 45000ms
     cfg = ConfigManager(config_path=cfg_file)
-    cfg.set_active_page("player")
     cfg.set_player_position_ms(45000)
     cfg.set_player_volume(75)
     cfg.set_player_muted(False)
@@ -1156,7 +1154,7 @@ def test_main_window_active_page_and_position_restore(qapp: QApplication, tmp_pa
     db = DatabaseManager(db_path=db_file)
     win = MainWindow(db=db)
 
-    # Vérification que la page "player" a été restaurée
+    # Vérification que l'application démarre systématiquement sur la page "player"
     assert win._current_active_page == "player"
     assert win.btn_player.isChecked() is True
     assert win.stacked_widget.currentWidget() == win.page_player
@@ -1167,12 +1165,10 @@ def test_main_window_active_page_and_position_restore(qapp: QApplication, tmp_pa
     assert win._current_active_page == "playlist"
     assert win.stacked_widget.currentWidget() == win.page_playlist
 
-    # Sauvegarde
-    win._save_active_page()
-    cfg_reloaded = ConfigManager(config_path=cfg_file)
-    assert cfg_reloaded.get_active_page() == "playlist"
-
+    # Fermeture : la page n'est plus persistée dans ini
     win.close()
+    cfg_reloaded = ConfigManager(config_path=cfg_file)
+    assert cfg_reloaded.get_active_page() == "player"
 
 
 def test_player_start_at_zero_and_volume_lock_and_immediate_persistence(tmp_path: Path, monkeypatch) -> None:

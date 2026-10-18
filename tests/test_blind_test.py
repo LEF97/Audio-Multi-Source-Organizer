@@ -337,9 +337,10 @@ def test_main_window_blind_test_integration(qapp: QApplication, tmp_path: Path):
 
     window = MainWindow(db=db)
 
-    # 1. Bouton dans le tiroir Lecteur
+    # 1. Bouton dans le tiroir dédié Jeux
     assert hasattr(window, "btn_blind_test")
-    assert window.btn_blind_test in window.drawer_player.findChildren(type(window.btn_blind_test))
+    assert hasattr(window, "drawer_games")
+    assert window.btn_blind_test in window.drawer_games.findChildren(type(window.btn_blind_test))
 
     # 2. Page Blind Test dans le stacked_widget
     assert hasattr(window, "page_blind_test")
@@ -538,8 +539,9 @@ def test_blind_test_state_restoration_on_exit(qapp: QApplication, sample_track: 
     # 3. Quitter la page Blind Test
     view.hideEvent(QHideEvent())
 
-    # Le player doit être revenu sur la piste 0 et avoir restauré les 73000 ms
+    # Le player doit être revenu sur la piste 0 et avoir restauré les 73000 ms, et être mis en pause
     player_mock.play_index.assert_called_with(0, resume_pending=True)
+    player_mock.pause.assert_called()
 
 
 def test_blind_test_file_name_display(qapp: QApplication, sample_track: TrackRecord):

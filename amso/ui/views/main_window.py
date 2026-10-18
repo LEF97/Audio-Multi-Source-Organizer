@@ -268,7 +268,7 @@ class MainWindow(QMainWindow):
         # Chargement initial
         if progress_callback:
             progress_callback(75, tr("splash.loading_library"))
-        self._current_active_page: str = "tracks"
+        self._current_active_page: str = "player"
         self.refresh_sources_list()
         self.table_model.reload_data()
         self._update_track_count()
@@ -292,7 +292,6 @@ class MainWindow(QMainWindow):
         SleepInhibitor.release()
         if hasattr(self, "_playlist_save_timer") and self._playlist_save_timer.isActive():
             self._playlist_save_timer.stop()
-        self._save_active_page()
         self._save_all_tables_state()
         self._save_player_state()
         self._save_current_playlist(immediate=True)
@@ -317,15 +316,14 @@ class MainWindow(QMainWindow):
         super().closeEvent(event)
 
     def _save_active_page(self) -> None:
-        """Sauvegarde l'identifiant de la page active courante dans la configuration."""
-        cfg = get_config_manager()
-        active_page = getattr(self, "_current_active_page", "tracks")
-        cfg.set_active_page(active_page)
+        """Supprimé : la page active n'est plus persistée, l'appli démarre systématiquement sur le Lecteur."""
+        pass
 
     def _restore_active_page(self) -> None:
-        """Restaure la dernière page active, coche le bon bouton de navigation et ouvre son tiroir parent."""
+        """Au démarrage de l'appli, on bascule systématiquement sur la page Lecteur."""
         cfg = get_config_manager()
-        page_id = cfg.get_active_page(default="tracks")
+        cfg.remove_active_page()
+        page_id = "player"
         self._current_active_page = page_id
 
         mapping = {
@@ -356,7 +354,7 @@ class MainWindow(QMainWindow):
             ),
             "blind_test": (
                 getattr(self, "btn_blind_test", None),
-                getattr(self, "drawer_player", None),
+                getattr(self, "drawer_games", None),
                 self._on_blind_test_nav_clicked,
             ),
             "playlist": (
@@ -671,13 +669,6 @@ class MainWindow(QMainWindow):
         self.nav_button_group.addButton(self.btn_player)
         self.drawer_player.add_widget(self.btn_player)
 
-        self.btn_blind_test = QPushButton(tr("sidebar.nav_blind_test"))
-        self.btn_blind_test.setProperty("class", "nav-btn")
-        self.btn_blind_test.setCheckable(True)
-        self.btn_blind_test.clicked.connect(self._on_blind_test_nav_clicked)
-        self.nav_button_group.addButton(self.btn_blind_test)
-        self.drawer_player.add_widget(self.btn_blind_test)
-
         self.btn_playlist = QPushButton(tr("sidebar.nav_playlist"))
         self.btn_playlist.setProperty("class", "nav-btn")
         self.btn_playlist.setCheckable(True)
@@ -685,6 +676,16 @@ class MainWindow(QMainWindow):
         self.nav_button_group.addButton(self.btn_playlist)
         self.drawer_player.add_widget(self.btn_playlist)
         drawers_layout.addWidget(self.drawer_player)
+
+        # 0b. Tiroir JEUX (Dédié au Blind Test, sous le tiroir Lecteur)
+        self.drawer_games = CollapsibleDrawer(tr("sidebar.drawer_games"), initially_expanded=True)
+        self.btn_blind_test = QPushButton(tr("sidebar.nav_blind_test"))
+        self.btn_blind_test.setProperty("class", "nav-btn")
+        self.btn_blind_test.setCheckable(True)
+        self.btn_blind_test.clicked.connect(self._on_blind_test_nav_clicked)
+        self.nav_button_group.addButton(self.btn_blind_test)
+        self.drawer_games.add_widget(self.btn_blind_test)
+        drawers_layout.addWidget(self.drawer_games)
 
         # 1. Tiroir BIBLIOTHÈQUE (fermé par défaut)
         self.drawer_library = CollapsibleDrawer(tr("sidebar.drawer_library"), initially_expanded=False)
@@ -2934,6 +2935,8 @@ class MainWindow(QMainWindow):
         # Tiroirs
         if hasattr(self, "drawer_player"):
             self.drawer_player.set_title(tr("sidebar.drawer_player"))
+        if hasattr(self, "drawer_games"):
+            self.drawer_games.set_title(tr("sidebar.drawer_games"))
         self.drawer_library.set_title(tr("sidebar.drawer_library"))
         self.drawer_tools.set_title(tr("sidebar.drawer_tools"))
         self.drawer_stats.set_title(tr("sidebar.drawer_stats"))

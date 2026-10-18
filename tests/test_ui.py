@@ -140,7 +140,8 @@ def test_main_window_instantiation(qapp: QApplication, db: DatabaseManager):
     assert "AMSO" in window.windowTitle()
     assert __version__ in window.windowTitle()
     assert window.table_model.rowCount() == 2
-    assert window.search_edit is not None
+    assert window.btn_player.isChecked() is True
+    window.btn_all_tracks.click()
     assert window.btn_all_tracks.isChecked() is True
     assert "Tous les morceaux" in window.btn_all_tracks.text()
 
