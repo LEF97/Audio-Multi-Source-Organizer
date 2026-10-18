@@ -84,9 +84,10 @@ flowchart TD
      - La mise en page du tableau officiel des téléchargements (`AMSO-Windows-vX.Y.Z.zip` et `AMSO.exe`).
      - La création ou la mise à jour de la release via l'API REST GitHub (avec jeton d'authentification récupéré automatiquement).
      - Le téléversement de l'archive binaire `dist/AMSO-Windows-vX.Y.Z.zip`.
-3. **Publication sur itch.io :**
-   - Téléverser `AMSO-Windows-vX.Y.Z.zip` sur le tableau de bord itch.io.
-   - Mettre à jour la description, les visuels (`screenshots/`) et publier l'annonce (Devlog).
+3. **Publication sur itch.io (automatisée via GitHub Actions & Butler) :**
+   - Le workflow `.github/workflows/release.yml` déploie automatiquement l'archive `AMSO-Windows-vX.Y.Z.zip` sur le canal `arnaudlef97/amso:windows` via **Itch.io Butler** à chaque push de tag `v*`.
+   - **Prérequis unique :** configurer le secret GitHub `BUTLER_API_KEY` dans *Settings > Secrets and variables > Actions* avec une clé API générée sur [itch.io API Keys](https://itch.io/user/settings/api-keys).
+   - Accéder au tableau de bord itch.io pour ajuster la description, les visuels (`screenshots/`) et publier l'annonce (Devlog) si souhaité.
 
 ---
 
