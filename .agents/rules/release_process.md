@@ -28,6 +28,9 @@ Pour toute demande concernant la préparation, la finalisation ou le déploiemen
 - Créer le tag Git annoté `vX.Y.Z` et pousser les branches et tags (`git push origin main develop --tags`).
 - Exécuter la publication automatisée sur GitHub : `python scripts/publish_github_release.py` (extraction changelog, captures, tableau et zip).
 - Déploiement itch.io automatisé via GitHub Actions & Butler (clé secrète `BUTLER_API_KEY`).
+- Sur Itch.io : vérifier que le canal `amso-windows.zip` est bien à jour, que les anciens fichiers obsolètes sont supprimés, et que le « Nom affiché » du build est configuré.
+- **Devlog Itch.io obligatoire :** l'assistant DOIT obligatoirement rédiger et fournir à l'utilisateur le contenu complet du Devlog d'annonce en français et en anglais (bilingue) prêt à publier.
+
 
 ### 4. Post-release (Nouveau cycle dev)
 - Revenir sur `develop`.

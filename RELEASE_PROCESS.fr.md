@@ -95,9 +95,13 @@ flowchart TD
      - La création ou la mise à jour de la release via l'API REST GitHub (avec jeton d'authentification récupéré automatiquement).
      - Le téléversement de l'archive binaire `dist/AMSO-Windows-vX.Y.Z.zip`.
 3. **Publication sur itch.io (automatisée via GitHub Actions & Butler) :**
-   - Le workflow `.github/workflows/release.yml` déploie automatiquement l'archive `AMSO-Windows-vX.Y.Z.zip` sur le canal `arnaudlef97/amso:windows` via **Itch.io Butler** à chaque push de tag `v*`.
-   - **Prérequis unique :** configurer le secret GitHub `BUTLER_API_KEY` dans *Settings > Secrets and variables > Actions* avec une clé API générée sur [itch.io API Keys](https://itch.io/user/settings/api-keys).
-   - Accéder au tableau de bord itch.io pour ajuster la description, les visuels (`screenshots/`) et publier l'annonce (Devlog) si souhaité.
+   - Le workflow `.github/workflows/release.yml` déploie automatiquement l'archive sur le canal `arnaudlef97/amso:windows` via **Itch.io Butler** à chaque push de tag `v*` (ou via déclenchement manuel `workflow_dispatch`).
+   - **Nommage des fichiers Itch.io :**
+     - Butler nomme automatiquement le fichier généré selon le projet et le canal : `amso-windows.zip` avec le tag officiel vert `[windows]`.
+     - L'intitulé lisible (*« Nom affiché »*) personnalisé sur Itch.io (ex: `AMSO — Windows (Portable 64-bit)`) est pérenne et automatiquement conservé par Itch.io à chaque nouvelle version poussée par Butler.
+     - Les anciens fichiers d'archives ou exécutables résiduels antérieurs doivent être supprimés du tableau de bord Itch.io (*Fichiers mis en ligne*) pour éviter tout téléchargement d'une version obsolète.
+   - **Publication du Devlog bilingue (FR / EN) :**
+     - À chaque publication, l'assistant DOIT obligatoirement générer et fournir à l'utilisateur le titre et le contenu complet du **Devlog officiel en français et en anglais**, prêt à être publié sur Itch.io pour notifier la communauté et faire remonter l'application dans le flux d'actualités.
 
 ---
 
