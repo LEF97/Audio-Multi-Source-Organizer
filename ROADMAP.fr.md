@@ -49,6 +49,7 @@ AMSO a pour vocation de devenir le **hub musical universel et décentralisé** d
 
 ### 🟡 Version 0.4.0 — Expérience Audio Avancée, Artistes & Packaging Multiplateforme
 - [ ] **Déploiement multiplateforme automatisé (Linux & macOS) :** Compilation native et packaging automatisé via GitHub Actions pour Linux (`.AppImage` / `.tar.gz`) et macOS Apple Silicon ARM & Intel (`.dmg`), en complément de l'exécutable Windows.
+- [ ] **Intégration Windows Shell & barre des tâches :** Épinglage natif direct depuis l'icône active (`AppUserModelID` explicite) et persistance du raccourci lors des mises à jour.
 - [ ] **Gestion des artistes et discographie associée :** Vue dédiée par artiste avec albums, singles et discographie complète.
 - [ ] **Égaliseur graphique (EQ) :** Presets (Rock, Pop, Jazz, Bass Boost) et égaliseur paramétrique multibandes.
 - [ ] **Éditeur de métadonnées in-app :** Modification directe des tags ID3 / Vorbis sur un ou plusieurs fichiers sélectionnés.

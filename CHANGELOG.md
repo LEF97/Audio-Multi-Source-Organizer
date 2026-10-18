@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning (SemVer)](https://semver.org/).
 
 ### Added
 - Started development cycle for version 0.4.0 (Advanced Audio Experience, Artists Hub & Multiplatform Packaging for Linux/macOS).
+- **Windows Shell & Taskbar Integration:** Enforced early `AppUserModelID` declaration (`LEF97.AMSO.AudioPlayer`) at the absolute first line of `main.py` before any Qt initialization, allowing the running application to be pinned natively to the Windows taskbar.
 
 ---
 

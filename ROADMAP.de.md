@@ -49,6 +49,7 @@ AMSO versteht sich als **universeller und dezentraler Musik-Hub**: schnell, ress
 
 ### 🟡 Version 0.4.0 — Erweiterte Audio-Erfahrung, Künstler & Plattformübergreifendes Packaging
 - [ ] **Automatisiertes Cross-Platform Deployment (Linux & macOS):** Native Kompilierung und automatisiertes Packaging über GitHub Actions für Linux (`.AppImage` / `.tar.gz`) und macOS Apple Silicon ARM & Intel (`.dmg`), ergänzend zur Windows-EXE.
+- [ ] **Windows-Taskleisten-Integration:** Natives Anheften direkt über das aktive Taskleistensymbol (`AppUserModelID`) und dauerhafte Verknüpfung bei Updates.
 - [ ] **Künstler-Hub & Diskografie-Ansicht:** Dedizierte Ansicht nach Künstlern mit Alben, Singles und kompletter Diskografie.
 - [ ] **Grafischer Equalizer (EQ):** Klangprofile (Rock, Pop, Jazz, Bass Boost) und parametrischer Mehrband-Equalizer.
 - [ ] **In-App Metadaten-Editor:** Direktes Bearbeiten von ID3- und Vorbis-Tags einzelner oder mehrerer Titel.

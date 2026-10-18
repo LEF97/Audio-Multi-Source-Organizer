@@ -49,6 +49,7 @@ AMSO aims to become the definitive **universal and decentralized music hub**: a 
 
 ### 🟡 Version 0.4.0 — Advanced Audio Experience, Artists & Multiplatform Packaging
 - [ ] **Automated Cross-Platform Deployment (Linux & macOS):** Native compilation and automated packaging via GitHub Actions for Linux (`.AppImage` / `.tar.gz`) and macOS Apple Silicon ARM & Intel (`.dmg`), alongside Windows executables.
+- [ ] **Windows Taskbar & Shell Integration:** Native pinning directly from active taskbar icon (`AppUserModelID` enforcement) and persistent shortcut grouping across updates.
 - [ ] **Artist Hub & Full Discography View:** Dedicated artist browser showcasing albums, singles, and full discographies.
 - [ ] **Graphical Equalizer (EQ):** Curated sound presets (Rock, Pop, Jazz, Bass Boost) and multi-band parametric equalizer.
 - [ ] **In-App Metadata Editor:** Direct ID3 / Vorbis tag editing on single or batch-selected tracks.

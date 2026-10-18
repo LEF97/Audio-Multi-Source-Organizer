@@ -1,6 +1,17 @@
 """Audio Multi-Source Organizer (AMSO) — Point d'entrée principal."""
 
 import sys
+
+# Sous Windows, définir l'AppUserModelID impérativement AVANT tout import Qt/GUI
+# afin de garantir l'épinglage à la barre des tâches et le regroupement d'icônes
+if sys.platform == "win32":
+    try:
+        import ctypes
+
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("LEF97.AMSO.AudioPlayer")
+    except Exception:
+        pass
+
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -23,15 +34,6 @@ from amso.ui.views.splash_screen import SplashScreen  # noqa: E402
 
 def main() -> int:
     """Initialise la base locale, affiche l'écran de chargement et démarre l'interface graphique PySide6."""
-    # Identification unique du processus Windows pour afficher l'icône personnalisée dans la barre des tâches
-    if sys.platform == "win32":
-        try:
-            import ctypes
-
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("LEF97.AMSO.AudioOrganizer.1.0")
-        except Exception:
-            pass
-
     # 1. Initialisation prioritaire de l'application Qt pour affichage instantané du splash screen
     app = QApplication(sys.argv)
     app.setApplicationName("Audio Multi-Source Organizer")

@@ -16,6 +16,7 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/) 
 
 ### Added
 - Beginn des Entwicklungszyklus für Version 0.4.0 (Erweiterte Audio-Erfahrung, Künstler-Hub und plattformübergreifendes Packaging für Linux/macOS).
+- **Windows-Shell- & Taskleisten-Integration:** Vorzeitige Deklaration der `AppUserModelID` (`LEF97.AMSO.AudioPlayer`) in der allerersten Zeile von `main.py` vor jedem Qt-Import, sodass die laufende Anwendung nativ an die Windows-Taskleiste angeheftet werden kann.
 
 ---
 

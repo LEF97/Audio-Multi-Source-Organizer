@@ -16,6 +16,7 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ### Added
 - Inicio del ciclo de desarrollo para la versión 0.4.0 (Experiencia de audio avanzada, Hub de artistas y empaquetado multiplataforma para Linux/macOS).
+- **Integración con Windows Shell y barra de tareas:** Declaración prioritaria del identificador `AppUserModelID` (`LEF97.AMSO.AudioPlayer`) en la primera línea de `main.py` antes de cualquier importación de Qt, lo que permite anclar de forma nativa la aplicación en ejecución a la barra de tareas de Windows.
 
 ---
 

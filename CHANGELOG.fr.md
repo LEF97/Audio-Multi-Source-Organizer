@@ -17,6 +17,7 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 
 ### Added
 - Début du cycle de développement pour la version 0.4.0 (Expérience Audio Avancée, Artistes & Packaging Multiplateforme Linux/macOS).
+- **Intégration Windows Shell & Barre des tâches :** Déclaration prioritaire de l'identifiant d'application `AppUserModelID` (`LEF97.AMSO.AudioPlayer`) dès la première ligne du point d'entrée `main.py` avant tout import Qt, permettant d'épingler nativement l'exécutable à la barre des tâches lors de son exécution.
 
 ---
 
