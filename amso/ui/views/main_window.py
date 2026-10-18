@@ -1964,10 +1964,10 @@ class MainWindow(QMainWindow):
         content_layout.addStretch(1)
 
         # Rendre accessibles les contrôles sur le widget de page
-        setattr(container, "spin_bt_countdown", self.spin_bt_countdown)
-        setattr(container, "spin_bt_reveal", self.spin_bt_reveal)
-        setattr(container, "spin_bt_fade", self.spin_bt_fade)
-        setattr(container, "lbl_bt_total", self.lbl_bt_total)
+        setattr(container, "spin_bt_countdown", self.spin_bt_countdown)  # noqa: B010
+        setattr(container, "spin_bt_reveal", self.spin_bt_reveal)  # noqa: B010
+        setattr(container, "spin_bt_fade", self.spin_bt_fade)  # noqa: B010
+        setattr(container, "lbl_bt_total", self.lbl_bt_total)  # noqa: B010
 
         scroll.setWidget(scroll_content)
         main_layout.addWidget(scroll, 1)
