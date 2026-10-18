@@ -53,21 +53,22 @@ jobs:
           from pathlib import Path
 
           tag = os.environ.get("GITHUB_REF_NAME", "").lstrip("v")
-          changelog_path = Path("CHANGELOG.md")
           notes = ""
 
-          if changelog_path.exists() and tag:
-              content = changelog_path.read_text(encoding="utf-8")
-              # Recherche de la section ## [X.Y.Z]
-              pattern = rf"## \[{re.escape(tag)}\][^\n]*\n(.*?)(?=\n## \[|\Z)"
-              match = re.search(pattern, content, re.DOTALL)
-              if match:
-                  notes = match.group(1).strip()
+          # Vérifier en priorité CHANGELOG.fr.md puis CHANGELOG.md
+          for filename in ["CHANGELOG.fr.md", "CHANGELOG.md"]:
+              changelog_path = Path(filename)
+              if changelog_path.exists() and tag:
+                  content = changelog_path.read_text(encoding="utf-8")
+                  pattern = rf"## \[{re.escape(tag)}\][^\n]*\n(.*?)(?=\n## \[|\Z)"
+                  match = re.search(pattern, content, re.DOTALL)
+                  if match and match.group(1).strip():
+                      notes = match.group(1).strip()
+                      break
 
           if not notes:
-              notes = "Consultez le fichier CHANGELOG.md pour le détail des modifications apportées dans cette version."
+              notes = "Consultez le fichier CHANGELOG.fr.md pour le détail des modifications apportées dans cette version."
 
-          # Écriture dans le fichier de sortie GitHub
           github_output = os.environ.get("GITHUB_OUTPUT")
           if github_output:
               with open(github_output, "a", encoding="utf-8") as f:
@@ -86,3 +87,19 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Butler
+        if: startsWith(github.ref, 'refs/tags/') && secrets.BUTLER_API_KEY != ''
+        uses: remarkablegames/setup-butler@v1
+        with:
+          butler-version: LATEST
+
+      - name: Deploy to Itch.io
+        if: startsWith(github.ref, 'refs/tags/') && secrets.BUTLER_API_KEY != ''
+        shell: pwsh
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: |
+          $cleanVersion = $env:GITHUB_REF_NAME -replace '^v', ''
+          Write-Host "Déploiement de $env:ZIP_NAME vers itch.io (cible: arnaudlef97/amso:windows, version: $cleanVersion)..."
+          butler push $env:ZIP_NAME arnaudlef97/amso:windows --userversion $cleanVersion
