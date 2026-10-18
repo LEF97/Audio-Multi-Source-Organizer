@@ -61,7 +61,7 @@ def test_funding_yaml_exists_and_valid():
 
 def test_constants_and_version():
     """Vérifie la définition cohérente des versions et des URLs de distribution/don."""
-    assert __version__ == "0.3.0"
+    assert __version__ == "0.4.0-dev"
     assert "github.com/LEF97" in URL_GITHUB_REPO
     assert "itch.io" in URL_ITCH_IO
     assert "ko-fi.com" in URL_KO_FI

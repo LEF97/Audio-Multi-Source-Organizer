@@ -13,6 +13,13 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 
 ---
 
+## [0.4.0-dev] - En cours de développement
+
+### Added
+- Début du cycle de développement pour la version 0.4.0 (Expérience Audio Avancée, Artistes & Packaging Multiplateforme Linux/macOS).
+
+---
+
 ## [0.3.0] - 2026-10-18
 
 ### Added

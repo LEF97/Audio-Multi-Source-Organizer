@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning (SemVer)](https://semver.org/).
 
 ---
 
+## [0.4.0-dev] - In Development
+
+### Added
+- Started development cycle for version 0.4.0 (Advanced Audio Experience, Artists Hub & Multiplatform Packaging for Linux/macOS).
+
+---
+
 ## [0.3.0] - 2026-10-18
 
 ### Added
