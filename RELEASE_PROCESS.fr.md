@@ -76,10 +76,14 @@ flowchart TD
    - Merge de la branche de dev vers la branche principale : `git checkout main` puis `git merge develop`
    - Création du tag officiel annoté : `git tag -a vX.Y.Z -m "Release vX.Y.Z"`
    - Push vers le dépôt distant : `git push origin main develop --tags`
-2. **Publication GitHub Release :**
-   - Créer la release sur GitHub liée au tag `vX.Y.Z`.
-   - Coller les notes de version extraites du `CHANGELOG.fr.md`.
-   - Téléverser l'archive `dist/AMSO-Windows-vX.Y.Z.zip` en tant qu'asset binaire téléchargeable.
+2. **Publication & Synchronisation GitHub Release (automatisée) :**
+   - Exécuter le script dédié : `python scripts/publish_github_release.py` (ou avec `--tag vX.Y.Z`).
+   - Le script réalise de façon totalement automatisée :
+     - L'extraction intégrale des notes de version depuis `CHANGELOG.fr.md`.
+     - L'intégration des captures d'écran de la version courante (`screenshots/*vX.Y.Z*.png`) et globales (`screenshots/Global*.png`).
+     - La mise en page du tableau officiel des téléchargements (`AMSO-Windows-vX.Y.Z.zip` et `AMSO.exe`).
+     - La création ou la mise à jour de la release via l'API REST GitHub (avec jeton d'authentification récupéré automatiquement).
+     - Le téléversement de l'archive binaire `dist/AMSO-Windows-vX.Y.Z.zip`.
 3. **Publication sur itch.io :**
    - Téléverser `AMSO-Windows-vX.Y.Z.zip` sur le tableau de bord itch.io.
    - Mettre à jour la description, les visuels (`screenshots/`) et publier l'annonce (Devlog).

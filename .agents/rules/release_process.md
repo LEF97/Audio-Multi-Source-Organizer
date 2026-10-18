@@ -22,7 +22,7 @@ Pour toute demande concernant la préparation, la finalisation ou le déploiemen
 ### 3. Release (Publication)
 - Committer et merger `develop` vers `main`.
 - Créer le tag Git annoté `vX.Y.Z` et pousser les branches et tags (`git push origin main develop --tags`).
-- Accompagner l'utilisateur pour la publication sur GitHub Release (notes de changelog + zip en pièce jointe).
+- Exécuter la publication automatisée sur GitHub : `python scripts/publish_github_release.py` (extraction changelog, captures, tableau et zip).
 - Accompagner l'utilisateur pour le téléversement sur itch.io (zip + descriptions et screenshots).
 
 ### 4. Post-release (Nouveau cycle dev)
