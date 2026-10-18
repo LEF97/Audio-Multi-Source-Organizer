@@ -1,6 +1,6 @@
 {
   "app.name": "Audio Multi-Source Organizer",
-  "app.version": "0.2.0",
+  "app.version": "0.3.0-dev",
   "app.window_title": "Audio Multi-Source Organizer (AMSO)",
   "sidebar.drawer_player": "Lecteur",
   "sidebar.drawer_games": "Jeux",
@@ -241,6 +241,15 @@
   "dialog.scan_errors_message": "{count} erreur(s) lors du scan.<br><br>Détail de la première erreur :<br>{error}",
   "dialog.scan_error_title": "Erreur de scan",
   "dialog.scan_error_message": "Une erreur est survenue pendant le scan :<br>{error}",
+  "dialog.large_selection_title": "Grande sélection audio",
+  "dialog.large_selection_prompt": "Vous vous apprêtez à charger {count} morceaux dans la playlist. Que souhaitez-vous faire ?",
+  "dialog.large_selection_opt_folder": "📁 Lire uniquement ce dossier ({count} titres)",
+  "dialog.large_selection_opt_folder_desc": "Charge l'album ou dossier du morceau sélectionné",
+  "dialog.large_selection_opt_limit": "⚡ Limiter aux 1 000 titres suivants",
+  "dialog.large_selection_opt_limit_desc": "Démarre la lecture sur le titre cliqué avec les 1 000 morceaux suivants",
+  "dialog.large_selection_opt_all": "🚀 Tout charger ({count} titres)",
+  "dialog.large_selection_opt_all_desc": "Charge l'intégralité de la sélection dans la file d'attente",
+  "context_menu.play_playlist": "▶️  Lire la playlist",
   "context_menu.open_file_location": "📂 Ouvrir l'emplacement du fichier",
   "context_menu.play_next": "⏭️  Suivant",
   "context_menu.add_to_playlist": "➕  Ajouter à la liste de lecture",
@@ -395,5 +404,12 @@
   "update.btn_dismiss": "Masquer",
   "update.already_latest": "AMSO est à jour (version {version}).",
   "update.checking": "Recherche de mise à jour en cours...",
-  "update.error": "Impossible de vérifier les mises à jour pour le moment."
+  "update.error": "Impossible de vérifier les mises à jour pour le moment.",
+  "dialog.welcome_title": "Bienvenue dans AMSO !",
+  "dialog.welcome_desc": "Aucune source audio n'est configurée pour le moment. Souhaitez-vous sélectionner votre dossier de musique dès maintenant pour indexer vos morceaux ?",
+  "dialog.welcome_add_folder": "📁  Sélectionner un dossier audio",
+  "dialog.welcome_later": "Plus tard",
+  "player.empty_title": "Votre bibliothèque musicale est vide",
+  "player.empty_desc": "Ajoutez votre premier dossier de musique pour explorer, écouter et organiser votre collection.",
+  "player.btn_add_first_folder": "📁  Ajouter un dossier audio"
 }

@@ -59,6 +59,7 @@ flowchart TD
      - Le dossier compilé `AMSO/` (ou l'exécutable portable).
      - Les 3 fichiers Markdown à jour : `README.fr.md`, `CHANGELOG.fr.md`, `ROADMAP.fr.md`.
    - Créer l'archive zip finale : `dist/AMSO-Windows-vX.Y.Z.zip`.
+   - *(Note jalon v0.4.0+) :* Extension du packaging multiplateforme via GitHub Actions (`runs-on: [ubuntu-latest, macos-latest]`) pour générer également les paquets Linux (`.AppImage`) et macOS (`.dmg`).
 5. **Validation manuelle de l'exécutable :**
    - Tester le lancement de `AMSO.exe` directement depuis le dossier compilé (hors environnement virtuel Python).
 
@@ -76,13 +77,18 @@ flowchart TD
    - Merge de la branche de dev vers la branche principale : `git checkout main` puis `git merge develop`
    - Création du tag officiel annoté : `git tag -a vX.Y.Z -m "Release vX.Y.Z"`
    - Push vers le dépôt distant : `git push origin main develop --tags`
-2. **Publication GitHub Release :**
-   - Créer la release sur GitHub liée au tag `vX.Y.Z`.
-   - Coller les notes de version extraites du `CHANGELOG.fr.md`.
-   - Téléverser l'archive `dist/AMSO-Windows-vX.Y.Z.zip` en tant qu'asset binaire téléchargeable.
-3. **Publication sur itch.io :**
-   - Téléverser `AMSO-Windows-vX.Y.Z.zip` sur le tableau de bord itch.io.
-   - Mettre à jour la description, les visuels (`screenshots/`) et publier l'annonce (Devlog).
+2. **Publication & Synchronisation GitHub Release (automatisée) :**
+   - Exécuter le script dédié : `python scripts/publish_github_release.py` (ou avec `--tag vX.Y.Z`).
+   - Le script réalise de façon totalement automatisée :
+     - L'extraction intégrale des notes de version depuis `CHANGELOG.fr.md`.
+     - L'intégration des captures d'écran de la version courante (`screenshots/*vX.Y.Z*.png`) et globales (`screenshots/Global*.png`).
+     - La mise en page du tableau officiel des téléchargements (`AMSO-Windows-vX.Y.Z.zip` et `AMSO.exe`).
+     - La création ou la mise à jour de la release via l'API REST GitHub (avec jeton d'authentification récupéré automatiquement).
+     - Le téléversement de l'archive binaire `dist/AMSO-Windows-vX.Y.Z.zip`.
+3. **Publication sur itch.io (automatisée via GitHub Actions & Butler) :**
+   - Le workflow `.github/workflows/release.yml` déploie automatiquement l'archive `AMSO-Windows-vX.Y.Z.zip` sur le canal `arnaudlef97/amso:windows` via **Itch.io Butler** à chaque push de tag `v*`.
+   - **Prérequis unique :** configurer le secret GitHub `BUTLER_API_KEY` dans *Settings > Secrets and variables > Actions* avec une clé API générée sur [itch.io API Keys](https://itch.io/user/settings/api-keys).
+   - Accéder au tableau de bord itch.io pour ajuster la description, les visuels (`screenshots/`) et publier l'annonce (Devlog) si souhaité.
 
 ---
 

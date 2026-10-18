@@ -199,6 +199,9 @@ class TrackRecord:
     created_at: str | None = None
     updated_at: str | None = None
 
+    # Statut fichier manquant (ex: référencé dans une playlist mais absent du disque)
+    is_missing: bool = False
+
     def __post_init__(self) -> None:
         if self.source_path:
             clean_path = str(self.source_path).replace("\\", "/")
@@ -255,6 +258,7 @@ class TrackRecord:
             else False,
             created_at=row["created_at"],
             updated_at=row["updated_at"],
+            is_missing=bool(row["is_missing"]) if "is_missing" in keys and row["is_missing"] is not None else False,
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -291,6 +295,7 @@ class TrackRecord:
             "metadata_extracted": self.metadata_extracted,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
+            "is_missing": self.is_missing,
         }
 
     @classmethod
@@ -333,6 +338,87 @@ class TrackRecord:
             metadata_extracted=data.get("metadata_extracted", False),
             created_at=data.get("created_at"),
             updated_at=data.get("updated_at"),
+            is_missing=bool(data.get("is_missing", False)),
+        )
+
+
+@dataclass(slots=True)
+class PlaylistRecord:
+    """Représentation d'une playlist indexée (M3U, PLS, XSPF, WPL)."""
+
+    file_path: str
+    file_name: str
+    folder_path: str
+    format: str
+    id: int | None = None
+    source_id: int | None = None
+    track_count: int = 0
+    file_mtime: float = 0.0
+    file_size: int = 0
+    source_type: SourceType = SourceType.LOCAL
+    created_at: str | None = None
+    updated_at: str | None = None
+
+    @classmethod
+    def from_row(cls, row: sqlite3.Row) -> PlaylistRecord:
+        keys = row.keys() if hasattr(row, "keys") else ()
+        st = row["source_type"] if "source_type" in keys and row["source_type"] else "local"
+        try:
+            source_type = SourceType(st)
+        except Exception:
+            source_type = SourceType.LOCAL
+        return cls(
+            id=row["id"],
+            source_id=row["source_id"] if "source_id" in keys else None,
+            file_path=row["file_path"] if "file_path" in keys else "",
+            file_name=row["file_name"] if "file_name" in keys else (row["name"] if "name" in keys else ""),
+            folder_path=row["folder_path"] if "folder_path" in keys else "",
+            format=row["format"] if "format" in keys else "",
+            track_count=int(row["track_count"]) if "track_count" in keys and row["track_count"] is not None else 0,
+            file_mtime=float(row["file_mtime"]) if "file_mtime" in keys and row["file_mtime"] is not None else 0.0,
+            file_size=int(row["file_size"]) if "file_size" in keys and row["file_size"] is not None else 0,
+            source_type=source_type,
+            created_at=str(row["created_at"]) if "created_at" in keys and row["created_at"] is not None else None,
+            updated_at=str(row["updated_at"]) if "updated_at" in keys and row["updated_at"] is not None else None,
+        )
+
+    @property
+    def name(self) -> str:
+        """Alias pratique pour le nom de la playlist."""
+        return self.file_name
+
+
+@dataclass(slots=True)
+class PlaylistEntryRecord:
+    """Représentation d'un élément contenu dans une playlist."""
+
+    position: int
+    raw_path: str
+    resolved_path: str
+    id: int | None = None
+    playlist_id: int | None = None
+    track_id: int | None = None
+    title: str | None = None
+    artist: str | None = None
+    duration_seconds: float | None = None
+    is_missing: bool = False
+
+    @classmethod
+    def from_row(cls, row: sqlite3.Row) -> PlaylistEntryRecord:
+        keys = row.keys() if hasattr(row, "keys") else ()
+        return cls(
+            id=row["id"],
+            playlist_id=row["playlist_id"] if "playlist_id" in keys else None,
+            position=int(row["position"]) if "position" in keys and row["position"] is not None else 1,
+            raw_path=row["raw_path"] if "raw_path" in keys else "",
+            resolved_path=row["resolved_path"] if "resolved_path" in keys else "",
+            track_id=row["track_id"] if "track_id" in keys else None,
+            title=row["title"] if "title" in keys else None,
+            artist=row["artist"] if "artist" in keys else None,
+            duration_seconds=float(row["duration_seconds"])
+            if "duration_seconds" in keys and row["duration_seconds"] is not None
+            else None,
+            is_missing=bool(row["is_missing"]) if "is_missing" in keys and row["is_missing"] is not None else False,
         )
 
 
@@ -663,19 +749,67 @@ class DatabaseManager:
                 """
             )
 
-            # 6. Playlists
+            # 6. Playlists & Entrées de Playlist (M3U, PLS, XSPF, WPL)
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS playlists (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    source_id INTEGER REFERENCES sources(id) ON DELETE CASCADE,
                     name TEXT NOT NULL,
-                    source_type TEXT NOT NULL,
+                    file_path TEXT UNIQUE,
+                    folder_path TEXT,
+                    format TEXT,
+                    track_count INTEGER DEFAULT 0,
+                    file_mtime REAL DEFAULT 0,
+                    file_size INTEGER DEFAULT 0,
+                    source_type TEXT DEFAULT 'local',
                     external_id TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
                 """
             )
+            # Migration incrémentale playlists
+            cur_pl = conn.execute("PRAGMA table_info(playlists);")
+            cols_pl = {r["name"] for r in cur_pl.fetchall()}
+            if "source_id" not in cols_pl:
+                conn.execute("ALTER TABLE playlists ADD COLUMN source_id INTEGER REFERENCES sources(id) ON DELETE CASCADE;")
+            if "file_path" not in cols_pl:
+                conn.execute("ALTER TABLE playlists ADD COLUMN file_path TEXT;")
+            if "folder_path" not in cols_pl:
+                conn.execute("ALTER TABLE playlists ADD COLUMN folder_path TEXT;")
+            if "format" not in cols_pl:
+                conn.execute("ALTER TABLE playlists ADD COLUMN format TEXT;")
+            if "track_count" not in cols_pl:
+                conn.execute("ALTER TABLE playlists ADD COLUMN track_count INTEGER DEFAULT 0;")
+            if "file_mtime" not in cols_pl:
+                conn.execute("ALTER TABLE playlists ADD COLUMN file_mtime REAL DEFAULT 0;")
+            if "file_size" not in cols_pl:
+                conn.execute("ALTER TABLE playlists ADD COLUMN file_size INTEGER DEFAULT 0;")
+
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_playlists_source ON playlists(source_id);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_playlists_folder ON playlists(source_id, folder_path);")
+            conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_playlists_path ON playlists(file_path);")
+
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS playlist_entries (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    playlist_id INTEGER NOT NULL REFERENCES playlists(id) ON DELETE CASCADE,
+                    position INTEGER NOT NULL,
+                    raw_path TEXT NOT NULL,
+                    resolved_path TEXT NOT NULL,
+                    track_id INTEGER REFERENCES tracks(id) ON DELETE SET NULL,
+                    title TEXT,
+                    artist TEXT,
+                    duration_seconds REAL,
+                    is_missing INTEGER DEFAULT 0
+                );
+                """
+            )
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_pl_entries_pl ON playlist_entries(playlist_id, position);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_pl_entries_track ON playlist_entries(track_id);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_pl_entries_resolved ON playlist_entries(resolved_path);")
             # 7. Activity Logs
             conn.execute(
                 """
@@ -1628,4 +1762,215 @@ class DatabaseManager:
                 )
             else:
                 cur = conn.execute("DELETE FROM activity_logs;")
+            return cur.rowcount
+
+    # -------------------------------------------------------------------------
+    # Gestion des Playlists (M3U, PLS, XSPF, WPL)
+    # -------------------------------------------------------------------------
+
+    def upsert_playlist(
+        self,
+        source_id: int,
+        file_path: str,
+        file_name: str,
+        folder_path: str,
+        format_str: str,
+        file_mtime: float,
+        file_size: int,
+        entries: list[Any],
+        source_type: str = "local",
+    ) -> int:
+        """Insère ou met à jour une playlist et ses entrées ordonnées associées."""
+        clean_fp = file_path.replace("\\", "/")
+        clean_folder = folder_path.replace("\\", "/")
+        track_cnt = len(entries)
+
+        with self.get_connection() as conn:
+            conn.execute(
+                """
+                INSERT INTO playlists (
+                    source_id, name, file_path, folder_path, format,
+                    track_count, file_mtime, file_size, source_type, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                ON CONFLICT(file_path) DO UPDATE SET
+                    source_id = excluded.source_id,
+                    name = excluded.name,
+                    folder_path = excluded.folder_path,
+                    format = excluded.format,
+                    track_count = excluded.track_count,
+                    file_mtime = excluded.file_mtime,
+                    file_size = excluded.file_size,
+                    source_type = excluded.source_type,
+                    updated_at = datetime('now');
+                """,
+                (
+                    source_id,
+                    file_name,
+                    clean_fp,
+                    clean_folder,
+                    format_str.lower(),
+                    track_cnt,
+                    file_mtime,
+                    file_size,
+                    source_type,
+                ),
+            )
+            row = conn.execute("SELECT id FROM playlists WHERE file_path = ?;", (clean_fp,)).fetchone()
+            if not row:
+                return 0
+            playlist_id = int(row["id"])
+
+            # Supprimer les anciennes entrées associées
+            conn.execute("DELETE FROM playlist_entries WHERE playlist_id = ?;", (playlist_id,))
+
+            entries_to_insert = []
+            for e in entries:
+                raw_p = getattr(e, "raw_path", "") or ""
+                resolved_p = getattr(e, "resolved_path", "") or raw_p or ""
+                pos = getattr(e, "position", 1)
+                title = getattr(e, "title", None)
+                artist = getattr(e, "artist", None)
+                dur = getattr(e, "duration_seconds", None)
+                is_missing = 1 if getattr(e, "is_missing", False) else 0
+
+                # Recherche automatique du track_id correspondant dans la base tracks
+                t_row = conn.execute(
+                    "SELECT id FROM tracks WHERE source_path = ? OR source_ref = ? LIMIT 1;",
+                    (resolved_p, resolved_p),
+                ).fetchone()
+                t_id = t_row["id"] if t_row else None
+
+                entries_to_insert.append(
+                    (playlist_id, pos, raw_p, resolved_p, t_id, title, artist, dur, is_missing)
+                )
+
+            if entries_to_insert:
+                conn.executemany(
+                    """
+                    INSERT INTO playlist_entries (
+                        playlist_id, position, raw_path, resolved_path,
+                        track_id, title, artist, duration_seconds, is_missing
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+                    """,
+                    entries_to_insert,
+                )
+
+            return playlist_id
+
+    def get_playlists(self, source_id: int | None = None) -> list[PlaylistRecord]:
+        """Retourne la liste des playlists indexées ordonnées par dossier et nom."""
+        query = """
+            SELECT * FROM playlists
+            WHERE (:source_id IS NULL OR source_id = :source_id)
+            ORDER BY folder_path ASC, name ASC;
+        """
+        with self.get_connection() as conn:
+            rows = conn.execute(query, {"source_id": source_id}).fetchall()
+            return [PlaylistRecord.from_row(r) for r in rows]
+
+    def get_playlist(self, playlist_id: int) -> PlaylistRecord | None:
+        """Retourne une playlist spécifique par son ID."""
+        with self.get_connection() as conn:
+            r = conn.execute("SELECT * FROM playlists WHERE id = ?;", (playlist_id,)).fetchone()
+            return PlaylistRecord.from_row(r) if r else None
+
+    def get_playlist_by_path(self, file_path: str) -> PlaylistRecord | None:
+        """Retourne une playlist par son chemin absolu."""
+        clean_fp = file_path.replace("\\", "/")
+        with self.get_connection() as conn:
+            r = conn.execute("SELECT * FROM playlists WHERE file_path = ?;", (clean_fp,)).fetchone()
+            return PlaylistRecord.from_row(r) if r else None
+
+    def delete_playlist(self, playlist_id: int) -> None:
+        """Supprime une playlist et toutes ses entrées."""
+        with self.get_connection() as conn:
+            conn.execute("DELETE FROM playlists WHERE id = ?;", (playlist_id,))
+
+    def delete_playlist_by_path(self, file_path: str) -> None:
+        """Supprime une playlist par son chemin de fichier."""
+        clean_fp = file_path.replace("\\", "/")
+        with self.get_connection() as conn:
+            conn.execute("DELETE FROM playlists WHERE file_path = ?;", (clean_fp,))
+
+    def delete_playlists_not_in(self, source_id: int, current_file_paths: set[str]) -> int:
+        """Supprime les playlists d'une source qui n'existent plus sur le disque."""
+        with self.get_connection() as conn:
+            rows = conn.execute(
+                "SELECT id, file_path FROM playlists WHERE source_id = ? AND file_path IS NOT NULL AND file_path != '';",
+                (source_id,),
+            ).fetchall()
+            to_delete = [r["id"] for r in rows if r["file_path"] not in current_file_paths]
+            if to_delete:
+                placeholders = ",".join(["?"] * len(to_delete))
+                conn.execute(f"DELETE FROM playlists WHERE id IN ({placeholders});", to_delete)
+            return len(to_delete)
+
+    def get_playlist_tracks(self, playlist_id: int) -> list[TrackRecord]:
+        """Retourne la liste ordonnée des pistes composant une playlist."""
+        with self.get_connection() as conn:
+            query = """
+                SELECT
+                    pe.position as pe_position,
+                    pe.raw_path as pe_raw_path,
+                    pe.resolved_path as pe_resolved_path,
+                    pe.title as pe_title,
+                    pe.artist as pe_artist,
+                    pe.duration_seconds as pe_duration,
+                    pe.is_missing as pe_is_missing,
+                    t.*
+                FROM playlist_entries pe
+                LEFT JOIN tracks t ON pe.track_id = t.id
+                WHERE pe.playlist_id = ?
+                ORDER BY pe.position ASC;
+            """
+            rows = conn.execute(query, (playlist_id,)).fetchall()
+            tracks: list[TrackRecord] = []
+            for r in rows:
+                is_missing = bool(r["pe_is_missing"])
+                resolved = r["pe_resolved_path"]
+                if not is_missing and resolved and not os.path.exists(resolved):
+                    is_missing = True
+
+                pos = int(r["pe_position"])
+
+                if r["id"] is not None:
+                    # Morceau présent dans la table tracks : on récupère ses métadonnées riches
+                    rec = TrackRecord.from_row(r)
+                    rec.track_number = pos
+                    rec.is_missing = is_missing
+                    tracks.append(rec)
+                else:
+                    # Morceau non indexé dans tracks ou fichier manquant/externe
+                    fn = Path(resolved).name if resolved else (r["pe_title"] or "Titre inconnu")
+                    tit = r["pe_title"] or (Path(resolved).stem if resolved else "Titre inconnu")
+                    fmt = Path(resolved).suffix.lstrip(".").lower() if resolved else "audio"
+                    rec = TrackRecord(
+                        source_ref=resolved or r["pe_raw_path"],
+                        source_path=resolved or r["pe_raw_path"],
+                        file_name=fn,
+                        title=tit,
+                        artist=r["pe_artist"] or "",
+                        duration_seconds=r["pe_duration"],
+                        track_number=pos,
+                        format=fmt,
+                        is_missing=is_missing,
+                    )
+                    tracks.append(rec)
+            return tracks
+
+    def link_playlist_entries_to_tracks(self, source_id: int | None = None) -> int:
+        """Associe les entrées de playlist orphelines aux pistes nouvellement indexées."""
+        with self.get_connection() as conn:
+            cur = conn.execute(
+                """
+                UPDATE playlist_entries
+                SET track_id = (
+                    SELECT t.id FROM tracks t
+                    WHERE t.source_path = playlist_entries.resolved_path
+                       OR t.source_ref = playlist_entries.resolved_path
+                    LIMIT 1
+                )
+                WHERE track_id IS NULL;
+                """
+            )
             return cur.rowcount

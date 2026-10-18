@@ -11,16 +11,20 @@
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
-> **AMSO** est une application de bureau open-source et multiplateforme conçue pour unifier, dédoublonner et synchroniser vos bibliothèques musicales hybrides réparties entre vos disques locaux, vos archives cloud (Google Drive) et vos plateformes de streaming (Spotify, Deezer et Amazon Music).
+> **AMSO** (Audio Multi-Source Organizer) est un lecteur audio de bureau moderne, réactif et multiplateforme (Windows, Linux, macOS). Conçu pour offrir aux audiophiles un contrôle total sur leur bibliothèque musicale locale (MP3, FLAC, OGG…), il prend désormais en charge les listes de lecture (M3U, PLS, XSPF, WPL) et intègre un tout nouveau mode blind test audio ! Le projet évolue pour devenir un centre de commande unifié capable d'organiser, dédoublonner et synchroniser des collections musicales hybrides réparties entre disques locaux, stockage cloud (Google Drive) et services de streaming (Spotify, Deezer, Amazon Music).
 
 ---
 
 <p align="center">
-  <img src="screenshots/2026-10-18%20v0.2.0.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur Audio & Ambiance Hyperspace" width="850">
+  <img src="screenshots/2026-10-18%20v0.3.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & Playlists 🎶" width="850">
 </p>
 
 <p align="center">
-  <img src="screenshots/2026-10-18%20v0.2.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Spectre Rétro & Contrôles" width="850">
+  <img src="screenshots/2026-10-18%20v0.3.0.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur Audio & Ambiance Hyperspace" width="850">
+</p>
+
+<p align="center">
+  <img src="screenshots/2026-10-18%20v0.3.0%20blind%20test.png" alt="Audio Multi-Source Organizer (AMSO) - Mini-jeu Blind Test & Décompte dynamique" width="850">
 </p>
 
 ---
@@ -29,14 +33,12 @@
 
 | Fonctionnalité | Description | Statut |
 | :--- | :--- | :---: |
+| **Moteur de lecture VLC intégré** | Lecteur audio léger et autonome avec auto-installation VLC portable et gestion fluide du volume | 🟢 Implémenté |
 | **Scanner local multithreadé** | Découverte récursive et rapide des fichiers audio locaux (MP3, FLAC, AAC, OGG...) | 🟢 Implémenté |
 | **Extraction de métadonnées** | Lecture/écriture ID3, Vorbis Comments et calcul d'empreinte audio (`mutagen`) | 🟢 Implémenté |
-| **Moteur de lecture VLC intégré** | Lecteur audio léger et autonome avec auto-installation VLC portable et gestion fluide du volume | 🟢 Implémenté |
+| **Support des Playlists (M3U, PLS, XSPF, WPL)** | Indexation arborescente (🎶), ordre séquentiel d'écoute et repérage visuel des morceaux manquants | 🟢 Implémenté |
 | **Gestionnaire de Playlist & Glisser-Déposer** | File d'attente virtualisée, drag & drop fluide, aléatoire (shuffle) réversible et boucles | 🟢 Implémenté |
 | **Mode « 🎲 Blind Test » interactif** | Jeu musical immersif avec décompte animé, fondu sonore, révélation douce et enchaînement automatique | 🟢 Implémenté |
-| **Corbeille intelligente & Restauration** | Exclusion pérenne de morceaux, intégration corbeille Windows et vue dédiée Corbeille AMSO | 🟢 Implémenté |
-| **Sauvegarde asynchrone ultra-rapide** | Persistance SQLite compacte en arrière-plan (-99 % d'espace disque) et démarrage instantané | 🟢 Implémenté |
-| **Interface graphique PySide6** | Dark Mode haut de gamme, visualiseur audio temps réel, tiroir Jeux dédié, internationalisation 5 langues | 🟢 Implémenté |
 | **Mises à jour in-app** | Vérification automatique/manuelle des versions via GitHub Releases | 🟢 Implémenté |
 | **Gestion des artistes & Discographie** | Vue dédiée par artiste avec albums, singles et discographie complète | 🟡 Prévu |
 | **Égaliseur graphique (EQ)** | Presets audio et égaliseur multibandes paramétrique | 🟡 Prévu |

@@ -515,3 +515,59 @@ def test_ignored_tracks(db: DatabaseManager):
     assert db.count_ignored_tracks() == 0
 
 
+def test_migration_legacy_playlists_table(tmp_path):
+    """Vérifie la migration incrémentale d'une ancienne table playlists sans erreur UNIQUE."""
+    import sqlite3
+
+    db_file = tmp_path / "legacy.db"
+    # Créer une base de données avec l'ancien schéma playlists (v0.2.0)
+    with sqlite3.connect(db_file) as conn:
+        conn.execute(
+            """
+            CREATE TABLE playlists (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                description TEXT,
+                source_type TEXT NOT NULL,
+                external_id TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            """
+        )
+        conn.execute("INSERT INTO playlists (name, description, source_type) VALUES ('Legacy Playlist', 'Description', 'local');")
+
+    # Initialiser DatabaseManager sur cette base existante
+    mgr = DatabaseManager(str(db_file))
+    try:
+        # Vérifier que les colonnes ont été ajoutées correctement
+        with mgr.get_connection() as conn:
+            cur = conn.execute("PRAGMA table_info(playlists);")
+            cols = {r["name"] for r in cur.fetchall()}
+            assert "file_path" in cols
+            assert "source_id" in cols
+            assert "track_count" in cols
+
+        # Créer une source pour satisfaire la clé étrangère
+        src = mgr.add_source(SourceType.LOCAL, "Test Source", "C:/Music")
+
+        # Vérifier qu'on peut faire un upsert_playlist sans erreur
+        pl_id = mgr.upsert_playlist(
+            source_id=src.id,
+            file_path="C:/Music/test.m3u",
+            file_name="test.m3u",
+            folder_path="C:/Music",
+            format_str="m3u",
+            file_mtime=123456.0,
+            file_size=1024,
+            entries=[],
+        )
+        assert pl_id > 0
+        fetched = mgr.get_playlist(pl_id)
+        assert fetched is not None
+        assert fetched.name == "test.m3u"
+    finally:
+        mgr.close()
+
+
+

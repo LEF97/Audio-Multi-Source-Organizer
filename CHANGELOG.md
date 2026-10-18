@@ -13,7 +13,33 @@ and this project adheres to [Semantic Versioning (SemVer)](https://semver.org/).
 
 ---
 
-## [0.2.0-dev] - In Development
+## [0.3.0] - 2026-10-18
+
+### Added
+- **Full Playlist File Support**:
+  - Automatic indexing and scanning of `.m3u`, `.m3u8`, `.pls`, `.xspf`, and `.wpl` playlist formats.
+  - Dedicated folder tree nodes displayed with the **`🎶`** icon under their respective parent directories.
+  - Strict preservation of the natural sequential playlist order (1, 2, 3...) in the `#` column without forced alphabetical sorting.
+  - Clear visual detection of missing/moved tracks (**`⚠️`** warning prefix, warning highlight, and explanatory tooltip) without interrupting playback.
+  - Context menu actions for playlist nodes: Direct playback, append to queue, play next, and reveal in Windows Explorer.
+- **Acoustic Fade-in**:
+  - Smooth 1-second volume fade-in (0% to set volume) on playback start and resume.
+- **Background Synchronization & Tree Stability**:
+  - Replaced the intrusive "Scan already running" popup with seamless background queue scheduling.
+  - Eliminated unnecessary folder tree reloading when no directory structure changes occurred.
+- **Dynamic Cover Art Presentation**:
+  - Fixed scaling, recentering, and alignment when toggling fullscreen/windowed modes or resizing the window.
+
+---
+
+## [0.2.0] - 2026-10-18
+
+### Added
+- **Dedicated "Games / Blind Test" Sidebar Drawer**:
+  - Added a collapsible "🎲 GAMES" drawer hosting the interactive Blind Test mini-game.
+  - Session autonomy v2: dynamic countdown zoom, configurable reveal fade-out, instant stop on view leave, async cover art RAM preloading.
+- **Audio Player UI Polish**:
+  - Relocated volume slider to the top navigation header for an unobstructed player canvas.
 
 ### Fixed
 - **SQLite `disk I/O error` resolution on Windows**: configured WAL mode once upon database initialization, configured `PRAGMA busy_timeout = 30000`, enabled in-memory temporary store (`PRAGMA temp_store = MEMORY`), and added automatic retry with exponential backoff to eliminate file locking contention during multithreaded scans.

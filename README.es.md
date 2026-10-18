@@ -16,11 +16,15 @@
 ---
 
 <p align="center">
-  <img src="screenshots/2026-10-18%20v0.2.0.png" alt="Captura de pantalla de Audio Multi-Source Organizer (AMSO) - Reproductor" width="850">
+  <img src="screenshots/2026-10-18%20v0.3.0%2002.png" alt="Captura de pantalla de Audio Multi-Source Organizer (AMSO) - Explorador de carpetas y listas de reproducción 🎶" width="850">
 </p>
 
 <p align="center">
-  <img src="screenshots/2026-10-18%20v0.2.0%2002.png" alt="Captura de pantalla de Audio Multi-Source Organizer (AMSO) - Espectro y Volumen" width="850">
+  <img src="screenshots/2026-10-18%20v0.3.0.png" alt="Captura de pantalla de Audio Multi-Source Organizer (AMSO) - Reproductor y Ambiente Espacial" width="850">
+</p>
+
+<p align="center">
+  <img src="screenshots/2026-10-18%20v0.3.0%20blind%20test.png" alt="Captura de pantalla de Audio Multi-Source Organizer (AMSO) - Modo Blind Test" width="850">
 </p>
 
 ---

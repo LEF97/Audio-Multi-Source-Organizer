@@ -357,22 +357,23 @@ def test_main_window_player_drawer_and_views(qapp: QApplication):
     idx_1 = window.table_model.index(1, 1)
     window._on_table_view_double_clicked(idx_1)
 
-    # La playlist doit contenir Song B et Song C
+    # La playlist contient tous les morceaux de la vue avec démarrage sur le morceau cliqué (index 1 -> Song B)
     playlist = window.player_service.playlist
-    assert len(playlist) == 2
-    assert playlist[0].title == "Song B"
-    assert playlist[1].title == "Song C"
-    assert window.player_service.current_index == 0
+    assert len(playlist) == 3
+    assert playlist[0].title == "Song A"
+    assert playlist[1].title == "Song B"
+    assert playlist[2].title == "Song C"
+    assert window.player_service.current_index == 1
 
     # 5. Simulation menu contextuel : "Suivant" et "Ajouter"
     track_to_insert = [TrackRecord(source_ref="D:/Music/X.mp3", source_path="D:/Music/X.mp3", title="Song X")]
     window.player_service.insert_next(track_to_insert)
-    assert len(window.player_service.playlist) == 3
-    assert window.player_service.playlist[1].title == "Song X"
+    assert len(window.player_service.playlist) == 4
+    assert window.player_service.playlist[2].title == "Song X"
 
     track_to_append = [TrackRecord(source_ref="D:/Music/Z.mp3", source_path="D:/Music/Z.mp3", title="Song Z")]
     window.player_service.append_tracks(track_to_append)
-    assert len(window.player_service.playlist) == 4
+    assert len(window.player_service.playlist) == 5
     assert window.player_service.playlist[-1].title == "Song Z"
 
     window.close()
@@ -1633,6 +1634,286 @@ def test_insert_next_and_append_tracks_no_autoplay(qapp: QApplication) -> None:
     assert player2.is_playing is False
 
 
+def test_player_empty_state_onboarding(qapp: QApplication, tmp_path: Path) -> None:
+    """Vérifie l'état vide d'accueil incitatif du lecteur lorsqu'aucune source n'est configurée."""
+    from amso.core.database import DatabaseManager, SourceType
+    from amso.ui.views.main_window import MainWindow
+
+    # 1. Vérification de l'état vide sur PlayerView
+    player = PlayerService()
+    view = PlayerView(player)
+    assert hasattr(view, "empty_container")
+    assert hasattr(view, "btn_add_first_folder")
+
+    received_signal = []
+    view.add_folder_requested.connect(lambda: received_signal.append(True))
+
+    # Quand aucune source n'est présente
+    view.set_has_sources(False)
+    assert not view.empty_container.isHidden()
+    assert view.lbl_cover.isHidden()
+    assert view.info_container.isHidden()
+    assert view.seek_container.isHidden()
+    assert view.ctrl_container.isHidden()
+
+    # Clic sur le bouton d'ajout de premier dossier
+    view.btn_add_first_folder.click()
+    assert len(received_signal) == 1
+
+    # Quand des sources sont présentes
+    view.set_has_sources(True)
+    assert view.empty_container.isHidden()
+    assert not view.lbl_cover.isHidden()
+    assert not view.info_container.isHidden()
+    assert not view.seek_container.isHidden()
+    assert not view.ctrl_container.isHidden()
+
+    # 3. Intégration dans MainWindow
+    db = DatabaseManager(str(tmp_path / "test_empty_onboarding.db"))
+    window = MainWindow(db=db)
+
+    # Au démarrage avec base vide, la carte du lecteur est en mode accueil incitatif
+    assert not window.page_player.empty_container.isHidden()
+
+    # Dès qu'une source est ajoutée, la carte bascule sur le lecteur standard
+    db.add_source(source_type=SourceType.LOCAL, name="Musique", path_or_uri="C:/Music")
+    window.close()
 
 
+def test_large_selection_dialog(qapp: QApplication) -> None:
+    """Vérifie le fonctionnement de LargeSelectionDialog et ses options."""
+    from amso.ui.dialogs.large_selection_dialog import LargeSelectionDialog
+
+    track = TrackRecord(
+        source_ref="D:/Music/Rock/track1.mp3",
+        source_path="D:/Music/Rock/track1.mp3",
+        folder_path="D:/Music/Rock",
+        folder_name="Rock",
+        title="Rock Anthem",
+        artist="Awesome Band",
+    )
+
+    dlg = LargeSelectionDialog(track=track, total_count=2500, folder_track_count=15)
+    assert dlg.get_choice() == "cancel"
+
+    dlg._choose("folder")
+    assert dlg.get_choice() == "folder"
+
+    dlg._choose("limit_1000")
+    assert dlg.get_choice() == "limit_1000"
+
+    dlg._choose("play_all")
+    assert dlg.get_choice() == "play_all"
+
+
+def test_play_from_table_threshold(qapp: QApplication, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Vérifie la logique du seuil de 1 000 titres lors du double-clic dans la table."""
+    from PySide6.QtWidgets import QDialog
+
+    from amso.ui.dialogs.large_selection_dialog import LargeSelectionDialog
+
+    db = DatabaseManager(str(tmp_path / "test_threshold.db"))
+    src = db.add_source(SourceType.LOCAL, "Dossier Test", "D:/Music")
+
+    # Création de quelques morceaux dans la base
+    folder_tracks = [
+        TrackRecord(
+            source_ref=f"D:/Music/Album1/track_{i}.mp3",
+            source_path=f"D:/Music/Album1/track_{i}.mp3",
+            folder_path="D:/Music/Album1",
+            folder_name="Album1",
+            source_id=src.id,
+            title=f"Track {i}",
+            artist="Artist 1",
+            format="mp3",
+        )
+        for i in range(10)
+    ]
+    db.upsert_tracks_batch(folder_tracks)
+
+    window = MainWindow(db=db)
+    monkeypatch.setattr(PlayerService, "is_vlc_available", property(lambda self: True))
+
+    # 1. Modèle simulé avec 1 500 morceaux (> 1 000)
+    all_mock_tracks = [
+        TrackRecord(
+            id=i + 1,
+            source_ref=f"D:/Music/Track_{i}.mp3",
+            source_path=f"D:/Music/Track_{i}.mp3",
+            folder_path="D:/Music/Album1" if i < 10 else "D:/Music/Other",
+            source_id=src.id,
+            title=f"Big List Track {i}",
+        )
+        for i in range(1500)
+    ]
+
+    class MockModel:
+        def rowCount(self) -> int:
+            return len(all_mock_tracks)
+
+        def get_track_at(self, row: int) -> TrackRecord | None:
+            if 0 <= row < len(all_mock_tracks):
+                return all_mock_tracks[row]
+            return None
+
+    model = MockModel()
+
+    # Cas A : L'utilisateur annule le dialogue
+    monkeypatch.setattr(LargeSelectionDialog, "exec", lambda self: QDialog.DialogCode.Rejected)
+    window.player_service.clear_playlist()
+    window._play_from_table(model, start_row=50)
+    assert len(window.player_service.playlist) == 0
+
+    # Cas B : L'utilisateur choisit "folder"
+    monkeypatch.setattr(LargeSelectionDialog, "exec", lambda self: QDialog.DialogCode.Accepted)
+    monkeypatch.setattr(LargeSelectionDialog, "get_choice", lambda self: "folder")
+    window._play_from_table(model, start_row=3)
+    # Doit avoir chargé les 10 titres de Album1
+    assert len(window.player_service.playlist) == 10
+    assert window.player_service.current_index == 3
+
+    # Cas C : L'utilisateur choisit "limit_1000"
+    monkeypatch.setattr(LargeSelectionDialog, "get_choice", lambda self: "limit_1000")
+    window._play_from_table(model, start_row=200)
+    # Doit avoir chargé exactement 1 000 titres à partir de 200, démarrant à 0
+    assert len(window.player_service.playlist) == 1000
+    assert window.player_service.playlist[0].title == "Big List Track 200"
+    assert window.player_service.current_index == 0
+
+    # Cas D : L'utilisateur choisit "play_all"
+    monkeypatch.setattr(LargeSelectionDialog, "get_choice", lambda self: "play_all")
+    window._play_from_table(model, start_row=450)
+    # Doit avoir chargé la totalité des 1 500 titres, avec index de lecture sur 450
+    assert len(window.player_service.playlist) == 1500
+    assert window.player_service.playlist[450].title == "Big List Track 450"
+    assert window.player_service.current_index == 450
+
+    # Cas E : Modèle <= 1 000 titres : pas de dialogue requis, tout est chargé et démarre sur start_row
+    small_mock_tracks = all_mock_tracks[:50]
+
+    class SmallModel:
+        def rowCount(self) -> int:
+            return len(small_mock_tracks)
+
+        def get_track_at(self, row: int) -> TrackRecord | None:
+            if 0 <= row < len(small_mock_tracks):
+                return small_mock_tracks[row]
+            return None
+
+    dialog_opened = []
+    monkeypatch.setattr(LargeSelectionDialog, "exec", lambda self: dialog_opened.append(True) or QDialog.DialogCode.Accepted)
+    window._play_from_table(SmallModel(), start_row=12)
+    assert len(dialog_opened) == 0  # Dialogue non déclenché
+    assert len(window.player_service.playlist) == 50
+    assert window.player_service.current_index == 12
+
+    window.close()
+
+
+def test_playlist_view_scroll_to_current_track(qapp: QApplication) -> None:
+    """Vérifie que PlaylistView dispose du centrage du défilement et ne crash pas."""
+    from amso.ui.views.playlist_view import PlaylistView
+
+    player = PlayerService()
+    tracks = [
+        TrackRecord(
+            source_ref=f"D:/Music/song_{i}.mp3",
+            source_path=f"D:/Music/song_{i}.mp3",
+            title=f"Song {i}",
+            duration_seconds=120.0,
+        )
+        for i in range(100)
+    ]
+    player.play_tracks(tracks, start_index=55)
+
+    view = PlaylistView(player_service=player)
+    view.scroll_to_current_track()
+    # Le morceau actif doit être l'index 55
+    assert player.current_index == 55
+    view.close()
+
+
+def test_player_start_playback_fade_in(qapp: QApplication) -> None:
+    """Vérifie le fonctionnement du fade-in progressif de 1 seconde au démarrage de lecture."""
+    player = PlayerService()
+    player.set_volume(80)
+
+    # 1. Démarrage du fade in
+    player._start_playback_fade_in()
+    assert player._is_fading_in
+    assert player._last_set_volume == 0
+
+    # 2. Progression à mi-parcours (ex: 0.5s écoulées sur 1s)
+    player._fade_in_start_time = time.time() - 0.5
+    player._on_playback_fade_in_tick()
+    assert player._is_fading_in
+    assert 35 <= player._last_set_volume <= 45
+
+    # 3. Fin du fade-in (1.0s écoulée)
+    player._fade_in_start_time = time.time() - 1.05
+    player._on_playback_fade_in_tick()
+    assert not player._is_fading_in
+    assert player._last_set_volume == 80
+
+    # 4. En mode Blind Test (_is_temporary_volume = True), le fade-in standard ne se déclenche pas
+    player.audio_set_temporary_volume(20)
+    assert player._is_temporary_volume
+    player._start_playback_fade_in()
+    assert not player._is_fading_in
+    player.restore_volume()
+    assert not player._is_temporary_volume
+
+
+def test_scan_running_enqueues_without_popup(qapp: QApplication, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Vérifie qu'un scan lancé pendant qu'un autre tourne est mis en file d'attente sans popup d'avertissement."""
+    from PySide6.QtWidgets import QMessageBox
+
+    from amso.core.scanner import ScanSummary
+
+    db = DatabaseManager(str(tmp_path / "test_queue.db"))
+    src1 = db.add_source(SourceType.LOCAL, "Dossier 1", "D:/Music1")
+    src2 = db.add_source(SourceType.LOCAL, "Dossier 2", "D:/Music2")
+
+    window = MainWindow(db=db)
+
+    # Simulation d'un scan en cours
+    class MockWorker:
+        def isRunning(self) -> bool:
+            return True
+
+        def cancel(self) -> None:
+            pass
+
+        def wait(self, timeout_ms: int = 2000) -> bool:
+            return True
+
+    window.scan_worker = MockWorker()  # type: ignore
+    window.scheduler.notify_scan_started(src1.id)
+
+    # Si un popup d'avertissement s'affichait, monkeypatch lèverait une exception
+    def forbidden_popup(*args, **kwargs):
+        raise AssertionError("Un popup QMessageBox s'est affiché alors qu'il devait être supprimé !")
+
+    monkeypatch.setattr(QMessageBox, "warning", forbidden_popup)
+
+    # L'utilisateur déclenche un scan sur src2
+    started = window._start_scan(src2, user_initiated=True)
+    assert not started
+    # src2 doit être en file d'attente dans le scheduler
+    assert src2.id in window.scheduler._queue
+
+    # Vérification vue par dossier : si summary.added == 0 and summary.deleted == 0, _refresh_folders_tree n'est pas appelé
+    tree_refreshed = []
+    monkeypatch.setattr(window, "_refresh_folders_tree", lambda: tree_refreshed.append(True))
+    window.stacked_widget.setCurrentIndex(3)  # Page dossier
+
+    summary_no_change = ScanSummary(source_id=src1.id, source_path=src1.path_or_uri, added=0, deleted=0, updated=0)
+    window._on_scan_finished(summary_no_change)
+    assert len(tree_refreshed) == 0  # Pas d'actualisation inutile
+
+    summary_with_addition = ScanSummary(source_id=src1.id, source_path=src1.path_or_uri, added=1, deleted=0, updated=0)
+    window._on_scan_finished(summary_with_addition)
+    assert len(tree_refreshed) == 1  # Actualisé car un morceau/dossier a été ajouté
+
+    window.close()
 

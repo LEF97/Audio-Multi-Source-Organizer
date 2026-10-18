@@ -16,14 +16,14 @@ Pour toute demande concernant la préparation, la finalisation ou le déploiemen
 - Exécuter `python scripts/sync_translations.py` pour valider l'i18n.
 - Mettre à jour les 3 fichiers Markdown : `CHANGELOG.fr.md`, `README.fr.md`, `ROADMAP.fr.md`.
 - Compiler avec `python scripts/build_exe.py` et préparer le dossier `dist/AMSO-Windows-vX.Y.Z/` contenant l'exe et les 3 `.md`.
-- Créer l'archive `dist/AMSO-Windows-vX.Y.Z.zip`.
+- Créer l'archive `dist/AMSO-Windows-vX.Y.Z.zip` (à partir de v0.4.0+, étendre la GitHub Action pour packager également Linux `.AppImage` et macOS `.dmg`).
 - Demander la validation manuelle de l'exécutable compilé à l'utilisateur.
 
 ### 3. Release (Publication)
 - Committer et merger `develop` vers `main`.
 - Créer le tag Git annoté `vX.Y.Z` et pousser les branches et tags (`git push origin main develop --tags`).
-- Accompagner l'utilisateur pour la publication sur GitHub Release (notes de changelog + zip en pièce jointe).
-- Accompagner l'utilisateur pour le téléversement sur itch.io (zip + descriptions et screenshots).
+- Exécuter la publication automatisée sur GitHub : `python scripts/publish_github_release.py` (extraction changelog, captures, tableau et zip).
+- Déploiement itch.io automatisé via GitHub Actions & Butler (clé secrète `BUTLER_API_KEY`).
 
 ### 4. Post-release (Nouveau cycle dev)
 - Revenir sur `develop`.

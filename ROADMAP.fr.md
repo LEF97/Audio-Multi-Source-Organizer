@@ -29,7 +29,7 @@ AMSO a pour vocation de devenir le **hub musical universel et décentralisé** d
 
 ---
 
-### 🟢 Version 0.2.0 — Mode Blind Test, Corbeille & Ergonomie *(Actuel)*
+### 🟢 Version 0.2.0 — Mode Blind Test, Corbeille & Ergonomie
 - [x] **Mode « 🎲 Jeux / Blind Test » immersif :** Décompte avec pulsation animée, révélation progressive en fondu doux, enchaînement automatique et paramètres dédiés.
 - [x] **Gestion de la Corbeille & Restauration :** Exclusion de morceaux, envoi vers la corbeille Windows et vue dédiée Corbeille AMSO avec restauration instantanée dans la bibliothèque.
 - [x] **Refonte du mode Aléatoire (Shuffle) & Glisser-Déposer :** Mélange visuel intégral, ordre réversible et réorganisation de la playlist à la souris.
@@ -38,17 +38,27 @@ AMSO a pour vocation de devenir le **hub musical universel et décentralisé** d
 
 ---
 
-### 🟡 Version 0.3.0 — Expérience Audio Avancée, Artistes & Discographie
+### 🟢 Version 0.3.0 — Support des Playlists, Fondu Audio & Robustesse *(Actuel)*
+- [x] **Prise en charge intégrale des playlists :** Indexation automatique des formats `.m3u`, `.m3u8`, `.pls`, `.xspf`, `.wpl` dans la vue par dossier avec l'icône `🎶`.
+- [x] **Ordre séquentiel et gestion des morceaux manquants :** Respect de l'ordre d'origine de la playlist et détection visuelle des fichiers manquants (`⚠️`) sans interruption de lecture.
+- [x] **Fondu sonore acoustique (*Fade-in*) :** Montée progressive du volume sur 1 seconde au démarrage et à la reprise d'une lecture audio.
+- [x] **Fluidité de la synchronisation :** File d'attente continue en arrière-plan sans pop-up intrusive et préservation de l'arbre des dossiers.
+- [x] **Ajustement dynamique des pochettes :** Recentrage et dimensionnement fluide lors du passage plein écran / fenêtré.
+
+---
+
+### 🟡 Version 0.4.0 — Expérience Audio Avancée, Artistes & Packaging Multiplateforme
+- [ ] **Déploiement multiplateforme automatisé (Linux & macOS) :** Compilation native et packaging automatisé via GitHub Actions pour Linux (`.AppImage` / `.tar.gz`) et macOS Apple Silicon ARM & Intel (`.dmg`), en complément de l'exécutable Windows.
 - [ ] **Gestion des artistes et discographie associée :** Vue dédiée par artiste avec albums, singles et discographie complète.
 - [ ] **Égaliseur graphique (EQ) :** Presets (Rock, Pop, Jazz, Bass Boost) et égaliseur paramétrique multibandes.
 - [ ] **Éditeur de métadonnées in-app :** Modification directe des tags ID3 / Vorbis sur un ou plusieurs fichiers sélectionnés.
 - [ ] **Téléchargement automatique de pochettes :** Recherche en ligne (MusicBrainz / Cover Art Archive) des jaquettes manquantes.
-- [ ] **Filtres de recherche avancés :** Filtrage combiné par genre, année, débit binaire (bitrate) et format de compression sans perte (Lossless).
+- [ ] **Filtres de recherche avancés :** Filtrage combiné par genre, année, débit binaire (bitrate) et format sans perte (Lossless).
 - [ ] **Crossfade paramétrable :** Transition en fondu enchaîné personnalisable entre les morceaux.
 
 ---
 
-### 🔵 Version 0.4.0 — Connecteur Cloud Google Drive
+### 🔵 Version 0.5.0 — Connecteur Cloud Google Drive
 - [ ] **Authentification sécurisée OAuth 2.0 :** Connexion simplifiée via le navigateur sans stocker de secrets en clair.
 - [ ] **Scan distant des dossiers Google Drive :** Indexation des fichiers audio présents dans les dossiers configurés.
 - [ ] **Lecture directe en streaming cloud :** Écoute des morceaux distants avec mise en cache locale transparente.
@@ -56,7 +66,7 @@ AMSO a pour vocation de devenir le **hub musical universel et décentralisé** d
 
 ---
 
-### 🟣 Version 0.5.0 — Intégrations Streaming (Spotify, Deezer & Amazon Music)
+### 🟣 Version 0.6.0 — Intégrations Streaming (Spotify, Deezer & Amazon Music)
 - [ ] **Connecteur Spotify (Web API) :** Connexion du compte utilisateur et récupération des playlists et favoris.
 - [ ] **Connecteur Amazon Music :** Scan, streaming et synchronisation de collections musicales distantes (OAuth 2.0).
 - [ ] **Matching hybride intelligent :** Correspondance entre les titres d'une playlist distante et les fichiers déjà présents en local (haute fidélité).
