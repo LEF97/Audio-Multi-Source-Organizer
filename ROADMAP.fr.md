@@ -18,7 +18,7 @@ AMSO a pour vocation de devenir le **hub musical universel et décentralisé** d
 
 ## 🗺️ Jalons et Versions
 
-### 🟢 Version 0.1.0 — Le Socle Local Robuste *(Actuel)*
+### 🟢 Version 0.1.0 — Le Socle Local Robuste
 - [x] Scanner local multithreadé avec extraction des métadonnées (ID3, Vorbis Comments, FLAC).
 - [x] Moteur de lecture audio intégré (python-vlc) avec auto-installation VLC portable.
 - [x] Vue Playlist complète avec réorganisation glisser-déposer, lecture aléatoire et boucles.
@@ -29,7 +29,16 @@ AMSO a pour vocation de devenir le **hub musical universel et décentralisé** d
 
 ---
 
-### 🟡 Version 0.2.0 — Expérience Audio Avancée, Artistes & Discographie
+### 🟢 Version 0.2.0 — Mode Blind Test, Corbeille & Ergonomie *(Actuel)*
+- [x] **Mode « 🎲 Jeux / Blind Test » immersif :** Décompte avec pulsation animée, révélation progressive en fondu doux, enchaînement automatique et paramètres dédiés.
+- [x] **Gestion de la Corbeille & Restauration :** Exclusion de morceaux, envoi vers la corbeille Windows et vue dédiée Corbeille AMSO avec restauration instantanée dans la bibliothèque.
+- [x] **Refonte du mode Aléatoire (Shuffle) & Glisser-Déposer :** Mélange visuel intégral, ordre réversible et réorganisation de la playlist à la souris.
+- [x] **Optimisations de performances et persistance :** Format de sauvegarde compact asynchrone (-99 % d'espace disque) et élimination des latences au démarrage.
+- [x] **Ergonomie du Lecteur & Navigation :** Nouveau tiroir « Jeux », curseur de volume intégré dans l'en-tête du Lecteur, démarrage par défaut sur le Lecteur.
+
+---
+
+### 🟡 Version 0.3.0 — Expérience Audio Avancée, Artistes & Discographie
 - [ ] **Gestion des artistes et discographie associée :** Vue dédiée par artiste avec albums, singles et discographie complète.
 - [ ] **Égaliseur graphique (EQ) :** Presets (Rock, Pop, Jazz, Bass Boost) et égaliseur paramétrique multibandes.
 - [ ] **Éditeur de métadonnées in-app :** Modification directe des tags ID3 / Vorbis sur un ou plusieurs fichiers sélectionnés.
@@ -39,7 +48,7 @@ AMSO a pour vocation de devenir le **hub musical universel et décentralisé** d
 
 ---
 
-### 🔵 Version 0.3.0 — Connecteur Cloud Google Drive
+### 🔵 Version 0.4.0 — Connecteur Cloud Google Drive
 - [ ] **Authentification sécurisée OAuth 2.0 :** Connexion simplifiée via le navigateur sans stocker de secrets en clair.
 - [ ] **Scan distant des dossiers Google Drive :** Indexation des fichiers audio présents dans les dossiers configurés.
 - [ ] **Lecture directe en streaming cloud :** Écoute des morceaux distants avec mise en cache locale transparente.
@@ -47,7 +56,7 @@ AMSO a pour vocation de devenir le **hub musical universel et décentralisé** d
 
 ---
 
-### 🟣 Version 0.4.0 — Intégrations Streaming (Spotify, Deezer & Amazon Music)
+### 🟣 Version 0.5.0 — Intégrations Streaming (Spotify, Deezer & Amazon Music)
 - [ ] **Connecteur Spotify (Web API) :** Connexion du compte utilisateur et récupération des playlists et favoris.
 - [ ] **Connecteur Amazon Music :** Scan, streaming et synchronisation de collections musicales distantes (OAuth 2.0).
 - [ ] **Matching hybride intelligent :** Correspondance entre les titres d'une playlist distante et les fichiers déjà présents en local (haute fidélité).

@@ -116,8 +116,84 @@ def build(onefile: bool = False) -> int:
     return res.returncode
 
 
+def package_release(onefile: bool = True) -> int:
+    """Prépare le dossier de distribution et l'archive zip selon le protocole de release."""
+    project_root = Path(__file__).parent.parent.absolute()
+    dist_dir = project_root / "dist"
+    locales_dir = project_root / "amso" / "locales"
+
+    # Récupérer la version courante
+    sys.path.insert(0, str(project_root))
+    try:
+        import amso
+        version = amso.__version__
+    except Exception:
+        version = "0.0.0"
+
+    release_name = f"AMSO-Windows-v{version}"
+    release_dir = dist_dir / release_name
+
+    print("\n" + "=" * 60)
+    print(f"  AMSO — Packaging de distribution : {release_name}")
+    print("=" * 60)
+
+    # Nettoyage et création du dossier cible
+    if release_dir.exists():
+        shutil.rmtree(release_dir)
+    release_dir.mkdir(parents=True, exist_ok=True)
+
+    # 1. Copie de l'exécutable
+    if onefile:
+        exe_src = dist_dir / "AMSO.exe"
+        if exe_src.exists():
+            print(f"  -> Copie de {exe_src.name} vers {release_dir}")
+            shutil.copy2(exe_src, release_dir / "AMSO.exe")
+        else:
+            print(f"  [ATTENTION] Fichier {exe_src} introuvable.")
+    else:
+        app_dir = dist_dir / "AMSO"
+        if app_dir.exists():
+            print(f"  -> Copie du dossier AMSO vers {release_dir / 'AMSO'}")
+            shutil.copytree(app_dir, release_dir / "AMSO", dirs_exist_ok=True)
+        else:
+            print(f"  [ATTENTION] Dossier {app_dir} introuvable.")
+
+    # 2. Copie des fichiers markdown (.md)
+    for md_file in project_root.glob("*.md"):
+        print(f"  -> Ajout documentation : {md_file.name}")
+        shutil.copy2(md_file, release_dir / md_file.name)
+
+    # 3. Copie de la licence
+    license_file = project_root / "LICENSE"
+    if license_file.exists():
+        shutil.copy2(license_file, release_dir / "LICENSE")
+
+    # 4. Copie des fichiers de langues
+    if locales_dir.exists():
+        print("  -> Copie des traductions locales")
+        shutil.copytree(locales_dir, release_dir / "locales", dirs_exist_ok=True)
+
+    # 5. Création de l'archive ZIP
+    zip_dest = dist_dir / release_name
+    print(f"  -> Création de l'archive ZIP : {zip_dest}.zip")
+    shutil.make_archive(str(zip_dest), "zip", root_dir=str(release_dir))
+
+    print("\n" + "=" * 60)
+    print(f"  SUCCÈS : Packaging {release_name} terminé !")
+    print(f"  Dossier : {release_dir}")
+    print(f"  Archive : {zip_dest}.zip")
+    print("=" * 60)
+    return 0
+
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Compiler AMSO en .exe avec PyInstaller")
+    parser = argparse.ArgumentParser(description="Compiler et packager AMSO en .exe avec PyInstaller")
     parser.add_argument("--onefile", action="store_true", help="Générer un fichier .exe unique portable")
+    parser.add_argument("--package", action="store_true", help="Générer le dossier de release et l'archive .zip")
     args = parser.parse_args()
-    sys.exit(build(onefile=args.onefile))
+
+    ret = build(onefile=args.onefile)
+    if ret == 0 and args.package:
+        ret = package_release(onefile=args.onefile)
+
+    sys.exit(ret)

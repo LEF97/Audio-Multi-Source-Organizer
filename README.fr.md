@@ -16,7 +16,11 @@
 ---
 
 <p align="center">
-  <img src="screenshots/2026-10-17%20v0.1.0.png" alt="Capture d'écran Audio Multi-Source Organizer (AMSO)" width="850">
+  <img src="screenshots/2026-10-18%20v0.2.0.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur Audio & Ambiance Hyperspace" width="850">
+</p>
+
+<p align="center">
+  <img src="screenshots/2026-10-18%20v0.2.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Spectre Rétro & Contrôles" width="850">
 </p>
 
 ---
@@ -28,8 +32,11 @@
 | **Scanner local multithreadé** | Découverte récursive et rapide des fichiers audio locaux (MP3, FLAC, AAC, OGG...) | 🟢 Implémenté |
 | **Extraction de métadonnées** | Lecture/écriture ID3, Vorbis Comments et calcul d'empreinte audio (`mutagen`) | 🟢 Implémenté |
 | **Moteur de lecture VLC intégré** | Lecteur audio léger et autonome avec auto-installation VLC portable et gestion fluide du volume | 🟢 Implémenté |
-| **Gestionnaire de Playlist** | File d'attente virtualisée, drag & drop, aléatoire (shuffle), répétition (repeat) | 🟢 Implémenté |
-| **Interface graphique PySide6** | Dark Mode haut de gamme, visualiseur audio temps réel, internationalisation 5 langues | 🟢 Implémenté |
+| **Gestionnaire de Playlist & Glisser-Déposer** | File d'attente virtualisée, drag & drop fluide, aléatoire (shuffle) réversible et boucles | 🟢 Implémenté |
+| **Mode « 🎲 Blind Test » interactif** | Jeu musical immersif avec décompte animé, fondu sonore, révélation douce et enchaînement automatique | 🟢 Implémenté |
+| **Corbeille intelligente & Restauration** | Exclusion pérenne de morceaux, intégration corbeille Windows et vue dédiée Corbeille AMSO | 🟢 Implémenté |
+| **Sauvegarde asynchrone ultra-rapide** | Persistance SQLite compacte en arrière-plan (-99 % d'espace disque) et démarrage instantané | 🟢 Implémenté |
+| **Interface graphique PySide6** | Dark Mode haut de gamme, visualiseur audio temps réel, tiroir Jeux dédié, internationalisation 5 langues | 🟢 Implémenté |
 | **Mises à jour in-app** | Vérification automatique/manuelle des versions via GitHub Releases | 🟢 Implémenté |
 | **Gestion des artistes & Discographie** | Vue dédiée par artiste avec albums, singles et discographie complète | 🟡 Prévu |
 | **Égaliseur graphique (EQ)** | Presets audio et égaliseur multibandes paramétrique | 🟡 Prévu |

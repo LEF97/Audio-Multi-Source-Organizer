@@ -13,7 +13,7 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 
 ---
 
-## [0.2.0-dev] - En cours de développement
+## [0.2.0] - 2026-10-18
 
 ### Added
 - **Nouveau tiroir dédié « 🎲 Jeux » dans la barre latérale** :

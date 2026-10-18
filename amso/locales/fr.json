@@ -1,6 +1,6 @@
 {
   "app.name": "Audio Multi-Source Organizer",
-  "app.version": "0.2.0-dev",
+  "app.version": "0.2.0",
   "app.window_title": "Audio Multi-Source Organizer (AMSO)",
   "sidebar.drawer_player": "Lecteur",
   "sidebar.drawer_games": "Jeux",
