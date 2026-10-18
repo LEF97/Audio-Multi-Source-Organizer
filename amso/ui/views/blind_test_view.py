@@ -133,6 +133,10 @@ class BlindTestView(QWidget):
         self._fade_in_duration: float = 2.0
         self._fade_in_start_time: float = 0.0
         self._fade_in_paused_elapsed: float = 0.0
+
+        # Sauvegarde d'état du lecteur
+        self._saved_player_index: int | None = None
+        self._saved_player_position_ms: int = 0
         self._session_playing: bool = False
 
         self._setup_ui()

@@ -569,13 +569,13 @@ class PlaylistTableModel(QAbstractTableModel):
 
     MIME_TYPE = "application/x-amso-playlist-rows"
 
-    def flags(self, index: QModelIndex | QPersistentModelIndex) -> Qt.ItemFlags:
+    def flags(self, index: QModelIndex | QPersistentModelIndex) -> Qt.ItemFlag:
         default_flags = super().flags(index)
         if index.isValid():
             return default_flags | Qt.ItemFlag.ItemIsDragEnabled
         return default_flags | Qt.ItemFlag.ItemIsDropEnabled
 
-    def supportedDropActions(self) -> Qt.DropActions:
+    def supportedDropActions(self) -> Qt.DropAction:
         return Qt.DropAction.MoveAction
 
     def mimeTypes(self) -> list[str]:

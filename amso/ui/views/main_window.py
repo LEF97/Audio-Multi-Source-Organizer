@@ -1964,10 +1964,10 @@ class MainWindow(QMainWindow):
         content_layout.addStretch(1)
 
         # Rendre accessibles les contrôles sur le widget de page
-        container.spin_bt_countdown = self.spin_bt_countdown
-        container.spin_bt_reveal = self.spin_bt_reveal
-        container.spin_bt_fade = self.spin_bt_fade
-        container.lbl_bt_total = self.lbl_bt_total
+        setattr(container, "spin_bt_countdown", self.spin_bt_countdown)
+        setattr(container, "spin_bt_reveal", self.spin_bt_reveal)
+        setattr(container, "spin_bt_fade", self.spin_bt_fade)
+        setattr(container, "lbl_bt_total", self.lbl_bt_total)
 
         scroll.setWidget(scroll_content)
         main_layout.addWidget(scroll, 1)
@@ -3845,7 +3845,7 @@ class MainWindow(QMainWindow):
         if dlg.exec() != QDialog.DialogCode.Accepted or not dlg.action:
             return
 
-        if dlg.action == "trash":
+        if dlg.action == "trash" and track.source_path:
             send_file_to_trash(track.source_path)
 
         # Dans les deux cas (retirer de la bibliothèque ou corbeille), on ignore pour les futurs scans
@@ -4614,7 +4614,7 @@ class MainWindow(QMainWindow):
         if dlg.exec() != QDialog.DialogCode.Accepted or not dlg.action:
             return
 
-        if dlg.action == "trash":
+        if dlg.action == "trash" and track.source_path:
             send_file_to_trash(track.source_path)
 
         # Dans les deux cas (retirer de la bibliothèque ou corbeille), on ignore pour les futurs scans
