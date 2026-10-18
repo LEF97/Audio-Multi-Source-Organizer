@@ -14,8 +14,12 @@ Pour toute demande concernant la préparation, la finalisation ou le déploiemen
 - Sélectionner les screenshots selon la règle : captures de la version courante (`screenshots/*vX.Y.Z*.png`) + captures globales (`screenshots/Global*.png`).
 - Passer la version officielle dans `amso/__init__.py` et `pyproject.toml` (retirer le suffixe `-dev`).
 - Exécuter `python scripts/sync_translations.py` pour valider l'i18n.
-- Mettre à jour les 3 fichiers Markdown : `CHANGELOG.fr.md`, `README.fr.md`, `ROADMAP.fr.md`.
-- Compiler avec `python scripts/build_exe.py` et préparer le dossier `dist/AMSO-Windows-vX.Y.Z/` contenant l'exe et les 3 `.md`.
+- Mettre à jour l'ensemble des fichiers Markdown dans les 5 langues officielles (FR, EN, ES, DE, IT) :
+  - `CHANGELOG.*.md` : clôturer `[X.Y.Z-dev]` sous `## [X.Y.Z] - AAAA-MM-JJ` dans les 5 fichiers.
+  - `README.*.md` : actualiser captures, badges, résumé et 13 lignes de fonctionnalités.
+  - `ROADMAP.*.md` : pointer et cocher les objectifs atteints en vX.Y.Z et réajuster les jalons.
+- Exécuter la vérification automatisée : `python scripts/check_docs_sync.py` (bloquant en CI si non synchronisé).
+- Compiler avec `python scripts/build_exe.py` et préparer le dossier `dist/AMSO-Windows-vX.Y.Z/` contenant l'exe, les 15 `.md`, `locales/` et `LICENSE`.
 - Créer l'archive `dist/AMSO-Windows-vX.Y.Z.zip` (à partir de v0.4.0+, étendre la GitHub Action pour packager également Linux `.AppImage` et macOS `.dmg`).
 - Demander la validation manuelle de l'exécutable compilé à l'utilisateur.
 
@@ -28,5 +32,6 @@ Pour toute demande concernant la préparation, la finalisation ou le déploiemen
 ### 4. Post-release (Nouveau cycle dev)
 - Revenir sur `develop`.
 - Incrémenter la version vers le cycle suivant : `v(X).(Y+1).0-dev` dans `amso/__init__.py`.
-- Ajouter la section `## [X.Y.Z-dev] - En cours de développement` dans `CHANGELOG.fr.md`.
+- Ajouter la section `## [X.Y.Z-dev] - ...` en tête des 5 fichiers `CHANGELOG.*.md`.
+- Valider l'alignement : `python scripts/check_docs_sync.py`.
 - Nettoyer les caches et committer l'ouverture du cycle.

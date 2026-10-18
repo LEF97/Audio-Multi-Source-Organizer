@@ -49,21 +49,30 @@ flowchart TD
    - Basculer de `X.Y.Z-dev` vers `X.Y.Z` dans `amso/__init__.py`.
    - Mettre à jour `version` dans `pyproject.toml`.
    - Exécuter la synchronisation des traductions : `python scripts/sync_translations.py`.
-3. **Actualisation des 3 fichiers Markdown (FR) :**
-   - `CHANGELOG.fr.md` : Clôturer la section `[X.Y.Z-dev]` sous son titre définitif `## [X.Y.Z] - AAAA-MM-JJ`.
-   - `README.fr.md` : Mettre à jour le badge de version, les fonctionnalités documentées et les liens d'images (captures `vX.Y.Z` et `Global*`).
-   - `ROADMAP.fr.md` : Pointer et cocher les objectifs atteints en vX.Y.Z et réajuster les jalons suivants.
-4. **Compilation & Création des archives de distribution :**
+3. **Actualisation des fichiers Markdown dans les 5 langues (FR, EN, ES, DE, IT) :**
+   - **`CHANGELOG.*.md`** (5 fichiers : `.fr.md`, `.md` [EN], `.es.md`, `.de.md`, `.it.md`) :
+     - Clôturer la section `[X.Y.Z-dev]` sous son titre définitif `## [X.Y.Z] - AAAA-MM-JJ`.
+     - Reporter les nouveautés, améliorations et corrections dans les 5 langues.
+   - **`README.*.md`** (5 fichiers) :
+     - Mettre à jour les badges, les captures d'écran (`screenshots/*vX.Y.Z*.png`), le texte d'introduction et le tableau des fonctionnalités (13 lignes avec statuts à jour).
+   - **`ROADMAP.*.md`** (5 fichiers) :
+     - Cocher les objectifs atteints en vX.Y.Z (`- [x]`) et réajuster les jalons suivants (`- [ ]`).
+4. **Vérification automatisée de l'alignement multilingue :**
+   - Exécuter le contrôle i18n : `python scripts/sync_translations.py --check-only`
+   - Exécuter le contrôle documentaire : `python scripts/check_docs_sync.py`
+   - *(Note : la suite de tests automatisée `pytest` et les workflows GitHub Actions bloquent la CI si un seul fichier n'est pas synchronisé).*
+5. **Compilation & Création des archives de distribution :**
    - Lancer la compilation PyInstaller : `python scripts/build_exe.py` (ou `scripts\build_exe.bat`).
    - Préparer le dossier de distribution : `dist/AMSO-Windows-vX.Y.Z/` contenant :
      - Le dossier compilé `AMSO/` (ou l'exécutable portable).
-     - Les 3 fichiers Markdown à jour : `README.fr.md`, `CHANGELOG.fr.md`, `ROADMAP.fr.md`.
+     - L'ensemble des 15 fichiers Markdown à jour : `README*.md`, `CHANGELOG*.md`, `ROADMAP*.md`.
+     - Le dossier `locales/` (5 langues) et le fichier `LICENSE`.
    - Créer l'archive zip finale : `dist/AMSO-Windows-vX.Y.Z.zip`.
    - *(Note jalon v0.4.0+) :* Extension du packaging multiplateforme via GitHub Actions (`runs-on: [ubuntu-latest, macos-latest]`) pour générer également les paquets Linux (`.AppImage`) et macOS (`.dmg`).
-5. **Validation manuelle de l'exécutable :**
+6. **Validation manuelle de l'exécutable :**
    - Tester le lancement de `AMSO.exe` directement depuis le dossier compilé (hors environnement virtuel Python).
 
-> 🛑 **JALON DE VALIDATION 2 :** Validation manuelle du bon fonctionnement de l'exécutable packagé et validation des textes de documentation avant publication.
+> 🛑 **JALON DE VALIDATION 2 :** Validation manuelle du bon fonctionnement de l'exécutable packagé et validation des textes de documentation dans les 5 langues avant publication.
 
 ---
 
@@ -99,8 +108,14 @@ flowchart TD
 ### Checklist des actions
 1. **Basculement vers la version dev suivante :**
    - Revenir sur la branche de développement : `git checkout develop`
-   - Incrémenter le numéro de version (ex: `0.2.0` ➔ `0.3.0-dev`) dans `amso/__init__.py`.
-   - Créer une nouvelle section en tête du journal : `## [X.Y.Z-dev] - En cours de développement` dans `CHANGELOG.fr.md`.
+   - Incrémenter le numéro de version (ex: `0.3.0` ➔ `0.4.0-dev`) dans `amso/__init__.py`.
+   - Créer une nouvelle section en tête de journal dans les 5 fichiers `CHANGELOG.*.md` :
+     - `CHANGELOG.fr.md` : `## [X.Y.Z-dev] - En cours de développement`
+     - `CHANGELOG.md` : `## [X.Y.Z-dev] - In Development`
+     - `CHANGELOG.es.md` : `## [X.Y.Z-dev] - En desarrollo`
+     - `CHANGELOG.de.md` : `## [X.Y.Z-dev] - In Entwicklung`
+     - `CHANGELOG.it.md` : `## [X.Y.Z-dev] - In sviluppo`
+   - Valider la synchronisation : `python scripts/check_docs_sync.py`
 2. **Nettoyage :**
    - Nettoyer les fichiers intermédiaires de compilation (`build/`, caches pyinstaller).
    - Commit d'ouverture du nouveau cycle : `git commit -m "chore: open development cycle for vX.Y.Z"`
