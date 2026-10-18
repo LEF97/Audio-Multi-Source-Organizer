@@ -187,9 +187,14 @@ def test_main_window_instantiation(qapp: QApplication, db: DatabaseManager):
     assert window.btn_all_tracks.isChecked() is True
     assert window.stacked_widget.currentIndex() == 0
 
-    # Test état des tiroirs par défaut : Lecteur ouvert, Bibliothèque fermée
+    # Test état des tiroirs par défaut : seul Lecteur est ouvert, tous les autres sont fermés
     assert window.drawer_player._is_expanded is True
+    assert window.drawer_games._is_expanded is False
     assert window.drawer_library._is_expanded is False
+    assert window.drawer_tools._is_expanded is False
+    assert window.drawer_stats._is_expanded is False
+    assert window.drawer_sources._is_expanded is False
+    assert window.drawer_settings._is_expanded is False
     assert window.drawer_library.content_widget.isHidden() is True
     window.drawer_library.toggle()
     assert window.drawer_library._is_expanded is True

@@ -677,8 +677,8 @@ class MainWindow(QMainWindow):
         self.drawer_player.add_widget(self.btn_playlist)
         drawers_layout.addWidget(self.drawer_player)
 
-        # 0b. Tiroir JEUX (Dédié au Blind Test, sous le tiroir Lecteur)
-        self.drawer_games = CollapsibleDrawer(tr("sidebar.drawer_games"), initially_expanded=True)
+        # 0b. Tiroir JEUX (Dédié au Blind Test, sous le tiroir Lecteur, fermé par défaut)
+        self.drawer_games = CollapsibleDrawer(tr("sidebar.drawer_games"), initially_expanded=False)
         self.btn_blind_test = QPushButton(tr("sidebar.nav_blind_test"))
         self.btn_blind_test.setProperty("class", "nav-btn")
         self.btn_blind_test.setCheckable(True)
@@ -745,8 +745,8 @@ class MainWindow(QMainWindow):
         # Espace élastique avant les paramètres
         drawers_layout.addStretch()
 
-        # 5. Tiroir PARAMÈTRES (Ordre : général, lecteur, sources, logs, à propos)
-        self.drawer_settings = CollapsibleDrawer(tr("sidebar.drawer_settings"), initially_expanded=True)
+        # 5. Tiroir PARAMÈTRES (Ordre : général, lecteur, sources, logs, à propos, fermé par défaut)
+        self.drawer_settings = CollapsibleDrawer(tr("sidebar.drawer_settings"), initially_expanded=False)
 
         # 1. Général
         self.btn_settings_general = QPushButton(tr("sidebar.nav_settings_general"))
