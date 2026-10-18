@@ -45,10 +45,14 @@ jobs:
       - name: Prepare Release Archive
         shell: pwsh
         run: |
-          $tag = if ($env:GITHUB_REF_NAME) { $env:GITHUB_REF_NAME } else { "v0.1.0" }
+          $tag = if ($env:GITHUB_REF_NAME -and $env:GITHUB_REF_NAME.StartsWith("v")) { $env:GITHUB_REF_NAME } else {
+            $ver = (Get-Content amso/__init__.py | Select-String '__version__\s*=\s*["'']([^"'']+)["'']').Matches.Groups[1].Value.Trim()
+            "v$ver"
+          }
           $zipName = "AMSO-Windows-${tag}.zip"
           Compress-Archive -Path dist/AMSO.exe, README*.md, LICENSE, CHANGELOG*.md, ROADMAP*.md, amso/locales -DestinationPath $zipName
           echo "ZIP_NAME=$zipName" >> $env:GITHUB_ENV
+
 
       - name: Extract Release Notes from CHANGELOG
         id: changelog_reader
@@ -95,17 +99,22 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Butler
-        if: startsWith(github.ref, 'refs/tags/') && secrets.BUTLER_API_KEY != ''
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         uses: remarkablegames/setup-butler@v1
         with:
           butler-version: LATEST
 
       - name: Deploy to Itch.io
-        if: startsWith(github.ref, 'refs/tags/') && secrets.BUTLER_API_KEY != ''
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         shell: pwsh
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
         run: |
-          $cleanVersion = $env:GITHUB_REF_NAME -replace '^v', ''
-          Write-Host "Déploiement de $env:ZIP_NAME vers itch.io (cible: arnaudlef97/amso:windows, version: $cleanVersion)..."
+          if (-not $env:BUTLER_API_KEY) {
+            Write-Host "Le secret BUTLER_API_KEY n'est pas configure dans GitHub Actions. Etape ignoree."
+            exit 0
+          }
+          $cleanVersion = if ($env:GITHUB_REF_NAME) { $env:GITHUB_REF_NAME -replace '^v', '' } else { "0.3.0" }
+          Write-Host "Deploiement de $env:ZIP_NAME vers itch.io (cible: arnaudlef97/amso:windows, version: $cleanVersion)..."
           butler push $env:ZIP_NAME arnaudlef97/amso:windows --userversion $cleanVersion
+
