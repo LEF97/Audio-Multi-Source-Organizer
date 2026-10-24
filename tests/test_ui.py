@@ -480,3 +480,34 @@ def test_trash_view_and_restore(qapp: QApplication, db: DatabaseManager) -> None
 
     window.close()
 
+
+def test_effects_combo_and_styles(qapp: QApplication) -> None:
+    """Vérifie le bon fonctionnement du sélecteur d'effets visuels et des styles de sliders."""
+    from PySide6.QtWidgets import QComboBox
+
+    from amso.ui.styles import seek_slider_qss, volume_label_qss, volume_slider_qss
+    from amso.ui.widgets.effects_combo import get_available_effects, populate_effects_combo
+
+    # Effets disponibles
+    effects = get_available_effects()
+    assert len(effects) == 9
+    assert effects[0][0] == "particles"
+
+    # Peuplement de la combo
+    combo = QComboBox()
+    populate_effects_combo(combo, current_effect="warp")
+    assert combo.count() == 9
+    assert combo.currentData() == "warp"
+
+    # QSS sliders et labels
+    vol_qss = volume_slider_qss(groove_height=5, handle_size=12)
+    assert "QSlider::groove:horizontal" in vol_qss
+    assert "height: 5px;" in vol_qss
+    assert "width: 12px;" in vol_qss
+
+    seek_qss = seek_slider_qss(groove_height=6, handle_size=14)
+    assert "QSlider::groove:horizontal" in seek_qss
+    assert "height: 6px;" in seek_qss
+
+    lbl_qss = volume_label_qss(min_width=38)
+    assert "min-width: 38px;" in lbl_qss

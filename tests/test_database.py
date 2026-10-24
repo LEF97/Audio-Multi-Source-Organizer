@@ -535,7 +535,9 @@ def test_migration_legacy_playlists_table(tmp_path):
             );
             """
         )
-        conn.execute("INSERT INTO playlists (name, description, source_type) VALUES ('Legacy Playlist', 'Description', 'local');")
+        conn.execute(
+            "INSERT INTO playlists (name, description, source_type) VALUES ('Legacy Playlist', 'Description', 'local');"
+        )
 
     # Initialiser DatabaseManager sur cette base existante
     mgr = DatabaseManager(str(db_file))
@@ -568,6 +570,3 @@ def test_migration_legacy_playlists_table(tmp_path):
         assert fetched.name == "test.m3u"
     finally:
         mgr.close()
-
-
-

@@ -6,10 +6,11 @@ import logging
 from typing import Any
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QMouseEvent
+from PySide6.QtGui import QMouseEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QLabel,
     QPushButton,
+    QSlider,
     QVBoxLayout,
     QWidget,
 )
@@ -102,3 +103,30 @@ class CollapsibleDrawer(QWidget):
 
     def add_widget(self, widget: QWidget) -> None:
         self.content_layout.addWidget(widget)
+
+
+class ClickableSlider(QSlider):
+    """QSlider permettant de cliquer directement à n'importe quel endroit de la barre."""
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
+            val = self.minimum() + ((self.maximum() - self.minimum()) * event.position().x()) / max(1, self.width())
+            self.setValue(int(round(val)))
+            self.sliderMoved.emit(self.value())
+        super().mousePressEvent(event)
+
+
+class EffectContainer(QWidget):
+    """Conteneur qui maintient le widget d'effet visuel redimensionné en arrière-plan."""
+
+    def __init__(self, effect_canvas: QWidget | None = None, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.effect_canvas = effect_canvas
+        if self.effect_canvas:
+            self.effect_canvas.setParent(self)
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+        if self.effect_canvas:
+            self.effect_canvas.setGeometry(0, 0, self.width(), self.height())
+            self.effect_canvas.lower()

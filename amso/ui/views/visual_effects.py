@@ -451,4 +451,3 @@ class VisualEffectWidget(EffectPaintersMixin, SpectrumBarsMixin, QWidget):
             self._paint_bars(painter, w, h)
         elif self._effect_type == self.EFFECT_BARS_FULL:
             self._paint_bars_full(painter, w, h)
-

@@ -146,4 +146,3 @@ def test_find_cover_image_in_folder_rejection_of_unrelated_images(tmp_path: Path
     song_png.write_bytes(b"legit_song_stem_cover" * 50)
     res_stem = find_cover_image_in_folder(folder, audio_stem="Song Title")
     assert res_stem == song_png.read_bytes()
-

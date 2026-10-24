@@ -13,6 +13,7 @@ from __future__ import annotations
 import ctypes
 import json
 import locale
+import logging
 import os
 import sys
 from collections.abc import Callable
@@ -20,6 +21,8 @@ from pathlib import Path
 from typing import Any
 
 from amso.core.config import ConfigManager, get_config_manager
+
+logger = logging.getLogger(__name__)
 
 # Langues supportées (code ISO 639-1 -> Libellé affiché)
 SUPPORTED_LANGUAGES: dict[str, str] = {
@@ -149,7 +152,7 @@ class I18nManager:
                 with open(path, encoding="utf-8") as f:
                     return json.load(f)
             except Exception as e:
-                print(f"[i18n] Erreur de lecture de {path} : {e}", file=sys.stderr)
+                logger.warning("[i18n] Erreur de lecture de %s : %s", path, e)
         return {}
 
     def _load_fallback_translations(self) -> None:
@@ -197,7 +200,7 @@ class I18nManager:
             try:
                 listener(self._current_language)
             except Exception as e:
-                print(f"[i18n] Erreur lors de la notification de listener : {e}", file=sys.stderr)
+                logger.warning("[i18n] Erreur lors de la notification de listener : %s", e)
 
         return True
 

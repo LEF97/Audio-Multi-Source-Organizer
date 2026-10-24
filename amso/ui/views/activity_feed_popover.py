@@ -120,11 +120,11 @@ class ActivityFeedPopover(QFrame):
         sec_current_layout.setContentsMargins(0, 0, 0, 0)
         sec_current_layout.setSpacing(4)
 
-        lbl_cur_title = QLabel(f"<b>{tr('feed.current_action')}</b>")
-        lbl_cur_title.setStyleSheet(
+        self.lbl_cur_title = QLabel(f"<b>{tr('feed.current_action')}</b>")
+        self.lbl_cur_title.setStyleSheet(
             "font-size: 12px; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.5px;"
         )
-        sec_current_layout.addWidget(lbl_cur_title)
+        sec_current_layout.addWidget(self.lbl_cur_title)
 
         self.cur_box = QFrame()
         self.cur_box.setStyleSheet("background-color: #1E293B; border: 1px solid #334155; border-radius: 8px;")
@@ -189,9 +189,11 @@ class ActivityFeedPopover(QFrame):
         sec_upcoming_layout.setContentsMargins(0, 0, 0, 0)
         sec_upcoming_layout.setSpacing(4)
 
-        lbl_up_title = QLabel(f"<b>{tr('feed.upcoming')}</b>")
-        lbl_up_title.setStyleSheet("font-size: 12px; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.5px;")
-        sec_upcoming_layout.addWidget(lbl_up_title)
+        self.lbl_up_title = QLabel(f"<b>{tr('feed.upcoming')}</b>")
+        self.lbl_up_title.setStyleSheet(
+            "font-size: 12px; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.5px;"
+        )
+        sec_upcoming_layout.addWidget(self.lbl_up_title)
 
         self.lbl_upcoming_content = QLabel("")
         self.lbl_upcoming_content.setStyleSheet("font-size: 12px; color: #CBD5E1; padding-left: 4px;")
@@ -205,11 +207,11 @@ class ActivityFeedPopover(QFrame):
         sec_recent_layout.setContentsMargins(0, 0, 0, 0)
         sec_recent_layout.setSpacing(4)
 
-        lbl_rec_title = QLabel(f"<b>{tr('feed.recent_activity')}</b>")
-        lbl_rec_title.setStyleSheet(
+        self.lbl_rec_title = QLabel(f"<b>{tr('feed.recent_activity')}</b>")
+        self.lbl_rec_title.setStyleSheet(
             "font-size: 12px; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.5px;"
         )
-        sec_recent_layout.addWidget(lbl_rec_title)
+        sec_recent_layout.addWidget(self.lbl_rec_title)
 
         self.lbl_recent_content = QLabel("")
         self.lbl_recent_content.setStyleSheet("font-size: 11px; color: #94A3B8; padding-left: 4px;")
@@ -406,3 +408,13 @@ class ActivityFeedPopover(QFrame):
     def _on_open_logs(self) -> None:
         self.hide()
         self.open_logs_requested.emit()
+
+    def retranslate_ui(self) -> None:
+        """Met à jour les libellés traduits du popover."""
+        self.lbl_title.setText(tr("feed.title"))
+        self.lbl_cur_title.setText(f"<b>{tr('feed.current_action')}</b>")
+        self.lbl_queue_title.setText(f"<b>{tr('feed.queue')}</b>")
+        self.lbl_up_title.setText(f"<b>{tr('feed.upcoming')}</b>")
+        self.lbl_rec_title.setText(f"<b>{tr('feed.recent_activity')}</b>")
+        self.btn_view_logs.setText(tr("feed.btn_view_logs"))
+        self.refresh_content()

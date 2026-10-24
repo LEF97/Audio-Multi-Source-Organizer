@@ -51,6 +51,7 @@ amso = "main:main"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
+addopts = "-q --tb=short"
 
 [tool.setuptools.packages.find]
 where = ["."]
@@ -73,11 +74,19 @@ select = [
     "UP",  # pyupgrade (idiomes Python modernes)
     "B",   # flake8-bugbear (bugs potentiels)
     "C4",  # flake8-comprehensions
+    "T20", # flake8-print (pas de print, utiliser logging)
+    "RUF100",  # noqa inutiles
 ]
 ignore = [
     "E501",  # Longueur de ligne (les styles Qt et textes i18n sont souvent longs)
     "B008",  # Do not perform function call in argument defaults
 ]
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/**" = ["T20"]
+"scratch/**" = ["T20"]
+"tests/**" = ["T20"]
+"main.py" = ["T20"]
 
 [tool.mypy]
 python_version = "3.11"

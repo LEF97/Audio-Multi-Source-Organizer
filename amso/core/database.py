@@ -51,7 +51,9 @@ __all__ = [
 logger = logging.getLogger(__name__)
 
 
-class DatabaseManager(SourcesRepoMixin, TracksRepoMixin, TrackCurationMixin, LibraryQueriesMixin, ActivityRepoMixin, PlaylistsRepoMixin):
+class DatabaseManager(
+    SourcesRepoMixin, TracksRepoMixin, TrackCurationMixin, LibraryQueriesMixin, ActivityRepoMixin, PlaylistsRepoMixin
+):
     """Gestionnaire de persistance SQLite pour la bibliothèque AMSO."""
 
     SCHEMA_VERSION = 1
@@ -356,7 +358,9 @@ class DatabaseManager(SourcesRepoMixin, TracksRepoMixin, TrackCurationMixin, Lib
             cur_pl = conn.execute("PRAGMA table_info(playlists);")
             cols_pl = {r["name"] for r in cur_pl.fetchall()}
             if "source_id" not in cols_pl:
-                conn.execute("ALTER TABLE playlists ADD COLUMN source_id INTEGER REFERENCES sources(id) ON DELETE CASCADE;")
+                conn.execute(
+                    "ALTER TABLE playlists ADD COLUMN source_id INTEGER REFERENCES sources(id) ON DELETE CASCADE;"
+                )
             if "file_path" not in cols_pl:
                 conn.execute("ALTER TABLE playlists ADD COLUMN file_path TEXT;")
             if "folder_path" not in cols_pl:
@@ -430,4 +434,3 @@ class DatabaseManager(SourcesRepoMixin, TracksRepoMixin, TrackCurationMixin, Lib
     # -------------------------------------------------------------------------
     # Sources CRUD
     # -------------------------------------------------------------------------
-

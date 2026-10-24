@@ -651,7 +651,7 @@ def test_player_and_playlist_translations(qapp: QApplication, tmp_path: Path, sa
 
     assert window.drawer_player.title() == "Lecteur"
     assert "Lecteur" in window.btn_player.text()
-    assert "Playlist" in window.btn_playlist.text()
+    assert "Liste de lecture" in window.btn_playlist.text()
     assert window.page_player.lbl_page_title.text() == "Lecteur audio"
     assert window.page_playlist.lbl_page_title.text() == "Liste de lecture"
 
@@ -1199,8 +1199,12 @@ def test_player_start_at_zero_and_volume_lock_and_immediate_persistence(tmp_path
     assert cfg_check3.get_player_muted() is False
 
     # 2. Test du démarrage à 0:00 vs reprise de session
-    t1 = TrackRecord(source_ref="C:/dummy/track1.mp3", title="Track 1", source_path="C:/dummy/track1.mp3", duration_seconds=180.0)
-    t2 = TrackRecord(source_ref="C:/dummy/track2.mp3", title="Track 2", source_path="C:/dummy/track2.mp3", duration_seconds=200.0)
+    t1 = TrackRecord(
+        source_ref="C:/dummy/track1.mp3", title="Track 1", source_path="C:/dummy/track1.mp3", duration_seconds=180.0
+    )
+    t2 = TrackRecord(
+        source_ref="C:/dummy/track2.mp3", title="Track 2", source_path="C:/dummy/track2.mp3", duration_seconds=200.0
+    )
 
     # Restauration d'une session avec 50 secondes d'offset
     player.load_playlist([t1, t2], current_index=0, initial_position_ms=50000)
@@ -1406,8 +1410,7 @@ def test_saved_playlist_v2_format_and_debounced_save(qapp: QApplication, tmp_pat
 
     db = DatabaseManager(str(db_path))
     tracks = [
-        TrackRecord(source_ref=f"D:/Music/track_{i}.mp3", title=f"Track {i}", duration_seconds=200.0)
-        for i in range(10)
+        TrackRecord(source_ref=f"D:/Music/track_{i}.mp3", title=f"Track {i}", duration_seconds=200.0) for i in range(10)
     ]
     saved_ids = [db.upsert_track(t) for t in tracks]
     assert len(saved_ids) == 10
@@ -1476,10 +1479,7 @@ def test_database_get_tracks_by_ids_chunking(tmp_path: Path) -> None:
 def test_shuffle_playlist_below_current(qapp: QApplication) -> None:
     """Vérifie que shuffle_playlist mélange strictement les pistes situées en dessous du titre en cours."""
     player = PlayerService()
-    tracks = [
-        TrackRecord(source_ref=f"C:/audio/track_{i}.mp3", title=f"Track {i}")
-        for i in range(20)
-    ]
+    tracks = [TrackRecord(source_ref=f"C:/audio/track_{i}.mp3", title=f"Track {i}") for i in range(20)]
     # Jouer à partir de l'index 5
     player.play_tracks(tracks, start_index=5)
     assert player.current_index == 5
@@ -1510,10 +1510,7 @@ def test_drag_and_drop_reorder_playlist(qapp: QApplication) -> None:
     from amso.ui.views.playlist_view import PlaylistView
 
     player = PlayerService()
-    tracks = [
-        TrackRecord(source_ref=f"C:/audio/track_{i}.mp3", title=f"Track {i}")
-        for i in range(6)
-    ]
+    tracks = [TrackRecord(source_ref=f"C:/audio/track_{i}.mp3", title=f"Track {i}") for i in range(6)]
     player.play_tracks(tracks, start_index=2)  # Track 2 est en cours de lecture
     assert player.current_track.title == "Track 2"
 
@@ -1563,10 +1560,7 @@ def test_shuffle_all_tracks_and_restore_order(qapp: QApplication) -> None:
     from amso.ui.views.playlist_view import PlaylistView
 
     player = PlayerService()
-    tracks = [
-        TrackRecord(source_ref=f"C:/audio/track_{i}.mp3", title=f"Track {i:02d}")
-        for i in range(25)
-    ]
+    tracks = [TrackRecord(source_ref=f"C:/audio/track_{i}.mp3", title=f"Track {i:02d}") for i in range(25)]
     # Lancer la lecture sur Track 10
     player.play_tracks(tracks, start_index=10)
     assert player.current_index == 10
@@ -1801,7 +1795,9 @@ def test_play_from_table_threshold(qapp: QApplication, monkeypatch: pytest.Monke
             return None
 
     dialog_opened = []
-    monkeypatch.setattr(LargeSelectionDialog, "exec", lambda self: dialog_opened.append(True) or QDialog.DialogCode.Accepted)
+    monkeypatch.setattr(
+        LargeSelectionDialog, "exec", lambda self: dialog_opened.append(True) or QDialog.DialogCode.Accepted
+    )
     window._play_from_table(SmallModel(), start_row=12)
     assert len(dialog_opened) == 0  # Dialogue non déclenché
     assert len(window.player_service.playlist) == 50
@@ -1864,7 +1860,9 @@ def test_player_start_playback_fade_in(qapp: QApplication) -> None:
     assert not player._is_temporary_volume
 
 
-def test_scan_running_enqueues_without_popup(qapp: QApplication, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_scan_running_enqueues_without_popup(
+    qapp: QApplication, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     """Vérifie qu'un scan lancé pendant qu'un autre tourne est mis en file d'attente sans popup d'avertissement."""
     from PySide6.QtWidgets import QMessageBox
 
@@ -1916,4 +1914,3 @@ def test_scan_running_enqueues_without_popup(qapp: QApplication, monkeypatch: py
     assert len(tree_refreshed) == 1  # Actualisé car un morceau/dossier a été ajouté
 
     window.close()
-

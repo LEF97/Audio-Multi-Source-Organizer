@@ -56,7 +56,9 @@ def test_funding_yaml_exists_and_valid():
     content = funding_path.read_text(encoding="utf-8")
     assert "github: [LEF97]" in content or "github: LEF97" in content
     assert "ko_fi: arnaudlef97" in content or "ko_fi: lef97" in content
-    assert "https://arnaudlef97.itch.io/amso" in content or "https://lef97.itch.io/audio-multi-source-organizer" in content
+    assert (
+        "https://arnaudlef97.itch.io/amso" in content or "https://lef97.itch.io/audio-multi-source-organizer" in content
+    )
 
 
 def test_constants_and_version():
@@ -153,10 +155,12 @@ def test_update_banner_widget(qapp: QApplication, monkeypatch: pytest.MonkeyPatc
 
 def test_update_checker_worker_success(qapp: QApplication, monkeypatch: pytest.MonkeyPatch):
     """Vérifie la détection d'une mise à jour disponible via le worker."""
-    fake_json = json.dumps({
-        "tag_name": "v0.2.0",
-        "html_url": "https://github.com/LEF97/Audio-Multi-Source-Organizer/releases/tag/v0.2.0",
-    }).encode("utf-8")
+    fake_json = json.dumps(
+        {
+            "tag_name": "v0.2.0",
+            "html_url": "https://github.com/LEF97/Audio-Multi-Source-Organizer/releases/tag/v0.2.0",
+        }
+    ).encode("utf-8")
 
     class MockResponse:
         def __init__(self):
@@ -187,10 +191,12 @@ def test_update_checker_worker_success(qapp: QApplication, monkeypatch: pytest.M
 
 def test_update_checker_worker_no_update(qapp: QApplication, monkeypatch: pytest.MonkeyPatch):
     """Vérifie le comportement silencieux lorsqu'AMSO est déjà à jour."""
-    fake_json = json.dumps({
-        "tag_name": "v0.1.0",
-        "html_url": "https://github.com/LEF97/Audio-Multi-Source-Organizer/releases/tag/v0.1.0",
-    }).encode("utf-8")
+    fake_json = json.dumps(
+        {
+            "tag_name": "v0.1.0",
+            "html_url": "https://github.com/LEF97/Audio-Multi-Source-Organizer/releases/tag/v0.1.0",
+        }
+    ).encode("utf-8")
 
     class MockResponse:
         def __init__(self):

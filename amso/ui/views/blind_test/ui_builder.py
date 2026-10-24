@@ -9,7 +9,6 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
-    QComboBox,
     QFrame,
     QGraphicsOpacityEffect,
     QGridLayout,
@@ -23,11 +22,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from amso.core.config import get_config_manager
 from amso.core.i18n import tr
+from amso.ui.styles import style_icon_button, volume_label_qss, volume_slider_qss
 from amso.ui.views.blind_test.zoom_fade_label import ZoomFadeLabel
-from amso.ui.views.player_view import ClickableSlider, EffectContainer
-from amso.ui.views.visual_effects import VisualEffectWidget
+from amso.ui.widgets.common import ClickableSlider
+from amso.ui.widgets.effects_view_mixin import EffectsViewMixin
 
 if TYPE_CHECKING:
     _MixinBase = QWidget
@@ -35,7 +34,7 @@ else:
     _MixinBase = object
 
 
-class BlindTestUiMixin(_MixinBase):
+class BlindTestUiMixin(EffectsViewMixin, _MixinBase):
     """Construction de l'interface, signaux et sélecteur d'effets du Blind Test."""
 
     if TYPE_CHECKING:
@@ -75,65 +74,18 @@ class BlindTestUiMixin(_MixinBase):
         self.slider_volume.setFixedWidth(120)
         self.slider_volume.setFixedHeight(22)
         self.slider_volume.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.slider_volume.setStyleSheet("""
-            QSlider::groove:horizontal {
-                height: 5px;
-                background-color: #282C37;
-                border-radius: 2px;
-            }
-            QSlider::sub-page:horizontal {
-                background-color: #38BDF8;
-                border-radius: 2px;
-            }
-            QSlider::handle:horizontal {
-                background-color: #E2E8F0;
-                width: 12px;
-                height: 12px;
-                margin: -3px 0;
-                border-radius: 6px;
-            }
-            QSlider::handle:horizontal:hover {
-                background-color: #38BDF8;
-            }
-        """)
+        self.slider_volume.setStyleSheet(volume_slider_qss(groove_height=5, handle_size=12))
         self.slider_volume.valueChanged.connect(self._on_volume_changed)
         top_layout.addWidget(self.slider_volume)
 
         self.lbl_volume = QLabel(f"{self.player.volume}%")
-        self.lbl_volume.setStyleSheet("color: #94A3B8; font-size: 12px; min-width: 38px;")
+        self.lbl_volume.setStyleSheet(volume_label_qss(min_width=38))
         top_layout.addWidget(self.lbl_volume)
 
         top_layout.addStretch()
 
-        self.lbl_effect_badge = QLabel(tr("player.visual_effect"))
-        self.lbl_effect_badge.setStyleSheet("color: #94A3B8; font-size: 12.5px; font-weight: 500; margin-right: 4px;")
+        self.lbl_effect_badge, self.combo_effect = self._create_effects_combo()
         top_layout.addWidget(self.lbl_effect_badge)
-
-        self.combo_effect = QComboBox()
-        self.combo_effect.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.combo_effect.setFixedWidth(250)
-        self.combo_effect.view().setMinimumWidth(260)
-        self.combo_effect.setStyleSheet("""
-            QComboBox {
-                background-color: #20242D;
-                color: #F8FAFC;
-                border: 1px solid #38BDF8;
-                border-radius: 6px;
-                padding: 4px 10px;
-                font-size: 12px;
-                font-weight: 500;
-            }
-            QComboBox::drop-down {
-                border: none;
-                width: 20px;
-            }
-            QComboBox QAbstractItemView {
-                background-color: #1A1D24;
-                color: #F8FAFC;
-                selection-background-color: #0284C7;
-                border: 1px solid #282C37;
-            }
-        """)
         top_layout.addWidget(self.combo_effect)
         layout.addWidget(top_bar)
 
@@ -166,9 +118,9 @@ class BlindTestUiMixin(_MixinBase):
         layout.addWidget(sub_bar)
 
         # 2. Toile d'effet visuel dynamique en fond
-        cfg = get_config_manager()
-        initial_effect = cfg.get_visual_effect()
-        self.effect_canvas = VisualEffectWidget(initial_effect)
+        self.effect_canvas, center_container = self._create_effect_container()
+        self.effect_widget = self.effect_canvas
+        self.center_container = center_container
 
         # Zone défilante centrale
         scroll = QScrollArea()
@@ -176,7 +128,6 @@ class BlindTestUiMixin(_MixinBase):
         scroll.setStyleSheet("background: transparent; border: none;")
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
-        center_container = EffectContainer(self.effect_canvas)
         center_layout = QVBoxLayout(center_container)
         center_layout.setContentsMargins(16, 12, 16, 12)
         center_layout.setSpacing(12)
@@ -407,27 +358,9 @@ class BlindTestUiMixin(_MixinBase):
         layout.addWidget(scroll, 1)
 
         self._populate_effects_combo()
-        self.combo_effect.currentIndexChanged.connect(self._on_effect_combo_changed)
 
     def _style_icon_button(self, btn: QPushButton, font_size: int = 14) -> None:
-        btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: #20242D;
-                color: #CBD5E1;
-                border: 1px solid #282C37;
-                border-radius: 6px;
-                font-size: {font_size}px;
-            }}
-            QPushButton:hover {{
-                background-color: #2B303C;
-                color: #F8FAFC;
-                border-color: #38BDF8;
-            }}
-            QPushButton:pressed {{
-                background-color: #0284C7;
-                color: #FFFFFF;
-            }}
-        """)
+        style_icon_button(btn, radius=6, font_size=font_size)
 
     def _connect_signals(self) -> None:
         self.player.track_changed.connect(self._on_track_changed)
@@ -435,52 +368,6 @@ class BlindTestUiMixin(_MixinBase):
         self.player.volume_changed.connect(self._on_player_volume_changed)
         self.player.position_changed.connect(self._on_player_position_changed)
         self.player.playlist_updated.connect(self._on_playlist_updated)
-
-    def _populate_effects_combo(self) -> None:
-        """Remplit le menu déroulant des effets visuels."""
-        current_data = getattr(self, "current_effect", None) or (
-            self.effect_canvas.effect_type if hasattr(self, "effect_canvas") else "particles"
-        )
-        self.combo_effect.blockSignals(True)
-        self.combo_effect.clear()
-        effects = [
-            ("particles", f"✨ {tr('effects.particles')}"),
-            ("waves", f"🌊 {tr('effects.waves')}"),
-            ("stars", f"☄️ {tr('effects.stars')}"),
-            ("warp", f"🚀 {tr('effects.warp')}"),
-            ("warp_dynamic", f"🛸 {tr('effects.warp_dynamic')}"),
-            ("aurora", f"🌌 {tr('effects.aurora')}"),
-            ("bars", f"📊 {tr('effects.bars')}"),
-            ("bars_full", f"📶 {tr('effects.bars_full')}"),
-            ("none", f"🚫 {tr('effects.none')}"),
-        ]
-        target_idx = 0
-        for i, (key, label) in enumerate(effects):
-            self.combo_effect.addItem(label, key)
-            if key == current_data:
-                target_idx = i
-        self.combo_effect.setCurrentIndex(target_idx)
-        self.combo_effect.blockSignals(False)
-
-    def _on_effect_combo_changed(self, index: int) -> None:
-        effect_key = self.combo_effect.itemData(index)
-        if effect_key:
-            self.set_effect_type(effect_key)
-            self.effect_changed.emit(effect_key)
-
-    def set_effect_type(self, effect_name: str) -> None:
-        self.current_effect = effect_name
-        if hasattr(self, "effect_canvas") and self.effect_canvas:
-            self.effect_canvas.set_effect_type(effect_name)
-        if hasattr(self, "combo_effect"):
-            self.combo_effect.blockSignals(True)
-            for i in range(self.combo_effect.count()):
-                if self.combo_effect.itemData(i) == effect_name:
-                    self.combo_effect.setCurrentIndex(i)
-                    break
-            self.combo_effect.blockSignals(False)
-        cfg = get_config_manager()
-        cfg.set_visual_effect(effect_name)
 
     # -------------------------------------------------------------------------
     # Alias et accesseurs de compatibilité pour les tests

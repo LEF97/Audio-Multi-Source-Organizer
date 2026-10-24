@@ -294,7 +294,6 @@ class ConfigManager:
         self.set(SECTION_PLAYER, KEY_BLIND_TEST_FADE, str(max(0, min(10, seconds))))
 
 
-
 # Instance singleton globale pour simplifier l'accès à travers l'application
 _default_config_manager: ConfigManager | None = None
 

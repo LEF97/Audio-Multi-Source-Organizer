@@ -115,6 +115,16 @@ class RetranslateMixin(_MixinBase):
                 fp = cdata.get("folder_path")
                 self.lbl_folder_breadcrumb.setToolTip(f"{fp}\n({tr('folders.breadcrumb_tooltip')})")
 
+        # Corbeille dans la vue Dossiers
+        if hasattr(self, "lbl_trash_title"):
+            self.lbl_trash_title.setText(tr("trash.banner_title"))
+        if hasattr(self, "lbl_trash_desc"):
+            self.lbl_trash_desc.setText(tr("trash.banner_desc"))
+        if hasattr(self, "btn_restore_selected_trash"):
+            self.btn_restore_selected_trash.setText(tr("trash.btn_restore_selected"))
+        if hasattr(self, "btn_clear_all_trash"):
+            self.btn_clear_all_trash.setText(tr("trash.btn_clear_all"))
+
         # Page Paramètres
         self.lbl_settings_title.setText(tr("settings.page_title"))
         if hasattr(self, "lbl_settings_sources_page_title"):
@@ -250,3 +260,7 @@ class RetranslateMixin(_MixinBase):
             self.page_blind_test.retranslate_ui()
         if hasattr(self, "page_playlist") and self.page_playlist:
             self.page_playlist.retranslate_ui()
+        if hasattr(self, "page_logs") and self.page_logs:
+            self.page_logs.retranslate_ui()
+        if hasattr(self, "activity_popover") and self.activity_popover:
+            self.activity_popover.retranslate_ui()

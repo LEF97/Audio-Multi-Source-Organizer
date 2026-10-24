@@ -703,6 +703,7 @@ def test_blind_test_effects_harmonization_and_spectrum(qapp: QApplication, sampl
 
     # Calcul de l'animation de spectre : les barres doivent être dynamiquement alimentées
     from unittest.mock import patch
+
     with patch("amso.services.audio_spectrum.AudioSpectrumService.get_spectrum", return_value=[0.7] * 48):
         view.effect_canvas._update_bars_tick(0.033, 800, 600)
         assert any(target > 0.0 for target in view.effect_canvas._bar_targets)
@@ -761,6 +762,3 @@ def test_blind_test_cover_resize_and_fullscreen(qapp: QApplication, sample_track
     assert view.lbl_cover.width() == 280
     assert view.lbl_cover.height() == 280
     assert not view.cover_opacity.isEnabled()
-
-
-
