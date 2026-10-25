@@ -137,10 +137,7 @@ class LargeSelectionDialog(QDialog):
             options_layout.addWidget(btn_folder)
 
         # Option 2 : Limiter aux 1 000 titres suivants
-        btn_limit_text = (
-            f"{tr('dialog.large_selection_opt_limit')}\n"
-            f"   {tr('dialog.large_selection_opt_limit_desc')}"
-        )
+        btn_limit_text = f"{tr('dialog.large_selection_opt_limit')}\n   {tr('dialog.large_selection_opt_limit_desc')}"
         btn_limit = QPushButton(btn_limit_text)
         btn_limit.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_limit.setStyleSheet(button_qss)
@@ -164,7 +161,7 @@ class LargeSelectionDialog(QDialog):
         bottom_layout = QHBoxLayout()
         bottom_layout.addStretch()
 
-        btn_cancel = QPushButton(tr("dialog.btn_cancel"))
+        btn_cancel = QPushButton(tr("common.cancel"))
         btn_cancel.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_cancel.setStyleSheet("""
             QPushButton {

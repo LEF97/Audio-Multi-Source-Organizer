@@ -1,8 +1,16 @@
 # Audio Multi-Source Organizer (AMSO)
 
+<!-- lang-nav:start -->
 <p align="right">
-  <b>Français</b> • <a href="README.md">English</a> • <a href="README.es.md">Español</a> • <a href="README.de.md">Deutsch</a> • <a href="README.it.md">Italiano</a>
+  <b>Français</b> • <a href="README.md">English</a> • <a href="docs/i18n/README.es.md">Español</a> • <a href="docs/i18n/README.de.md">Deutsch</a> • <a href="docs/i18n/README.it.md">Italiano</a> • <a href="docs/i18n/README.pt.md">Português</a> • <a href="docs/i18n/README.zh_cn.md">简体中文</a> • <a href="docs/i18n/README.ja.md">日本語</a> • <a href="docs/i18n/README.ru.md">Русский</a> • <a href="docs/i18n/README.ar.md">العربية</a>
 </p>
+<details>
+<summary>🌐 Other languages / Autres langues (33)</summary>
+<p align="right">
+  <a href="docs/i18n/README.pl.md">Polski</a> • <a href="docs/i18n/README.tr.md">Türkçe</a> • <a href="docs/i18n/README.nl.md">Nederlands</a> • <a href="docs/i18n/README.sv.md">Svenska</a> • <a href="docs/i18n/README.id.md">Bahasa Indonesia</a> • <a href="docs/i18n/README.bg.md">Български</a> • <a href="docs/i18n/README.sr.md">Српски</a> • <a href="docs/i18n/README.be.md">Беларуская</a> • <a href="docs/i18n/README.el.md">Ελληνικά</a> • <a href="docs/i18n/README.ca.md">Català</a> • <a href="docs/i18n/README.eu.md">Euskara</a> • <a href="docs/i18n/README.gl.md">Galego</a> • <a href="docs/i18n/README.cs.md">Čeština</a> • <a href="docs/i18n/README.sk.md">Slovenčina</a> • <a href="docs/i18n/README.hu.md">Magyar</a> • <a href="docs/i18n/README.hr.md">Hrvatski</a> • <a href="docs/i18n/README.sl.md">Slovenščina</a> • <a href="docs/i18n/README.bs.md">Bosanski</a> • <a href="docs/i18n/README.et.md">Eesti</a> • <a href="docs/i18n/README.lv.md">Latviešu</a> • <a href="docs/i18n/README.lt.md">Lietuvių</a> • <a href="docs/i18n/README.no.md">Norsk</a> • <a href="docs/i18n/README.da.md">Dansk</a> • <a href="docs/i18n/README.fi.md">Suomi</a> • <a href="docs/i18n/README.is.md">Íslenska</a> • <a href="docs/i18n/README.ms.md">Bahasa Melayu</a> • <a href="docs/i18n/README.tl.md">Tagalog</a> • <a href="docs/i18n/README.sw.md">Kiswahili</a> • <a href="docs/i18n/README.eo.md">Esperanto</a> • <a href="docs/i18n/README.zh_tw.md">繁體中文</a> • <a href="docs/i18n/README.ko.md">한국어</a> • <a href="docs/i18n/README.he.md">עברית</a> • <a href="docs/i18n/README.vi.md">Tiếng Việt</a>
+</p>
+</details>
+<!-- lang-nav:end -->
 
 [![CI Tests](https://github.com/LEF97/Audio-Multi-Source-Organizer/actions/workflows/tests.yml/badge.svg)](https://github.com/LEF97/Audio-Multi-Source-Organizer/actions)
 [![Release](https://img.shields.io/github/v/release/LEF97/Audio-Multi-Source-Organizer?include_prereleases&color=orange)](https://github.com/LEF97/Audio-Multi-Source-Organizer/releases)
@@ -11,16 +19,16 @@
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
-> **AMSO** (Audio Multi-Source Organizer) est un lecteur audio de bureau moderne, réactif et multiplateforme (Windows, Linux, macOS). Conçu pour offrir aux audiophiles un contrôle total sur leur bibliothèque musicale locale (MP3, FLAC, OGG…), il prend désormais en charge les listes de lecture (M3U, PLS, XSPF, WPL) et intègre un tout nouveau mode blind test audio ! Le projet évolue pour devenir un centre de commande unifié capable d'organiser, dédoublonner et synchroniser des collections musicales hybrides réparties entre disques locaux, stockage cloud (Google Drive) et services de streaming (Spotify, Deezer, Amazon Music).
+> **AMSO** (Audio Multi-Source Organizer) est un lecteur audio de bureau moderne, réactif et multiplateforme (Windows, Linux, macOS). Conçu pour offrir aux audiophiles un contrôle total sur leur bibliothèque musicale locale (MP3, FLAC, OGG…), il prend désormais en charge les listes de lecture (M3U, PLS, XSPF, WPL), les feuilles CUE (albums d'un seul fichier découpés en pistes) et intègre un tout nouveau mode blind test audio ! Le projet évolue pour devenir un centre de commande unifié capable d'organiser, dédoublonner et synchroniser des collections musicales hybrides réparties entre disques locaux, stockage cloud (Google Drive) et services de streaming (Spotify, Deezer, Amazon Music).
 
 ---
 
 <p align="center">
-  <img src="screenshots/2026-10-18%20v0.3.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & Playlists 🎶" width="850">
+  <img src="screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
 </p>
 
 <p align="center">
-  <img src="screenshots/2026-10-18%20v0.3.0.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur Audio & Ambiance Hyperspace" width="850">
+  <img src="screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
 </p>
 
 <p align="center">
@@ -36,7 +44,7 @@
 | **Moteur de lecture VLC intégré** | Lecteur audio léger et autonome avec auto-installation VLC portable et gestion fluide du volume | 🟢 Implémenté |
 | **Scanner local multithreadé** | Découverte récursive et rapide des fichiers audio locaux (MP3, FLAC, AAC, OGG...) | 🟢 Implémenté |
 | **Extraction de métadonnées** | Lecture/écriture ID3, Vorbis Comments et calcul d'empreinte audio (`mutagen`) | 🟢 Implémenté |
-| **Support des Playlists (M3U, PLS, XSPF, WPL)** | Indexation arborescente (🎶), ordre séquentiel d'écoute et repérage visuel des morceaux manquants | 🟢 Implémenté |
+| **Support des Playlists (M3U, PLS, XSPF, WPL) & feuilles CUE** | Indexation arborescente (🎶), ordre séquentiel d'écoute, repérage visuel des morceaux manquants ; les fichiers `.cue` (💿) s'ouvrent comme un dossier de pistes virtuelles avec leur durée et se lisent comme de vraies pistes | 🟢 Implémenté |
 | **Gestionnaire de Playlist & Glisser-Déposer** | File d'attente virtualisée, drag & drop fluide, aléatoire (shuffle) réversible et boucles | 🟢 Implémenté |
 | **Mode « 🎲 Blind Test » interactif** | Jeu musical immersif avec décompte animé, fondu sonore, révélation douce et enchaînement automatique | 🟢 Implémenté |
 | **Mises à jour in-app** | Vérification automatique/manuelle des versions via GitHub Releases | 🟢 Implémenté |
@@ -51,9 +59,16 @@
 
 ---
 
+## 📌 Langues disponibles
+
+Anglais, Français, Espagnol, Allemand, Italien, Portugais, Japonais, Russe, Polonais, Turc, Néerlandais, Suédois, Indonésien, Bulgare, Serbe, Biélorusse, Grec, Catalan, Basque, Galicien, Tchèque, Slovaque, Hongrois, Croate, Slovène, Bosniaque, Estonien, Letton, Lituanien, Norvégien, Danois, Finnois, Islandais, Malais, Tagalog, Swahili, Espéranto, Chinois simplifié, Chinois traditionnel, Coréen, Arabe, Hébreu, Vietnamien
+
+---
+
 ## 🚀 Démarrage rapide
 
 ### Prérequis
+
 - **Python 3.11** ou supérieur installé
 - Git
 
@@ -120,9 +135,9 @@ Les tests s'exécutent automatiquement sur **Windows, macOS et Ubuntu** à chaqu
 
 AMSO est un logiciel libre et gratuit (open source). Si vous appréciez l'application et souhaitez encourager son développement :
 
-* 🎮 **Téléchargement & Pay What You Want :** [Page Itch.io d'AMSO](https://lef97.itch.io/audio-multi-source-organizer) (exécutable précompilé prêt à l'emploi)
-* ☕ **Faire un don direct :** [Ko-fi (@lef97)](https://ko-fi.com/lef97)
-* ⭐ **GitHub Sponsors :** [Sponsoriser LEF97](https://github.com/sponsors/LEF97)
+- 🎮 **Téléchargement & Pay What You Want :** [Page Itch.io d'AMSO](https://lef97.itch.io/audio-multi-source-organizer) (exécutable précompilé prêt à l'emploi)
+- ☕ **Faire un don direct :** [Ko-fi (@lef97)](https://ko-fi.com/lef97)
+- ⭐ **GitHub Sponsors :** [Sponsoriser LEF97](https://github.com/sponsors/LEF97)
 
 ---
 

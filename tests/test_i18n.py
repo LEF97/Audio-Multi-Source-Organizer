@@ -63,11 +63,11 @@ def test_detect_os_language_supported():
 
 
 def test_detect_os_language_unsupported_defaults_to_english():
-    """Vérifie qu'une langue non supportée (ex: japonais, russe) bascule sur l'anglais."""
-    with patch("locale.getlocale", return_value=("ja_JP", "utf-8")), patch("sys.platform", "linux"):
+    """Vérifie qu'une langue non supportée (ex: zoulou, afrikaans) bascule sur l'anglais."""
+    with patch("locale.getlocale", return_value=("zu_ZA", "utf-8")), patch("sys.platform", "linux"):
         assert detect_os_language() == DEFAULT_LANGUAGE
 
-    with patch("locale.getlocale", return_value=("ru_RU", "utf-8")), patch("sys.platform", "linux"):
+    with patch("locale.getlocale", return_value=("af_ZA", "utf-8")), patch("sys.platform", "linux"):
         assert detect_os_language() == DEFAULT_LANGUAGE
 
     with (

@@ -99,7 +99,7 @@ class VlcDownloadDialog(QDialog):
         self.buttons_layout.setSpacing(10)
         self.buttons_layout.addStretch()
 
-        self.btn_later = QPushButton(tr("dialog.vlc_btn_later"))
+        self.btn_later = QPushButton(tr("common.later"))
         self.btn_later.setProperty("class", "secondary-btn")
         self.btn_later.clicked.connect(self.reject)
         self.buttons_layout.addWidget(self.btn_later)
@@ -127,7 +127,7 @@ class VlcDownloadDialog(QDialog):
     def _start_download(self) -> None:
         """Démarre le téléchargement en arrière-plan."""
         self.btn_download.setVisible(False)
-        self.btn_later.setText(tr("status.cancel"))
+        self.btn_later.setText(tr("common.cancel"))
         self.btn_later.clicked.disconnect()
         self.btn_later.clicked.connect(self._cancel_download)
 

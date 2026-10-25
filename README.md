@@ -1,8 +1,16 @@
 # Audio Multi-Source Organizer (AMSO)
 
+<!-- lang-nav:start -->
 <p align="right">
-  <a href="README.fr.md">Français</a> • <b>English</b> • <a href="README.es.md">Español</a> • <a href="README.de.md">Deutsch</a> • <a href="README.it.md">Italiano</a>
+  <a href="README.fr.md">Français</a> • <b>English</b> • <a href="docs/i18n/README.es.md">Español</a> • <a href="docs/i18n/README.de.md">Deutsch</a> • <a href="docs/i18n/README.it.md">Italiano</a> • <a href="docs/i18n/README.pt.md">Português</a> • <a href="docs/i18n/README.zh_cn.md">简体中文</a> • <a href="docs/i18n/README.ja.md">日本語</a> • <a href="docs/i18n/README.ru.md">Русский</a> • <a href="docs/i18n/README.ar.md">العربية</a>
 </p>
+<details>
+<summary>🌐 Other languages / Autres langues (33)</summary>
+<p align="right">
+  <a href="docs/i18n/README.pl.md">Polski</a> • <a href="docs/i18n/README.tr.md">Türkçe</a> • <a href="docs/i18n/README.nl.md">Nederlands</a> • <a href="docs/i18n/README.sv.md">Svenska</a> • <a href="docs/i18n/README.id.md">Bahasa Indonesia</a> • <a href="docs/i18n/README.bg.md">Български</a> • <a href="docs/i18n/README.sr.md">Српски</a> • <a href="docs/i18n/README.be.md">Беларуская</a> • <a href="docs/i18n/README.el.md">Ελληνικά</a> • <a href="docs/i18n/README.ca.md">Català</a> • <a href="docs/i18n/README.eu.md">Euskara</a> • <a href="docs/i18n/README.gl.md">Galego</a> • <a href="docs/i18n/README.cs.md">Čeština</a> • <a href="docs/i18n/README.sk.md">Slovenčina</a> • <a href="docs/i18n/README.hu.md">Magyar</a> • <a href="docs/i18n/README.hr.md">Hrvatski</a> • <a href="docs/i18n/README.sl.md">Slovenščina</a> • <a href="docs/i18n/README.bs.md">Bosanski</a> • <a href="docs/i18n/README.et.md">Eesti</a> • <a href="docs/i18n/README.lv.md">Latviešu</a> • <a href="docs/i18n/README.lt.md">Lietuvių</a> • <a href="docs/i18n/README.no.md">Norsk</a> • <a href="docs/i18n/README.da.md">Dansk</a> • <a href="docs/i18n/README.fi.md">Suomi</a> • <a href="docs/i18n/README.is.md">Íslenska</a> • <a href="docs/i18n/README.ms.md">Bahasa Melayu</a> • <a href="docs/i18n/README.tl.md">Tagalog</a> • <a href="docs/i18n/README.sw.md">Kiswahili</a> • <a href="docs/i18n/README.eo.md">Esperanto</a> • <a href="docs/i18n/README.zh_tw.md">繁體中文</a> • <a href="docs/i18n/README.ko.md">한국어</a> • <a href="docs/i18n/README.he.md">עברית</a> • <a href="docs/i18n/README.vi.md">Tiếng Việt</a>
+</p>
+</details>
+<!-- lang-nav:end -->
 
 [![CI Tests](https://github.com/LEF97/Audio-Multi-Source-Organizer/actions/workflows/tests.yml/badge.svg)](https://github.com/LEF97/Audio-Multi-Source-Organizer/actions)
 [![Release](https://img.shields.io/github/v/release/LEF97/Audio-Multi-Source-Organizer?include_prereleases&color=orange)](https://github.com/LEF97/Audio-Multi-Source-Organizer/releases)
@@ -11,16 +19,16 @@
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
-> **AMSO** (Audio Multi-Source Organizer) is a modern, responsive, cross-platform desktop audio player (Windows, Linux, macOS). Built to give audiophiles complete control over their local music library (MP3, FLAC, OGG…), it now supports playlist files (M3U, PLS, XSPF, WPL) and features an interactive audio blind test game! The project is expanding to become a unified command center capable of organizing, deduplicating, and synchronizing hybrid music collections across local storage, cloud services (Google Drive), and streaming platforms (Spotify, Deezer, Amazon Music).
+> **AMSO** (Audio Multi-Source Organizer) is a modern, responsive, cross-platform desktop audio player (Windows, Linux, macOS). Built to give audiophiles complete control over their local music library (MP3, FLAC, OGG…), it now supports playlist files (M3U, PLS, XSPF, WPL), CUE sheets (single-file albums split into tracks) and features an interactive audio blind test game! The project is expanding to become a unified command center capable of organizing, deduplicating, and synchronizing hybrid music collections across local storage, cloud services (Google Drive), and streaming platforms (Spotify, Deezer, Amazon Music).
 
 ---
 
 <p align="center">
-  <img src="screenshots/2026-10-18%20v0.3.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Folder Tree & Playlists 🎶" width="850">
+  <img src="screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Folder tree & CUE sheet 💿 (virtual tracks)" width="850">
 </p>
 
 <p align="center">
-  <img src="screenshots/2026-10-18%20v0.3.0.png" alt="Audio Multi-Source Organizer (AMSO) - Audio Player & Hyperspace Ambience" width="850">
+  <img src="screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Playlist of a CUE sheet (virtual tracks)" width="850">
 </p>
 
 <p align="center">
@@ -36,7 +44,7 @@
 | **Integrated VLC Playback Engine** | Lightweight, standalone audio player with automatic portable VLC setup and smooth volume control | 🟢 Implemented |
 | **High-Speed Multithreaded Scanner** | Fast recursive traversal and indexing of local audio files (MP3, FLAC, AAC, OGG...) | 🟢 Implemented |
 | **Metadata & Artwork Extraction** | ID3 tags, Vorbis Comments, and audio fingerprinting extraction (`mutagen`) | 🟢 Implemented |
-| **Playlist Files Support (M3U, PLS, XSPF, WPL)** | Tree-based indexing (🎶), natural sequential track ordering, and visual missing track alerts | 🟢 Implemented |
+| **Playlist Files Support (M3U, PLS, XSPF, WPL) & CUE sheets** | Tree-based indexing (🎶), natural sequential track ordering, visual missing track alerts; `.cue` files (💿) open like a folder of virtual tracks with their duration and play like real tracks | 🟢 Implemented |
 | **Playlist & Queue Management** | Virtualized queue table, smooth drag & drop reordering, reversible shuffle, and repeat modes | 🟢 Implemented |
 | **Interactive « 🎲 Blind Test » Mode** | Immersive music guessing game with animated pulsing countdown, soft audio fade-out, smooth reveal, and auto-progression | 🟢 Implemented |
 | **In-App Update Checker** | Automatic and manual version checking via GitHub Releases | 🟢 Implemented |

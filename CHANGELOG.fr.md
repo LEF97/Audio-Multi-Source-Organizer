@@ -1,7 +1,7 @@
 # Journal des modifications (Changelog) — AMSO
 
 <p align="right">
-  <b>Français</b> • <a href="CHANGELOG.md">English</a> • <a href="CHANGELOG.es.md">Español</a> • <a href="CHANGELOG.de.md">Deutsch</a> • <a href="CHANGELOG.it.md">Italiano</a>
+  <b>Français</b> • <a href="CHANGELOG.md">English</a> • <a href="docs/i18n/CHANGELOG.es.md">Español</a> • <a href="docs/i18n/CHANGELOG.de.md">Deutsch</a> • <a href="docs/i18n/CHANGELOG.it.md">Italiano</a>
 </p>
 
 ---
@@ -10,6 +10,87 @@ Toutes les modifications notables apportées au projet **Audio Multi-Source Orga
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https://semver.org/lang/fr/).
+
+---
+
+## [0.4.0] - 2026-10-25
+
+### Added
+- **Prise en charge des feuilles CUE (`.cue`) :**
+  - Un fichier `.cue` apparaît dans l'arborescence comme un dossier virtuel (icône 💿) contenant ses pistes avec leur titre, leur artiste et leur durée ; le fichier audio d'origine reste lisible normalement.
+  - Lecture d'une piste CUE en tant que portion du fichier (début `INDEX 01`, fin au début de la piste suivante, dernière piste jusqu'à la fin du fichier) avec position et durée propres à la piste, déplacement dans la piste et enchaînement gapless / crossfade entre portions (moteur à tampon continu uniquement ; le moteur `vlc_direct` affiche un message explicatif).
+  - Tolérance aux feuilles mal formées (ligne `FILE` pointant vers le `.cue` lui-même : repli sur le fichier audio du même nom), plusieurs `FILE` par feuille, encodages UTF-8 / CP1252.
+- **Support étendu de 43 langues internationales :**
+  - Intégration de 38 nouvelles langues avec leurs libellés natifs dans le sélecteur de langue (`amso/core/i18n.py`).
+  - Traduction automatisée et parité intégrale (401 clés par langue) via l'IA locale Ollama (`mistral:latest`).
+  - Script de synchronisation globale en un clic : `scripts/sync_all_languages_ollama.bat`.
+- **Mode de diagnostic visuel des traductions (`⟦...⟧`) :**
+  - Ajout de l'argument CLI `--debug-i18n` et du lanceur `run_debug_i18n.bat` encadrant chaque texte traduit de balises `⟦...⟧` pour repérer immédiatement à l'écran les textes dynamiques et isoler les éventuelles chaînes codées en dur.
+- **Outil d'audit et d'intégrité i18n (`scripts/audit_translations.py`) :**
+  - Détection automatique de la parité des 43 langues, détection des doublons de libellés à fusionner et identification des clés orphelines via `scripts/audit_translations.bat`.
+- **Sélecteur d'architecture audio dans les Paramètres / Lecture parfaite en mode gapless 0 (reste certaines anomalies en mode cross fade) :**
+  - Choix transparent dans `Paramètres > Lecteur` entre :
+    - *Tampon continu en mémoire (QAudioSink / WASAPI)* : flux unique ininterrompu vers la carte son, transitions gapless 0 et fondu sans coupure matérielle.
+    - *Sortie directe LibVLC (double lecteur matériel)* : moteur classique matériel piloté directement par LibVLC.
+- **Harnais de validation qualité unifié (Quality Gate) :** Création du script `scripts/verify.py` et de son wrapper racine `verify.bat` exécutant consécutivement le formatage (Ruff), le linter (Ruff check), le typage strict (Mypy sans masquage), le contrôle des plafonds de taille de fichiers et les tests automatisés (Pytest).
+
+### Fixed
+- **Playlists et feuilles CUE découvertes : journal d'activité et rafraîchissement de l'arborescence :** un scan qui n'ajoutait que des playlists (M3U, PLS, XSPF, WPL, CUE) n'était mentionné nulle part et ne rafraîchissait pas l'arborescence des dossiers (le nouveau nœud n'apparaissait qu'après un redémarrage). Le journal indique désormais le nombre de playlists / feuilles CUE ajoutées, mises à jour ou supprimées (avec les premiers noms), et l'arborescence se met à jour à la fin du scan.
+- **Moteur audio natif WASAPI & Résolution de la coupure prématurée de fin de piste :**
+  - *Sortie audio native Windows WASAPI (`mmdevice`)* : suppression du forçage de `--aout=directsound` sous Windows. Le module DirectSound de VLC tronquait de manière anormale les 1,3 à 1,4 dernières secondes des fichiers audio (coupant la fin de *Sirius*). L'alignement sur `mmdevice` permet à LibVLC de diffuser l'intégralité du flux audio jusqu'à la dernière milliseconde en 32-bit float.
+  - *Suppression des bops et artefacts de clics rapides* : élimination des coupures artificielles de volume à 0 lors des `seek` et `stop` qui provoquaient des discontinuités de phase et des collisions de timers asynchrones lors des clics rapides. Le repositionnement temporel (`set_time`) et l'arrêt s'exécutent désormais de manière native et fluide.
+  - *Suppression des micro-glitches en fin de piste / passages calmes* : arrêt du polling permanent de volume dans la boucle de tick, évitant d'envoyer des ajustements de gain matériels répétitifs en continu pendant la lecture.
+- **Précision millimétrique des transitions & Enchaînements fluides (Gapless & Pas de fondu) :**
+  - *Élimination des craquements et pops au lancement du titre suivant* : suppression du forçage de volume à 0 sur le second lecteur en veille, qui provoquait une coupure globale de session sous WASAPI puis un transitoire impulsif (« craquement ») au déblocage de la pause. Le second lecteur est préchargé en pause (`:start-paused`) au volume nominal sans altérer le titre en cours.
+  - *Enchaînement sans blanc (Gapless 0)* : prise en compte exacte de la latence de pipeline LibVLC (`vlc_gapless_latency_ms`, 250 ms par défaut) pour débloquer le lecteur suivant avant la fin exacte de la piste en cours, assurant une continuité musicale ininterrompue sans aucun trou de silence entre morceaux enchaînés (*Sirius* -> *Eye In The Sky*).
+  - *Enchaînement naturel en mode Pas de fondu* : suppression du délai artificiel de 400 ms après `State.Ended`, permettant une transition immédiate et propre dès la fin de lecture du titre précédent.
+- **Suppression des déclenchements de lecture audio intempestifs :**
+  - *Retour en arrière (`previous` / `seek`)* : la commande piste précédente (`previous()`) respecte strictement l'état de pause du lecteur et utilise `load_index()` pour charger le titre sans démarrer la lecture si le lecteur était en pause. De même, un déplacement temporel (`seek_ms`) annule tout préchargement standby ou vidage de transition en attente, et repositionne la piste sans lecture forcée si le lecteur était en pause ou en fin de morceau (`State.Ended`).
+  - *Navigation entre menus (sortie du Blind Test vers d'autres onglets)* : centralisation de la navigation d'onglets (`_switch_to_page`), arrêt forcé du Blind Test et réinitialisation de tout standby actif dès la sortie de la page pour interdire tout redémarrage autonome de la musique en arrière-plan.
+- **Fondu enchaîné sans saccades (Crossfade Equal-Power) :**
+  - *Isolation matérielle des volumes sous Windows* : affectation dynamique de la sortie audio `directsound` pour le mode fondu enchaîné (les modes standard et gapless demeurent sur `mmdevice` natif sans troncature). Contrairement à WASAPI (`mmdevice`) dont le réglage de volume affecte la session de processus globale et générait un conflit violent (hachage / saccades à 40 Hz entre le titre sortant et le titre entrant), DirectSound isole le volume propre à chaque mémoire tampon secondaire (`IDirectSoundBuffer::SetVolume`).
+  - *Courbes de fondu parfaitement lisses* : transition en puissance égale continue (cosinus pour le titre sortant, sinus pour le titre entrant) sans aucun creux acoustique ni saccade au déclenchement du fondu.
+- **Fiabilisation du Moteur Tampon Continu en Mémoire (Phase 2 - QAudioSink / Ring Buffer) :**
+  - *Respect absolu de la pause sur retour arrière (`previous()`)* : `previous()` préserve désormais fidèlement l'état de pause, charge le morceau précédent sans déclencher la lecture, et suspend le flux audio sans micro-coupure ni redémarrage impromptu.
+  - *Enchaînement naturel en mode Pas de fondu* : suppression du préchargement standby inutile en mode standard, transition directe via le cycle de chargement standard avec mise à jour immédiate du titre, de la pochette et de la durée exacte.
+  - *Résolution des collisions et saccades en mode Gapless 0* : cycle de vie hermétique du décodeur standby, déconnexions/reconnexions complètes des signaux (`ready_to_play`, `chunk_decoded`), rétablissement du seek après raccord, et rejet strict des paquets PCM non appariés au titre courant dans le tampon mémoire.
+  - *Fondu croisé en mémoire à puissance égale (Mode Crossfade)* :
+    - Mixage PCM mathématique des échantillons 16-bit (courbes cos/sin à puissance égale) à partir de la tête de lecture courante (`_play_offset`), avec clamping anti-écrêtage.
+    - Séparation stricte entre le déclenchement audio du fondu et la bascule de l'interface graphique : l'UI reste affichée sur le titre sortant pendant son estompage progressif, et bascule sur le titre entrant exactement à l'extinction naturelle du morceau, éliminant la coupure visuelle et sonore prématurée.
+    - Synchronisation et calage temporel continus : purge instantanée des données PCM consommées de la piste sortante à l'extinction (`finish_crossfade`), recalage précis de l'offset de lecture (`_base_offset_ms`) sur la durée exacte du fondu, garantissant un défilement continu du curseur sans téléportation, ainsi qu'un repositionnement temporel (`seek_ms`) parfaitement aligné.
+    - Découpage modulaire : extraction de `amso/services/player_vlc_transitions.py` (transitions directes LibVLC) permettant de maintenir tous les fichiers du lecteur sous les 450 lignes.
+  - *Réinitialisation intégrale à chaud du lecteur (`reset_playback`)* :
+    - Toute modification dans les Paramètres du moteur audio (*VLC direct* vs *Tampon continu*) ou du mode de transition (*Pas de fondu*, *Gapless 0*, *Crossfade*) coupe immédiatement la lecture en cours et réinitialise de fond en comble les flux (destruction propre du `QAudioSink`, vidage des tampons PCM mémoire, arrêt des décodeurs, détachement des médias LibVLC, annulation de tous les timers de transition/fondu).
+    - La piste active reste sélectionnée en pause à 00:00 prête à être lancée sous la nouvelle configuration sans nécessiter de redémarrer l'application.
+
+
+### Changed
+- **Découpage modulaire complet de l'architecture (< 500 lignes par fichier) :**
+  - Objectif atteint à 100 % : **0 fichier > 500 lignes** sur l'ensemble de la base de code AMSO (contre 8 fichiers au-dessus du seuil initialement).
+  - Allègement de `main_window.py` (~1 500 -> 357 lignes) via des mixins spécialisés dans `amso/ui/pages/`.
+  - Décomposition de `player_service.py` (~1 400 -> 329 lignes) avec l'extraction de `player_transport.py`, `player_queue.py`, `player_transitions.py` et `windows_audio.py`.
+  - Scission de `blind_test_view.py` (864 -> 447 lignes) vers `round_controller.py` et `compat.py`.
+  - Scission de `player_view.py` (693 -> 316 lignes) vers `player_ui_builder.py`.
+  - Scission de `settings_player.py` (668 -> 345 lignes) vers `settings_player_effects.py`.
+  - Scission de `theme.py` (633 -> 20 lignes) vers `resources.py`, `qss_base.py` et `qss_components.py`.
+  - Scission de `models.py` (631 -> 118 lignes) vers `models_base.py`, `folder_track_model.py` et `playlist_table_model.py`.
+  - Scission de `metadata.py` (621 -> 420 lignes) vers `cover_art.py`.
+  - Scission de `playlist_view.py` (603 -> 284 lignes) vers `playlist_ui_builder.py` et `playlist_table_view.py`.
+  - Scission de `logs_view.py` (512 -> 426 lignes) vers `log_detail_dialog.py`.
+  - Scission de `folders_page.py` (~970 -> 406 lignes) vers `folders_tree.py` et `folders_trash.py`.
+- **Rationalisation et fusion des doublons :**
+  - Centralisation des composants partagés (`ClickableSlider`, `EffectContainer`, `EffectsViewMixin`).
+  - Factorisation des libellés UI génériques sous le préfixe partagé `common.*` (`common.cancel`, `common.close`, `common.refresh`, `common.later`, `common.open_explorer`, `table.col_filename`, `table.col_source`, `table.col_folder_name`).
+  - Normalisation obligatoire des fins de ligne Windows CRLF (`\r\n`) sur l'ensemble des fichiers `.bat`.
+
+### Fixed
+- **Harmonisation et élimination des résidus de traduction dans les 41 langues :**
+  - Éradication de plus de 1 400 clés restées en français ou en anglais par défaut via le nouvel outil `scripts/fix_residual_translations.py` (`scripts/fix_residual_translations.bat`).
+  - Correction des libellés d'ambiance visuelle et des effets graphiques (`player.visual_effect`, `effects.*`), traduits désormais nativement dans toutes les langues.
+  - Résolution des placeholders de recherche hybrides (`topbar.search_placeholder`) mélangeant langue cible et anglais sur les écrans Doublons, Sources et Navigation.
+  - Traduction fidèle des titres de paramétrage des sources (`settings.page_sources_title`, `settings.section_sources_title`) et de configuration générale (`settings.page_title`).
+  - Traduction intégrale du bouton partagé d'actualisation (`common.refresh` : « 🔄 刷新 » en chinois, etc.) au lieu d'un « Actualiser » francophone résiduel dans les logs.
+  - Localisation complète des sections de soutien, dons et liens officiels de la page À propos (`dialog.about_*`, `update.btn_support`).
 
 ---
 
@@ -35,6 +116,7 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 ## [0.2.0] - 2026-10-18
 
 ### Added
+
 ### Mode Blind Test & Section Jeux
 - **Nouveau tiroir « 🎲 Jeux »** : Catégorie dédiée repliable dans la barre latérale accueillant la vue Blind Test (localisée en 5 langues).
 - **Expérience de jeu immersive** : Décompte visuel dynamique au centre de la pochette masquée, révélation progressive en fondu doux et enchaînement automatique des manches.

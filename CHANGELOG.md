@@ -1,7 +1,7 @@
 # Changelog — AMSO
 
 <p align="right">
-  <a href="CHANGELOG.fr.md">Français</a> • <b>English</b> • <a href="CHANGELOG.es.md">Español</a> • <a href="CHANGELOG.de.md">Deutsch</a> • <a href="CHANGELOG.it.md">Italiano</a>
+  <a href="CHANGELOG.fr.md">Français</a> • <b>English</b> • <a href="docs/i18n/CHANGELOG.es.md">Español</a> • <a href="docs/i18n/CHANGELOG.de.md">Deutsch</a> • <a href="docs/i18n/CHANGELOG.it.md">Italiano</a>
 </p>
 
 ---
@@ -10,6 +10,86 @@ All notable changes to the **Audio Multi-Source Organizer (AMSO)** project will 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning (SemVer)](https://semver.org/).
+
+---
+
+## [0.4.0] - 2026-10-25
+
+### Added
+- **CUE sheet (`.cue`) support:**
+  - A `.cue` file appears in the folder tree as a virtual folder (💿 icon) containing its tracks with their title, artist and duration; the original audio file remains playable as usual.
+  - A CUE track plays as a portion of the file (start at `INDEX 01`, end at the start of the next track, last track up to the end of the file) with its own position and duration, seeking inside the track, and gapless / crossfade transitions between portions (continuous buffer engine only; the `vlc_direct` engine shows an explanatory message).
+  - Tolerance for malformed sheets (a `FILE` line pointing to the `.cue` itself falls back to the audio file with the same name), several `FILE` entries per sheet, UTF-8 / CP1252 encodings.
+- **Expanded support for 43 international languages:**
+  - Added 38 new languages with their native names in the language selector (`amso/core/i18n.py`).
+  - Automated translation and complete parity (401 keys per language) using the local Ollama AI (`mistral:latest`).
+  - One-click global synchronization script: `scripts/sync_all_languages_ollama.bat`.
+- **Visual translation diagnostic mode (`⟦...⟧`):**
+  - Added the `--debug-i18n` command-line argument and the `run_debug_i18n.bat` launcher, which wrap every translated text in `⟦...⟧` markers to spot dynamic texts on screen at a glance and isolate any hard-coded strings.
+- **i18n audit and integrity tool (`scripts/audit_translations.py`):**
+  - Automatic parity check of the 43 languages, detection of duplicate labels to merge and identification of orphan keys through `scripts/audit_translations.bat`.
+- **Audio architecture selector in Settings / Perfect playback in gapless 0 mode (some anomalies remain in crossfade mode):**
+  - Transparent choice in `Settings > Player` between:
+    - *Continuous in-memory buffer (QAudioSink / WASAPI)*: a single uninterrupted stream to the sound card, gapless 0 transitions and crossfade without hardware cuts.
+    - *Direct LibVLC output (dual hardware players)*: the classic hardware engine driven directly by LibVLC.
+- **Unified quality validation harness (Quality Gate):** added the `scripts/verify.py` script and its root wrapper `verify.bat`, which run in sequence formatting (Ruff), linting (Ruff check), strict typing (Mypy without masking), file size limit checks and automated tests (Pytest).
+
+### Fixed
+- **Discovered playlists and CUE sheets: activity log and tree refresh:** a scan that only added playlists (M3U, PLS, XSPF, WPL, CUE) was mentioned nowhere and did not refresh the folder tree (the new node only appeared after a restart). The log now reports the number of playlists / CUE sheets added, updated or deleted (with the first names), and the tree is refreshed at the end of the scan.
+- **Native WASAPI audio engine & fix for the premature end-of-track cut:**
+  - *Native Windows WASAPI audio output (`mmdevice`)*: removed the forced `--aout=directsound` on Windows. VLC's DirectSound module abnormally truncated the last 1.3 to 1.4 seconds of audio files (cutting the end of *Sirius*). Aligning on `mmdevice` lets LibVLC play the whole audio stream up to the last millisecond in 32-bit float.
+  - *Removal of pops and rapid-click artifacts*: eliminated the artificial volume cuts to 0 during `seek` and `stop`, which caused phase discontinuities and asynchronous timer collisions on rapid clicks. Time repositioning (`set_time`) and stopping now run natively and smoothly.
+  - *Removal of micro-glitches at the end of tracks / quiet passages*: stopped the permanent volume polling in the tick loop, avoiding continuous repeated hardware gain adjustments during playback.
+- **Millimetre-accurate transitions & smooth sequencing (Gapless & No fade):**
+  - *Elimination of crackles and pops when the next track starts*: removed the forced volume of 0 on the second standby player, which caused a global session cut under WASAPI and then an impulsive transient ("crackle") when the pause was released. The second player is now preloaded paused (`:start-paused`) at nominal volume without affecting the current track.
+  - *Gap-free sequencing (Gapless 0)*: exact handling of the LibVLC pipeline latency (`vlc_gapless_latency_ms`, 250 ms by default) to release the next player before the exact end of the current track, ensuring uninterrupted musical continuity with no silent gap between chained tracks (*Sirius* -> *Eye In The Sky*).
+  - *Natural sequencing in No fade mode*: removed the artificial 400 ms delay after `State.Ended`, allowing an immediate and clean transition as soon as the previous track finishes.
+- **Removal of unwanted audio playback triggers:**
+  - *Going back (`previous` / `seek`)*: the previous-track command (`previous()`) strictly respects the player's pause state and uses `load_index()` to load the track without starting playback if the player was paused. Likewise, a time jump (`seek_ms`) cancels any standby preload or pending transition drain, and repositions the track without forcing playback if the player was paused or at the end of a track (`State.Ended`).
+  - *Navigation between menus (leaving the Blind Test for other tabs)*: centralized tab navigation (`_switch_to_page`), forced stop of the Blind Test and reset of any active standby as soon as the page is left, to prevent any autonomous restart of the music in the background.
+- **Smooth crossfade (Equal-Power Crossfade):**
+  - *Hardware isolation of volumes on Windows*: dynamic assignment of the `directsound` audio output for crossfade mode (standard and gapless modes remain on native `mmdevice` without truncation). Unlike WASAPI (`mmdevice`), whose volume setting affects the global process session and generated a violent conflict (chopping / stutter at 40 Hz between the outgoing and incoming tracks), DirectSound isolates the volume of each secondary buffer (`IDirectSoundBuffer::SetVolume`).
+  - *Perfectly smooth fade curves*: continuous equal-power transition (cosine for the outgoing track, sine for the incoming track) without any acoustic dip or stutter when the fade starts.
+- **Reliability of the Continuous In-Memory Buffer Engine (Phase 2 - QAudioSink / Ring Buffer):**
+  - *Absolute respect of pause on going back (`previous()`)*: `previous()` now faithfully preserves the pause state, loads the previous track without starting playback, and suspends the audio stream without micro-cuts or unexpected restarts.
+  - *Natural sequencing in No fade mode*: removed the useless standby preload in standard mode, direct transition through the standard loading cycle with immediate update of the title, cover and exact duration.
+  - *Resolution of collisions and stutter in Gapless 0 mode*: sealed lifecycle of the standby decoder, full disconnection/reconnection of signals (`ready_to_play`, `chunk_decoded`), seek restored after the splice, and strict rejection of PCM packets that do not match the current track in the memory buffer.
+  - *In-memory equal-power crossfade (Crossfade mode)*:
+    - Mathematical PCM mixing of 16-bit samples (equal-power cos/sin curves) from the current playhead (`_play_offset`), with anti-clipping clamping.
+    - Strict separation between the audio trigger of the fade and the switch of the graphical interface: the UI stays on the outgoing track while it fades out progressively, and switches to the incoming track exactly when the track naturally ends, eliminating the premature visual and audio cut.
+    - Continuous synchronization and time alignment: immediate purge of the consumed PCM data of the outgoing track at the end of the fade (`finish_crossfade`), precise realignment of the playback offset (`_base_offset_ms`) on the exact fade duration, guaranteeing a continuous cursor movement without jumps, as well as perfectly aligned time repositioning (`seek_ms`).
+    - Modular split: extraction of `amso/services/player_vlc_transitions.py` (direct LibVLC transitions) to keep all player files under 450 lines.
+  - *Full hot reset of the player (`reset_playback`)*:
+    - Any change in the audio engine settings (*Direct VLC* vs *Continuous buffer*) or in the transition mode (*No fade*, *Gapless 0*, *Crossfade*) immediately stops the current playback and thoroughly resets the streams (clean destruction of the `QAudioSink`, emptying of the in-memory PCM buffers, stopping of the decoders, detaching of the LibVLC media, cancellation of all transition/fade timers).
+    - The active track stays selected, paused at 00:00, ready to be started under the new configuration without restarting the application.
+
+### Changed
+- **Complete modular split of the architecture (< 500 lines per file):**
+  - Goal 100% achieved: **0 files > 500 lines** across the whole AMSO code base (versus 8 files above the threshold initially).
+  - Lightening of `main_window.py` (~1,500 -> 357 lines) through specialized mixins in `amso/ui/pages/`.
+  - Decomposition of `player_service.py` (~1,400 -> 329 lines) with the extraction of `player_transport.py`, `player_queue.py`, `player_transitions.py` and `windows_audio.py`.
+  - Split of `blind_test_view.py` (864 -> 447 lines) into `round_controller.py` and `compat.py`.
+  - Split of `player_view.py` (693 -> 316 lines) into `player_ui_builder.py`.
+  - Split of `settings_player.py` (668 -> 345 lines) into `settings_player_effects.py`.
+  - Split of `theme.py` (633 -> 20 lines) into `resources.py`, `qss_base.py` and `qss_components.py`.
+  - Split of `models.py` (631 -> 118 lines) into `models_base.py`, `folder_track_model.py` and `playlist_table_model.py`.
+  - Split of `metadata.py` (621 -> 420 lines) into `cover_art.py`.
+  - Split of `playlist_view.py` (603 -> 284 lines) into `playlist_ui_builder.py` and `playlist_table_view.py`.
+  - Split of `logs_view.py` (512 -> 426 lines) into `log_detail_dialog.py`.
+  - Split of `folders_page.py` (~970 -> 406 lines) into `folders_tree.py` and `folders_trash.py`.
+- **Rationalization and merging of duplicates:**
+  - Centralization of shared components (`ClickableSlider`, `EffectContainer`, `EffectsViewMixin`).
+  - Factorization of generic UI labels under the shared `common.*` prefix (`common.cancel`, `common.close`, `common.refresh`, `common.later`, `common.open_explorer`, `table.col_filename`, `table.col_source`, `table.col_folder_name`).
+  - Mandatory normalization of Windows CRLF line endings (`\r\n`) across all `.bat` files.
+
+### Fixed
+- **Harmonization and removal of translation leftovers in the 41 languages:**
+  - Eradication of more than 1,400 keys left in French or English by default through the new `scripts/fix_residual_translations.py` tool (`scripts/fix_residual_translations.bat`).
+  - Fixed the visual ambiance and graphic effect labels (`player.visual_effect`, `effects.*`), now natively translated in all languages.
+  - Resolution of hybrid search placeholders (`topbar.search_placeholder`) mixing the target language and English on the Duplicates, Sources and Navigation screens.
+  - Faithful translation of the source settings titles (`settings.page_sources_title`, `settings.section_sources_title`) and of the general settings (`settings.page_title`).
+  - Full translation of the shared refresh button (`common.refresh`: "🔄 刷新" in Chinese, etc.) instead of a leftover French "Actualiser" in the logs.
+  - Complete localization of the support, donation and official link sections of the About page (`dialog.about_*`, `update.btn_support`).
 
 ---
 

@@ -177,4 +177,3 @@ def test_scan_skips_ignored_tracks(tmp_path: Path, db: DatabaseManager, scanner:
     assert len(files) == 1
     assert files[0].name == "valid.mp3"
     assert db.get_track_by_ref(f2.resolve().as_posix()) is None
-

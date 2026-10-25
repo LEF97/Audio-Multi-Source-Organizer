@@ -76,7 +76,7 @@ class AboutDialog(QDialog):
         title_layout = QVBoxLayout()
         title_layout.setSpacing(4)
 
-        app_name_lbl = QLabel(tr("dialog.about_app_name"))
+        app_name_lbl = QLabel(tr("app.name"))
         app_name_lbl.setStyleSheet("color: #F8FAFC; font-size: 19px; font-weight: 800; letter-spacing: 0.5px;")
         title_layout.addWidget(app_name_lbl)
 
@@ -212,7 +212,7 @@ class AboutDialog(QDialog):
         footer_layout = QHBoxLayout()
         footer_layout.addStretch()
 
-        self.btn_close = QPushButton(tr("dialog.about_btn_close"))
+        self.btn_close = QPushButton(tr("common.close"))
         self.btn_close.setProperty("class", "secondary-btn")
         self.btn_close.setMinimumWidth(100)
         self.btn_close.clicked.connect(self.accept)

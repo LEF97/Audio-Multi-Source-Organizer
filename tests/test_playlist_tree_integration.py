@@ -22,7 +22,9 @@ def qapp() -> QApplication:
     return app
 
 
-def test_playlist_scanning_and_tree_integration(qapp: QApplication, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_playlist_scanning_and_tree_integration(
+    qapp: QApplication, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Vérifie l'indexation de playlists (M3U, PLS), leur présence dans l'arborescence et l'affichage des morceaux ordonnés."""
     music_dir = tmp_path / "Music"
     music_dir.mkdir(parents=True)

@@ -5,6 +5,7 @@ Prend en charge les formats :
 - PLS (format INI standard)
 - XSPF (XML Shareable Playlist Format)
 - WPL (Windows Media Player XML)
+- CUE (feuilles de découpage d'un fichier audio en pistes virtuelles, voir cue_parser)
 Garantit la résolution des chemins relatifs par rapport au dossier de la playlist
 et la détection des fichiers manquants.
 """
@@ -27,6 +28,7 @@ SUPPORTED_PLAYLIST_EXTENSIONS: frozenset[str] = frozenset(
         ".pls",
         ".xspf",
         ".wpl",
+        ".cue",
     }
 )
 
@@ -42,6 +44,8 @@ class ParsedPlaylistEntry:
     artist: str | None = None
     duration_seconds: float | None = None
     is_missing: bool = False
+    start_ms: int | None = None  # CUE : début de la piste dans le fichier audio
+    end_ms: int | None = None  # CUE : fin de la piste (None = fin du fichier)
 
 
 def resolve_playlist_path(raw_path: str, playlist_dir: Path) -> tuple[str, bool]:
@@ -361,5 +365,9 @@ def parse_playlist_file(file_path: str | Path) -> list[ParsedPlaylistEntry]:
         return parse_xspf_content(content, playlist_dir)
     elif ext == ".wpl":
         return parse_wpl_content(content, playlist_dir)
+    elif ext == ".cue":
+        from amso.core.cue_parser import parse_cue_content
+
+        return parse_cue_content(content, playlist_dir)
 
     return []
