@@ -8,11 +8,16 @@ dans le répertoire utilisateur (%APPDATA%/AMSO/config.ini sous Windows).
 from __future__ import annotations
 
 import configparser
+import contextlib
+import logging
 import os
+import shutil
 from pathlib import Path
 from typing import overload
 
 from amso.core.database import get_default_data_dir
+
+logger = logging.getLogger(__name__)
 
 # Nom du fichier de configuration par défaut
 CONFIG_FILENAME = "config.ini"
@@ -78,17 +83,34 @@ class ConfigManager:
         if self.config_path.exists() and self.config_path.is_file():
             try:
                 self._config.read(self.config_path, encoding="utf-8")
-            except Exception:
-                # En cas de corruption, on repart sur une configuration vierge
+            except Exception as exc:
+                # En cas de corruption : copie de sauvegarde du fichier fautif, puis configuration vierge
+                logger.warning(
+                    "config.ini illisible (%s) : copie de sauvegarde en .bak, configuration réinitialisée", exc
+                )
+                with contextlib.suppress(OSError):
+                    shutil.copy2(self.config_path, self.config_path.with_name(self.config_path.name + ".bak"))
                 self._config = configparser.ConfigParser()
         else:
             self._config = configparser.ConfigParser()
 
     def save(self) -> None:
-        """Sauvegarde la configuration actuelle dans le fichier INI."""
+        """Sauvegarde la configuration dans le fichier INI de façon atomique (fichier temporaire puis remplacement).
+
+        Une coupure pendant l'écriture laisse l'ancien fichier intact au lieu d'un fichier tronqué.
+        """
         self.config_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(self.config_path, "w", encoding="utf-8") as f:
-            self._config.write(f)
+        tmp_path = self.config_path.with_name(self.config_path.name + ".tmp")
+        try:
+            with open(tmp_path, "w", encoding="utf-8") as f:
+                self._config.write(f)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp_path, self.config_path)
+        except BaseException:
+            with contextlib.suppress(OSError):
+                tmp_path.unlink()
+            raise
 
     @overload
     def get(self, section: str, key: str) -> str | None: ...
