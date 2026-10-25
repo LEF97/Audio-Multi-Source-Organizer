@@ -32,10 +32,10 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
-      - name: Verify Documentation & i18n Sync (5 languages)
+      - name: Verify Documentation & i18n Sync (43 languages)
         run: |
           python scripts/sync_translations.py --check-only
-          python scripts/check_docs_sync.py
+          python scripts/check_docs_sync.py --release
 
 
       - name: Build Standalone Executable
@@ -113,6 +113,7 @@ jobs:
           if (-not $env:BUTLER_API_KEY) {
             Write-Host "Le secret BUTLER_API_KEY n'est pas configure dans GitHub Actions. Etape ignoree."
             exit 0
+          }
           $cleanVersion = if ($env:GITHUB_REF_NAME -and $env:GITHUB_REF_NAME.StartsWith("v")) {
             $env:GITHUB_REF_NAME -replace '^v', ''
           } else {
