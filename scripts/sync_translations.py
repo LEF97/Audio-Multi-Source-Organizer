@@ -33,6 +33,10 @@ if sys.stdout and hasattr(sys.stdout, "reconfigure"):
         pass
 
 
+# Modèle Ollama par défaut : meilleur que mistral sur ja/ar/sw (test du 2026-10-25 sur 30 clés)
+DEFAULT_OLLAMA_MODEL = "gemma4:latest"
+
+
 def log(msg: str = "") -> None:
     """Affiche un message et force le vidage du tampon stdout."""
     print(msg)
@@ -331,9 +335,9 @@ def main() -> int:
     parser.add_argument(
         "--ollama",
         nargs="?",
-        const="mistral:latest",
+        const=DEFAULT_OLLAMA_MODEL,
         default=None,
-        help="Traduire les clés avec Ollama (défaut : mistral:latest)",
+        help=f"Traduire les clés avec Ollama (défaut : {DEFAULT_OLLAMA_MODEL})",
     )
     parser.add_argument(
         "--retranslate-untranslated",
