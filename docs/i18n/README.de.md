@@ -1,13 +1,15 @@
 # Audio Multi-Source Organizer (AMSO)
 
+<!-- lang-nav:start -->
 <p align="right">
-  <a href="README.fr.md">Français</a> • <a href="README.md">English</a> • <a href="README.es.md">Español</a> • <b>Deutsch</b> • <a href="README.it.md">Italiano</a>
+  <a href="../../README.fr.md">Français</a> • <a href="../../README.md">English</a> • <a href="README.es.md">Español</a> • <b>Deutsch</b> • <a href="README.it.md">Italiano</a>
 </p>
+<!-- lang-nav:end -->
 
 [![CI Tests](https://github.com/LEF97/Audio-Multi-Source-Organizer/actions/workflows/tests.yml/badge.svg)](https://github.com/LEF97/Audio-Multi-Source-Organizer/actions)
 [![Release](https://img.shields.io/github/v/release/LEF97/Audio-Multi-Source-Organizer?include_prereleases&color=orange)](https://github.com/LEF97/Audio-Multi-Source-Organizer/releases)
-[![Changelog](https://img.shields.io/badge/Changelog-Keep%20a%20Changelog-blue.svg)](CHANGELOG.de.md)
-[![Roadmap](https://img.shields.io/badge/Roadmap-Zuk%C3%BCnftige%20Meilensteine-purple.svg)](ROADMAP.de.md)
+[![Changelog](https://img.shields.io/badge/Changelog-Keep%20a%20Changelog-blue.svg)](../../CHANGELOG.de.md)
+[![Roadmap](https://img.shields.io/badge/Roadmap-Zuk%C3%BCnftige%20Meilensteine-purple.svg)](../../ROADMAP.de.md)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
@@ -16,15 +18,15 @@
 ---
 
 <p align="center">
-  <img src="screenshots/2026-10-18%20v0.3.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Ordnerbaum & Playlists 🎶" width="850">
+  <img src="../../screenshots/2026-10-18%20v0.3.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Ordnerbaum & Playlists 🎶" width="850">
 </p>
 
 <p align="center">
-  <img src="screenshots/2026-10-18%20v0.3.0.png" alt="Audio Multi-Source Organizer (AMSO) - Audioplayer & Hyperspace" width="850">
+  <img src="../../screenshots/2026-10-18%20v0.3.0.png" alt="Audio Multi-Source Organizer (AMSO) - Audioplayer & Hyperspace" width="850">
 </p>
 
 <p align="center">
-  <img src="screenshots/2026-10-18%20v0.3.0%20blind%20test.png" alt="Audio Multi-Source Organizer (AMSO) - Interaktives Blind-Test-Spiel" width="850">
+  <img src="../../screenshots/2026-10-18%20v0.3.0%20blind%20test.png" alt="Audio Multi-Source Organizer (AMSO) - Interaktives Blind-Test-Spiel" width="850">
 </p>
 
 ---
@@ -47,7 +49,7 @@
 | **Spotify / Deezer-Streaming-Integration** | Import von Wiedergabelisten und hybrider Titelabgleich | ⚪ Geplant |
 | **Intelligente Deduplizierung** | Duplikaterkennung über unscharfe Metadaten und akustische Fingerabdrücke | ⚪ Geplant |
 
-> 💡 *Detaillierte Meilensteine und Versionsplanungen finden Sie in der [Roadmap (ROADMAP.de.md)](ROADMAP.de.md).*
+> 💡 *Detaillierte Meilensteine und Versionsplanungen finden Sie in der [Roadmap (ROADMAP.de.md)](../../ROADMAP.de.md).*
 
 ---
 
@@ -110,9 +112,9 @@ Die Tests laufen bei jedem Push über GitHub Actions automatisch auf **Windows, 
 
 ## 📋 Dokumentation & Projektverfolgung
 
-- 📜 **[CHANGELOG.de.md](CHANGELOG.de.md)** ([Version Française](CHANGELOG.fr.md) • [English Version](CHANGELOG.md)): Detailliertes Versionsprotokoll, neue Funktionen und Fehlerbehebungen.
-- 🗺️ **[ROADMAP.de.md](ROADMAP.de.md)** ([Version Française](ROADMAP.fr.md) • [English Version](ROADMAP.md)): Roadmap künftiger Meilensteine (Künstler, Cloud, Spotify, Deduplizierung).
-- 📐 **[CODE_QUALITY.md](CODE_QUALITY.md)**: Architektur- und Code-Qualitätsstandards.
+- 📜 **[CHANGELOG.de.md](../../CHANGELOG.de.md)** ([Version Française](../../CHANGELOG.fr.md) • [English Version](../../CHANGELOG.md)): Detailliertes Versionsprotokoll, neue Funktionen und Fehlerbehebungen.
+- 🗺️ **[ROADMAP.de.md](../../ROADMAP.de.md)** ([Version Française](../../ROADMAP.fr.md) • [English Version](../../ROADMAP.md)): Roadmap künftiger Meilensteine (Künstler, Cloud, Spotify, Deduplizierung).
+- 📐 **[CODE_QUALITY.md](../../CODE_QUALITY.md)**: Architektur- und Code-Qualitätsstandards.
 
 ---
 
@@ -128,4 +130,4 @@ AMSO ist freie Open-Source-Software. Wenn Ihnen die Anwendung gefällt und Sie d
 
 ## 📄 Lizenz
 
-Dieses Projekt steht unter der **GNU General Public License v3.0 (GPL-3.0)** — siehe [LICENSE](LICENSE) für weitere Details.
+Dieses Projekt steht unter der **GNU General Public License v3.0 (GPL-3.0)** — siehe [LICENSE](../../LICENSE) für weitere Details.

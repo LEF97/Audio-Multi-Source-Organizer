@@ -18,8 +18,8 @@ Contexte projet : voir `context.md`. Ne pas le relire si déjà connu.
 
 ## Documentation (FR source de vérité)
 - **Fichiers français (`*.fr.md`)** : Les 3 fichiers de référence (`README.fr.md`, `CHANGELOG.fr.md`, `ROADMAP.fr.md`) sont la source de vérité et sont mis à jour au fur et à mesure des développements.
-- **Documentation dans les autres langues (`*.md`, `*.es.md`, `*.de.md`, `*.it.md`)** : Ne pas les modifier au fil de l'eau. Elles seront traduites et synchronisées uniquement lors de la release (procédure : skill `docs-sync`).
-- Utiliser `python scripts/check_docs_sync.py` uniquement avant une release pour contrôler l'alignement des 15 fichiers.
+- **Documentation dans les autres langues** : ne pas les modifier au fil de l'eau ; traduites uniquement à la release (skill `docs-sync`). **`en` est la seule langue traduite par un assistant IA** (depuis le français). **Toutes les autres** (es, de, it, et les 38 autres langues de README dans `docs/i18n/`) passent **exclusivement par Ollama** : `python scripts/translate_docs.py --ollama` (README + CHANGELOG + ROADMAP, modèle `gemma4:latest`). Jamais de traduction manuelle de ces langues par l'assistant, ni d'édition à la main des fichiers générés.
+- Utiliser `python scripts/check_docs_sync.py` uniquement avant une release pour contrôler l'alignement des 15 fichiers (+ README multilingues avec `--release`).
 
 ## Exécution et boucles
 - Tests : lancer d'abord seulement les tests concernés (`pytest -q tests/<fichier>`), la suite complète uniquement avant release.
@@ -34,7 +34,7 @@ Contexte projet : voir `context.md`. Ne pas le relire si déjà connu.
 ## Style de travail
 - Faire des modifications ciblées, pas de réécriture complète de fichier.
 - Réponses concises, sans re-résumer ce qui vient d'être fait.
-- Skills (`.agents/skills/`) à charger à la demande : `audio-pipeline` (architecture audio/tampon continu), `release` (toute release), `split-module` (découpage de fichiers), `add-i18n-key` (nouveau texte UI), `docs-sync` (doc multilingue), `add-source-connector` (nouvelle source), `db-migration` (schéma/requêtes SQLite), `quality-gate` (fin de tâche : ruff/mypy/pytest), `write-tests` (tests pytest), `qt-threading` (QThread/workers), `build-exe` (PyInstaller), `update-context` (mise à jour de `context.md`).
+- Skills (`.agents/skills/`) à charger à la demande : `audio-pipeline` (architecture audio/tampon continu), `release` (toute release), `split-module` (découpage de fichiers), `add-i18n-key` (nouveau texte UI), `docs-sync` (doc multilingue : en par assistant, autres langues par Ollama), `add-source-connector` (nouvelle source), `db-migration` (schéma/requêtes SQLite), `quality-gate` (fin de tâche : ruff/mypy/pytest), `write-tests` (tests pytest), `qt-threading` (QThread/workers), `build-exe` (PyInstaller), `update-context` (mise à jour de `context.md`).
 - Suivi du découpage : `python scripts/check_file_sizes.py` (liste courte des fichiers > 500 lignes).
 
 ## Rationalisation (anti-duplication)

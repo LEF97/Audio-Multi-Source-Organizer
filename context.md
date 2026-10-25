@@ -66,7 +66,8 @@ amso/
     └── workers.py            QThread / signaux (scans et calculs lourds hors thread UI)
 amso/locales/*.json           43 langues, fr.json = source de vérité
 scripts/                      outils (+ .bat jumeau pour chaque script) : verify, check_file_sizes, check_docs_sync, check_context,
-                              sync_translations(_ollama), audit_translations, build_exe, publish_github_release, sync_skills
+                              sync_translations(_ollama), translate_docs (README en 43 langues, CHANGELOG/ROADMAP es/de/it, via Ollama), audit_translations, build_exe, publish_github_release, sync_skills
+docs/i18n/                    README es/de/it (manuels) + 38 autres langues générées par Ollama ; sélecteur de langue partagé
 tests/                        pytest, Qt offscreen, config et DB isolées (conftest autouse)
 .agents/skills/               procédures (copie pour Claude dans .claude/skills via scripts/sync_skills.py)
 ```

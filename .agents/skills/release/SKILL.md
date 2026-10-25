@@ -19,11 +19,12 @@ Ne lire les 15 fichiers `.md` multilingues que dans cette procédure ; utiliser 
 - Passer la version officielle dans `amso/__init__.py` et `pyproject.toml` (retirer le suffixe `-dev`).
 - `python scripts/sync_translations.py` pour valider l'i18n.
 - Mettre à jour les Markdown dans les 5 langues (FR, EN, ES, DE, IT) :
-  - `CHANGELOG.*.md` : clôturer `[X.Y.Z-dev]` sous `## [X.Y.Z] - AAAA-MM-JJ` dans les 5 fichiers.
-  - `README.*.md` : captures, badges, résumé et 13 lignes de fonctionnalités.
-  - `ROADMAP.*.md` : cocher les objectifs atteints en vX.Y.Z et réajuster les jalons.
-- `python scripts/check_docs_sync.py` (bloquant en CI si non synchronisé).
-- `python scripts/build_exe.py`, puis préparer `dist/AMSO-Windows-vX.Y.Z/` (exe, les 15 `.md`, `locales/`, `LICENSE`).
+  - `CHANGELOG.fr.md` : clôturer `[X.Y.Z-dev]` sous `## [X.Y.Z] - AAAA-MM-JJ` (les autres langues suivent via la traduction ci-dessus).
+  - `README.fr.md` (source) : captures, badges, résumé et 13 lignes de fonctionnalités ; `README.md` (EN) traduit depuis le français par l'assistant. C'est la seule langue traduite par un assistant.
+  - **Toutes les autres langues (README ×41, CHANGELOG et ROADMAP es/de/it) : Ollama uniquement**, jamais de traduction manuelle. Ollama démarré : `python scripts/translate_docs.py --ollama` (blocs modifiés seulement ; relancer si des fragments restent en français). Il régénère aussi les sélecteurs de langue.
+  - `ROADMAP.fr.md` : cocher les objectifs atteints en vX.Y.Z et réajuster les jalons (les autres langues suivent via la traduction).
+- `python scripts/check_docs_sync.py --release` (43 README + sélecteur de langue ; bloquant en CI si non synchronisé).
+- `python scripts/build_exe.py`, puis préparer `dist/AMSO-Windows-vX.Y.Z/` (exe, les 12 `.md` de la racine, `locales/`, `LICENSE` ; pas les README de `docs/i18n/`).
 - Créer l'archive `dist/AMSO-Windows-vX.Y.Z.zip` (dès v0.4.0+, étendre la GitHub Action pour Linux `.AppImage` et macOS `.dmg`).
 - Demander la validation manuelle de l'exécutable compilé.
 

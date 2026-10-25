@@ -5,19 +5,26 @@ description: Mise à jour de la documentation multilingue AMSO (README, CHANGELO
 
 # Synchronisation de la documentation multilingue
 
-Fichiers : `README.*.md`, `CHANGELOG.*.md`, `ROADMAP.*.md` (+ `RELEASE_PROCESS.*.md`) pour `fr`, `en`, `es`, `de`, `it`.
+Fichiers : `README.fr.md` et `README.md` (racine), `docs/i18n/README.<code>.md` (41 langues, dont es/de/it), `CHANGELOG.*.md`, `ROADMAP.*.md` (fr, en, es, de, it) (+ `RELEASE_PROCESS.fr.md`, français seul).
+
+## Qui traduit quoi (règle stricte)
+- `fr` : source de vérité, rédigée au fil de l'eau.
+- `en` : SEULE langue traduite par un assistant IA (Claude), depuis `*.fr.md`, à la release (README, CHANGELOG, ROADMAP).
+- **Toutes les autres langues, Ollama uniquement** : `python scripts/translate_docs.py --ollama` (ou `scripts\translate_docs.bat`, modèle par défaut `gemma4:latest`) traduit README (41 langues), CHANGELOG et ROADMAP (es, de, it). Jamais de traduction manuelle par Claude ou Gemini pour ces langues, et jamais d'édition à la main des fichiers générés. Options : `--docs README`, `--lang ja`, `--force`, `--nav-only` (régénère seulement les sélecteurs de langue, bloc entre `<!-- lang-nav:start -->` et `<!-- lang-nav:end -->`, à ne pas modifier à la main).
+- Chaque bloc traduit est validé (liens, versions/dates, structure) ; les blocs invalides restent en français et le script signale `fragment(s) laissé(s) en français` : relancer (le cache évite de tout retraduire) ou signaler à l'utilisateur.
+
 - **Au fil de l'eau :** Les versions françaises (`*.fr.md`) sont la source de vérité et sont mises à jour au fur et à mesure des développements.
-- **À la release uniquement :** Les 4 autres langues (`en`, `es`, `de`, `it`) sont traduites et synchronisées lors de la préparation de la release.
+- **À la release uniquement :** `en` (assistant) puis les autres langues (Ollama) sont traduites et synchronisées lors de la préparation de la release.
 
 ## Procédure
 1. Éditer d'abord la version française (`*.fr.md`), qui sert de référence.
 2. Ne lire que les sections concernées (grep sur le titre `## [`, ou le badge/numéro de ligne), pas les 15 fichiers entiers.
-3. Reporter la même modification structurelle dans les 4 autres langues (mêmes titres de section, même ordre, mêmes lignes, texte traduit).
-4. Lancer `python scripts/check_docs_sync.py` : il détecte les écarts de structure. Corriger jusqu'à succès (bloquant en CI).
+3. Ne rien reporter à la main dans les autres langues : à la release, traduire `en` depuis `fr`, puis lancer `translate_docs.py --ollama` (Ollama démarré).
+4. Lancer `python scripts/check_docs_sync.py` (`--release` à la release : exige les 43 README) : il détecte les écarts de structure et un sélecteur de langue obsolète. Corriger jusqu'à succès (bloquant en CI).
 5. Si le script échoue 2 fois avec la même erreur, arrêter et expliquer.
 
 ## Conventions
 - CHANGELOG : `## [X.Y.Z-dev] - AAAA-MM-JJ` en tête pendant le développement ; clôturé en `## [X.Y.Z]` à la release.
-- README : 13 lignes de fonctionnalités, captures selon `screenshots/*vX.Y.Z*.png` et `screenshots/Global*.png`.
+- README : liens relatifs (`../../` dans `docs/i18n/`), 13 lignes de fonctionnalités, captures selon `screenshots/*vX.Y.Z*.png` et `screenshots/Global*.png`.
 - ROADMAP : cocher les objectifs atteints, réajuster les jalons.
 - Les textes d'interface se traduisent via le skill `add-i18n-key`, pas ici.

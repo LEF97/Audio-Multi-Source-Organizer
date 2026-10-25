@@ -1,13 +1,15 @@
 # Audio Multi-Source Organizer (AMSO)
 
+<!-- lang-nav:start -->
 <p align="right">
-  <a href="README.fr.md">Français</a> • <a href="README.md">English</a> • <b>Español</b> • <a href="README.de.md">Deutsch</a> • <a href="README.it.md">Italiano</a>
+  <a href="../../README.fr.md">Français</a> • <a href="../../README.md">English</a> • <b>Español</b> • <a href="README.de.md">Deutsch</a> • <a href="README.it.md">Italiano</a>
 </p>
+<!-- lang-nav:end -->
 
 [![CI Tests](https://github.com/LEF97/Audio-Multi-Source-Organizer/actions/workflows/tests.yml/badge.svg)](https://github.com/LEF97/Audio-Multi-Source-Organizer/actions)
 [![Release](https://img.shields.io/github/v/release/LEF97/Audio-Multi-Source-Organizer?include_prereleases&color=orange)](https://github.com/LEF97/Audio-Multi-Source-Organizer/releases)
-[![Changelog](https://img.shields.io/badge/Changelog-Keep%20a%20Changelog-blue.svg)](CHANGELOG.es.md)
-[![Roadmap](https://img.shields.io/badge/Roadmap-Hitos%20futuros-purple.svg)](ROADMAP.es.md)
+[![Changelog](https://img.shields.io/badge/Changelog-Keep%20a%20Changelog-blue.svg)](../../CHANGELOG.es.md)
+[![Roadmap](https://img.shields.io/badge/Roadmap-Hitos%20futuros-purple.svg)](../../ROADMAP.es.md)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
@@ -16,15 +18,15 @@
 ---
 
 <p align="center">
-  <img src="screenshots/2026-10-18%20v0.3.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Explorador de carpetas y listas de reproducción 🎶" width="850">
+  <img src="../../screenshots/2026-10-18%20v0.3.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Explorador de carpetas y listas de reproducción 🎶" width="850">
 </p>
 
 <p align="center">
-  <img src="screenshots/2026-10-18%20v0.3.0.png" alt="Audio Multi-Source Organizer (AMSO) - Reproductor de Audio & Ambiente Hyperspace" width="850">
+  <img src="../../screenshots/2026-10-18%20v0.3.0.png" alt="Audio Multi-Source Organizer (AMSO) - Reproductor de Audio & Ambiente Hyperspace" width="850">
 </p>
 
 <p align="center">
-  <img src="screenshots/2026-10-18%20v0.3.0%20blind%20test.png" alt="Audio Multi-Source Organizer (AMSO) - Minijuego interactivo Blind Test" width="850">
+  <img src="../../screenshots/2026-10-18%20v0.3.0%20blind%20test.png" alt="Audio Multi-Source Organizer (AMSO) - Minijuego interactivo Blind Test" width="850">
 </p>
 
 ---
@@ -47,7 +49,7 @@
 | **Integración de streaming Spotify / Deezer** | Importación de listas de reproducción y correspondencia híbrida de pistas | ⚪ Planificado |
 | **Desduplicación inteligente** | Detección de duplicados basada en metadatos difusos y huellas acústicas | ⚪ Planificado |
 
-> 💡 *Para consultar el detalle de los hitos y versiones planificadas, consulte la [Hoja de ruta (Roadmap)](ROADMAP.es.md).*
+> 💡 *Para consultar el detalle de los hitos y versiones planificadas, consulte la [Hoja de ruta (Roadmap)](../../ROADMAP.es.md).*
 
 ---
 
@@ -110,9 +112,9 @@ Las pruebas se ejecutan automáticamente en **Windows, macOS y Ubuntu** en cada 
 
 ## 📋 Documentación & Seguimiento del proyecto
 
-- 📜 **[CHANGELOG.es.md](CHANGELOG.es.md)** ([Version Française](CHANGELOG.fr.md) • [English Version](CHANGELOG.md)): Registro detallado de versiones, nuevas funciones y correcciones.
-- 🗺️ **[ROADMAP.es.md](ROADMAP.es.md)** ([Version Française](ROADMAP.fr.md) • [English Version](ROADMAP.md)): Hoja de ruta con futuros hitos (Artistas, Nube, Spotify, Desduplicación).
-- 📐 **[CODE_QUALITY.md](CODE_QUALITY.md)**: Carta de arquitectura y normas de calidad del código.
+- 📜 **[CHANGELOG.es.md](../../CHANGELOG.es.md)** ([Version Française](../../CHANGELOG.fr.md) • [English Version](../../CHANGELOG.md)): Registro detallado de versiones, nuevas funciones y correcciones.
+- 🗺️ **[ROADMAP.es.md](../../ROADMAP.es.md)** ([Version Française](../../ROADMAP.fr.md) • [English Version](../../ROADMAP.md)): Hoja de ruta con futuros hitos (Artistas, Nube, Spotify, Desduplicación).
+- 📐 **[CODE_QUALITY.md](../../CODE_QUALITY.md)**: Carta de arquitectura y normas de calidad del código.
 
 ---
 
@@ -128,4 +130,4 @@ AMSO es software libre y de código abierto (open source). Si disfrutas de la ap
 
 ## 📄 Licencia
 
-Este proyecto está bajo la licencia **GNU General Public License v3.0 (GPL-3.0)** — consulte el archivo [LICENSE](LICENSE) para más detalles.
+Este proyecto está bajo la licencia **GNU General Public License v3.0 (GPL-3.0)** — consulte el archivo [LICENSE](../../LICENSE) para más detalles.

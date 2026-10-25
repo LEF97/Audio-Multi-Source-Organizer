@@ -1,14 +1,17 @@
-"""Script de vérification de synchronisation de la documentation multilingue (5 langues).
+"""Script de vérification de synchronisation de la documentation multilingue.
 
 Langues prises en charge :
 - Français (fr) : README.fr.md, CHANGELOG.fr.md, ROADMAP.fr.md
 - Anglais (en / base) : README.md, CHANGELOG.md, ROADMAP.md
-- Espagnol (es) : README.es.md, CHANGELOG.es.md, ROADMAP.es.md
-- Allemand (de) : README.de.md, CHANGELOG.de.md, ROADMAP.de.md
-- Italien (it) : README.it.md, CHANGELOG.it.md, ROADMAP.it.md
+- Espagnol (es) : docs/i18n/README.es.md, CHANGELOG.es.md, ROADMAP.es.md
+- Allemand (de) : docs/i18n/README.de.md, CHANGELOG.de.md, ROADMAP.de.md
+- Italien (it) : docs/i18n/README.it.md, CHANGELOG.it.md, ROADMAP.it.md
+- README des autres langues de l'application : docs/i18n/README.<code>.md (générés par scripts/translate_docs.py)
 
 Usage:
-    python scripts/check_docs_sync.py
+    python scripts/check_docs_sync.py [--release]
+
+`--release` exige en plus le README des 43 langues (sinon seuls les README existants sont contrôlés).
 """
 
 from __future__ import annotations
@@ -30,9 +33,9 @@ DOC_PATTERNS = {
     "README": {
         "fr": "README.fr.md",
         "en": "README.md",
-        "es": "README.es.md",
-        "de": "README.de.md",
-        "it": "README.it.md",
+        "es": "docs/i18n/README.es.md",
+        "de": "docs/i18n/README.de.md",
+        "it": "docs/i18n/README.it.md",
     },
     "CHANGELOG": {
         "fr": "CHANGELOG.fr.md",
@@ -61,7 +64,33 @@ EXPECTED_ROADMAP_MILESTONES = [
 ]
 
 
-def check_docs(project_root: Path | None = None) -> list[str]:
+def _check_readme_i18n(release: bool) -> list[str]:
+    """Contrôle le sélecteur de langue et les liens de tous les README existants (toutes langues)."""
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from scripts import translate_docs as tr
+
+    errors: list[str] = []
+    available = tr.available_languages()
+    if release:
+        errors.extend(
+            f"[README] README manquant pour la langue '{lang}' : {tr.readme_path(lang).relative_to(tr.ROOT).as_posix()}"
+            for lang in tr.SUPPORTED_LANGUAGES
+            if lang not in available
+        )
+    for lang in available:
+        path = tr.readme_path(lang)
+        name = path.relative_to(tr.ROOT).as_posix()
+        text = path.read_text(encoding="utf-8")
+        if tr.NAV_START not in text:
+            errors.append(f"[{name}] Marqueurs du sélecteur de langue absents (lang-nav).")
+        elif tr.build_nav(lang, available) not in text:
+            errors.append(f"[{name}] Sélecteur de langue obsolète : lancer python scripts/translate_docs.py --nav-only")
+        if not all(word in text for word in ("CHANGELOG", "ROADMAP", "CODE_QUALITY")):
+            errors.append(f"[{name}] Liens de documentation essentiels manquants (CHANGELOG/ROADMAP/CODE_QUALITY).")
+    return errors
+
+
+def check_docs(project_root: Path | None = None, release: bool = False) -> list[str]:
     """Vérifie l'existence et la synchronisation de tous les fichiers de documentation.
 
     Retourne une liste d'erreurs (vide si tout est valide).
@@ -153,6 +182,7 @@ def check_docs(project_root: Path | None = None) -> list[str]:
         if "CHANGELOG" not in text or "ROADMAP" not in text or "CODE_QUALITY" not in text:
             errors.append(f"[{filename}] Liens de documentation essentiels manquants (CHANGELOG/ROADMAP/CODE_QUALITY).")
 
+    errors.extend(_check_readme_i18n(release))
     return errors
 
 
@@ -161,10 +191,11 @@ def main() -> int:
     print("=" * 65)
     print("  AMSO — Vérification de la synchronisation de la documentation")
     print(f"  Répertoire : {project_root}")
-    print("  Langues    : FR, EN, ES, DE, IT (15 fichiers)")
+    print("  Langues    : FR, EN, ES, DE, IT (15 fichiers) + README des autres langues")
     print("=" * 65)
 
-    errors = check_docs(project_root)
+    release = "--release" in sys.argv
+    errors = check_docs(project_root, release=release)
 
     if errors:
         print("\n❌ DES ERREURS DE SYNCHRONISATION ONT ÉTÉ DÉTECTÉES :\n")
@@ -176,7 +207,7 @@ def main() -> int:
         return 1
 
     print("\n✅ SUCCÈS : Tous les fichiers de documentation (README, CHANGELOG,")
-    print("            ROADMAP) sont parfaitement synchronisés en 5 langues !")
+    print("            ROADMAP) sont parfaitement synchronisés !")
     print("=" * 65)
     return 0
 

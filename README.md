@@ -1,8 +1,10 @@
 # Audio Multi-Source Organizer (AMSO)
 
+<!-- lang-nav:start -->
 <p align="right">
-  <a href="README.fr.md">Français</a> • <b>English</b> • <a href="README.es.md">Español</a> • <a href="README.de.md">Deutsch</a> • <a href="README.it.md">Italiano</a>
+  <a href="README.fr.md">Français</a> • <b>English</b> • <a href="docs/i18n/README.es.md">Español</a> • <a href="docs/i18n/README.de.md">Deutsch</a> • <a href="docs/i18n/README.it.md">Italiano</a>
 </p>
+<!-- lang-nav:end -->
 
 [![CI Tests](https://github.com/LEF97/Audio-Multi-Source-Organizer/actions/workflows/tests.yml/badge.svg)](https://github.com/LEF97/Audio-Multi-Source-Organizer/actions)
 [![Release](https://img.shields.io/github/v/release/LEF97/Audio-Multi-Source-Organizer?include_prereleases&color=orange)](https://github.com/LEF97/Audio-Multi-Source-Organizer/releases)

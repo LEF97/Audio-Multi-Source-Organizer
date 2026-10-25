@@ -49,23 +49,19 @@ flowchart TD
    - Basculer de `X.Y.Z-dev` vers `X.Y.Z` dans `amso/__init__.py`.
    - Mettre à jour `version` dans `pyproject.toml`.
    - Exécuter la synchronisation des traductions : `python scripts/sync_translations.py`.
-3. **Actualisation des fichiers Markdown dans les 5 langues (FR, EN, ES, DE, IT) :**
-   - **`CHANGELOG.*.md`** (5 fichiers : `.fr.md`, `.md` [EN], `.es.md`, `.de.md`, `.it.md`) :
-     - Clôturer la section `[X.Y.Z-dev]` sous son titre définitif `## [X.Y.Z] - AAAA-MM-JJ`.
-     - Reporter les nouveautés, améliorations et corrections dans les 5 langues.
-   - **`README.*.md`** (5 fichiers) :
-     - Mettre à jour les badges, les captures d'écran (`screenshots/*vX.Y.Z*.png`), le texte d'introduction et le tableau des fonctionnalités (13 lignes avec statuts à jour).
-   - **`ROADMAP.*.md`** (5 fichiers) :
-     - Cocher les objectifs atteints en vX.Y.Z (`- [x]`) et réajuster les jalons suivants (`- [ ]`).
+3. **Actualisation des fichiers Markdown (FR source, EN par l'assistant, toutes les autres langues par Ollama) :**
+   - **Français (source de vérité)** : `CHANGELOG.fr.md` (clôturer `[X.Y.Z-dev]` sous `## [X.Y.Z] - AAAA-MM-JJ`), `README.fr.md` (badges, captures `screenshots/*vX.Y.Z*.png`, texte d'introduction, tableau des fonctionnalités de 13 lignes) et `ROADMAP.fr.md` (cocher `- [x]` les objectifs atteints, réajuster les jalons `- [ ]`).
+   - **Anglais** : `CHANGELOG.md`, `README.md`, `ROADMAP.md` traduits depuis le français par l'assistant (seule langue traduite par un assistant).
+   - **Toutes les autres langues : Ollama uniquement, jamais de traduction manuelle.** Démarrer Ollama, puis `python scripts/translate_docs.py --ollama` (ou `scripts\translate_docs.bat`, modèle par défaut `gemma4:latest`) : README en 41 langues (`docs/i18n/README.<code>.md`), CHANGELOG et ROADMAP en `es`, `de`, `it`. Seuls les blocs modifiés sont retraduits ; si des fragments restent en français, relancer. Les sélecteurs de langue sont régénérés par ce même script (`--nav-only` pour les régénérer seuls).
 4. **Vérification automatisée de l'alignement multilingue :**
    - Exécuter le contrôle i18n : `python scripts/sync_translations.py --check-only`
-   - Exécuter le contrôle documentaire : `python scripts/check_docs_sync.py`
+   - Exécuter le contrôle documentaire : `python scripts/check_docs_sync.py --release` (exige en plus les 43 README et un sélecteur de langue à jour)
    - *(Note : la suite de tests automatisée `pytest` et les workflows GitHub Actions bloquent la CI si un seul fichier n'est pas synchronisé).*
 5. **Compilation & Création des archives de distribution :**
    - Lancer la compilation PyInstaller : `python scripts/build_exe.py` (ou `scripts\build_exe.bat`).
    - Préparer le dossier de distribution : `dist/AMSO-Windows-vX.Y.Z/` contenant :
      - Le dossier compilé `AMSO/` (ou l'exécutable portable).
-     - L'ensemble des 15 fichiers Markdown à jour : `README*.md`, `CHANGELOG*.md`, `ROADMAP*.md`.
+     - Les 12 fichiers Markdown de la racine à jour : `README.md`, `README.fr.md`, `CHANGELOG*.md`, `ROADMAP*.md` (les README de `docs/i18n/` ne sont pas dans l'archive : ils sont consultables sur GitHub).
      - Le dossier `locales/` (43 langues) et le fichier `LICENSE`.
    - Créer l'archive zip finale : `dist/AMSO-Windows-vX.Y.Z.zip`.
    - *(Note jalon v0.4.0+) :* Extension du packaging multiplateforme via GitHub Actions (`runs-on: [ubuntu-latest, macos-latest]`) pour générer également les paquets Linux (`.AppImage`) et macOS (`.dmg`).
