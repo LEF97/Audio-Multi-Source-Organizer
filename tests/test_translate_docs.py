@@ -125,10 +125,13 @@ def test_only_fr_and_en_are_not_generated() -> None:
 
 
 def test_doc_path_and_doc_nav() -> None:
-    assert tr.doc_path("CHANGELOG", "en").name == "CHANGELOG.md"
-    assert tr.doc_path("ROADMAP", "es").name == "ROADMAP.es.md"
-    nav = tr.build_doc_nav("CHANGELOG", "es")
-    assert "<b>Español</b>" in nav and 'href="CHANGELOG.md"' in nav and 'href="CHANGELOG.fr.md"' in nav
+    assert tr.doc_path("CHANGELOG", "en") == tr.ROOT / "CHANGELOG.md"
+    assert tr.doc_path("CHANGELOG", "fr") == tr.ROOT / "CHANGELOG.fr.md"
+    assert tr.doc_path("ROADMAP", "es") == tr.I18N_DIR / "ROADMAP.es.md"  # seules fr et en sont à la racine
+    nav_es = tr.build_doc_nav("CHANGELOG", "es")
+    assert "<b>Español</b>" in nav_es and 'href="../../CHANGELOG.md"' in nav_es and 'href="CHANGELOG.de.md"' in nav_es
+    nav_fr = tr.build_doc_nav("CHANGELOG", "fr")
+    assert 'href="docs/i18n/CHANGELOG.es.md"' in nav_fr and 'href="CHANGELOG.md"' in nav_fr
 
 
 def test_validate_rejects_changed_version_or_date() -> None:
@@ -148,6 +151,15 @@ def test_long_blocks_are_split_into_chunks() -> None:
 def test_finalize_points_to_documents_of_the_same_language() -> None:
     text = '[c](CHANGELOG.fr.md) [r](ROADMAP.fr.md) <img src="screenshots/a.png">'
     es = tr.finalize("README", "es", text)
-    assert "(../../CHANGELOG.es.md)" in es and "(../../ROADMAP.es.md)" in es and 'src="../../screenshots/a.png"' in es
+    # le README es est dans docs/i18n/, comme CHANGELOG.es.md et ROADMAP.es.md : liens dans le même dossier
+    assert "(CHANGELOG.es.md)" in es and "(ROADMAP.es.md)" in es and 'src="../../screenshots/a.png"' in es
     ja = tr.finalize("README", "ja", text)  # langue sans CHANGELOG propre -> anglais
     assert "(../../CHANGELOG.md)" in ja and "(../../ROADMAP.md)" in ja
+
+
+def test_blocks_with_very_long_lines_are_split_by_size() -> None:
+    long_lines = ["- " + "mot " * 125 for _ in range(10)]  # 10 lignes de ~500 caractères
+    parts = tr.chunks(long_lines)
+    assert len(parts) > 1 and sum(len(p) for p in parts) == 10
+    assert all(sum(len(line) + 1 for line in p) <= tr.CHUNK_CHARS + 600 for p in parts)
+    assert [line for p in parts for line in p] == long_lines

@@ -21,10 +21,10 @@ Ne lire les 15 fichiers `.md` multilingues que dans cette procédure ; utiliser 
 - Mettre à jour les Markdown dans les 5 langues (FR, EN, ES, DE, IT) :
   - `CHANGELOG.fr.md` : clôturer `[X.Y.Z-dev]` sous `## [X.Y.Z] - AAAA-MM-JJ` (les autres langues suivent via la traduction ci-dessus).
   - `README.fr.md` (source) : captures, badges, résumé et 13 lignes de fonctionnalités ; `README.md` (EN) traduit depuis le français par l'assistant. C'est la seule langue traduite par un assistant.
-  - **Toutes les autres langues (README ×41, CHANGELOG et ROADMAP es/de/it) : Ollama uniquement**, jamais de traduction manuelle. Ollama démarré : `python scripts/translate_docs.py --ollama` (blocs modifiés seulement ; relancer si des fragments restent en français). Il régénère aussi les sélecteurs de langue.
+  - **Toutes les autres langues (README ×41, CHANGELOG et ROADMAP es/de/it, tous dans `docs/i18n/`) : Ollama uniquement**, jamais de traduction manuelle. Ollama démarré : `python scripts/translate_docs.py --ollama` (blocs modifiés seulement ; relancer si des fragments restent en français). Il régénère aussi les sélecteurs de langue.
   - `ROADMAP.fr.md` : cocher les objectifs atteints en vX.Y.Z et réajuster les jalons (les autres langues suivent via la traduction).
 - `python scripts/check_docs_sync.py --release` (43 README + sélecteur de langue ; bloquant en CI si non synchronisé).
-- `python scripts/build_exe.py`, puis préparer `dist/AMSO-Windows-vX.Y.Z/` (exe, les 12 `.md` de la racine, `locales/`, `LICENSE` ; pas les README de `docs/i18n/`).
+- `python scripts/build_exe.py`, puis préparer `dist/AMSO-Windows-vX.Y.Z/` (exe, les 6 `.md` de la racine (README, CHANGELOG, ROADMAP en fr et en), `locales/`, `LICENSE` ; pas le dossier `docs/i18n/`).
 - Créer l'archive `dist/AMSO-Windows-vX.Y.Z.zip` (dès v0.4.0+, étendre la GitHub Action pour Linux `.AppImage` et macOS `.dmg`).
 - Demander la validation manuelle de l'exécutable compilé.
 
@@ -39,7 +39,7 @@ Ne lire les 15 fichiers `.md` multilingues que dans cette procédure ; utiliser 
 ## 4. Post-release (Nouveau cycle dev)
 - Revenir sur `develop`.
 - Version suivante `v(X).(Y+1).0-dev` dans `amso/__init__.py`.
-- Ajouter `## [X.Y.Z-dev] - ...` en tête des 5 `CHANGELOG.*.md`.
+- Ajouter `## [X.Y.Z-dev] - ...` en tête de `CHANGELOG.fr.md` (les autres langues suivent à la prochaine traduction).
 - `python scripts/check_docs_sync.py`.
 - Mettre à jour le tableau « Vision & état » de `context.md` (skill `update-context`) : version publiée, nouveau cycle `-dev`.
 - Nettoyer les caches et committer l'ouverture du cycle.

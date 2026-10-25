@@ -1,7 +1,7 @@
 # Journal des modifications (Changelog) — AMSO
 
 <p align="right">
-  <b>Français</b> • <a href="CHANGELOG.md">English</a> • <a href="CHANGELOG.es.md">Español</a> • <a href="CHANGELOG.de.md">Deutsch</a> • <a href="CHANGELOG.it.md">Italiano</a>
+  <b>Français</b> • <a href="CHANGELOG.md">English</a> • <a href="docs/i18n/CHANGELOG.es.md">Español</a> • <a href="docs/i18n/CHANGELOG.de.md">Deutsch</a> • <a href="docs/i18n/CHANGELOG.it.md">Italiano</a>
 </p>
 
 ---
@@ -13,7 +13,7 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 
 ---
 
-## [0.4.0-dev] - En cours de développement
+## [0.4.0] - 2026-10-25
 
 ### Added
 - **Prise en charge des feuilles CUE (`.cue`) :**
@@ -28,7 +28,7 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
   - Ajout de l'argument CLI `--debug-i18n` et du lanceur `run_debug_i18n.bat` encadrant chaque texte traduit de balises `⟦...⟧` pour repérer immédiatement à l'écran les textes dynamiques et isoler les éventuelles chaînes codées en dur.
 - **Outil d'audit et d'intégrité i18n (`scripts/audit_translations.py`) :**
   - Détection automatique de la parité des 43 langues, détection des doublons de libellés à fusionner et identification des clés orphelines via `scripts/audit_translations.bat`.
-- **Sélecteur d'architecture audio dans les Paramètres :**
+- **Sélecteur d'architecture audio dans les Paramètres / Lecture parfaite en mode gapless 0 (reste certaines anomalies en mode cross fade) :**
   - Choix transparent dans `Paramètres > Lecteur` entre :
     - *Tampon continu en mémoire (QAudioSink / WASAPI)* : flux unique ininterrompu vers la carte son, transitions gapless 0 et fondu sans coupure matérielle.
     - *Sortie directe LibVLC (double lecteur matériel)* : moteur classique matériel piloté directement par LibVLC.

@@ -61,7 +61,7 @@ flowchart TD
    - Lancer la compilation PyInstaller : `python scripts/build_exe.py` (ou `scripts\build_exe.bat`).
    - Préparer le dossier de distribution : `dist/AMSO-Windows-vX.Y.Z/` contenant :
      - Le dossier compilé `AMSO/` (ou l'exécutable portable).
-     - Les 12 fichiers Markdown de la racine à jour : `README.md`, `README.fr.md`, `CHANGELOG*.md`, `ROADMAP*.md` (les README de `docs/i18n/` ne sont pas dans l'archive : ils sont consultables sur GitHub).
+     - Les 6 fichiers Markdown de la racine à jour : `README.md`, `README.fr.md`, `CHANGELOG.md`, `CHANGELOG.fr.md`, `ROADMAP.md`, `ROADMAP.fr.md` (le dossier `docs/i18n/` n'est pas dans l'archive : ils sont consultables sur GitHub).
      - Le dossier `locales/` (43 langues) et le fichier `LICENSE`.
    - Créer l'archive zip finale : `dist/AMSO-Windows-vX.Y.Z.zip`.
    - *(Note jalon v0.4.0+) :* Extension du packaging multiplateforme via GitHub Actions (`runs-on: [ubuntu-latest, macos-latest]`) pour générer également les paquets Linux (`.AppImage`) et macOS (`.dmg`).
@@ -109,7 +109,7 @@ flowchart TD
 1. **Basculement vers la version dev suivante :**
    - Revenir sur la branche de développement : `git checkout develop`
    - Incrémenter le numéro de version (ex: `0.3.0` ➔ `0.4.0-dev`) dans `amso/__init__.py`.
-   - Créer une nouvelle section en tête de journal dans les 5 fichiers `CHANGELOG.*.md` :
+   - Créer une nouvelle section en tête de journal dans `CHANGELOG.fr.md` (les autres langues suivent à la prochaine traduction) :
      - `CHANGELOG.fr.md` : `## [X.Y.Z-dev] - En cours de développement`
      - `CHANGELOG.md` : `## [X.Y.Z-dev] - In Development`
      - `CHANGELOG.es.md` : `## [X.Y.Z-dev] - En desarrollo`

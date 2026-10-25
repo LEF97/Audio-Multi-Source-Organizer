@@ -7,10 +7,10 @@ Usage:
 Règle : seules `fr` (source de vérité, `*.fr.md`) et `en` (traduite depuis `fr` par l'assistant, skill `docs-sync`) ne passent
 pas par ce script. TOUTES les autres langues sont traduites par Ollama :
 - README : 41 langues (es, de, it, … dans `docs/i18n/README.<code>.md`) ;
-- CHANGELOG et ROADMAP : es, de, it (fichiers à la racine).
+- CHANGELOG et ROADMAP : es, de, it (`docs/i18n/CHANGELOG.<code>.md`, `docs/i18n/ROADMAP.<code>.md`). Seuls fr et en sont à la racine.
 La traduction se fait par blocs Markdown (code, HTML, badges et titre du projet restent intacts). Chaque bloc traduit est
 validé (mêmes liens, mêmes numéros de version et dates, même nombre de lignes, mêmes marqueurs de liste/titre/tableau),
-réessayé une fois, puis conservé en français s'il reste invalide. Les blocs déjà traduits sont mémorisés
+réessayé jusqu'à 3 essais, puis conservé en français s'il reste invalide. Les blocs déjà traduits sont mémorisés
 (`docs/i18n/.docs_cache.json`) : seuls les blocs modifiés sont retraduits.
 Sans `--ollama` (ou avec `--nav-only`), seuls les sélecteurs de langue sont régénérés dans les fichiers existants.
 """
@@ -45,6 +45,8 @@ MAIN_LANGS = ["fr", "en", "es", "de", "it", "pt", "zh_cn", "ja", "ru", "ar"]  # 
 DEFAULT_MODEL = "gemma4:latest"  # meilleur que mistral sur ja/ar/zh/ko (test du 2026-10-25)
 MAX_BLOCK_LINES = 10  # au-delà, le bloc est traduit par tranches de CHUNK_LINES lignes
 CHUNK_LINES = 8
+MAX_BLOCK_CHARS = 3000  # un bloc plus long est aussi découpé : le modèle abrège ou tronque les longues sorties
+CHUNK_CHARS = 2000
 NAV_START = "<!-- lang-nav:start -->"
 NAV_END = "<!-- lang-nav:end -->"
 PRESERVED_NAMES = (
@@ -65,7 +67,9 @@ def doc_path(doc: str, lang: str) -> Path:
     """Chemin d'un document (README, CHANGELOG ou ROADMAP) dans une langue."""
     if doc == "README":
         return readme_path(lang)
-    return ROOT / (f"{doc}.md" if lang == "en" else f"{doc}.{lang}.md")
+    if lang in ("fr", "en"):  # seules fr et en sont à la racine ; les autres langues sont dans docs/i18n/
+        return ROOT / (f"{doc}.md" if lang == "en" else f"{doc}.fr.md")
+    return I18N_DIR / f"{doc}.{lang}.md"
 
 
 def doc_languages(doc: str) -> list[str]:
@@ -92,12 +96,16 @@ def _write(path: Path, text: str) -> None:
 # --- Navigation entre langues -------------------------------------------------------------------
 
 
+def _relative(target: Path, from_dir: Path) -> str:
+    """Chemin relatif (séparateurs `/`) de `target` vu depuis le dossier `from_dir`."""
+    return os.path.relpath(target, from_dir).replace("\\", "/")
+
+
 def _entry(current: str, target: str) -> str:
     name = SUPPORTED_LANGUAGES[target]
     if target == current:
         return f"<b>{name}</b>"
-    rel = os.path.relpath(readme_path(target), readme_path(current).parent).replace("\\", "/")
-    return f'<a href="{rel}">{name}</a>'
+    return f'<a href="{_relative(readme_path(target), readme_path(current).parent)}">{name}</a>'
 
 
 def build_nav(current: str, available: list[str]) -> str:
@@ -124,7 +132,7 @@ def build_doc_nav(doc: str, current: str) -> str:
     entries = [
         f"<b>{SUPPORTED_LANGUAGES[lang]}</b>"
         if lang == current
-        else f'<a href="{doc_path(doc, lang).name}">{SUPPORTED_LANGUAGES[lang]}</a>'
+        else f'<a href="{_relative(doc_path(doc, lang), doc_path(doc, current).parent)}">{SUPPORTED_LANGUAGES[lang]}</a>'
         for lang in DOC_LANGS
     ]
     return '<p align="right">\n  ' + " • ".join(entries) + "\n</p>"
@@ -224,10 +232,21 @@ def validate(source: str, output: str) -> bool:
 
 
 def chunks(lines: list[str]) -> list[list[str]]:
-    """Un bloc court reste entier ; un bloc long est découpé en tranches pour fiabiliser la traduction."""
-    if len(lines) <= MAX_BLOCK_LINES:
+    """Un bloc court reste entier ; un bloc long (en lignes ou en caractères) est découpé pour fiabiliser la traduction."""
+    if len(lines) <= MAX_BLOCK_LINES and sum(len(line) + 1 for line in lines) <= MAX_BLOCK_CHARS:
         return [lines]
-    return [lines[i : i + CHUNK_LINES] for i in range(0, len(lines), CHUNK_LINES)]
+    parts: list[list[str]] = []
+    current: list[str] = []
+    size = 0
+    for line in lines:
+        if current and (len(current) >= CHUNK_LINES or size + len(line) + 1 > CHUNK_CHARS):
+            parts.append(current)
+            current, size = [], 0
+        current.append(line)
+        size += len(line) + 1
+    if current:
+        parts.append(current)
+    return parts
 
 
 # --- Traduction ---------------------------------------------------------------------------------
@@ -277,7 +296,7 @@ def _translate_chunk(block: str, lang: str, translate: Translator, cache: dict[s
     key = hashlib.sha256(f"{lang}\0{block}".encode()).hexdigest()
     if key in cache:
         return cache[key]
-    for _attempt in range(2):
+    for _attempt in range(3):
         try:
             candidate = translate(block, lang)
         except Exception as exc:
@@ -308,14 +327,15 @@ def translate_text(source: str, lang: str, translate: Translator, cache: dict[st
 
 
 def finalize(doc: str, lang: str, text: str) -> str:
-    """Adapte les liens d'un document généré : chemins relatifs (README) et documents associés dans la même langue."""
-    if doc == "README":
-        text = rebase_links(text, "../../")
+    """Adapte les liens d'un document généré (placé dans docs/i18n/) : chemins relatifs et documents de la même langue."""
+    here = doc_path(doc, lang).parent
+    if here != ROOT:
+        text = rebase_links(text, _relative(ROOT, here) + "/")
     for other in ("CHANGELOG", "ROADMAP"):
-        target = doc_path(other, lang if lang in DOC_LANGS else "en").name
-        text = text.replace(f"{other}.fr.md", target)
+        target = doc_path(other, lang if lang in DOC_LANGS else "en")
+        text = text.replace(f"{_relative(ROOT, here)}/{other}.fr.md", _relative(target, here))
     if doc != "README":
-        text = text.replace("README.fr.md", os.path.relpath(readme_path(lang), ROOT).replace("\\", "/"))
+        text = text.replace(f"{_relative(ROOT, here)}/README.fr.md", _relative(readme_path(lang), here))
     return text
 
 

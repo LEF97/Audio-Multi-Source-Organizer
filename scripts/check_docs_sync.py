@@ -3,9 +3,9 @@
 Langues prises en charge :
 - Français (fr) : README.fr.md, CHANGELOG.fr.md, ROADMAP.fr.md
 - Anglais (en / base) : README.md, CHANGELOG.md, ROADMAP.md
-- Espagnol (es) : docs/i18n/README.es.md, CHANGELOG.es.md, ROADMAP.es.md
-- Allemand (de) : docs/i18n/README.de.md, CHANGELOG.de.md, ROADMAP.de.md
-- Italien (it) : docs/i18n/README.it.md, CHANGELOG.it.md, ROADMAP.it.md
+- Espagnol (es) : docs/i18n/README.es.md, docs/i18n/CHANGELOG.es.md, docs/i18n/ROADMAP.es.md
+- Allemand (de) : docs/i18n/README.de.md, docs/i18n/CHANGELOG.de.md, docs/i18n/ROADMAP.de.md
+- Italien (it) : docs/i18n/README.it.md, docs/i18n/CHANGELOG.it.md, docs/i18n/ROADMAP.it.md
 - README des autres langues de l'application : docs/i18n/README.<code>.md (générés par scripts/translate_docs.py)
 
 Usage:
@@ -40,16 +40,16 @@ DOC_PATTERNS = {
     "CHANGELOG": {
         "fr": "CHANGELOG.fr.md",
         "en": "CHANGELOG.md",
-        "es": "CHANGELOG.es.md",
-        "de": "CHANGELOG.de.md",
-        "it": "CHANGELOG.it.md",
+        "es": "docs/i18n/CHANGELOG.es.md",
+        "de": "docs/i18n/CHANGELOG.de.md",
+        "it": "docs/i18n/CHANGELOG.it.md",
     },
     "ROADMAP": {
         "fr": "ROADMAP.fr.md",
         "en": "ROADMAP.md",
-        "es": "ROADMAP.es.md",
-        "de": "ROADMAP.de.md",
-        "it": "ROADMAP.it.md",
+        "es": "docs/i18n/ROADMAP.es.md",
+        "de": "docs/i18n/ROADMAP.de.md",
+        "it": "docs/i18n/ROADMAP.it.md",
     },
 }
 
@@ -58,9 +58,7 @@ EXPECTED_ROADMAP_MILESTONES = [
     "0.2.0",
     "0.3.0",
     "0.4.0",
-    "0.5.0",
-    "0.6.0",
-    "1.0.0",
+    "x.0.0",  # jalon regroupant les évolutions à venir (connecteurs, artistes, égaliseur, dédoublonnage…)
 ]
 
 
@@ -170,8 +168,8 @@ def check_docs(project_root: Path | None = None, release: bool = False) -> list[
 
         # Vérification des screenshots v0.3.0
         expected_screenshots = [
-            "screenshots/2026-10-18%20v0.3.0%2002.png",
-            "screenshots/2026-10-18%20v0.3.0.png",
+            "screenshots/2026-10-25%20v0.4.0%2002.png",
+            "screenshots/2026-10-25%20v0.4.0.png",
             "screenshots/2026-10-18%20v0.3.0%20blind%20test.png",
         ]
         for shot in expected_screenshots:

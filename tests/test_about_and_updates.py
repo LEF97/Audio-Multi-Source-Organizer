@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import urllib.error
 from pathlib import Path
 
@@ -63,7 +64,7 @@ def test_funding_yaml_exists_and_valid():
 
 def test_constants_and_version():
     """Vérifie la définition cohérente des versions et des URLs de distribution/don."""
-    assert __version__ == "0.4.0-dev"
+    assert re.fullmatch(r"\d+\.\d+\.\d+(-dev)?", __version__)  # la valeur exacte est contrôlée par test_basic
     assert "github.com/LEF97" in URL_GITHUB_REPO
     assert "itch.io" in URL_ITCH_IO
     assert "ko-fi.com" in URL_KO_FI

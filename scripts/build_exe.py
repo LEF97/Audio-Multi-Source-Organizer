@@ -158,10 +158,11 @@ def package_release(onefile: bool = True) -> int:
         else:
             print(f"  [ATTENTION] Dossier {app_dir} introuvable.")
 
-    # 2. Copie des fichiers markdown (.md)
-    for md_file in project_root.glob("*.md"):
-        print(f"  -> Ajout documentation : {md_file.name}")
-        shutil.copy2(md_file, release_dir / md_file.name)
+    # 2. Copie de la documentation utilisateur (README, CHANGELOG, ROADMAP en fr et en ; pas les fichiers de développement)
+    for pattern in ("README*.md", "CHANGELOG*.md", "ROADMAP*.md"):
+        for md_file in sorted(project_root.glob(pattern)):
+            print(f"  -> Ajout documentation : {md_file.name}")
+            shutil.copy2(md_file, release_dir / md_file.name)
 
     # 3. Copie de la licence
     license_file = project_root / "LICENSE"

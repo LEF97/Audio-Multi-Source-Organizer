@@ -1,7 +1,7 @@
 # Project Roadmap — AMSO
 
 <p align="right">
-  <a href="ROADMAP.fr.md">Français</a> • <b>English</b> • <a href="ROADMAP.es.md">Español</a> • <a href="ROADMAP.de.md">Deutsch</a> • <a href="ROADMAP.it.md">Italiano</a>
+  <a href="ROADMAP.fr.md">Français</a> • <b>English</b> • <a href="docs/i18n/ROADMAP.es.md">Español</a> • <a href="docs/i18n/ROADMAP.de.md">Deutsch</a> • <a href="docs/i18n/ROADMAP.it.md">Italiano</a>
 </p>
 
 ---
@@ -38,7 +38,7 @@ AMSO aims to become the definitive **universal and decentralized music hub**: a 
 
 ---
 
-### 🟢 Version 0.3.0 — Full Playlist Support, Audio Fade-in & Robustness *(Current)*
+### 🟢 Version 0.3.0 — Full Playlist Support, Audio Fade-in & Robustness
 - [x] **Full Playlist Files Support:** Automatic indexing of `.m3u`, `.m3u8`, `.pls`, `.xspf`, and `.wpl` formats in folder tree with dedicated `🎶` icons.
 - [x] **Sequential Playback Order & Missing Track Alerts:** Preservation of natural playlist track order (`#` column) and clear visual alert (`⚠️`) without playback interruption.
 - [x] **Acoustic Audio Fade-in:** Smooth 1-second volume progression from 0% on playback start or track resumption.
@@ -47,39 +47,38 @@ AMSO aims to become the definitive **universal and decentralized music hub**: a 
 
 ---
 
-### 🟡 Version 0.4.0 — Advanced Audio Experience, Artists & Multiplatform Packaging
-- [ ] **Automated Cross-Platform Deployment (Linux & macOS):** Native compilation and automated packaging via GitHub Actions for Linux (`.AppImage` / `.tar.gz`) and macOS Apple Silicon ARM & Intel (`.dmg`), alongside Windows executables.
-- [ ] **Windows Taskbar & Shell Integration:** Native pinning directly from active taskbar icon (`AppUserModelID` enforcement) and persistent shortcut grouping across updates.
-- [ ] **Artist Hub & Full Discography View:** Dedicated artist browser showcasing albums, singles, and full discographies.
-- [ ] **Graphical Equalizer (EQ):** Curated sound presets (Rock, Pop, Jazz, Bass Boost) and multi-band parametric equalizer.
-- [ ] **In-App Metadata Editor:** Direct ID3 / Vorbis tag editing on single or batch-selected tracks.
-- [ ] **Automated Cover Art Fetcher:** Online artwork search (MusicBrainz / Cover Art Archive) for missing album covers.
-- [ ] **Advanced Search Filters:** Combined filtering by genre, release year, bitrate, and lossless audio formats.
-- [ ] **Configurable Crossfade:** Smooth, customizable crossfade transitions between songs.
+### 🟢 Version 0.4.0 — Advanced Audio Experience & CUE Sheets *(Current)*
+- [x] **Modular architecture refactoring & Quality Gate:** Application split into cohesive modules (< 500 lines), MainWindow modularized into dedicated mixins (amso/ui/pages/), audio service broken down into independent subsystems (player_transport, player_queue, player_transitions) and an automated validation harness put in place (scripts/verify.py & .bat: ruff, mypy, pytest, size checks).
+- [x] **Windows Shell & taskbar integration:** Native pinning directly from the active icon (explicit AppUserModelID LEF97.AMSO.AudioPlayer) from the main.py entry point, and shortcut persistence across updates.
+- [x] **Perfect Gapless 0 listening between two tracks:** 2 engines are now available, one based on VLC_direct, the other working in buffer mode (preferred). These modes allow smooth listening on albums with linked tracks (Alan Parsons, Pink Floyd, Mike Oldfield, etc.).
+- [x] **CUE sheet (`.cue`) support:** A `.cue` file is displayed as a folder of virtual tracks (💿) with their duration and plays like real tracks (continuous buffer engine).
 
 ---
 
-### 🔵 Version 0.5.0 — Google Drive Cloud Connector
-- [ ] **Secure OAuth 2.0 Browser Authentication:** Seamless browser sign-in without storing raw secrets.
-- [ ] **Remote Google Drive Indexing:** Recursive scanning and indexing of audio tracks stored in selected Drive folders.
-- [ ] **Direct Cloud Streaming:** Play remote audio files with background local caching.
-- [ ] **Selective Bidirectional Sync:** Download remote cloud tracks or upload local files to Drive.
+### 🔵 Version 0.4.1 — Linux & macOS Packaging
+- [ ] **Automated cross-platform deployment (Linux & macOS):** Native compilation and automated packaging via GitHub Actions for Linux (.AppImage / .tar.gz) and macOS Apple Silicon ARM & Intel (.dmg), in addition to the Windows executable.
 
 ---
 
-### 🟣 Version 0.6.0 — Streaming Integrations (Spotify, Deezer & Amazon Music)
-- [ ] **Spotify Connector (Web API):** Connect user accounts to import playlists and saved library tracks.
-- [ ] **Amazon Music Connector:** Remote music library scanning, streaming, and synchronization (OAuth 2.0).
-- [ ] **Smart Hybrid Matching:** Match streaming playlist tracks against existing high-fidelity local files.
-- [ ] **Unified Collection View:** Side-by-side display of local lossless audio and streaming-only tracks.
-
----
-
-### 🌟 Version 1.0.0 — Intelligent Deduplication & Stable Release
-- [ ] **Acoustic Audio Fingerprinting:** Duplicate detection regardless of corrupted metadata or re-encoded bitrates.
-- [ ] **Smart Deduplication Wizard:** Quality comparison engine (automated selection of best bitrate/lossless source) with safe archival.
-- [ ] **Official Cross-Platform Packages:** Signed installers for Windows (`.exe` / portable), macOS (`.dmg` Apple Silicon & Intel), and Linux (`AppImage` / `.deb`).
-- [ ] **Comprehensive User Documentation:** Illustrated step-by-step user guide and official GitHub Pages showcase website.
+### 🌟 Version x.0.0 — Smart Deduplication & Stable Release
+- [ ] **Acoustic fingerprint detection (Audio Fingerprinting):** Identification of duplicates even with wrong tags or re-encoded files.
+- [ ] **Duplicate resolution assistant:** Smart quality comparison (automatic selection of the best bitrate / lossless) with safe archiving.
+- [ ] **Official cross-platform packaging:** Signed executables for Windows (`.exe` / portable), macOS (`.dmg` Apple Silicon & Intel) and Linux (`AppImage` / `.deb`).
+- [ ] **Complete user documentation:** Illustrated step-by-step guide and GitHub Pages showcase site.
+- [ ] **Spotify connector (Web API):** User account connection and retrieval of playlists and favorites.
+- [ ] **Amazon Music connector:** Scan, streaming and synchronization of remote music collections (OAuth 2.0).
+- [ ] **Smart hybrid matching:** Matching between the tracks of a remote playlist and the files already present locally (high fidelity).
+- [ ] **Unified view:** Side-by-side display of the tracks available locally and those available only through streaming.
+- [ ] **Secure OAuth 2.0 authentication:** Simplified connection through the browser without storing secrets in clear text.
+- [ ] **Remote scan of Google Drive folders:** Indexing of the audio files present in the configured folders.
+- [ ] **Direct cloud streaming playback:** Listening to remote tracks with transparent local caching.
+- [ ] **Selective two-way synchronization:** Local download of tracks from the cloud or backup of local tracks to Drive.
+- [ ] **Artist management and associated discography:** Dedicated view per artist with albums, singles and complete discography.
+- [ ] **Graphical equalizer (EQ):** Presets (Rock, Pop, Jazz, Bass Boost) and multi-band parametric equalizer.
+- [ ] **In-app metadata editor:** Direct editing of ID3 / Vorbis tags on one or several selected files.
+- [ ] **Automatic cover art download:** Online search (MusicBrainz / Cover Art Archive) for missing covers.
+- [ ] **Advanced search filters:** Combined filtering by genre, year, bitrate and lossless format.
+- [x] **Configurable crossfade & advanced audio sequencing:** Support for gapless transitions (Gapless 0 ms), high-precision crossfade (Equal-Power Crossfade) and the standard no-gap mode.
 
 ---
 

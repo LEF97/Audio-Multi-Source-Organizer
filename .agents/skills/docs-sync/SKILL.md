@@ -5,7 +5,7 @@ description: Mise à jour de la documentation multilingue AMSO (README, CHANGELO
 
 # Synchronisation de la documentation multilingue
 
-Fichiers : `README.fr.md` et `README.md` (racine), `docs/i18n/README.<code>.md` (41 langues, dont es/de/it), `CHANGELOG.*.md`, `ROADMAP.*.md` (fr, en, es, de, it) (+ `RELEASE_PROCESS.fr.md`, français seul).
+Fichiers : `README.fr.md` et `README.md` (racine), `docs/i18n/README.<code>.md` (41 langues, dont es/de/it), `CHANGELOG.fr.md`, `CHANGELOG.md`, `ROADMAP.fr.md`, `ROADMAP.md` (racine) et `docs/i18n/CHANGELOG.{es,de,it}.md`, `docs/i18n/ROADMAP.{es,de,it}.md` (+ `RELEASE_PROCESS.fr.md`, français seul).
 
 ## Qui traduit quoi (règle stricte)
 - `fr` : source de vérité, rédigée au fil de l'eau.

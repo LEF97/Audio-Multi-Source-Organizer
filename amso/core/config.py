@@ -12,12 +12,18 @@ import contextlib
 import logging
 import os
 import shutil
+import threading
+import time
 from pathlib import Path
 from typing import overload
 
 from amso.core.database import get_default_data_dir
 
 logger = logging.getLogger(__name__)
+
+# Une seule écriture de config.ini à la fois (timers, threads et plusieurs ConfigManager partagent le même fichier)
+_SAVE_LOCK = threading.Lock()
+_REPLACE_ATTEMPTS = 8  # Windows peut refuser un instant le remplacement (antivirus, indexation) : on réessaie
 
 # Nom du fichier de configuration par défaut
 CONFIG_FILENAME = "config.ini"
@@ -101,16 +107,24 @@ class ConfigManager:
         """
         self.config_path.parent.mkdir(parents=True, exist_ok=True)
         tmp_path = self.config_path.with_name(self.config_path.name + ".tmp")
-        try:
-            with open(tmp_path, "w", encoding="utf-8") as f:
-                self._config.write(f)
-                f.flush()
-                os.fsync(f.fileno())
-            os.replace(tmp_path, self.config_path)
-        except BaseException:
-            with contextlib.suppress(OSError):
-                tmp_path.unlink()
-            raise
+        with _SAVE_LOCK:
+            try:
+                with open(tmp_path, "w", encoding="utf-8") as f:
+                    self._config.write(f)
+                    f.flush()
+                    os.fsync(f.fileno())
+                for attempt in range(_REPLACE_ATTEMPTS):
+                    try:
+                        os.replace(tmp_path, self.config_path)
+                        break
+                    except PermissionError:
+                        if attempt == _REPLACE_ATTEMPTS - 1:
+                            raise
+                        time.sleep(0.05 * (attempt + 1))
+            except BaseException:
+                with contextlib.suppress(OSError):
+                    tmp_path.unlink()
+                raise
 
     @overload
     def get(self, section: str, key: str) -> str | None: ...
