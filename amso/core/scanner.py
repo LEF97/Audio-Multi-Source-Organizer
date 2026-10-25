@@ -34,9 +34,18 @@ class ScanSummary:
     unchanged: int = 0
     deleted: int = 0
     analyzed: int = 0  # Nombre de pistes dont les métadonnées audio ont été extraites
+    playlists_added: int = 0  # Playlists et feuilles CUE découvertes
+    playlists_updated: int = 0  # Playlists et feuilles CUE modifiées depuis le dernier scan
+    playlists_deleted: int = 0  # Playlists et feuilles CUE disparues du disque
+    playlist_names: list[str] = field(default_factory=list)  # « nom (N pistes) » des playlists ajoutées ou modifiées
     errors: list[str] = field(default_factory=list)
     elapsed_seconds: float = 0.0
     cancelled: bool = False
+
+    @property
+    def playlists_changed(self) -> bool:
+        """Vrai si des playlists ou feuilles CUE ont été ajoutées, modifiées ou supprimées."""
+        return bool(self.playlists_added or self.playlists_updated or self.playlists_deleted)
 
 
 # Callbacks de progression
@@ -265,12 +274,17 @@ class LocalScanner:
                     entries=parsed_entries,
                     source_type=src_type_str,
                 )
+                if existing_pl:
+                    summary.playlists_updated += 1
+                else:
+                    summary.playlists_added += 1
+                summary.playlist_names.append(f"{pl_name} ({len(parsed_entries)} pistes)")
             except Exception as e:
                 summary.errors.append(f"Erreur d'analyse de la playlist {pl_name} : {e}")
 
         # Nettoyage des playlists qui n'existent plus sur le disque et liaison automatique avec tracks
         if not summary.cancelled and source.id is not None:
-            self.db.delete_playlists_not_in(source.id, current_playlist_paths)
+            summary.playlists_deleted = self.db.delete_playlists_not_in(source.id, current_playlist_paths)
             self.db.link_playlist_entries_to_tracks(source.id)
 
         summary.elapsed_seconds = round(time.perf_counter() - start_time, 2)
@@ -410,6 +424,10 @@ class LocalScanner:
             updated=inv_summary.updated,
             unchanged=inv_summary.unchanged,
             deleted=inv_summary.deleted,
+            playlists_added=inv_summary.playlists_added,
+            playlists_updated=inv_summary.playlists_updated,
+            playlists_deleted=inv_summary.playlists_deleted,
+            playlist_names=inv_summary.playlist_names,
             analyzed=ext_summary.analyzed,
             errors=inv_summary.errors + ext_summary.errors,
             elapsed_seconds=round(time.perf_counter() - total_start, 2),

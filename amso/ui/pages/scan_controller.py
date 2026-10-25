@@ -192,7 +192,7 @@ class ScanControllerMixin(_MixinBase):
 
     def _on_phase1_scan_finished(self, summary: ScanSummary) -> None:
         """Appelé dès que l'étape 1 (inventaire rapide des fichiers) est achevée."""
-        has_structural_changes = summary.added > 0 or summary.deleted > 0
+        has_structural_changes = summary.added > 0 or summary.deleted > 0 or summary.playlists_changed
         has_any_changes = has_structural_changes or summary.updated > 0
 
         if has_any_changes:
@@ -224,7 +224,7 @@ class ScanControllerMixin(_MixinBase):
         self.progress_bar.setVisible(False)
         self.btn_cancel_scan.setVisible(False)
 
-        has_structural_changes = summary.added > 0 or summary.deleted > 0
+        has_structural_changes = summary.added > 0 or summary.deleted > 0 or summary.playlists_changed
         has_any_changes = has_structural_changes or summary.updated > 0
 
         # Marquer les vues pour un rafraîchissement à la demande uniquement si des changements existent
@@ -332,6 +332,14 @@ class ScanControllerMixin(_MixinBase):
                 f"Morceaux inchangés : {summary.unchanged}",
                 f"Morceaux supprimés : {summary.deleted}",
             ]
+            if summary.playlists_changed:
+                detail_lines.append(
+                    f"Playlists / feuilles CUE : {summary.playlists_added} ajoutée(s), "
+                    f"{summary.playlists_updated} mise(s) à jour, {summary.playlists_deleted} supprimée(s)"
+                )
+                detail_lines.extend(f"  + {name}" for name in summary.playlist_names[:10])
+                if len(summary.playlist_names) > 10:
+                    detail_lines.append(f"  … et {len(summary.playlist_names) - 10} autre(s)")
             if summary.errors:
                 detail_lines.append(f"Erreurs ({len(summary.errors)}) :")
                 detail_lines.extend(summary.errors[:10])

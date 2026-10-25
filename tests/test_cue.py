@@ -203,3 +203,31 @@ def test_cue_track_is_refused_by_the_vlc_direct_engine(
     player.load_playlist([track])
     player.play_index(0)
     assert errors and "CUE" in errors[0]
+
+
+def test_scan_summary_reports_added_updated_and_deleted_playlists(tmp_path: Path) -> None:
+    """Les playlists et feuilles CUE découvertes doivent apparaître dans le bilan du scan (journal, rafraîchissement)."""
+    music = tmp_path / "Music"
+    music.mkdir()
+    (music / "album.mp3").write_text("fake")
+    cue = music / "album.cue"
+    cue.write_text(CUE_TEXT, encoding="utf-8")
+    db = DatabaseManager(str(tmp_path / "cue3.db"))
+    src = db.add_source(SourceType.LOCAL, "Musique", str(music))
+    scanner = LocalScanner(db=db)
+
+    first, _ = scanner.scan_inventory(source=src)
+    assert (first.playlists_added, first.playlists_updated, first.playlists_deleted) == (1, 0, 0)
+    assert first.playlists_changed and first.playlist_names == ["album.cue (3 pistes)"]
+    assert first.added == 1  # le fichier audio ; le .cue n'est pas compté comme morceau
+
+    unchanged, _ = scanner.scan_inventory(source=src)
+    assert not unchanged.playlists_changed and unchanged.playlist_names == []
+
+    cue.write_text(CUE_TEXT + "\n", encoding="utf-8")
+    modified, _ = scanner.scan_inventory(source=src)
+    assert (modified.playlists_added, modified.playlists_updated) == (0, 1)
+
+    cue.unlink()
+    removed, _ = scanner.scan_inventory(source=src)
+    assert removed.playlists_deleted == 1 and removed.playlists_changed
