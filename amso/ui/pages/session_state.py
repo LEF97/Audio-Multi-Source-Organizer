@@ -173,7 +173,7 @@ class SessionStateMixin(_MixinBase):
                 "position_ms": 0,
                 "track_ids": [],
             }
-        elif all(t.id is not None for t in playlist):
+        elif all(t.id is not None for t in playlist) and not any(t.is_cue_segment for t in playlist):
             data = {
                 "version": 2,
                 "current_index": curr_idx,
@@ -247,7 +247,7 @@ class SessionStateMixin(_MixinBase):
 
                 for t_dict in raw_tracks:
                     tid = t_dict.get("id")
-                    if tid is not None and tid in db_tracks:
+                    if tid is not None and tid in db_tracks and t_dict.get("cue_start_ms") is None:
                         restored_tracks.append(db_tracks[tid])
                     else:
                         restored_tracks.append(TrackRecord.from_dict(t_dict))

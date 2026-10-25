@@ -355,8 +355,11 @@ class FoldersPageMixin(_MixinBase):
             pl_id = data.get("playlist_id")
             pl_name = data.get("file_name", "Playlist")
             pl_path = data.get("file_path", "")
-            self.lbl_folder_breadcrumb.setText(f"🎶  {pl_name}")
-            self.lbl_folder_breadcrumb.setToolTip(f"Playlist {str(data.get('format', '')).upper()}\n{pl_path}")
+            pl_format = str(data.get("format", ""))
+            is_cue = pl_format.lower() == "cue"
+            kind = "Feuille CUE" if is_cue else f"Playlist {pl_format.upper()}"
+            self.lbl_folder_breadcrumb.setText(f"{'💿' if is_cue else '🎶'}  {pl_name}")
+            self.lbl_folder_breadcrumb.setToolTip(f"{kind}\n{pl_path}")
             self.cb_recursive.setVisible(False)
             self.folder_search_edit.setVisible(True)
             self.right_stack.setCurrentIndex(1)

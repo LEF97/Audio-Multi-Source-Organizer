@@ -17,6 +17,25 @@ from amso.core.db.models import (
 logger = logging.getLogger(__name__)
 
 
+def _apply_cue_segment(rec: TrackRecord, row: Any) -> None:
+    """Transforme `rec` en piste virtuelle CUE (début/fin, titre, artiste, durée de la portion) si l'entrée en est une."""
+    start = row["pe_start_ms"]
+    if start is None:
+        return
+    start_ms = int(start)
+    end_ms = int(row["pe_end_ms"]) if row["pe_end_ms"] is not None else None
+    file_ms = int((rec.duration_seconds or 0) * 1000)  # durée du fichier entier (piste indexée)
+    if end_ms is None and file_ms > start_ms:
+        end_ms = file_ms  # dernière piste : jusqu'à la fin du fichier
+    if row["pe_title"]:
+        rec.title = row["pe_title"]
+    if row["pe_artist"]:
+        rec.artist = row["pe_artist"]
+    rec.cue_start_ms = start_ms
+    rec.cue_end_ms = end_ms
+    rec.duration_seconds = (end_ms - start_ms) / 1000.0 if end_ms is not None else None
+
+
 class PlaylistsRepoMixin:
     """Playlists et liaison des entrées aux pistes."""
 
@@ -88,6 +107,8 @@ class PlaylistsRepoMixin:
                 artist = getattr(e, "artist", None)
                 dur = getattr(e, "duration_seconds", None)
                 is_missing = 1 if getattr(e, "is_missing", False) else 0
+                start_ms = getattr(e, "start_ms", None)
+                end_ms = getattr(e, "end_ms", None)
 
                 # Recherche automatique du track_id correspondant dans la base tracks
                 t_row = conn.execute(
@@ -96,15 +117,17 @@ class PlaylistsRepoMixin:
                 ).fetchone()
                 t_id = t_row["id"] if t_row else None
 
-                entries_to_insert.append((playlist_id, pos, raw_p, resolved_p, t_id, title, artist, dur, is_missing))
+                entries_to_insert.append(
+                    (playlist_id, pos, raw_p, resolved_p, t_id, title, artist, dur, is_missing, start_ms, end_ms)
+                )
 
             if entries_to_insert:
                 conn.executemany(
                     """
                     INSERT INTO playlist_entries (
                         playlist_id, position, raw_path, resolved_path,
-                        track_id, title, artist, duration_seconds, is_missing
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+                        track_id, title, artist, duration_seconds, is_missing, start_ms, end_ms
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
                     """,
                     entries_to_insert,
                 )
@@ -171,6 +194,8 @@ class PlaylistsRepoMixin:
                     pe.artist as pe_artist,
                     pe.duration_seconds as pe_duration,
                     pe.is_missing as pe_is_missing,
+                    pe.start_ms as pe_start_ms,
+                    pe.end_ms as pe_end_ms,
                     t.*
                 FROM playlist_entries pe
                 LEFT JOIN tracks t ON pe.track_id = t.id
@@ -192,6 +217,7 @@ class PlaylistsRepoMixin:
                     rec = TrackRecord.from_row(r)
                     rec.track_number = pos
                     rec.is_missing = is_missing
+                    _apply_cue_segment(rec, r)
                     tracks.append(rec)
                 else:
                     # Morceau non indexé dans tracks ou fichier manquant/externe
@@ -209,6 +235,7 @@ class PlaylistsRepoMixin:
                         format=fmt,
                         is_missing=is_missing,
                     )
+                    _apply_cue_segment(rec, r)
                     tracks.append(rec)
             return tracks
 

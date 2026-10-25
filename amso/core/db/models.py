@@ -191,6 +191,11 @@ class TrackRecord:
     # Statut fichier manquant (ex: référencé dans une playlist mais absent du disque)
     is_missing: bool = False
 
+    # Piste virtuelle d'une feuille CUE : portion [cue_start_ms, cue_end_ms[ du fichier source_path
+    # (non stockée dans la table tracks ; cue_end_ms None = jusqu'à la fin du fichier)
+    cue_start_ms: int | None = None
+    cue_end_ms: int | None = None
+
     def __post_init__(self) -> None:
         if self.source_path:
             clean_path = str(self.source_path).replace("\\", "/")
@@ -205,6 +210,11 @@ class TrackRecord:
 
         if self.quality_score == 0 and (self.format or self.bitrate):
             self.quality_score = compute_quality_score(self.format, self.bitrate, self.sample_rate)
+
+    @property
+    def is_cue_segment(self) -> bool:
+        """Vrai si la piste est une portion d'un fichier audio décrite par une feuille CUE."""
+        return self.cue_start_ms is not None
 
     @classmethod
     def from_row(cls, row: sqlite3.Row) -> TrackRecord:
@@ -285,6 +295,8 @@ class TrackRecord:
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "is_missing": self.is_missing,
+            "cue_start_ms": self.cue_start_ms,
+            "cue_end_ms": self.cue_end_ms,
         }
 
     @classmethod
@@ -328,6 +340,8 @@ class TrackRecord:
             created_at=data.get("created_at"),
             updated_at=data.get("updated_at"),
             is_missing=bool(data.get("is_missing", False)),
+            cue_start_ms=data.get("cue_start_ms"),
+            cue_end_ms=data.get("cue_end_ms"),
         )
 
 
@@ -391,6 +405,8 @@ class PlaylistEntryRecord:
     artist: str | None = None
     duration_seconds: float | None = None
     is_missing: bool = False
+    start_ms: int | None = None  # CUE : début de la piste dans le fichier audio
+    end_ms: int | None = None  # CUE : fin de la piste (None = fin du fichier)
 
     @classmethod
     def from_row(cls, row: sqlite3.Row) -> PlaylistEntryRecord:
@@ -408,4 +424,6 @@ class PlaylistEntryRecord:
             if "duration_seconds" in keys and row["duration_seconds"] is not None
             else None,
             is_missing=bool(row["is_missing"]) if "is_missing" in keys and row["is_missing"] is not None else False,
+            start_ms=int(row["start_ms"]) if "start_ms" in keys and row["start_ms"] is not None else None,
+            end_ms=int(row["end_ms"]) if "end_ms" in keys and row["end_ms"] is not None else None,
         )

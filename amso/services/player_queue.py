@@ -93,6 +93,7 @@ class PlayerQueueMixin(_MixinBase):
                 t.source_path
                 and track.source_path
                 and os.path.normcase(t.source_path) == os.path.normcase(track.source_path)
+                and t.cue_start_ms == track.cue_start_ms
             ):
                 self._current_index = -1
                 self.play_index(idx)

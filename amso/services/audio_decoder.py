@@ -133,8 +133,14 @@ class AsyncAudioDecoder(QObject):
         elif self._has_emitted_ready:
             self.chunk_decoded.emit(self._current_path, chunk)
 
-    def start_decode(self, file_path: str, start_offset_ms: int = 0, duration_ms: int = 0) -> None:
-        """Lance le décodage asynchrone du fichier spécifié."""
+    def start_decode(
+        self, file_path: str, start_offset_ms: int = 0, duration_ms: int = 0, stop_offset_ms: int = 0, key: str = ""
+    ) -> None:
+        """Lance le décodage asynchrone du fichier spécifié.
+
+        `stop_offset_ms` (> 0) arrête le décodage à cette position du fichier ; `key` remplace le chemin comme
+        identifiant du flux dans les signaux (pistes CUE : plusieurs portions d'un même fichier).
+        """
         self.stop()
         if not file_path or not Path(file_path).exists():
             self.error_occurred.emit(file_path, f"Fichier introuvable : {file_path}")
@@ -144,7 +150,7 @@ class AsyncAudioDecoder(QObject):
             self.error_occurred.emit(file_path, "Impossible d'initialiser le décodeur audio")
             return
 
-        self._current_path = file_path
+        self._current_path = key or file_path
         self._duration_ms = duration_ms
         self._accumulated_pcm.clear()
         self._has_emitted_ready = False
@@ -158,6 +164,8 @@ class AsyncAudioDecoder(QObject):
             media.add_option(":network-caching=1000")
             if start_offset_ms > 0:
                 media.add_option(f":start-time={start_offset_ms / 1000.0:.2f}")
+            if stop_offset_ms > 0:
+                media.add_option(f":stop-time={stop_offset_ms / 1000.0:.2f}")
 
             self._player.set_media(media)
             self._player.play()

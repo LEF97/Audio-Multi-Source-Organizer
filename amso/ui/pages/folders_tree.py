@@ -163,10 +163,12 @@ class FoldersTreeMixin(_MixinBase):
                 parent_node = tree_items.get(pl_fp.lower(), source_item)
 
                 pl_node = QTreeWidgetItem(parent_node)
-                pl_node.setText(0, f"🎶  {pl.file_name}")
+                is_cue = pl.format.lower() == "cue"
+                pl_node.setText(0, f"{'💿' if is_cue else '🎶'}  {pl.file_name}")
                 pl_node.setText(1, f"{pl.track_count:,}" if pl.track_count > 0 else "")
                 pl_node.setTextAlignment(1, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-                pl_node.setToolTip(0, f"Playlist {pl.format.upper()}\n{pl.file_path}")
+                kind = "Feuille CUE" if is_cue else f"Playlist {pl.format.upper()}"
+                pl_node.setToolTip(0, f"{kind}\n{pl.file_path}")
                 pl_node.setData(
                     0,
                     Qt.ItemDataRole.UserRole,

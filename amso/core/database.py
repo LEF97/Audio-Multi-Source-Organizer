@@ -390,10 +390,18 @@ class DatabaseManager(
                     title TEXT,
                     artist TEXT,
                     duration_seconds REAL,
-                    is_missing INTEGER DEFAULT 0
+                    is_missing INTEGER DEFAULT 0,
+                    start_ms INTEGER,
+                    end_ms INTEGER
                 );
                 """
             )
+            # Migration incrémentale playlist_entries (pistes virtuelles CUE : début/fin dans le fichier audio)
+            cols_pe = {r["name"] for r in conn.execute("PRAGMA table_info(playlist_entries);").fetchall()}
+            if "start_ms" not in cols_pe:
+                conn.execute("ALTER TABLE playlist_entries ADD COLUMN start_ms INTEGER;")
+            if "end_ms" not in cols_pe:
+                conn.execute("ALTER TABLE playlist_entries ADD COLUMN end_ms INTEGER;")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_pl_entries_pl ON playlist_entries(playlist_id, position);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_pl_entries_track ON playlist_entries(track_id);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_pl_entries_resolved ON playlist_entries(resolved_path);")

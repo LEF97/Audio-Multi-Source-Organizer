@@ -8,6 +8,7 @@ import time
 from typing import TYPE_CHECKING, Any
 
 from amso.core.config import get_config_manager
+from amso.services.player_cue import start_track_decode, stream_key
 from amso.services.vlc_binding import vlc
 
 logger = logging.getLogger(__name__)
@@ -70,8 +71,7 @@ class PlayerTransitionsMixin(_MixinBase):
                 self._standby_decoder.chunk_decoded.connect(self._on_standby_decoder_chunk)
             self._standby_pcm.clear()
             self._preloaded_index = index
-            dur_ms = int((track.duration_seconds or 0) * 1000)
-            self._standby_decoder.start_decode(track.source_path, start_offset_ms=0, duration_ms=dur_ms)
+            start_track_decode(self._standby_decoder, track, 0)
             logger.info("Piste suivante pré-décodée dans le tampon continu (index %d) : %s", index, track.title)
             return
 
@@ -145,7 +145,7 @@ class PlayerTransitionsMixin(_MixinBase):
         track = self._playlist[next_idx]
         dur_ms = int((track.duration_seconds or 0) * 1000)
         pcm = bytes(getattr(self, "_standby_pcm", bytearray()))
-        self._engine.append_gapless(pcm, dur_ms, file_path=track.source_path)
+        self._engine.append_gapless(pcm, dur_ms, file_path=stream_key(track))
         self._promote_standby_decoder()
         self._current_index = next_idx
         self._preloaded_index = None
@@ -162,7 +162,7 @@ class PlayerTransitionsMixin(_MixinBase):
         track = self._playlist[next_idx]
         dur_ms = int((track.duration_seconds or 0) * 1000)
         pcm = bytes(getattr(self, "_standby_pcm", bytearray()))
-        fade_end = self._engine.append_with_crossfade(pcm, fade_sec, file_path=track.source_path)
+        fade_end = self._engine.append_with_crossfade(pcm, fade_sec, file_path=stream_key(track))
         self._promote_standby_decoder()
         self._is_buffer_crossfading = True
         self._buffer_crossfade_next_idx = next_idx
@@ -182,7 +182,7 @@ class PlayerTransitionsMixin(_MixinBase):
         fade_ms = getattr(self, "_buffer_crossfade_fade_ms", 0)
 
         # Purge des données jouées dans le moteur et calage précis de la position de départ
-        self._engine.finish_crossfade(track.source_path, dur_ms, fade_ms)
+        self._engine.finish_crossfade(stream_key(track), dur_ms, fade_ms)
 
         self._current_index = next_idx
         self._preloaded_index = None

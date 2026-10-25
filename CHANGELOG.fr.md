@@ -16,6 +16,10 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 ## [0.4.0-dev] - En cours de développement
 
 ### Added
+- **Prise en charge des feuilles CUE (`.cue`) :**
+  - Un fichier `.cue` apparaît dans l'arborescence comme un dossier virtuel (icône 💿) contenant ses pistes avec leur titre, leur artiste et leur durée ; le fichier audio d'origine reste lisible normalement.
+  - Lecture d'une piste CUE en tant que portion du fichier (début `INDEX 01`, fin au début de la piste suivante, dernière piste jusqu'à la fin du fichier) avec position et durée propres à la piste, déplacement dans la piste et enchaînement gapless / crossfade entre portions (moteur à tampon continu uniquement ; le moteur `vlc_direct` affiche un message explicatif).
+  - Tolérance aux feuilles mal formées (ligne `FILE` pointant vers le `.cue` lui-même : repli sur le fichier audio du même nom), plusieurs `FILE` par feuille, encodages UTF-8 / CP1252.
 - **Support étendu de 43 langues internationales :**
   - Intégration de 38 nouvelles langues avec leurs libellés natifs dans le sélecteur de langue (`amso/core/i18n.py`).
   - Traduction automatisée et parité intégrale (401 clés par langue) via l'IA locale Ollama (`mistral:latest`).

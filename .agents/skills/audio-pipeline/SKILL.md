@@ -56,3 +56,12 @@ Quel que soit le moteur audio sélectionné (`vlc_direct` ou `buffer`) :
    - Aucun son ne doit se réveiller spontanément en arrière-plan après navigation.
 
 
+
+---
+
+## Pistes virtuelles CUE (moteur `buffer` uniquement)
+- Une piste CUE est un `TrackRecord` avec `cue_start_ms` / `cue_end_ms` (portion de `source_path`, créé par `get_playlist_tracks`). `duration_seconds` est celle de la portion.
+- Le moteur et l'UI travaillent dans le **temps relatif à la piste** (0 = début de la portion). Seul le décodage ajoute `cue_start_ms` (`:start-time`) et s'arrête à `cue_end_ms` (`:stop-time`) : toujours passer par `amso/services/player_cue.py` (`start_track_decode`, `stream_key`), jamais `decoder.start_decode(track.source_path, …)` directement.
+- Le décodeur et le moteur identifient un flux par `stream_key(track)` (chemin + `#cue<début>`), pas par le chemin seul : deux portions d'un même fichier ne doivent jamais partager le même identifiant (sinon les blocs PCM de la piste suivante sont confondus avec ceux de la piste courante).
+- `vlc_direct` reste figé : une piste CUE y est refusée avec un message (`play_index`), il ne lit jamais le fichier entier à sa place.
+- Un test du décodage réel sur un `.cue` doit vérifier que la durée PCM obtenue égale celle de la portion (44100 Hz × 4 octets/s).

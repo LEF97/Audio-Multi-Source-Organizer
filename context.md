@@ -35,7 +35,8 @@ amso/
 │   ├── db/                   models, sources_repo, tracks_repo, curation_repo, playlists_repo, activity_repo, library_queries, paths
 │   ├── scanner.py            parcours récursif multithread
 │   ├── metadata.py           tags (mutagen), formats, pochettes embarquées
-│   ├── playlist_parser.py    M3U / PLS / XSPF / WPL
+│   ├── playlist_parser.py    M3U / PLS / XSPF / WPL (+ CUE)
+│   ├── cue_parser.py         feuilles CUE : pistes virtuelles (début/fin dans un fichier audio)
 │   ├── cover_art.py          pochettes
 │   ├── scheduler.py          synchronisation automatique planifiée
 │   ├── config.py             préférences persistantes (config.ini)
@@ -48,6 +49,7 @@ amso/
 │   ├── player_transitions.py transitions (standard, gapless, crossfade)
 │   ├── player_vlc_transitions.py transitions matérielles VLC direct
 │   ├── player_volume.py, player_types.py
+│   ├── player_cue.py         lecture des pistes CUE (moteur tampon) : décalage/arrêt de décodage, clé de flux
 │   ├── audio_engine.py       ContinuousAudioEngine (QAudioSink + ring buffer PCM)
 │   ├── audio_decoder.py      décodeur PCM (amem)
 │   ├── audio_spectrum.py     analyse du spectre

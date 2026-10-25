@@ -8,6 +8,7 @@ import time
 from typing import TYPE_CHECKING, Any
 
 from amso.core.config import get_config_manager
+from amso.services.player_cue import start_track_decode
 from amso.services.player_types import RepeatMode
 from amso.services.vlc_binding import vlc
 from amso.services.windows_audio import ensure_windows_audio_session_active
@@ -111,7 +112,7 @@ class PlayerTransportMixin(_MixinBase):
             self._pending_seek_ms = seek_ms
             self._current_time_ms = seek_ms
             if file_path and os.path.exists(file_path):
-                self._decoder.start_decode(file_path, start_offset_ms=seek_ms, duration_ms=dur_ms)
+                start_track_decode(self._decoder, track, seek_ms)
             self.track_changed.emit(track)
             self.state_changed.emit("paused")
             if dur_ms > 0:
@@ -175,6 +176,11 @@ class PlayerTransportMixin(_MixinBase):
                 and self._decoder
                 and self._engine.is_available
             )
+            if track.is_cue_segment and not use_buffer:
+                self.error_occurred.emit(
+                    "Les pistes CUE nécessitent le moteur à tampon continu (Paramètres > Lecteur)."
+                )
+                return
             if use_buffer:
                 if self._media_player:
                     try:
@@ -182,10 +188,9 @@ class PlayerTransportMixin(_MixinBase):
                     except Exception:
                         pass
                 self._engine.stop()
-                dur_ms = int((track.duration_seconds or 0) * 1000)
                 self._pending_seek_ms = seek_ms
                 self._current_time_ms = seek_ms
-                self._decoder.start_decode(file_path, start_offset_ms=seek_ms, duration_ms=dur_ms)
+                start_track_decode(self._decoder, track, seek_ms)
                 self._timer.start()
                 self.track_changed.emit(track)
                 self.state_changed.emit("playing")
@@ -468,11 +473,7 @@ class PlayerTransportMixin(_MixinBase):
                 self._engine.reset_buffer_for_seek(ms)
                 if self.current_track and self.current_track.source_path and self._decoder:
                     self._pending_seek_ms = ms
-                    self._decoder.start_decode(
-                        self.current_track.source_path,
-                        start_offset_ms=ms,
-                        duration_ms=int(dur),
-                    )
+                    start_track_decode(self._decoder, self.current_track, ms)
 
             self.position_changed.emit(ms, int(dur), ratio)
             return
