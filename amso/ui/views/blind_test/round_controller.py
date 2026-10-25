@@ -170,8 +170,8 @@ class BlindTestRoundMixin(_MixinBase):
                 border: 1px solid rgba(148, 163, 184, 0.3);
             """)
 
-    def _restart_current_round(self) -> None:
-        """Remet à zéro la manche courante du Blind Test avec fondu entrant de 2s."""
+    def _restart_current_round(self, auto_play: bool = True) -> None:
+        """Remet à zéro la manche courante du Blind Test avec fondu entrant si auto_play."""
         self._stop_fade_out()
         self._stop_fade_in()
         self._current_round_elapsed = 0
@@ -200,27 +200,45 @@ class BlindTestRoundMixin(_MixinBase):
         self._preload_next_track()
         self._update_session_progress()
 
-        self._session_playing = True
-        if hasattr(self, "effect_canvas") and self.effect_canvas:
-            self.effect_canvas.set_playback_state("playing")
-        self._apply_temporary_volume(0)
-        if not self.player.is_playing:
-            self.player.play()
-        self.player.seek_ratio(0.0)
-        self._start_fade_in(2.0)
-        self.btn_play_pause.setText("⏸")
-        self.lbl_status_badge.setText(tr("blind_test.status_searching"))
-        self.lbl_status_badge.setStyleSheet("""
-            color: #38BDF8;
-            font-size: 12px;
-            font-weight: 600;
-            padding: 3px 12px;
-            border-radius: 10px;
-            background-color: rgba(56, 189, 248, 0.12);
-            border: 1px solid rgba(56, 189, 248, 0.3);
-        """)
-        if self._is_active_page:
-            self._game_timer.start(1000)
+        if auto_play:
+            self._session_playing = True
+            if hasattr(self, "effect_canvas") and self.effect_canvas:
+                self.effect_canvas.set_playback_state("playing")
+            self._apply_temporary_volume(0)
+            if not self.player.is_playing:
+                self.player.play()
+            self.player.seek_ratio(0.0)
+            self._start_fade_in(2.0)
+            self.btn_play_pause.setText("⏸")
+            self.lbl_status_badge.setText(tr("blind_test.status_searching"))
+            self.lbl_status_badge.setStyleSheet("""
+                color: #38BDF8;
+                font-size: 12px;
+                font-weight: 600;
+                padding: 3px 12px;
+                border-radius: 10px;
+                background-color: rgba(56, 189, 248, 0.12);
+                border: 1px solid rgba(56, 189, 248, 0.3);
+            """)
+            if self._is_active_page:
+                self._game_timer.start(1000)
+        else:
+            self._session_playing = False
+            self.player.pause()
+            if hasattr(self, "effect_canvas") and self.effect_canvas:
+                self.effect_canvas.set_playback_state("stopped")
+            self._game_timer.stop()
+            self.btn_play_pause.setText("▶")
+            self.lbl_status_badge.setText(tr("blind_test.status_paused"))
+            self.lbl_status_badge.setStyleSheet("""
+                color: #94A3B8;
+                font-size: 12px;
+                font-weight: 600;
+                padding: 3px 12px;
+                border-radius: 10px;
+                background-color: rgba(148, 163, 184, 0.12);
+                border: 1px solid rgba(148, 163, 184, 0.3);
+            """)
 
     def _on_cover_loaded(self, target_path: str, pix: QPixmap | None) -> None:
         if not pix or pix.isNull():

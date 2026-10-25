@@ -78,7 +78,7 @@ class LogDetailDialog(QDialog):
             f"<b>{tr('logs.col_level')} :</b> <span style='color: {lvl_color}; font-weight: bold;'>{record.level}</span>"
         )
         lbl_time = QLabel(f"<b>{tr('logs.col_time')} :</b> {record.timestamp or '-'}")
-        lbl_src = QLabel(f"<b>{tr('logs.col_source')} :</b> {record.source_name or '-'}")
+        lbl_src = QLabel(f"<b>{tr('table.col_source')} :</b> {record.source_name or '-'}")
 
         stats_str = f"+{record.items_added} ajouts, ~{record.items_updated} modifiés, -{record.items_deleted} supprimés, !{record.items_errors} erreurs"
         lbl_stats = QLabel(f"<b>Statistiques :</b> {stats_str}")
@@ -97,7 +97,7 @@ class LogDetailDialog(QDialog):
         layout.addWidget(self.txt_details, 1)
 
         # Bouton fermer
-        btn_close = QPushButton(tr("dialog.btn_cancel"))
+        btn_close = QPushButton(tr("common.cancel"))
         btn_close.clicked.connect(self.accept)
         btn_layout = QHBoxLayout()
         btn_layout.addStretch()

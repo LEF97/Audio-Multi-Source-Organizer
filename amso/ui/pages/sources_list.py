@@ -74,7 +74,7 @@ class SourcesListMixin(_MixinBase):
         menu.addAction(action_sync)
 
         if source.path_or_uri:
-            action_open = QAction("📂  " + tr("sources.menu_open_explorer"), self)
+            action_open = QAction("📂  " + tr("common.open_explorer"), self)
             action_open.triggered.connect(lambda: self._open_source_in_explorer(source.path_or_uri))
             menu.addAction(action_open)
 

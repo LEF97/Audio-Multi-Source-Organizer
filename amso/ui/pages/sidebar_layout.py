@@ -309,7 +309,7 @@ class SidebarLayoutMixin(_MixinBase):
         self.progress_bar.setVisible(False)
         self.status_bar.addPermanentWidget(self.progress_bar)
 
-        self.btn_cancel_scan = QPushButton(tr("status.cancel"))
+        self.btn_cancel_scan = QPushButton(tr("common.cancel"))
         self.btn_cancel_scan.setStyleSheet("font-size: 11px; padding: 2px 8px;")
         self.btn_cancel_scan.setVisible(False)
         self.btn_cancel_scan.clicked.connect(self._cancel_current_scan)

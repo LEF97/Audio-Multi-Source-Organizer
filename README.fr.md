@@ -51,9 +51,16 @@
 
 ---
 
+## 📌 Langues disponibles
+
+Anglais, Français, Espagnol, Allemand, Italien, Portugais, Japonais, Russe, Polonais, Turc, Néerlandais, Suédois, Indonésien, Bulgare, Serbe, Biélorusse, Grec, Catalan, Basque, Galicien, Tchèque, Slovaque, Hongrois, Croate, Slovène, Bosniaque, Estonien, Letton, Lituanien, Norvégien, Danois, Finnois, Islandais, Malais, Tagalog, Swahili, Espéranto, Chinois simplifié, Chinois traditionnel, Coréen, Arabe, Hébreu, Vietnamien
+
+---
+
 ## 🚀 Démarrage rapide
 
 ### Prérequis
+
 - **Python 3.11** ou supérieur installé
 - Git
 
@@ -120,9 +127,9 @@ Les tests s'exécutent automatiquement sur **Windows, macOS et Ubuntu** à chaqu
 
 AMSO est un logiciel libre et gratuit (open source). Si vous appréciez l'application et souhaitez encourager son développement :
 
-* 🎮 **Téléchargement & Pay What You Want :** [Page Itch.io d'AMSO](https://lef97.itch.io/audio-multi-source-organizer) (exécutable précompilé prêt à l'emploi)
-* ☕ **Faire un don direct :** [Ko-fi (@lef97)](https://ko-fi.com/lef97)
-* ⭐ **GitHub Sponsors :** [Sponsoriser LEF97](https://github.com/sponsors/LEF97)
+- 🎮 **Téléchargement & Pay What You Want :** [Page Itch.io d'AMSO](https://lef97.itch.io/audio-multi-source-organizer) (exécutable précompilé prêt à l'emploi)
+- ☕ **Faire un don direct :** [Ko-fi (@lef97)](https://ko-fi.com/lef97)
+- ⭐ **GitHub Sponsors :** [Sponsoriser LEF97](https://github.com/sponsors/LEF97)
 
 ---
 

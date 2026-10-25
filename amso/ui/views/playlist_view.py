@@ -162,7 +162,7 @@ class PlaylistView(PlaylistUiMixin, TransportViewMixin, QWidget):
 
             menu.addSeparator()
 
-        act_shuffle = QAction(tr("playlist.menu_shuffle_tracks"), self)
+        act_shuffle = QAction(tr("playlist.btn_shuffle_tracks"), self)
         act_shuffle.setEnabled(bool(self.player.is_shuffle) and len(self.player.playlist) > 1)
         act_shuffle.triggered.connect(self._on_shuffle_tracks_clicked)
         menu.addAction(act_shuffle)

@@ -46,7 +46,7 @@ class StatsPageMixin:
 
         top_layout.addStretch()
 
-        self.btn_refresh_stats = QPushButton(tr("stats.btn_refresh"))
+        self.btn_refresh_stats = QPushButton(tr("common.refresh"))
         self.btn_refresh_stats.setProperty("class", "secondary-btn")
         self.btn_refresh_stats.clicked.connect(self._refresh_stats_view)
         top_layout.addWidget(self.btn_refresh_stats)

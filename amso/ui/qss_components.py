@@ -156,7 +156,7 @@ QComboBox QAbstractItemView {
     outline: none;
 }
 
-QSpinBox {
+QSpinBox, QDoubleSpinBox {
     background-color: #20242D;
     color: #F8FAFC;
     border: 1px solid #333846;
@@ -165,18 +165,20 @@ QSpinBox {
     font-size: 13px;
 }
 
-QSpinBox:focus {
+QSpinBox:focus, QDoubleSpinBox:focus {
     border: 1px solid #38BDF8;
     background-color: #262B36;
 }
 
-QSpinBox::up-button, QSpinBox::down-button {
+QSpinBox::up-button, QSpinBox::down-button,
+QDoubleSpinBox::up-button, QDoubleSpinBox::down-button {
     background-color: #282C37;
     border: none;
     width: 18px;
 }
 
-QSpinBox::up-button:hover, QSpinBox::down-button:hover {
+QSpinBox::up-button:hover, QSpinBox::down-button:hover,
+QDoubleSpinBox::up-button:hover, QDoubleSpinBox::down-button:hover {
     background-color: #0284C7;
 }
 

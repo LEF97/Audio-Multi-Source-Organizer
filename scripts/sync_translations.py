@@ -1,11 +1,12 @@
 """Script de synchronisation des fichiers de traduction sur la base de la VF (fr.json).
 
 Usage:
-    python scripts/sync_translations.py [--check-only] [--ollama [MODELE]] [--retranslate-untranslated]
+    python scripts/sync_translations.py [--check-only] [--ollama [MODELE]] [--retranslate-untranslated] [--lang CODE]
 
 Description:
     Prend fr.json comme fichier de référence (source de vérité).
-    Pour chaque autre langue (en, es, it, de, etc.) :
+    Pour chaque langue supportée (en, es, it, de, pt, ja, ru, etc.) :
+    - Crée le fichier de langue s'il n'existe pas encore.
     - Identifie les clés manquantes et les ajoute.
     - Si --retranslate-untranslated est activé (ou via Ollama), identifie les textes restés en français
       et les traduit vers la langue cible par lots JSON rapides via l'IA locale (Ollama).
@@ -38,17 +39,51 @@ def log(msg: str = "") -> None:
     sys.stdout.flush()
 
 
+# Noms des langues en anglais pour les instructions de prompt vers Ollama
 LANG_NAMES: dict[str, str] = {
     "en": "English",
+    "fr": "French",
     "es": "Spanish",
     "de": "German",
     "it": "Italian",
     "pt": "Portuguese",
-    "nl": "Dutch",
-    "pl": "Polish",
-    "ru": "Russian",
     "ja": "Japanese",
-    "zh": "Chinese",
+    "ru": "Russian",
+    "pl": "Polish",
+    "tr": "Turkish",
+    "nl": "Dutch",
+    "sv": "Swedish",
+    "id": "Indonesian",
+    "bg": "Bulgarian",
+    "sr": "Serbian",
+    "be": "Belarusian",
+    "el": "Greek",
+    "ca": "Catalan",
+    "eu": "Basque",
+    "gl": "Galician",
+    "cs": "Czech",
+    "sk": "Slovak",
+    "hu": "Hungarian",
+    "hr": "Croatian",
+    "sl": "Slovenian",
+    "bs": "Bosnian",
+    "et": "Estonian",
+    "lv": "Latvian",
+    "lt": "Lithuanian",
+    "no": "Norwegian",
+    "da": "Danish",
+    "fi": "Finnish",
+    "is": "Icelandic",
+    "ms": "Malay",
+    "tl": "Tagalog",
+    "sw": "Swahili",
+    "eo": "Esperanto",
+    "zh_cn": "Simplified Chinese",
+    "zh_tw": "Traditional Chinese",
+    "ko": "Korean",
+    "ar": "Arabic",
+    "he": "Hebrew",
+    "vi": "Vietnamese",
 }
 
 COMMON_IDENTICAL_TERMS = {
@@ -106,8 +141,6 @@ def is_untranslated(key: str, val: str, ref_val: str, target_lang: str) -> bool:
         return False
     if key.startswith("quality.") and "{" in val:
         return False
-    if key.startswith("lang."):
-        return False
     if key in ("sidebar.nav_blind_test", "dialog.about_btn_sponsors"):
         return False
 
@@ -124,13 +157,13 @@ def translate_batch_with_ollama(
     """Traduit un lot de chaînes en une seule requête vers Ollama en mode JSON structuré."""
     lang_name = LANG_NAMES.get(target_lang, target_lang)
     prompt = (
-        f"You are a professional software localization translator.\n"
+        f"You are a professional software localization translator for audio/music player applications.\n"
         f"Translate the values of the following JSON dictionary from French to {lang_name}.\n"
         "Strict rules:\n"
         "1. Return ONLY a valid JSON dictionary mapping the exact same keys to their translations.\n"
         "2. Keep all placeholders like {title}, {count}, {name}, {path}, {version}, {format}, {time}, {seconds}, {bitrate} EXACTLY intact.\n"
-        "3. Keep any emojis or leading symbols (e.g. 🔄, 🗑️, 💾, ⚡, ✓, •, 👍, 💖, 🌐) exactly at their position.\n"
-        "4. Do not include markdown or explanations.\n\n"
+        "3. Keep any emojis or leading symbols (e.g. 🔄, 🗑️, 💾, ⚡, ✓, •, 👍, 💖, 🌐, 🎵, 📁, 📜, ⚙️, 📊) exactly at their position.\n"
+        "4. Do not include markdown code blocks, prefixes or explanations.\n\n"
         + json.dumps(items, ensure_ascii=False)
     )
     payload = json.dumps(
@@ -142,7 +175,7 @@ def translate_batch_with_ollama(
         headers={"Content-Type": "application/json"},
     )
     try:
-        with urllib.request.urlopen(req, timeout=45) as res:
+        with urllib.request.urlopen(req, timeout=60) as res:
             data = json.loads(res.read().decode("utf-8"))
             resp_text = data.get("response", "").strip()
             parsed = json.loads(resp_text)
@@ -159,6 +192,7 @@ def sync_locales(
     check_only: bool = False,
     ollama_model: str | None = None,
     retranslate_untranslated: bool = False,
+    target_languages: list[str] | None = None,
 ) -> int:
     ref_file = locales_dir / "fr.json"
     if not ref_file.exists():
@@ -167,6 +201,20 @@ def sync_locales(
 
     ref_data = load_json(ref_file)
     ref_keys = list(ref_data.keys())
+
+    # Importer SUPPORTED_LANGUAGES depuis amso.core.i18n si possible
+    try:
+        from amso.core.i18n import SUPPORTED_LANGUAGES
+
+        all_languages = [c for c in SUPPORTED_LANGUAGES.keys() if c != "fr"]
+    except Exception:
+        all_languages = [c for c in LANG_NAMES.keys() if c != "fr"]
+
+    if target_languages:
+        # Filtrer sur les langues demandées
+        selected_langs = [c.strip().lower() for c in target_languages if c.strip().lower() != "fr"]
+    else:
+        selected_langs = all_languages
 
     log("=" * 65)
     log("  AMSO — Synchronisation i18n sur la base de la VF (fr.json)")
@@ -178,6 +226,7 @@ def sync_locales(
         log("  Mode : Classique (Repli standard instantané)")
     log(f"  Répertoire : {locales_dir}")
     log(f"  Nombre de clés dans la référence VF : {len(ref_keys)}")
+    log(f"  Nombre de langues cibles à traiter : {len(selected_langs)}")
     log("=" * 65)
 
     if ollama_model and not check_only:
@@ -190,14 +239,13 @@ def sync_locales(
     en_data = load_json(en_file) if en_file.exists() else {}
 
     has_diff = False
-    target_files = sorted(locales_dir.glob("*.json"))
 
-    for target_path in target_files:
-        if target_path.name == "fr.json":
-            continue
-
-        target_lang = target_path.stem
-        target_data = load_json(target_path)
+    for target_lang in selected_langs:
+        target_path = locales_dir / f"{target_lang}.json"
+        if not target_path.exists():
+            target_data: dict[str, str] = {}
+        else:
+            target_data = load_json(target_path)
 
         missing_keys = [k for k in ref_keys if k not in target_data]
         obsolete_keys = [k for k in target_data if k not in ref_data]
@@ -206,7 +254,7 @@ def sync_locales(
             if k in target_data and is_untranslated(k, target_data[k], ref_data[k], target_lang)
         ]
 
-        log(f"\n[{target_lang}] Analyse de {target_path.name} :")
+        log(f"\n[{target_lang}] Analyse de {target_path.name} ({LANG_NAMES.get(target_lang, target_lang)}) :")
         if not missing_keys and not obsolete_keys and not (retranslate_untranslated and untranslated_keys):
             log(f"  [OK] Parfaitement synchronisé ({len(target_data)} clés).")
             continue
@@ -241,7 +289,7 @@ def sync_locales(
                     chunk_dict = {k: ref_data[k] for k in chunk_keys}
                     batch_num = (b_idx // batch_size) + 1
                     log(
-                        f"    -> Lot {batch_num}/{total_batches} ({len(chunk_keys)} clés en cours via Mistral)..."
+                        f"    -> Lot {batch_num}/{total_batches} ({len(chunk_keys)} clés en cours via {ollama_model})..."
                     )
                     batch_res = translate_batch_with_ollama(chunk_dict, target_lang, ollama_model)
                     translated_results.update(batch_res)
@@ -292,6 +340,12 @@ def main() -> int:
         action="store_true",
         help="Traduire également les clés dont la valeur est restée identique au français",
     )
+    parser.add_argument(
+        "--lang",
+        nargs="+",
+        default=None,
+        help="Code(s) de langue(s) spécifique(s) à traiter (ex: --lang pt ja ru)",
+    )
     args = parser.parse_args()
 
     locales_dir = get_locales_dir()
@@ -300,6 +354,7 @@ def main() -> int:
         check_only=args.check_only,
         ollama_model=args.ollama,
         retranslate_untranslated=args.retranslate_untranslated or (args.ollama is not None),
+        target_languages=args.lang,
     )
 
 

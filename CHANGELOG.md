@@ -16,8 +16,35 @@ and this project adheres to [Semantic Versioning (SemVer)](https://semver.org/).
 ## [0.4.0-dev] - In Development
 
 ### Added
-- Started development cycle for version 0.4.0 (Advanced Audio Experience, Artists Hub & Multiplatform Packaging for Linux/macOS).
-- **Windows Shell & Taskbar Integration:** Enforced early `AppUserModelID` declaration (`LEF97.AMSO.AudioPlayer`) at the absolute first line of `main.py` before any Qt initialization, allowing the running application to be pinned natively to the Windows taskbar.
+- **Expanded support for 43 international languages:**
+  - Added 38 new languages with native display names in the language selector (`amso/core/i18n.py`).
+  - Automated batch translation and complete parity (401 keys per language) powered by local Ollama AI (`mistral:latest`).
+  - One-click global synchronization script: `scripts/sync_all_languages_ollama.bat`.
+- **Visual translation diagnostic mode (`⟦...⟧`):**
+  - Added `--debug-i18n` CLI flag and `run_debug_i18n.bat` launcher wrapping all translated strings in visual brackets `⟦...⟧` to identify dynamic texts and isolate hardcoded strings in the UI.
+- **i18n audit and integrity tool (`scripts/audit_translations.py`):**
+  - Automated parity check across all 43 languages, duplicate labels detection for merging, and orphan keys identification.
+- **Windows Shell & Taskbar integration:** Prioritized `AppUserModelID` (`LEF97.AMSO.AudioPlayer`) declaration in `main.py` before Qt imports for native taskbar pinning on Windows.
+- **Unified Quality Gate harness:** Added `scripts/verify.py` and root `verify.bat` running Ruff formatting, Ruff linter, strict Mypy typing, file size thresholds, and Pytest test suite.
+
+### Changed
+- **Complete modular code split (< 500 lines per file):**
+  - 100% target achieved: **0 files > 500 lines** across the entire AMSO codebase (down from 8 files initially).
+  - Reduced `main_window.py` (~1,500 -> 357 lines) via specialized mixins in `amso/ui/pages/`.
+  - Decomposed `player_service.py` (~1,400 -> 329 lines) into `player_transport.py`, `player_queue.py`, `player_transitions.py`, and `windows_audio.py`.
+  - Split `blind_test_view.py` (864 -> 447 lines) into `round_controller.py` and `compat.py`.
+  - Split `player_view.py` (693 -> 316 lines) into `player_ui_builder.py`.
+  - Split `settings_player.py` (668 -> 345 lines) into `settings_player_effects.py`.
+  - Split `theme.py` (633 -> 20 lines) into `resources.py`, `qss_base.py`, and `qss_components.py`.
+  - Split `models.py` (631 -> 118 lines) into `models_base.py`, `folder_track_model.py`, and `playlist_table_model.py`.
+  - Split `metadata.py` (621 -> 420 lines) into `cover_art.py`.
+  - Split `playlist_view.py` (603 -> 284 lines) into `playlist_ui_builder.py` and `playlist_table_view.py`.
+  - Split `logs_view.py` (512 -> 426 lines) into `log_detail_dialog.py`.
+  - Split `folders_page.py` (~970 -> 406 lines) into `folders_tree.py` and `folders_trash.py`.
+- **Rationalization and duplicate merging:**
+  - Shared widgets extracted (`ClickableSlider`, `EffectContainer`, `EffectsViewMixin`).
+  - Unified common actions under `common.*` (`common.cancel`, `common.close`, `common.refresh`, `common.later`, `common.open_explorer`).
+  - Mandatory Windows CRLF (`\r\n`) line endings enforced across all `.bat` files.
 
 ---
 

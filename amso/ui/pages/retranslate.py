@@ -70,7 +70,7 @@ class RetranslateMixin(_MixinBase):
 
         # Page Morceaux
         self.search_edit.setPlaceholderText(tr("topbar.search_placeholder"))
-        self.btn_cancel_scan.setText(tr("status.cancel"))
+        self.btn_cancel_scan.setText(tr("common.cancel"))
 
         if not (self.scan_worker and self.scan_worker.isRunning()):
             if not getattr(self, "_status_is_alert", False):
@@ -83,7 +83,7 @@ class RetranslateMixin(_MixinBase):
 
         # Page Statistiques
         self.lbl_stats_page_title.setText(tr("stats.page_title"))
-        self.btn_refresh_stats.setText(tr("stats.btn_refresh"))
+        self.btn_refresh_stats.setText(tr("common.refresh"))
         self.lbl_kpi_tracks_title.setText(tr("stats.card_tracks"))
         self.lbl_kpi_size_title.setText(tr("stats.card_size"))
         self.lbl_kpi_duration_title.setText(tr("stats.card_duration"))
@@ -102,7 +102,7 @@ class RetranslateMixin(_MixinBase):
         self.folder_search_edit.setPlaceholderText(tr("folders.search_placeholder"))
         self.lbl_placeholder_title.setText(tr("folders.empty_selection_title"))
         self.lbl_placeholder_desc.setText(tr("folders.empty_selection_desc"))
-        self.folder_tree.setHeaderLabels([tr("folders.tree_col_folder"), tr("folders.tree_col_count")])
+        self.folder_tree.setHeaderLabels([tr("table.col_folder_name"), tr("folders.tree_col_count")])
         self.folder_table_model.notify_language_changed()
         cnt = self.folder_table_model.rowCount()
         count_key = "folders.track_count_singular" if cnt == 1 else "folders.track_count"
@@ -143,7 +143,7 @@ class RetranslateMixin(_MixinBase):
         if hasattr(self, "lbl_settings_about_page_title"):
             self.lbl_settings_about_page_title.setText(tr("settings.about_page_title"))
         if hasattr(self, "lbl_about_app_name"):
-            self.lbl_about_app_name.setText(tr("dialog.about_app_name"))
+            self.lbl_about_app_name.setText(tr("app.name"))
         if hasattr(self, "lbl_about_desc"):
             self.lbl_about_desc.setText(tr("dialog.about_description"))
         if hasattr(self, "btn_check_updates_about"):
@@ -214,6 +214,22 @@ class RetranslateMixin(_MixinBase):
                     tr("settings.crossfade_duration_val", seconds=str(self.slider_crossfade.value()))
                 )
 
+            if hasattr(self, "lbl_card_engine_title"):
+                self.lbl_card_engine_title.setText(tr("settings.player_engine_choice_title"))
+                self.lbl_card_engine_desc.setText(tr("settings.player_engine_choice_desc"))
+                self.radio_engine_buffer.setText(tr("settings.player_engine_buffer_label"))
+                self.lbl_engine_buffer_hint.setText(tr("settings.player_engine_buffer_hint"))
+                self.radio_engine_vlc.setText(tr("settings.player_engine_vlc_label"))
+                self.lbl_engine_vlc_hint.setText(tr("settings.player_engine_vlc_hint"))
+                if hasattr(self, "lbl_vlc_latency"):
+                    self.lbl_vlc_latency.setText(tr("settings.player_engine_vlc_latency_label"))
+                if hasattr(self, "lbl_vlc_latency_hint"):
+                    self.lbl_vlc_latency_hint.setText(tr("settings.player_engine_vlc_latency_hint"))
+                if hasattr(self, "lbl_vlc_latency_val") and hasattr(self, "slider_vlc_latency"):
+                    self.lbl_vlc_latency_val.setText(
+                        tr("settings.player_engine_vlc_latency_val", ms=str(self.slider_vlc_latency.value()))
+                    )
+
             if hasattr(self, "lbl_card_effects_title"):
                 self.lbl_card_effects_title.setText(tr("settings.player_effects_title"))
                 self.lbl_card_effects_desc.setText(tr("settings.player_effects_desc"))
@@ -236,14 +252,13 @@ class RetranslateMixin(_MixinBase):
                 self.radio_eff_none.setText(f"🚫 {tr('effects.none')}")
                 self.lbl_eff_none_hint.setText(tr("effects.none_hint"))
 
-            self.lbl_card_vlc_title.setText(tr("settings.player_engine_title"))
-            self.lbl_card_vlc_desc.setText(tr("settings.player_engine_desc"))
-            is_avail = self.player_service.is_vlc_available
-            status_txt = tr("settings.player_engine_active") if is_avail else tr("settings.player_engine_inactive")
-            status_color = "#34D399" if is_avail else "#EF4444"
-            self.lbl_vlc_status_val.setText(
-                f"• <b>{tr('settings.player_engine_status')}</b> <span style='color: {status_color}; font-weight: 600;'>{status_txt}</span>"
-            )
+            if hasattr(self, "lbl_vlc_status_val"):
+                is_avail = self.player_service.is_vlc_available
+                status_txt = tr("settings.player_engine_active") if is_avail else tr("settings.player_engine_inactive")
+                status_color = "#34D399" if is_avail else "#EF4444"
+                self.lbl_vlc_status_val.setText(
+                    f"• <b>{tr('settings.player_engine_status')}</b> <span style='color: {status_color}; font-weight: 600;'>{status_txt}</span>"
+                )
 
             if hasattr(self, "lbl_card_bt_title"):
                 self.lbl_card_bt_title.setText("🎭  " + tr("blind_test.settings_title"))

@@ -165,6 +165,138 @@ class SettingsPlayerEffectsMixin(_MixinBase):
 
         return card_transitions
 
+    def _build_card_audio_engine(self) -> QFrame:
+        """Carte de sélection de l'architecture du moteur de lecture audio."""
+        cfg = get_config_manager()
+        radio_qss = settings_radio_qss()
+        card_engine = QFrame()
+        card_engine.setProperty("class", "dashboard-card")
+        l_eng = QVBoxLayout(card_engine)
+        l_eng.setContentsMargins(18, 16, 18, 16)
+        l_eng.setSpacing(12)
+
+        self.lbl_card_engine_title = QLabel(tr("settings.player_engine_choice_title"))
+        self.lbl_card_engine_title.setStyleSheet("color: #F8FAFC; font-size: 14px; font-weight: 700;")
+        l_eng.addWidget(self.lbl_card_engine_title)
+
+        self.lbl_card_engine_desc = QLabel(tr("settings.player_engine_choice_desc"))
+        self.lbl_card_engine_desc.setStyleSheet("color: #94A3B8; font-size: 13px;")
+        l_eng.addWidget(self.lbl_card_engine_desc)
+
+        self.engine_group = QButtonGroup(cast("QObject", self))
+
+        # Choix 1 (recommandé) : Tampon continu en mémoire (QAudioSink / WASAPI)
+        box_buffer = QVBoxLayout()
+        box_buffer.setSpacing(3)
+        self.radio_engine_buffer = QRadioButton(tr("settings.player_engine_buffer_label"))
+        self.radio_engine_buffer.setStyleSheet(radio_qss)
+        self.engine_group.addButton(self.radio_engine_buffer)
+        box_buffer.addWidget(self.radio_engine_buffer)
+
+        self.lbl_engine_buffer_hint = QLabel(tr("settings.player_engine_buffer_hint"))
+        self.lbl_engine_buffer_hint.setStyleSheet("color: #64748B; font-size: 12px; margin-left: 26px;")
+        self.lbl_engine_buffer_hint.setWordWrap(True)
+        box_buffer.addWidget(self.lbl_engine_buffer_hint)
+        l_eng.addLayout(box_buffer)
+
+        # Choix 2 : Sortie directe LibVLC (double lecteur)
+        box_vlc = QVBoxLayout()
+        box_vlc.setSpacing(3)
+        self.radio_engine_vlc = QRadioButton(tr("settings.player_engine_vlc_label"))
+        self.radio_engine_vlc.setStyleSheet(radio_qss)
+        self.engine_group.addButton(self.radio_engine_vlc)
+        box_vlc.addWidget(self.radio_engine_vlc)
+
+        self.lbl_engine_vlc_hint = QLabel(tr("settings.player_engine_vlc_hint"))
+        self.lbl_engine_vlc_hint.setStyleSheet("color: #64748B; font-size: 12px; margin-left: 26px;")
+        self.lbl_engine_vlc_hint.setWordWrap(True)
+        box_vlc.addWidget(self.lbl_engine_vlc_hint)
+        box_vlc.addWidget(self._build_vlc_latency_control())
+        l_eng.addLayout(box_vlc)
+
+        # Statut LibVLC
+        is_avail = getattr(self, "player_service", None) and self.player_service.is_vlc_available
+        status_txt = tr("settings.player_engine_active") if is_avail else tr("settings.player_engine_inactive")
+        status_color = "#34D399" if is_avail else "#EF4444"
+        self.lbl_vlc_status_val = QLabel(
+            f"• <b>{tr('settings.player_engine_status')}</b> <span style='color: {status_color}; font-weight: 600;'>{status_txt}</span>"
+        )
+        self.lbl_vlc_status_val.setStyleSheet("font-size: 12.5px; color: #CBD5E1; margin-top: 4px;")
+        l_eng.addWidget(self.lbl_vlc_status_val)
+
+        # État initial
+        cur_eng = cfg.get_audio_engine()
+        is_vlc = cur_eng == "vlc_direct"
+        if is_vlc:
+            self.radio_engine_vlc.setChecked(True)
+        else:
+            self.radio_engine_buffer.setChecked(True)
+        self.vlc_latency_container.setVisible(is_vlc)
+
+        self.radio_engine_buffer.toggled.connect(self._on_audio_engine_changed)
+        self.radio_engine_vlc.toggled.connect(self._on_audio_engine_changed)
+
+        return card_engine
+
+    def _build_vlc_latency_control(self) -> QWidget:
+        """Contrôle de réglage de la latence DirectSound pour LibVLC."""
+        cfg = get_config_manager()
+        self.vlc_latency_container = QWidget()
+        vlc_lat_layout = QVBoxLayout(self.vlc_latency_container)
+        vlc_lat_layout.setContentsMargins(26, 4, 0, 0)
+        vlc_lat_layout.setSpacing(4)
+
+        h_lat = QHBoxLayout()
+        self.lbl_vlc_latency = QLabel(tr("settings.player_engine_vlc_latency_label"))
+        self.lbl_vlc_latency.setStyleSheet("color: #CBD5E1; font-size: 12.5px; font-weight: 500;")
+        h_lat.addWidget(self.lbl_vlc_latency)
+
+        self.slider_vlc_latency = QSlider(Qt.Orientation.Horizontal)
+        self.slider_vlc_latency.setRange(0, 1000)
+        self.slider_vlc_latency.setSingleStep(10)
+        self.slider_vlc_latency.setPageStep(50)
+        self.slider_vlc_latency.setFixedWidth(180)
+        self.slider_vlc_latency.setStyleSheet("""
+            QSlider::groove:horizontal {
+                height: 6px;
+                background: #1E293B;
+                border-radius: 3px;
+            }
+            QSlider::sub-page:horizontal {
+                background: #0284C7;
+                border-radius: 3px;
+            }
+            QSlider::handle:horizontal {
+                background: #38BDF8;
+                border: 2px solid #0F172A;
+                width: 16px;
+                margin-top: -5px;
+                margin-bottom: -5px;
+                border-radius: 8px;
+            }
+            QSlider::handle:horizontal:hover {
+                background: #7DD3FC;
+            }
+        """)
+        h_lat.addWidget(self.slider_vlc_latency)
+
+        cur_lat = cfg.get_vlc_gapless_latency()
+        self.slider_vlc_latency.setValue(cur_lat)
+
+        self.lbl_vlc_latency_val = QLabel(tr("settings.player_engine_vlc_latency_val", ms=str(cur_lat)))
+        self.lbl_vlc_latency_val.setStyleSheet("color: #38BDF8; font-size: 12.5px; font-weight: 600; min-width: 60px;")
+        h_lat.addWidget(self.lbl_vlc_latency_val)
+        h_lat.addStretch()
+        vlc_lat_layout.addLayout(h_lat)
+
+        self.lbl_vlc_latency_hint = QLabel(tr("settings.player_engine_vlc_latency_hint"))
+        self.lbl_vlc_latency_hint.setStyleSheet("color: #64748B; font-size: 11.5px;")
+        self.lbl_vlc_latency_hint.setWordWrap(True)
+        vlc_lat_layout.addWidget(self.lbl_vlc_latency_hint)
+
+        self.slider_vlc_latency.valueChanged.connect(self._on_vlc_latency_slider_changed)
+        return self.vlc_latency_container
+
     def _build_card_effects(self) -> QFrame:
         """Carte de configuration des effets visuels d'ambiance."""
         cfg = get_config_manager()

@@ -161,7 +161,7 @@ class LargeSelectionDialog(QDialog):
         bottom_layout = QHBoxLayout()
         bottom_layout.addStretch()
 
-        btn_cancel = QPushButton(tr("dialog.btn_cancel"))
+        btn_cancel = QPushButton(tr("common.cancel"))
         btn_cancel.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_cancel.setStyleSheet("""
             QPushButton {

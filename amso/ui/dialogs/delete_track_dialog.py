@@ -221,7 +221,7 @@ class DeleteTrackDialog(QDialog):
         bottom_box = QHBoxLayout()
         bottom_box.addStretch()
 
-        btn_cancel = QPushButton(tr("dialog.delete_btn_cancel"))
+        btn_cancel = QPushButton(tr("common.cancel"))
         btn_cancel.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_cancel.setStyleSheet("""
             QPushButton {

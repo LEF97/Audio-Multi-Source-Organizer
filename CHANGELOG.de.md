@@ -15,8 +15,27 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/) 
 ## [0.4.0-dev] - In Entwicklung
 
 ### Added
-- Beginn des Entwicklungszyklus für Version 0.4.0 (Erweiterte Audio-Erfahrung, Künstler-Hub und plattformübergreifendes Packaging für Linux/macOS).
-- **Windows-Shell- & Taskleisten-Integration:** Vorzeitige Deklaration der `AppUserModelID` (`LEF97.AMSO.AudioPlayer`) in der allerersten Zeile von `main.py` vor jedem Qt-Import, sodass die laufende Anwendung nativ an die Windows-Taskleiste angeheftet werden kann.
+- **Erweiterte Unterstützung für 43 internationale Sprachen:**
+  - Integration von 38 neuen Sprachen mit nativen Bezeichnungen im Sprachauswahlmenü (`amso/core/i18n.py`).
+  - Automatisierte Stapelübersetzung und vollständige Parität (401 Schlüssel pro Sprache) über lokale Ollama-KI (`mistral:latest`).
+  - Ein-Klick-Synchronisationsskript: `scripts/sync_all_languages_ollama.bat`.
+- **Visueller Diagnosemodus für Übersetzungen (`⟦...⟧`):**
+  - CLI-Argument `--debug-i18n` und Starter `run_debug_i18n.bat`, die übersetzte Texte in Klammern `⟦...⟧` fassen, um dynamische Strings auf dem Bildschirm sofort zu prüfen.
+- **i18n-Audit- und Integritätswerkzeug (`scripts/audit_translations.py`):**
+  - Automatische Paritätsprüfung aller 43 Sprachen, Erkennung doppelter Bezeichnungen zur Zusammenführung und Ermittlung ungenutzter Schlüssel.
+- **Windows Shell- und Taskleistenintegration:** Priorisierte `AppUserModelID`-Deklaration (`LEF97.AMSO.AudioPlayer`) in `main.py` vor dem Qt-Start.
+- **Einheitliches Quality-Gate-Testsystem:** Skript `scripts/verify.py` und `verify.bat` zur automatischen Validierung von Ruff, Mypy, Dateigrößen und Pytest.
+
+### Changed
+- **Vollständige modulare Codeaufteilung (< 500 Zeilen pro Datei):**
+  - 100 %-Ziel erreicht: **0 Dateien > 500 Zeilen** in der gesamten AMSO-Codebasis.
+  - Verschlankung von `main_window.py` (~1 500 -> 357 Zeilen) durch spezialisierte Mixins in `amso/ui/pages/`.
+  - Aufteilung von `player_service.py` (~1 400 -> 329 Zeilen) in `player_transport.py`, `player_queue.py`, `player_transitions.py` und `windows_audio.py`.
+  - Aufteilung von `blind_test_view.py` (864 -> 447), `player_view.py` (693 -> 316), `settings_player.py` (668 -> 345), `theme.py` (633 -> 20), `models.py` (631 -> 118), `metadata.py` (621 -> 420), `playlist_view.py` (603 -> 284), `logs_view.py` (512 -> 426).
+- **Bereinigung und Zusammenführung redundanter Elemente:**
+  - Gemeinsam genutzte Widgets zentralisiert (`ClickableSlider`, `EffectContainer`, `EffectsViewMixin`).
+  - Vereinheitlichung allgemeiner Aktionen unter `common.*` (`common.cancel`, `common.close`, `common.refresh`, `common.later`, `common.open_explorer`).
+  - Verbindliche Windows-CRLF-Zeilenenden (`\r\n`) in allen `.bat`-Dateien.
 
 ---
 

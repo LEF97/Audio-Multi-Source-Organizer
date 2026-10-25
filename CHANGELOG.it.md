@@ -15,8 +15,27 @@ Il formato si basa su [Keep a Changelog](https://keepachangelog.com/it/1.0.0/) e
 ## [0.4.0-dev] - In sviluppo
 
 ### Added
-- Inizio del ciclo di sviluppo per la versione 0.4.0 (Esperienza audio avanzata, Hub artisti e packaging multipiattaforma per Linux/macOS).
-- **Integrazione con Windows Shell e barra delle applicazioni:** Dichiarazione prioritaria dell'identificatore `AppUserModelID` (`LEF97.AMSO.AudioPlayer`) nella primissima riga di `main.py` prima di qualsiasi importazione di Qt, consentendo di aggiungere nativamente l'applicazione in esecuzione alla barra delle applicazioni di Windows.
+- **Supporto esteso per 43 lingue internazionali:**
+  - Integrazione di 38 nuove lingue con nomi nativi nel selettore di lingua (`amso/core/i18n.py`).
+  - Traduzione automatizzata a lotti e parità completa (401 chiavi per lingua) tramite IA locale Ollama (`mistral:latest`).
+  - Script di sincronizzazione globale con un clic: `scripts/sync_all_languages_ollama.bat`.
+- **Modalità di diagnosi visiva delle traduzioni (`⟦...⟧`):**
+  - Argomento CLI `--debug-i18n` e file `run_debug_i18n.bat` che racchiudono le stringhe tradotte tra parentesi `⟦...⟧` per verificare sullo schermo i testi dinamici.
+- **Strumento di audit e integrità i18n (`scripts/audit_translations.py`):**
+  - Verifica automatica della parità di tutte le 43 lingue, rilevamento dei duplicati da unificare e identificazione delle chiavi orfane.
+- **Integrazione Windows Shell e Barra delle applicazioni:** Dichiarazione prioritaria di `AppUserModelID` (`LEF97.AMSO.AudioPlayer`) in `main.py` prima dell'avvio di Qt.
+- **Sistema unificato di controllo qualità (Quality Gate):** Script `scripts/verify.py` e `verify.bat` per eseguire Ruff, Mypy rigido, limiti di righe e Pytest.
+
+### Changed
+- **Suddivisione modulare completa dell'architettura (< 500 righe per file):**
+  - Obiettivo raggiunto al 100%: **0 file > 500 righe** nell'intera base di codice AMSO.
+  - Riduzione di `main_window.py` (~1 500 -> 357 righe) tramite mixin dedicati in `amso/ui/pages/`.
+  - Decomposizione di `player_service.py` (~1 400 -> 329 righe) in `player_transport.py`, `player_queue.py`, `player_transitions.py` e `windows_audio.py`.
+  - Suddivisione di `blind_test_view.py` (864 -> 447), `player_view.py` (693 -> 316), `settings_player.py` (668 -> 345), `theme.py` (633 -> 20), `models.py` (631 -> 118), `metadata.py` (621 -> 420), `playlist_view.py` (603 -> 284), `logs_view.py` (512 -> 426).
+- **Razionalizzazione e unificazione dei duplicati:**
+  - Componenti condivisi estratti (`ClickableSlider`, `EffectContainer`, `EffectsViewMixin`).
+  - Azioni comuni unificate sotto `common.*` (`common.cancel`, `common.close`, `common.refresh`, `common.later`, `common.open_explorer`).
+  - Fine riga Windows CRLF (`\r\n`) obbligatoria su tutti i file `.bat`.
 
 ---
 

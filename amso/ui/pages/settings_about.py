@@ -127,7 +127,7 @@ class SettingsAboutPageMixin:
         title_row.setSpacing(10)
         title_row.setAlignment(Qt.AlignmentFlag.AlignVCenter)
 
-        self.lbl_about_app_name = QLabel(tr("dialog.about_app_name"))
+        self.lbl_about_app_name = QLabel(tr("app.name"))
         self.lbl_about_app_name.setStyleSheet(
             "color: #F8FAFC; font-size: 20px; font-weight: 800; letter-spacing: 0.5px; padding: 0px; margin: 0px;"
         )

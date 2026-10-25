@@ -48,3 +48,11 @@ class PlayerStateBase(QObject):
     _is_fading_in: bool
     _fade_in_start_time: float
     _fade_in_duration: float
+    _last_fade_curr_vol: int | None
+    _last_fade_next_vol: int | None
+    _engine: Any
+    _decoder: Any
+    _standby_decoder: Any
+    _standby_pcm: bytearray
+    gapless_directsound_latency_ms: int
+    _is_draining_standard_end: bool

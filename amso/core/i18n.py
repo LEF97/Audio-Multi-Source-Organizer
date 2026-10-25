@@ -24,13 +24,51 @@ from amso.core.config import ConfigManager, get_config_manager
 
 logger = logging.getLogger(__name__)
 
-# Langues supportées (code ISO 639-1 -> Libellé affiché)
+# Langues supportées (code ISO 639-1 / IETF -> Libellé affiché)
 SUPPORTED_LANGUAGES: dict[str, str] = {
     "fr": "Français",
     "en": "English",
     "es": "Español",
-    "it": "Italiano",
     "de": "Deutsch",
+    "it": "Italiano",
+    "pt": "Português",
+    "ja": "日本語",
+    "ru": "Русский",
+    "pl": "Polski",
+    "tr": "Türkçe",
+    "nl": "Nederlands",
+    "sv": "Svenska",
+    "id": "Bahasa Indonesia",
+    "bg": "Български",
+    "sr": "Српски",
+    "be": "Беларуская",
+    "el": "Ελληνικά",
+    "ca": "Català",
+    "eu": "Euskara",
+    "gl": "Galego",
+    "cs": "Čeština",
+    "sk": "Slovenčina",
+    "hu": "Magyar",
+    "hr": "Hrvatski",
+    "sl": "Slovenščina",
+    "bs": "Bosanski",
+    "et": "Eesti",
+    "lv": "Latviešu",
+    "lt": "Lietuvių",
+    "no": "Norsk",
+    "da": "Dansk",
+    "fi": "Suomi",
+    "is": "Íslenska",
+    "ms": "Bahasa Melayu",
+    "tl": "Tagalog",
+    "sw": "Kiswahili",
+    "eo": "Esperanto",
+    "zh_cn": "简体中文",
+    "zh_tw": "繁體中文",
+    "ko": "한국어",
+    "ar": "العربية",
+    "he": "עברית",
+    "vi": "Tiếng Việt",
 }
 
 # Langue de repli internationale par défaut
@@ -138,6 +176,7 @@ class I18nManager:
         self._translations: dict[str, str] = {}
         self._fallback_translations: dict[str, str] = {}
         self._listeners: list[Callable[[str], None]] = []
+        self.debug_mode: bool = os.getenv("AMSO_DEBUG_I18N", "0").lower() in ("1", "true", "yes")
 
         # Chargement initial du fichier de repli anglais
         self._load_fallback_translations()
@@ -213,8 +252,14 @@ class I18nManager:
         if callback in self._listeners:
             self._listeners.remove(callback)
 
+    def set_debug_mode(self, enabled: bool) -> None:
+        """Active ou désactive l'encadrement de débogage visuel ⟦...⟧."""
+        self.debug_mode = enabled
+
     def tr(self, key: str, default: str | None = None, **kwargs: Any) -> str:
         """Traduit une clé selon la langue active avec repli et interpolation."""
+        is_missing = key not in self._translations and key not in self._fallback_translations
+
         template = self._translations.get(key)
         if template is None:
             template = self._fallback_translations.get(key)
@@ -223,10 +268,17 @@ class I18nManager:
 
         if kwargs:
             try:
-                return template.format(**kwargs)
+                res = template.format(**kwargs)
             except Exception:
-                return template
-        return template
+                res = template
+        else:
+            res = template
+
+        if self.debug_mode:
+            if is_missing:
+                return f"⚠️[{res}]⚠️"
+            return f"⟦{res}⟧"
+        return res
 
 
 # Instance singleton globale
@@ -239,6 +291,11 @@ def get_i18n(config_manager: ConfigManager | None = None) -> I18nManager:
     if _global_i18n is None:
         _global_i18n = I18nManager(config_manager=config_manager)
     return _global_i18n
+
+
+def set_debug_i18n(enabled: bool) -> None:
+    """Active ou désactive le mode diagnostic visuel des traductions (⟦...⟧)."""
+    get_i18n().set_debug_mode(enabled)
 
 
 def tr(key: str, default: str | None = None, **kwargs: Any) -> str:

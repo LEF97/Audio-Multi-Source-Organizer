@@ -152,8 +152,10 @@ class BlindTestView(BlindTestUiMixin, BlindTestRoundMixin, BlindTestFadesMixin, 
         self._stop_fade_in()
         self._stop_fade_and_restore_volume()
 
-        # Arrêter la lecture immédiatement
+        # Arrêter la lecture immédiatement et réinitialiser tout préchargement
         self.player.pause()
+        if hasattr(self.player, "_reset_standby_player"):
+            self.player._reset_standby_player()
 
         # Restauration de l'état du lecteur enregistré avant le Blind Test (en pause silencieuse garantie)
         self._restore_saved_player_state()
@@ -161,6 +163,8 @@ class BlindTestView(BlindTestUiMixin, BlindTestRoundMixin, BlindTestFadesMixin, 
         # Garantie absolue : s'assurer que le lecteur est bien en pause
         if self.player.is_playing:
             self.player.pause()
+        if hasattr(self.player, "_reset_standby_player"):
+            self.player._reset_standby_player()
 
         try:
             super().hideEvent(event)
@@ -185,6 +189,9 @@ class BlindTestView(BlindTestUiMixin, BlindTestRoundMixin, BlindTestFadesMixin, 
     def _restore_saved_player_state(self) -> None:
         """Restaure la piste et la position de lecture qui étaient actives avant d'entrer en Blind Test.
         La musique est impérativement mise en pause dès qu'on sort du Blind Test."""
+        if hasattr(self.player, "_reset_standby_player"):
+            self.player._reset_standby_player()
+
         if not hasattr(self, "_saved_player_index") or self._saved_player_index is None:
             self.player.pause()
             return
@@ -203,6 +210,8 @@ class BlindTestView(BlindTestUiMixin, BlindTestRoundMixin, BlindTestFadesMixin, 
             self.player.load_index(saved_idx, seek_ms=saved_ms)
         else:
             self.player.pause()
+        if hasattr(self.player, "_reset_standby_player"):
+            self.player._reset_standby_player()
 
     def set_durations(self, countdown_seconds: int, reveal_seconds: int, fade_seconds: int | None = None) -> None:
         """Met à jour les durées configurées du Blind Test."""
@@ -225,14 +234,15 @@ class BlindTestView(BlindTestUiMixin, BlindTestRoundMixin, BlindTestFadesMixin, 
         """Revient à 0 d'abord si la manche a déjà démarré (> 2s ou révélée),
         ou passe réellement au morceau précédent si au tout début.
         Si on est au premier morceau (index 0) et qu'on ne boucle pas, redémarre la manche 0."""
-        self._session_playing = True
+        was_playing = self.player.is_playing or self._session_playing
+        self._session_playing = was_playing
 
         repeat_all = getattr(self.player, "repeat_mode", None) == RepeatMode.ALL
         cur_idx = getattr(self.player, "current_index", 0)
         is_first_track = isinstance(cur_idx, int) and cur_idx <= 0 and not repeat_all
 
         if self._current_round_elapsed > 2 or self._state == "revealed" or is_first_track:
-            self._restart_current_round()
+            self._restart_current_round(auto_play=was_playing)
         else:
             self._stop_fade_out()
             self._stop_fade_in()

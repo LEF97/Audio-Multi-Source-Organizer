@@ -206,7 +206,7 @@ class SourceConfigDialog(QDialog):
         btn_layout.setSpacing(10)
         btn_layout.addStretch()
 
-        self.btn_cancel = QPushButton(tr("dialog.btn_cancel"))
+        self.btn_cancel = QPushButton(tr("common.cancel"))
         self.btn_cancel.setProperty("class", "secondary-btn")
         self.btn_cancel.setFixedHeight(34)
         self.btn_cancel.setAutoDefault(False)

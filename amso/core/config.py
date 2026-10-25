@@ -36,6 +36,12 @@ KEY_POSITION_MS = "position_ms"
 KEY_BLIND_TEST_COUNTDOWN = "blind_test_countdown"
 KEY_BLIND_TEST_REVEAL = "blind_test_reveal"
 KEY_BLIND_TEST_FADE = "blind_test_fade"
+KEY_FADE_IN_TRACK_ENABLED = "fade_in_track_enabled"
+KEY_FADE_IN_TRACK_DURATION = "fade_in_track_duration"
+KEY_FADE_IN_RESUME_ENABLED = "fade_in_resume_enabled"
+KEY_FADE_IN_RESUME_DURATION = "fade_in_resume_duration"
+KEY_AUDIO_ENGINE = "audio_engine"
+KEY_VLC_GAPLESS_LATENCY = "vlc_gapless_latency_ms"
 
 
 def get_config_path() -> Path:
@@ -169,6 +175,29 @@ class ConfigManager:
         """Rétrocompatibilité : active ou désactive l'inhibition de veille."""
         self.set_sleep_mode("player_playlist" if enabled else "allow")
 
+    def get_audio_engine(self) -> str:
+        """Retourne le moteur audio configuré : 'buffer' (défaut) ou 'vlc_direct'."""
+        val = self.get(SECTION_PLAYER, KEY_AUDIO_ENGINE, "buffer")
+        return "vlc_direct" if val == "vlc_direct" else "buffer"
+
+    def set_audio_engine(self, engine: str) -> None:
+        """Définit le moteur audio ('buffer' ou 'vlc_direct')."""
+        val = "vlc_direct" if engine == "vlc_direct" else "buffer"
+        self.set(SECTION_PLAYER, KEY_AUDIO_ENGINE, val)
+
+    def get_vlc_gapless_latency(self) -> int:
+        """Retourne la latence DirectSound/LibVLC en ms pour le gapless 0 (défaut : 250)."""
+        val = self.get(SECTION_PLAYER, KEY_VLC_GAPLESS_LATENCY, "250")
+        try:
+            return max(0, min(2000, int(val)))
+        except (ValueError, TypeError):
+            return 250
+
+    def set_vlc_gapless_latency(self, latency_ms: int) -> None:
+        """Définit la latence DirectSound/LibVLC en ms (entre 0 et 2000 ms)."""
+        val = max(0, min(2000, int(latency_ms)))
+        self.set(SECTION_PLAYER, KEY_VLC_GAPLESS_LATENCY, str(val))
+
     def get_transition_mode(self) -> str:
         """Retourne le mode de transition ('standard', 'gapless', 'crossfade'). Par défaut 'gapless'."""
         val = self.get(SECTION_PLAYER, KEY_TRANSITION_MODE, "gapless")
@@ -292,6 +321,48 @@ class ConfigManager:
     def set_blind_test_fade(self, seconds: int) -> None:
         """Définit la durée du fondu sonore Blind Test en secondes (0 à 10s)."""
         self.set(SECTION_PLAYER, KEY_BLIND_TEST_FADE, str(max(0, min(10, seconds))))
+
+    def get_fade_in_track_enabled(self) -> bool:
+        """Retourne True si le fondu est activé au lancement d'une piste (False par défaut)."""
+        val = self.get(SECTION_PLAYER, KEY_FADE_IN_TRACK_ENABLED, "false")
+        return str(val).lower() in ("true", "1", "yes", "on")
+
+    def set_fade_in_track_enabled(self, enabled: bool) -> None:
+        """Active ou désactive le fondu au lancement d'une piste."""
+        self.set(SECTION_PLAYER, KEY_FADE_IN_TRACK_ENABLED, "true" if enabled else "false")
+
+    def get_fade_in_track_duration(self) -> float:
+        """Retourne la durée du fondu au lancement d'une piste en secondes (0.1 à 5.0, défaut 1.0)."""
+        val = self.get(SECTION_PLAYER, KEY_FADE_IN_TRACK_DURATION, "1.0")
+        try:
+            return max(0.1, min(5.0, float(val)))
+        except Exception:
+            return 1.0
+
+    def set_fade_in_track_duration(self, seconds: float) -> None:
+        """Définit la durée du fondu au lancement d'une piste en secondes."""
+        self.set(SECTION_PLAYER, KEY_FADE_IN_TRACK_DURATION, f"{max(0.1, min(5.0, seconds)):.1f}")
+
+    def get_fade_in_resume_enabled(self) -> bool:
+        """Retourne True si le fondu est activé à la reprise après pause (True par défaut)."""
+        val = self.get(SECTION_PLAYER, KEY_FADE_IN_RESUME_ENABLED, "true")
+        return str(val).lower() in ("true", "1", "yes", "on")
+
+    def set_fade_in_resume_enabled(self, enabled: bool) -> None:
+        """Active ou désactive le fondu à la reprise de lecture."""
+        self.set(SECTION_PLAYER, KEY_FADE_IN_RESUME_ENABLED, "true" if enabled else "false")
+
+    def get_fade_in_resume_duration(self) -> float:
+        """Retourne la durée du fondu à la reprise de lecture en secondes (0.1 à 5.0, défaut 1.0)."""
+        val = self.get(SECTION_PLAYER, KEY_FADE_IN_RESUME_DURATION, "1.0")
+        try:
+            return max(0.1, min(5.0, float(val)))
+        except Exception:
+            return 1.0
+
+    def set_fade_in_resume_duration(self, seconds: float) -> None:
+        """Définit la durée du fondu à la reprise de lecture en secondes."""
+        self.set(SECTION_PLAYER, KEY_FADE_IN_RESUME_DURATION, f"{max(0.1, min(5.0, seconds)):.1f}")
 
 
 # Instance singleton globale pour simplifier l'accès à travers l'application

@@ -130,7 +130,7 @@ class FoldersPageMixin(_MixinBase):
         tree_top_layout.addWidget(self.btn_refresh_tree)
 
         self.folder_tree = QTreeWidget()
-        self.folder_tree.setHeaderLabels([tr("folders.tree_col_folder"), tr("folders.tree_col_count")])
+        self.folder_tree.setHeaderLabels([tr("table.col_folder_name"), tr("folders.tree_col_count")])
 
         self.btn_expand_tree = QPushButton("⊞")
         self.btn_expand_tree.setToolTip(tr("folders.btn_expand_all"))
@@ -284,7 +284,7 @@ class FoldersPageMixin(_MixinBase):
         self.trash_table.setColumnCount(4)
         self.trash_table.setHorizontalHeaderLabels(
             [
-                tr("trash.col_filename"),
+                tr("table.col_filename"),
                 tr("trash.col_path"),
                 tr("trash.col_deleted_at"),
                 tr("trash.col_status"),

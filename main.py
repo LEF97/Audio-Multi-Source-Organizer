@@ -34,6 +34,11 @@ from amso.ui.views.splash_screen import SplashScreen  # noqa: E402
 
 def main() -> int:
     """Initialise la base locale, affiche l'écran de chargement et démarre l'interface graphique PySide6."""
+    if "--debug-i18n" in sys.argv:
+        from amso.core.i18n import set_debug_i18n
+
+        set_debug_i18n(True)
+
     # 1. Initialisation prioritaire de l'application Qt pour affichage instantané du splash screen
     app = QApplication(sys.argv)
     app.setApplicationName("Audio Multi-Source Organizer")

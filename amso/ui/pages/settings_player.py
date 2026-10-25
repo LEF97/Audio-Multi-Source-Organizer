@@ -38,6 +38,9 @@ class SettingsPlayerPageMixin(SettingsPlayerEffectsMixin):
         player_service: PlayerService
 
         def _on_crossfade_slider_changed(self, value: int) -> None: ...
+        def _on_audio_engine_changed(self) -> None: ...
+        def _on_vlc_latency_slider_changed(self, value: int) -> None: ...
+        def _update_vlc_latency_controls_state(self) -> None: ...
         def _on_sleep_mode_changed(self) -> None: ...
         def _on_transition_mode_changed(self) -> None: ...
         def _on_visual_effect_changed(self) -> None: ...
@@ -150,37 +153,14 @@ class SettingsPlayerPageMixin(SettingsPlayerEffectsMixin):
 
         content_layout.addWidget(card_sleep)
 
-        # Carte 2 : Transitions et enchaînement des pistes
+        # Carte 2 : Architecture du moteur de lecture audio
+        content_layout.addWidget(self._build_card_audio_engine())
+
+        # Carte 3 : Transitions et enchaînement des pistes
         content_layout.addWidget(self._build_card_transitions())
 
-        # Carte 3 : Effets visuels d'ambiance
+        # Carte 4 : Effets visuels d'ambiance
         content_layout.addWidget(self._build_card_effects())
-
-        # Carte 3 : Moteur de lecture (VLC)
-        card_vlc = QFrame()
-        card_vlc.setProperty("class", "dashboard-card")
-        l_vlc = QVBoxLayout(card_vlc)
-        l_vlc.setContentsMargins(18, 16, 18, 16)
-        l_vlc.setSpacing(10)
-
-        self.lbl_card_vlc_title = QLabel(tr("settings.player_engine_title"))
-        self.lbl_card_vlc_title.setStyleSheet("color: #F8FAFC; font-size: 14px; font-weight: 700;")
-        l_vlc.addWidget(self.lbl_card_vlc_title)
-
-        self.lbl_card_vlc_desc = QLabel(tr("settings.player_engine_desc"))
-        self.lbl_card_vlc_desc.setStyleSheet("color: #94A3B8; font-size: 13px;")
-        l_vlc.addWidget(self.lbl_card_vlc_desc)
-
-        is_avail = self.player_service.is_vlc_available
-        status_txt = tr("settings.player_engine_active") if is_avail else tr("settings.player_engine_inactive")
-        status_color = "#34D399" if is_avail else "#EF4444"
-        self.lbl_vlc_status_val = QLabel(
-            f"• <b>{tr('settings.player_engine_status')}</b> <span style='color: {status_color}; font-weight: 600;'>{status_txt}</span>"
-        )
-        self.lbl_vlc_status_val.setStyleSheet("font-size: 12.5px; color: #CBD5E1;")
-        l_vlc.addWidget(self.lbl_vlc_status_val)
-
-        content_layout.addWidget(card_vlc)
 
         # Carte 4 : Paramètres du Blind Test
         card_bt = QFrame()

@@ -2,13 +2,14 @@
 
 import time
 from pathlib import Path
+from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QFont, QImage
 from PySide6.QtWidgets import QApplication
 
-from amso.core.config import ConfigManager
+from amso.core.config import ConfigManager, get_config_manager
 from amso.core.database import DatabaseManager, SourceType, TrackRecord
 from amso.core.metadata import extract_cover_art
 from amso.services.player_service import PlayerService, RepeatMode, vlc
@@ -1914,3 +1915,396 @@ def test_scan_running_enqueues_without_popup(
     assert len(tree_refreshed) == 1  # Actualisé car un morceau/dossier a été ajouté
 
     window.close()
+
+
+def test_fade_in_config_and_custom_duration(qapp: QApplication) -> None:
+    """Vérifie la persistance des options de fade-in et le fondu à durée personnalisée."""
+    from amso.core.config import get_config_manager
+
+    cfg = get_config_manager()
+
+    # 1. Vérification des valeurs par défaut
+    # Début de piste/album : désactivé par défaut, durée 1.0s
+    # Reprise : activé par défaut, durée 1.0s
+    cfg.set_fade_in_track_enabled(False)
+    cfg.set_fade_in_track_duration(1.0)
+    cfg.set_fade_in_resume_enabled(True)
+    cfg.set_fade_in_resume_duration(1.0)
+
+    assert not cfg.get_fade_in_track_enabled()
+    assert cfg.get_fade_in_track_duration() == 1.0
+    assert cfg.get_fade_in_resume_enabled()
+    assert cfg.get_fade_in_resume_duration() == 1.0
+
+    # 2. Clamping et validation des durées (min 0.1, max 5.0)
+    cfg.set_fade_in_track_duration(0.01)
+    assert cfg.get_fade_in_track_duration() == 0.1
+    cfg.set_fade_in_track_duration(10.0)
+    assert cfg.get_fade_in_track_duration() == 5.0
+
+    cfg.set_fade_in_resume_duration(0.0)
+    assert cfg.get_fade_in_resume_duration() == 0.1
+    cfg.set_fade_in_resume_duration(12.5)
+    assert cfg.get_fade_in_resume_duration() == 5.0
+
+    # 3. Test du fade-in avec durée personnalisée (2.0s)
+    player = PlayerService()
+    player.set_volume(100)
+    player._start_playback_fade_in(duration=2.0)
+    assert player._is_fading_in
+    assert player._fade_in_duration == 2.0
+    assert player._last_set_volume == 0
+
+    # À 1.0s (50% de 2.0s) -> volume à ~50
+    player._fade_in_start_time = time.time() - 1.0
+    player._on_playback_fade_in_tick()
+    assert player._is_fading_in
+    assert 45 <= player._last_set_volume <= 55
+
+    # À 2.05s -> terminé, volume nominal restauré à 100
+    player._fade_in_start_time = time.time() - 2.05
+    player._on_playback_fade_in_tick()
+    assert not player._is_fading_in
+    assert player._last_set_volume == 100
+
+
+def test_audio_engine_config_and_ui_selection(qapp: QApplication, tmp_path: Path, monkeypatch) -> None:
+    """Vérifie la configuration du choix de moteur audio et la sélection via l'interface."""
+    from amso.ui.views.main_window import MainWindow
+
+    cfg_file = tmp_path / "test_engine_cfg.ini"
+    monkeypatch.setenv("AMSO_CONFIG_PATH", str(cfg_file))
+    cfg = get_config_manager()
+
+    # Par défaut : moteur buffer et 250ms de latence
+    assert cfg.get_audio_engine() == "buffer"
+    assert cfg.get_vlc_gapless_latency() == 250
+
+    # Modification de la configuration
+    cfg.set_audio_engine("vlc_direct")
+    assert cfg.get_audio_engine() == "vlc_direct"
+    cfg.set_vlc_gapless_latency(320)
+    assert cfg.get_vlc_gapless_latency() == 320
+
+    cfg.set_audio_engine("buffer")
+    assert cfg.get_audio_engine() == "buffer"
+
+    # Vérification dans l'interface MainWindow
+    db = DatabaseManager(db_path=":memory:")
+    window = MainWindow(db=db)
+
+    # La carte fade-in ne doit plus exister dans l'UI
+    assert not hasattr(window, "chk_fade_in_track")
+    assert not hasattr(window, "chk_fade_in_resume")
+
+    # La carte de choix de moteur audio doit exister avec ses boutons radio
+    assert hasattr(window, "radio_engine_buffer")
+    assert hasattr(window, "radio_engine_vlc")
+    assert hasattr(window, "slider_vlc_latency")
+    assert hasattr(window, "vlc_latency_container")
+    assert window.radio_engine_buffer.isChecked()
+    assert window.vlc_latency_container.isHidden()
+
+    # Bascule vers VLC direct : le conteneur de latence devient visible
+    window.radio_engine_vlc.setChecked(True)
+    assert cfg.get_audio_engine() == "vlc_direct"
+    assert not window.vlc_latency_container.isHidden()
+
+    # Modification via slider
+    window.slider_vlc_latency.setValue(400)
+    assert cfg.get_vlc_gapless_latency() == 400
+    assert window.player_service.gapless_directsound_latency_ms == 400
+
+    # Bascule retour vers buffer
+    window.radio_engine_buffer.setChecked(True)
+    assert cfg.get_audio_engine() == "buffer"
+    assert window.vlc_latency_container.isHidden()
+
+
+def test_player_standard_transition_draining(qapp: QApplication, sample_tracks: list[TrackRecord]) -> None:
+    """Vérifie le cycle de vidage matériel en mode pas de fondu et sa réinitialisation."""
+    player = PlayerService()
+    player._playlist = list(sample_tracks)
+    player._current_index = 0
+    player._preloaded_index = 1
+
+    # Par défaut l'indicateur de vidage est faux
+    assert not player._is_draining_standard_end
+
+    # Simulation d'un vidage annulé si réinitialisé
+    player._is_draining_standard_end = True
+    player._reset_standby_player()
+    assert not player._is_draining_standard_end
+
+    # finish_standard_transition ne fait rien si le flag est faux
+    called = []
+    player.play_index = lambda idx: called.append(idx)  # type: ignore[assignment]
+    player._finish_standard_transition(1)
+    assert called == []
+
+    # finish_standard_transition déclenche la lecture si flag vrai
+    player._is_draining_standard_end = True
+    player._standby_player = None
+    player._finish_standard_transition(1)
+    assert called == [1]
+    assert not player._is_draining_standard_end
+
+
+def test_player_previous_respects_paused_state(sample_tracks: list[TrackRecord]) -> None:
+    """Vérifie que previous() appelle load_index (sans jouer) si le lecteur était en pause."""
+    player = PlayerService()
+    player._playlist = list(sample_tracks)
+    player._current_index = 1
+    player._media_player = MagicMock()
+    player._media_player.get_time.return_value = 1000  # < 3s
+
+    # Si le lecteur est en pause (is_playing False)
+    with patch.object(PlayerService, "is_playing", new_callable=PropertyMock) as mock_playing:
+        mock_playing.return_value = False
+        load_called: list[int] = []
+        play_called: list[int] = []
+        player.load_index = lambda idx: load_called.append(idx)  # type: ignore[assignment]
+        player.play_index = lambda idx: play_called.append(idx)  # type: ignore[assignment]
+
+        player.previous()
+        assert load_called == [0]
+        assert play_called == []
+
+    # Si le lecteur est en cours de lecture (is_playing True)
+    with patch.object(PlayerService, "is_playing", new_callable=PropertyMock) as mock_playing:
+        mock_playing.return_value = True
+        load_called = []
+        play_called = []
+        player._current_index = 1
+        player.previous()
+        assert load_called == []
+        assert play_called == [0]
+
+
+def test_player_seek_resets_standby_and_draining(sample_tracks: list[TrackRecord]) -> None:
+    """Vérifie que seek_ms réinitialise le lecteur standby et annule le vidage standard."""
+    player = PlayerService()
+    player._playlist = list(sample_tracks)
+    player._current_index = 0
+    player._is_draining_standard_end = True
+    player._preloaded_index = 1
+
+    player.seek_ms(1500)
+    assert not player._is_draining_standard_end
+    assert player._preloaded_index is None
+
+
+def test_player_seek_when_ended_reloads_or_resumes(sample_tracks: list[TrackRecord]) -> None:
+    """Vérifie qu'un seek sur piste Ended recharge en pause si le lecteur était en pause."""
+    player = PlayerService()
+    player._playlist = list(sample_tracks)
+    player._current_index = 0
+    player._media_player = MagicMock()
+    import vlc
+
+    player._media_player.get_state.return_value = vlc.State.Ended
+
+    load_called: list[tuple[int, int]] = []
+    player.load_index = lambda idx, seek_ms=0: load_called.append((idx, seek_ms))  # type: ignore[assignment]
+
+    with patch.object(PlayerService, "is_playing", new_callable=PropertyMock) as mock_playing:
+        mock_playing.return_value = False
+        player._is_paused_requested = True
+        player.seek_ms(5000)
+        assert load_called == [(0, 5000)]
+
+
+def test_player_buffer_engine_invariants_pause_and_seek(
+    sample_tracks: list[TrackRecord], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Vérifie que le mode buffer respecte strictement les invariants de pause et de non-déclenchement."""
+    player = PlayerService()
+    player._playlist = list(sample_tracks)
+    player._current_index = 0
+
+    from amso.services.audio_engine import ContinuousAudioEngine
+
+    engine = ContinuousAudioEngine()
+    player._engine = engine
+    monkeypatch.setattr(get_config_manager(), "get_audio_engine", lambda: "buffer")
+
+    # Mise en pause du mode buffer
+    player.pause()
+    assert not player.is_playing or player._is_paused_requested
+
+    # Seek en mode buffer ne déclenche pas de lecture si en pause
+    player.seek_ms(2000)
+    assert not engine.is_playing
+
+
+def test_buffer_decoder_end_reached_and_engine_feed_complete(qapp: QApplication) -> None:
+    """Vérifie que la notification de fin de VLC amem déclenche la fin de flux dans le buffer engine."""
+    from amso.services.audio_decoder import AsyncAudioDecoder
+    from amso.services.audio_engine import ContinuousAudioEngine
+
+    decoder = AsyncAudioDecoder()
+    engine = ContinuousAudioEngine()
+
+    decoder._current_path = "test.mp3"
+    decoder._duration_ms = 30000
+    decoder._accumulated_pcm = bytearray(b"\x00" * 4000)
+
+    finished_received: list[str] = []
+    decoder.decoding_finished.connect(lambda p, b, d: finished_received.append(p))
+
+    # Simulation de l'événement MediaPlayerEndReached
+    decoder._on_vlc_end_reached()
+
+    assert finished_received == ["test.mp3"]
+    assert decoder.is_finished
+
+    # Transmission à l'engine
+    engine._current_file_path = "test.mp3"
+    assert not engine.is_feed_complete
+    engine.mark_feed_complete("test.mp3")
+    assert engine.is_feed_complete
+
+
+def test_buffer_engine_seek_in_memory_vs_redecode(
+    sample_tracks: list[TrackRecord], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Vérifie que le seek utilise la mémoire si le fichier est complet ou redémarre le décodage."""
+    player = PlayerService()
+    player._playlist = list(sample_tracks)
+    player._current_index = 0
+    monkeypatch.setattr(get_config_manager(), "get_audio_engine", lambda: "buffer")
+
+    # Mode buffer en cours de lecture
+    with patch.object(PlayerService, "is_playing", new_callable=PropertyMock) as mock_playing:
+        mock_playing.return_value = True
+
+        # Cas 1 : non complètement chargé en RAM -> reset_buffer et start_decode
+        decode_calls: list[tuple[str, int, int]] = []
+        player._decoder.start_decode = lambda path, start_offset_ms=0, duration_ms=0: decode_calls.append(  # type: ignore[assignment]
+            (path, start_offset_ms, duration_ms)
+        )
+        player._engine._is_feed_complete = False
+        player.seek_ms(5000)
+        assert len(decode_calls) == 1
+        assert decode_calls[0][1] == 5000  # start_offset_ms
+
+        # Cas 2 : 100% en RAM -> seek interne instantané
+        decode_calls.clear()
+        player._engine._is_feed_complete = True
+        player._engine._base_offset_ms = 0
+        # 44100 * 4 = 176400 octets/sec -> 10 sec = 1764000 octets
+        player._engine._current_pcm = bytearray(b"\x00" * 2000000)
+        player.seek_ms(6000)
+        # Pas de nouvel appel à start_decode, seek directement dans le PCM
+        assert decode_calls == []
+        expected_offset = int((6000 / 1000.0) * 44100 * 4)
+        assert player._engine._play_offset == expected_offset
+
+
+def test_player_previous_while_paused_preserves_pause_state(
+    qapp: QApplication, sample_tracks: list[TrackRecord], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Invariant absolu : previous() lorsque le lecteur est en pause ne doit JAMAIS relancer la lecture."""
+    player = PlayerService()
+    player._playlist = list(sample_tracks)
+    player._current_index = 1
+    monkeypatch.setattr(get_config_manager(), "get_audio_engine", lambda: "buffer")
+
+    # Lecteur en pause
+    with patch.object(PlayerService, "is_playing", new_callable=PropertyMock) as mock_playing:
+        mock_playing.return_value = False
+        player._is_paused_requested = True
+
+        load_calls: list[int] = []
+        play_calls: list[int] = []
+        player.load_index = lambda idx, seek_ms=0: load_calls.append(idx)  # type: ignore[assignment]
+        player.play_index = lambda idx, resume_pending=False: play_calls.append(idx)  # type: ignore[assignment]
+
+        # Cas 1: position < 3s -> charge l'index précédent sans jouer
+        with patch.object(PlayerService, "current_time_ms", new_callable=PropertyMock) as mock_time:
+            mock_time.return_value = 1500
+            player.previous()
+            assert play_calls == []
+            assert load_calls == [0]
+
+        # Cas 2: position > 3s -> recharge le morceau actuel à 0 sans jouer
+        load_calls.clear()
+        with patch.object(PlayerService, "current_time_ms", new_callable=PropertyMock) as mock_time:
+            mock_time.return_value = 5000
+            player.previous()
+            assert play_calls == []
+            assert load_calls == [1]
+
+
+def test_engine_append_with_crossfade_equal_power(qapp: QApplication) -> None:
+    """Vérifie que append_with_crossfade applique le mixage cos/sin en puissance égale."""
+    import array
+
+    from amso.services.audio_engine import ContinuousAudioEngine
+
+    engine = ContinuousAudioEngine(None)
+    # Piste A : 1 seconde de valeur constante 10000 (16-bit)
+    samples_per_sec = 44100 * 2  # stéréo
+    raw_a = array.array("h", [10000] * samples_per_sec).tobytes()
+    # Piste B : 1 seconde de valeur constante 20000 (16-bit)
+    raw_b = array.array("h", [20000] * samples_per_sec).tobytes()
+
+    engine._current_pcm = bytearray(raw_a)
+    engine._play_offset = 0
+
+    # Crossfade de 0.5s
+    fade_end = engine.append_with_crossfade(raw_b, fade_seconds=0.5, total_duration_ms=2000, file_path="track_b.flac")
+
+    fade_bytes = int(0.5 * 44100 * 4)
+    assert engine._crossfade_next_path == "track_b.flac"
+    assert fade_end == fade_bytes
+    assert engine._play_offset == 0
+    mixed_samples = array.array("h")
+    mixed_samples.frombytes(engine._current_pcm[:fade_bytes])
+
+    # Au tout début du fondu (t=0): gain_a=cos(0)=1, gain_b=sin(0)=0 -> ~10000
+    assert abs(mixed_samples[0] - 10000) < 50
+    # À la toute fin du fondu (t=1): gain_a=cos(pi/2)=0, gain_b=sin(pi/2)=1 -> ~20000
+    assert abs(mixed_samples[-1] - 20000) < 50
+    # Au milieu (t=0.5): gain_a=cos(pi/4)=~0.707, gain_b=sin(pi/4)=~0.707
+    mid_idx = (len(mixed_samples) // 4) * 2
+    expected_mid = int(10000 * 0.7071 + 20000 * 0.7071)
+    assert abs(mixed_samples[mid_idx] - expected_mid) < 200
+
+    # Simulation de la lecture du fondu jusqu'à son terme et finalisation
+    engine._play_offset = fade_end
+    engine.finish_crossfade("track_b.flac", total_duration_ms=2000, fade_duration_ms=500)
+    assert engine._current_file_path == "track_b.flac"
+    assert engine._crossfade_next_path == ""
+    assert engine._total_duration_ms == 2000
+    assert engine._base_offset_ms == 500
+    assert engine._play_offset == 0
+    assert engine.current_time_ms == 500
+
+
+def test_player_reset_playback_on_config_change(qapp):
+    """Vérifie que reset_playback réinitialise intégralement le lecteur et les tampons."""
+
+    from amso.services.player_service import PlayerService
+
+    player = PlayerService()
+    player._is_crossfading = True
+    player._is_buffer_crossfading = True
+    player._current_time_ms = 45000
+    player._pending_seek_ms = 45000
+    if player._engine:
+        player._engine._play_offset = 12000
+        player._engine._base_offset_ms = 10000
+        player._engine._current_pcm = bytearray(b"\x00" * 20000)
+
+    # Réinitialisation
+    player.reset_playback()
+
+    assert player._is_crossfading is False
+    assert player._is_buffer_crossfading is False
+    assert player._current_time_ms == 0
+    assert player._pending_seek_ms == 0
+    if player._engine:
+        assert player._engine._play_offset == 0
+        assert player._engine._base_offset_ms == 0
+        assert len(player._engine._current_pcm) == 0

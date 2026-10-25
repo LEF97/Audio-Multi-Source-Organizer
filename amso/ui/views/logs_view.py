@@ -124,7 +124,7 @@ class LogsView(QWidget):
         toolbar.addStretch()
 
         # Bouton Rafraîchir
-        self.btn_refresh = QPushButton(tr("logs.btn_refresh"))
+        self.btn_refresh = QPushButton(tr("common.refresh"))
         self.btn_refresh.setStyleSheet("padding: 6px 12px;")
         self.btn_refresh.clicked.connect(self.refresh_logs)
         toolbar.addWidget(self.btn_refresh)
@@ -152,7 +152,7 @@ class LogsView(QWidget):
             [
                 tr("logs.col_time"),
                 tr("logs.col_level"),
-                tr("logs.col_source"),
+                tr("table.col_source"),
                 tr("logs.col_action"),
                 tr("logs.col_added"),
                 tr("logs.col_updated"),
@@ -404,7 +404,7 @@ class LogsView(QWidget):
         self.combo_level.blockSignals(False)
 
         self.search_edit.setPlaceholderText(tr("logs.search_placeholder"))
-        self.btn_refresh.setText(tr("logs.btn_refresh"))
+        self.btn_refresh.setText(tr("common.refresh"))
         self.btn_export.setText(tr("logs.btn_export"))
         self.btn_clear.setText(tr("logs.btn_clear"))
 
@@ -412,7 +412,7 @@ class LogsView(QWidget):
             [
                 tr("logs.col_time"),
                 tr("logs.col_level"),
-                tr("logs.col_source"),
+                tr("table.col_source"),
                 tr("logs.col_action"),
                 tr("logs.col_added"),
                 tr("logs.col_updated"),

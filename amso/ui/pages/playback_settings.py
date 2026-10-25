@@ -71,13 +71,24 @@ class PlaybackSettingsMixin(_MixinBase):
 
     def _on_transition_mode_changed(self) -> None:
         cfg = get_config_manager()
+        new_mode = None
         if hasattr(self, "radio_trans_standard") and self.radio_trans_standard.isChecked():
-            cfg.set_transition_mode("standard")
+            new_mode = "standard"
         elif hasattr(self, "radio_trans_gapless") and self.radio_trans_gapless.isChecked():
-            cfg.set_transition_mode("gapless")
+            new_mode = "gapless"
         elif hasattr(self, "radio_trans_crossfade") and self.radio_trans_crossfade.isChecked():
-            cfg.set_transition_mode("crossfade")
+            new_mode = "crossfade"
+
+        if not new_mode:
+            return
+
+        old_mode = cfg.get_transition_mode()
+        cfg.set_transition_mode(new_mode)
         self._update_crossfade_controls_state()
+
+        # Couper la lecture et réinitialiser complètement le lecteur si le mode change
+        if new_mode != old_mode and hasattr(self, "player_service") and self.player_service:
+            self.player_service.reset_playback()
 
     def _on_crossfade_slider_changed(self, value: int) -> None:
         cfg = get_config_manager()
@@ -178,3 +189,39 @@ class PlaybackSettingsMixin(_MixinBase):
             self.status_label.setText(tr("status.ready"))
             self.status_label.setToolTip("")
             self.status_label.setCursor(Qt.CursorShape.ArrowCursor)
+
+    def _on_audio_engine_changed(self) -> None:
+        """Sauvegarde le choix d'architecture du moteur audio et réinitialise le lecteur."""
+        cfg = get_config_manager()
+        new_engine = None
+        if hasattr(self, "radio_engine_vlc") and self.radio_engine_vlc.isChecked():
+            new_engine = "vlc_direct"
+        elif hasattr(self, "radio_engine_buffer") and self.radio_engine_buffer.isChecked():
+            new_engine = "buffer"
+
+        if not new_engine:
+            return
+
+        old_engine = cfg.get_audio_engine()
+        cfg.set_audio_engine(new_engine)
+        self._update_vlc_latency_controls_state()
+
+        # Si le moteur a changé, couper la lecture et réinitialiser complètement le lecteur
+        if new_engine != old_engine and hasattr(self, "player_service") and self.player_service:
+            self.player_service.reset_playback()
+
+    def _on_vlc_latency_slider_changed(self, value: int) -> None:
+        """Met à jour la latence DirectSound pour LibVLC."""
+        cfg = get_config_manager()
+        cfg.set_vlc_gapless_latency(value)
+        if hasattr(self, "player_service") and self.player_service:
+            self.player_service.gapless_directsound_latency_ms = value
+        if hasattr(self, "lbl_vlc_latency_val"):
+            self.lbl_vlc_latency_val.setText(tr("settings.player_engine_vlc_latency_val", ms=str(value)))
+
+    def _update_vlc_latency_controls_state(self) -> None:
+        """Affiche ou masque les réglages spécifiques à LibVLC."""
+        if not hasattr(self, "vlc_latency_container") or not hasattr(self, "radio_engine_vlc"):
+            return
+        is_vlc = self.radio_engine_vlc.isChecked()
+        self.vlc_latency_container.setVisible(is_vlc)

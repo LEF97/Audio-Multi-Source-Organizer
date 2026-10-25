@@ -10,15 +10,20 @@ import importlib
 import logging
 import sys
 import time
+from typing import Any
 
 from PySide6.QtCore import QObject, QTimer, Signal
 
 from amso.core.config import get_config_manager
 from amso.core.database import TrackRecord
+from amso.services.audio_decoder import AsyncAudioDecoder
+from amso.services.audio_engine import ContinuousAudioEngine
 from amso.services.player_queue import PlayerQueueMixin
 from amso.services.player_transitions import PlayerTransitionsMixin
 from amso.services.player_transport import PlayerTransportMixin
 from amso.services.player_types import RepeatMode  # noqa: F401  (réexporté)
+from amso.services.player_vlc_transitions import PlayerVlcTransitionsMixin
+from amso.services.player_volume import PlayerVolumeMixin
 from amso.services.vlc_binding import vlc
 from amso.services.vlc_downloader import setup_vlc_environment
 from amso.services.windows_audio import ensure_windows_audio_session_active
@@ -41,7 +46,14 @@ except Exception as _err:
     logger.warning("python-vlc n'a pas pu être chargé : %s", _err)
 
 
-class PlayerService(PlayerQueueMixin, PlayerTransportMixin, PlayerTransitionsMixin, QObject):
+class PlayerService(
+    PlayerQueueMixin,
+    PlayerTransportMixin,
+    PlayerVolumeMixin,
+    PlayerVlcTransitionsMixin,
+    PlayerTransitionsMixin,
+    QObject,
+):
     """Moteur de lecture audio centralisé avec gestionnaire de playlist."""
 
     # Signaux d'état émis vers l'interface
@@ -90,11 +102,27 @@ class PlayerService(PlayerQueueMixin, PlayerTransportMixin, PlayerTransitionsMix
         self._fade_start_time: float = 0.0
         self._fade_duration_sec: float = 0.0
         self._fade_paused_elapsed: float = 0.0
+        self._last_fade_curr_vol: int | None = None
+        self._last_fade_next_vol: int | None = None
 
-        # Initialisation VLC
+        # Initialisation VLC (moteur de lecture principal et standby)
         self._vlc_instance = None
         self._media_player = None
         self._init_vlc()
+
+        # Initialisation du moteur de streaming continu WASAPI
+        self._engine = ContinuousAudioEngine(self)
+        self._decoder = AsyncAudioDecoder(vlc_instance=self._vlc_instance, parent=self)
+        self._engine.set_volume(self._volume)
+        self._engine.set_muted(self._is_muted)
+        self._engine.track_finished.connect(self._on_engine_track_finished)
+        self._decoder.ready_to_play.connect(self._on_decoder_ready_to_play)
+        self._decoder.chunk_decoded.connect(self._on_decoder_chunk_decoded)
+        self._decoder.decoding_finished.connect(self._on_decoder_finished)
+        self._standby_decoder = None
+        self._standby_pcm = bytearray()
+        self.gapless_directsound_latency_ms: int = get_config_manager().get_vlc_gapless_latency()
+        self._is_draining_standard_end: bool = False
 
         # Timer pour mise à jour fluide de la progression (100ms)
         self._timer = QTimer(self)
@@ -114,8 +142,8 @@ class PlayerService(PlayerQueueMixin, PlayerTransportMixin, PlayerTransitionsMix
         self._playback_fade_in_timer.setInterval(40)
         self._playback_fade_in_timer.timeout.connect(self._on_playback_fade_in_tick)
 
-    def _start_playback_fade_in(self) -> None:
-        """Démarre une rampe de volume progressive de 0% vers le volume cible sur 1 seconde."""
+    def _start_playback_fade_in(self, duration: float = 1.0) -> None:
+        """Démarre une rampe de volume progressive de 0% vers le volume nominal."""
         if getattr(self, "_is_temporary_volume", False) or self._is_crossfading:
             return
 
@@ -126,7 +154,7 @@ class PlayerService(PlayerQueueMixin, PlayerTransportMixin, PlayerTransitionsMix
         self._stop_playback_fade_in()
         self._is_fading_in = True
         self._fade_in_start_time = time.time()
-        self._fade_in_duration = 1.0
+        self._fade_in_duration = max(0.1, float(duration))
 
         try:
             self._media_player.audio_set_volume(0)
@@ -165,59 +193,80 @@ class PlayerService(PlayerQueueMixin, PlayerTransportMixin, PlayerTransitionsMix
             self._volume_enforce_ticks = 5
             self._enforce_volume()
 
+    def _on_decoder_ready_to_play(self, file_path: str, initial_pcm: bytes, duration_ms: int) -> None:
+        """Déclenche la lecture dès que le premier bloc audio est prêt."""
+        seek_ms = getattr(self, "_pending_seek_ms", 0)
+        self._pending_seek_ms = 0
+        is_paused = getattr(self, "_is_paused_requested", False)
+        self._engine.play_track(file_path, initial_pcm, duration_ms, start_offset_ms=seek_ms, start_paused=is_paused)
+
+    def _on_decoder_chunk_decoded(self, file_path: str, chunk_pcm: bytes) -> None:
+        """Injecte les blocs audio décodés au fur et à mesure dans le flux continu."""
+        self._engine.append_chunk(file_path, chunk_pcm)
+
+    def _on_decoder_finished(self, file_path: str, total_pcm: bytes, duration_ms: int) -> None:
+        """Notifie la fin du décodage de la piste courante."""
+        self._engine.mark_feed_complete(file_path)
+
+    def _on_engine_track_finished(self) -> None:
+        """Appelé lorsque le flux audio de la piste courante est entièrement diffusé."""
+        self.next()
+
     def _enforce_volume(self) -> None:
         """Applique sans délai le volume nominal vers le lecteur principal s'il n'est pas en fondu."""
         if self._media_player and not self._is_crossfading and not self._is_temporary_volume and not self._is_fading_in:
             try:
                 target = 0 if self._is_muted else self._volume
-                if self._last_set_volume != target:
-                    self._last_set_volume = target
-                    self._media_player.audio_set_volume(target)
+                self._last_set_volume = target
+                self._media_player.audio_set_volume(target)
             except Exception:
                 pass
+
+    def _apply_vlc_audio_output(self, player_obj: Any) -> None:
+        """Configure la sortie audio VLC (directsound pour crossfade, mmdevice pour standard/gapless)."""
+        if player_obj is None or sys.platform != "win32":
+            return
+        try:
+            cfg = get_config_manager()
+            target = b"directsound" if cfg.get_transition_mode() == "crossfade" else b"mmdevice"
+            player_obj.audio_output_set(target)
+        except Exception:
+            pass
 
     def _init_vlc(self) -> bool:
         """Initialise l'instance VLC et les lecteurs multimédias principal et standby.
 
-        Sous Windows, on active explicitement le module de sortie '--aout=directsound'.
-        Le backend par défaut (mmdevice / WASAPI) agit au niveau de la session audio
-        du processus Windows tout entier, ce qui empêchait les 2 lecteurs d'avoir des
-        volumes distincts et provoquait un conflit destructeur (battement/saccades).
-        DirectSound fournit des canaux de mixage et de volume logiciel 100% indépendants.
-        On ajoute également '--reset-config' et '--no-volume-save' pour isoler AMSO de toute
-        interférence avec les réglages globaux du VLC de bureau et éviter les volumes corrompus.
+        AMSO utilise le moteur audio natif de la plateforme (mmdevice / WASAPI sous Windows,
+        identique à VLC de bureau), garantissant une qualité audio 32-bit float sans bop ni craquement.
+        On ajoute '--reset-config' et '--no-volume-save' pour isoler AMSO de toute interférence avec
+        les réglages globaux du VLC de bureau et éviter les corruptions de volume.
         """
         if not vlc.available:
             return False
         try:
-            vlc_args = ["--no-xlib", "--quiet", "--reset-config", "--no-volume-save"]
-            if sys.platform == "win32":
-                vlc_args.append("--aout=directsound")
+            vlc_args = [
+                "--no-xlib",
+                "--no-video",
+                "--quiet",
+                "--reset-config",
+                "--no-volume-save",
+            ]
             try:
                 self._vlc_instance = vlc.Instance(*vlc_args)
             except Exception:
-                self._vlc_instance = vlc.Instance("--no-xlib", "--quiet")
+                self._vlc_instance = vlc.Instance("--no-xlib", "--no-video", "--quiet")
             if self._vlc_instance is None:
                 raise RuntimeError("Échec de création de l'instance VLC")
             self._media_player = self._vlc_instance.media_player_new()
             if self._media_player is not None:
-                if sys.platform == "win32" and hasattr(self._media_player, "audio_output_set"):
-                    try:
-                        self._media_player.audio_output_set("directsound")
-                    except Exception:
-                        pass
+                self._apply_vlc_audio_output(self._media_player)
                 initial_vol = 0 if self._is_muted else self._volume
                 self._last_set_volume = initial_vol
                 self._media_player.audio_set_volume(initial_vol)
             try:
                 self._standby_player = self._vlc_instance.media_player_new()
                 if self._standby_player is not None:
-                    if sys.platform == "win32" and hasattr(self._standby_player, "audio_output_set"):
-                        try:
-                            self._standby_player.audio_output_set("directsound")
-                        except Exception:
-                            pass
-                    self._standby_player.audio_set_volume(0)
+                    self._apply_vlc_audio_output(self._standby_player)
             except Exception:
                 self._standby_player = None
             return True
@@ -291,6 +340,8 @@ class PlayerService(PlayerQueueMixin, PlayerTransportMixin, PlayerTransitionsMix
 
     @property
     def is_playing(self) -> bool:
+        if get_config_manager().get_audio_engine() == "buffer" and self._engine and self._engine.is_available:
+            return bool(self._engine.is_playing)
         if not self._media_player:
             return False
         return bool(self._media_player.is_playing())
@@ -298,6 +349,13 @@ class PlayerService(PlayerQueueMixin, PlayerTransportMixin, PlayerTransitionsMix
     @property
     def current_time_ms(self) -> int:
         """Retourne la position temporelle courante en millisecondes."""
+        if (
+            get_config_manager().get_audio_engine() == "buffer"
+            and self._engine
+            and self._engine.is_available
+            and self._engine.is_playing
+        ):
+            return self._engine.current_time_ms
         if self._media_player:
             try:
                 t = self._media_player.get_time()
@@ -317,6 +375,13 @@ class PlayerService(PlayerQueueMixin, PlayerTransportMixin, PlayerTransitionsMix
     @property
     def total_time_ms(self) -> int:
         """Retourne la durée totale du morceau en millisecondes."""
+        if (
+            get_config_manager().get_audio_engine() == "buffer"
+            and self._engine
+            and self._engine.is_available
+            and self._engine.total_duration_ms > 0
+        ):
+            return self._engine.total_duration_ms
         if self._media_player:
             try:
                 length_ms = self._media_player.get_length()
@@ -327,3 +392,77 @@ class PlayerService(PlayerQueueMixin, PlayerTransportMixin, PlayerTransitionsMix
         if self.current_track and self.current_track.duration_seconds:
             return int(self.current_track.duration_seconds * 1000)
         return getattr(self, "_total_time_ms", 0)
+
+    def reset_playback(self) -> None:
+        """Coupe la lecture et réinitialise intégralement tous les moteurs et tampons.
+
+        Permet de basculer de moteur audio ou de mode de transition à chaud
+        sans artefacts et sans redémarrer l'application.
+        """
+        # 1. Arrêter immédiatement tous les flux audio
+        self.stop()
+
+        # 2. Réinitialisation complète du moteur Buffer / QAudioSink
+        if self._engine:
+            self._engine.stop()
+            if hasattr(self._engine, "_sink") and self._engine._sink:
+                try:
+                    self._engine._sink.stop()
+                except Exception:
+                    pass
+                self._engine._sink = None
+                self._engine._audio_io = None
+            with self._engine._lock:
+                self._engine._current_pcm.clear()
+                self._engine._play_offset = 0
+                self._engine._base_offset_ms = 0
+                self._engine._total_duration_ms = 0
+                self._engine._current_file_path = ""
+                self._engine._crossfade_next_path = ""
+                self._engine._is_feed_complete = False
+                self._engine._track_finished_emitted = False
+
+        if self._decoder:
+            self._decoder.stop()
+        if getattr(self, "_standby_decoder", None):
+            try:
+                self._standby_decoder.stop()
+            except Exception:
+                pass
+            self._standby_decoder = None
+        if hasattr(self, "_standby_pcm"):
+            self._standby_pcm.clear()
+
+        # 3. Réinitialisation complète du moteur VLC direct
+        if self._media_player:
+            try:
+                self._media_player.stop()
+                self._media_player.set_media(None)
+            except Exception:
+                pass
+        if self._standby_player:
+            try:
+                self._standby_player.stop()
+                self._standby_player.set_media(None)
+            except Exception:
+                pass
+
+        self._reset_standby_player()
+        self._is_crossfading = False
+        self._is_buffer_crossfading = False
+        self._is_draining_standard_end = False
+        self._crossfade_next_index = None
+        self._preloaded_index = None
+
+        # 4. Rétablir la position à 0 et rafraîchir l'interface
+        self._current_time_ms = 0
+        self._pending_seek_ms = 0
+        track = self.current_track
+        dur_ms = int((track.duration_seconds or 0) * 1000) if track and track.duration_seconds else 0
+        self._total_time_ms = dur_ms
+        self.state_changed.emit("stopped")
+        self.position_changed.emit(0, dur_ms, 0.0)
+        if track:
+            self.track_changed.emit(track)
+        self.playlist_updated.emit()
+        logger.info("Lecteur audio réinitialisé complètement suite à modification de configuration.")
