@@ -30,26 +30,29 @@ def run_step(step_num: int, total_steps: int, title: str, cmd: list[str]) -> boo
     """Exécute une étape et affiche son statut."""
     print(f"\n[{step_num}/{total_steps}] {title}...")
     start = time.perf_counter()
-    res = subprocess.run(cmd, cwd=ROOT_DIR, capture_output=True, text=True, encoding="utf-8")
+    res = subprocess.run(cmd, cwd=ROOT_DIR, capture_output=True, text=True, encoding="utf-8", errors="replace")
     duration = time.perf_counter() - start
+
+    stdout_str = (res.stdout or "").strip()
+    stderr_str = (res.stderr or "").strip()
 
     if res.returncode == 0:
         print(f"  [OK] Succès ({duration:.1f}s)")
-        if res.stdout.strip():
+        if stdout_str:
             # Affiche un extrait si informatif (ex: check_file_sizes)
-            lines = res.stdout.strip().splitlines()
+            lines = stdout_str.splitlines()
             if len(lines) <= 6:
                 for line in lines:
                     print(f"       {line}")
         return True
 
     print(f"  [FAIL] ÉCHEC ({duration:.1f}s)")
-    if res.stdout.strip():
+    if stdout_str:
         print("--- Sortie standard ---")
-        print(res.stdout.strip()[:2000])
-    if res.stderr.strip():
+        print(stdout_str[:2000])
+    if stderr_str:
         print("--- Erreurs ---")
-        print(res.stderr.strip()[:2000])
+        print(stderr_str[:2000])
     return False
 
 
@@ -71,6 +74,7 @@ def main() -> int:
         ("Analyse statique et linter (Ruff)", [PYTHON, "-m", "ruff", "check", "amso", "tests"]),
         ("Vérification du typage (Mypy)", [PYTHON, "-m", "mypy", "amso"]),
         ("Contrôle des tailles de fichiers", [PYTHON, "scripts/check_file_sizes.py"]),
+        ("Cohérence de context.md", [PYTHON, "scripts/check_context.py"]),
     ]
 
     if args.all:

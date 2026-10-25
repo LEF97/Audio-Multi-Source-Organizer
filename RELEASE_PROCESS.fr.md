@@ -66,7 +66,7 @@ flowchart TD
    - Préparer le dossier de distribution : `dist/AMSO-Windows-vX.Y.Z/` contenant :
      - Le dossier compilé `AMSO/` (ou l'exécutable portable).
      - L'ensemble des 15 fichiers Markdown à jour : `README*.md`, `CHANGELOG*.md`, `ROADMAP*.md`.
-     - Le dossier `locales/` (5 langues) et le fichier `LICENSE`.
+     - Le dossier `locales/` (43 langues) et le fichier `LICENSE`.
    - Créer l'archive zip finale : `dist/AMSO-Windows-vX.Y.Z.zip`.
    - *(Note jalon v0.4.0+) :* Extension du packaging multiplateforme via GitHub Actions (`runs-on: [ubuntu-latest, macos-latest]`) pour générer également les paquets Linux (`.AppImage`) et macOS (`.dmg`).
 6. **Validation manuelle de l'exécutable :**

@@ -1,56 +1,97 @@
-# Audio Multi-Source Organizer (AMSO) — Project Context
+# Audio Multi-Source Organizer (AMSO) — Contexte projet
 
-## 1. Vision & Objectifs
-**Audio Multi-Source Organizer (AMSO)** est une application de bureau open-source multiplateforme (Windows, macOS, Linux) conçue pour unifier, organiser et synchroniser des bibliothèques audio hybrides réparties entre :
-* **Stockage local :** fichiers haute fidélité (MP3, FLAC, AAC, etc.) répartis sur plusieurs dossiers ou disques.
-* **Stockage cloud :** archives et sauvegardes sur Google Drive (v0.5.0).
-* **Services de streaming :** playlists et bibliothèques en ligne Spotify, Deezer (v0.6.0).
+> **Référence unique** du projet pour tous les assistants (Gemini, Claude) et pour les humains.
+> Les règles de travail sont dans `GEMINI.md`, les procédures dans `.agents/skills/`. En cas de doute, le code fait foi.
+> **À tenir à jour** à chaque ajout, déplacement ou suppression de module (skill `update-context`, contrôle : `python scripts/check_context.py`, intégré à `verify`).
 
----
+## 1. Vision & état
+Application de bureau open-source (GPL-3.0, auteur LEF97), Windows / macOS / Linux, qui unifie des bibliothèques audio réparties entre
+**disque local**, **cloud (Google Drive)** et **streaming (Spotify, Deezer, Amazon Music)**, sans compromis sur la vie privée.
+Distribution : GitHub Releases + itch.io (Butler, « Pay What You Want »), dons Ko-fi / GitHub Sponsors.
 
-## 2. Stack Technique & Dépendances
-* **Langage :** Python 3.11+
-* **Interface graphique :** PySide6 (Qt pour Python officiel). Utilisation stricte de modèles virtualisés (`QAbstractTableModel`) pour garantir la fluidité sur de grands volumes (> 50 000 titres).
-* **Moteur audio :** `python-vlc` (VLC portable intégré avec fondu doux, transitions et spectre sonore).
-* **Traitement audio & tags :** `mutagen` (extraction et écriture des tags ID3, Vorbis Comments, FLAC).
-* **Persistance locale :** SQLite3 via le module natif standard (pas d'ORM lourd, requêtes SQL optimisées).
-* **Packaging & Distribution :** PyInstaller (`scripts/build_exe.py`) pour générer les exécutables natifs (`.exe`, `.dmg`, `.AppImage`).
+| Version | Contenu | État |
+|---|---|---|
+| 0.1–0.3 | scanner local multithread, tags, lecteur VLC, playlists M3U/PLS/XSPF/WPL, Blind Test, corbeille, mises à jour in-app, effets visuels | publiées (0.3.0 actuelle) |
+| **0.4.0-dev** | refonte modulaire + quality gate, 43 langues, moteur audio `buffer` (QAudioSink), crossfade/gapless ; restent : packaging Linux/macOS, artistes/discographie, égaliseur, éditeur de tags, pochettes en ligne, filtres avancés | **en cours** (branche `develop`) |
+| 0.5.0 | connecteur Google Drive (OAuth2, scan distant, streaming avec cache) | planifié |
+| 0.6.0 | Spotify / Deezer / Amazon Music, matching hybride, vue unifiée | planifié |
+| 1.0.0 | dédoublonnage par empreinte acoustique, packaging signé, doc complète | planifié |
 
----
+Idée validée, non planifiée : serveur web embarqué (FastAPI/uvicorn) + client Android → `docs/plan_serveur_web_android.md`.
+Détail des jalons : `ROADMAP.fr.md` ; historique : `CHANGELOG.fr.md`.
 
-## 3. Architecture Logicielle
-L'application repose sur une architecture modulaire et découplée (modules < 500 lignes) :
+## 2. Stack
+Python 3.11+ (venv `.venv`) · PySide6 (modèles virtualisés `QAbstractTableModel`, > 50 000 titres) · python-vlc + VLC portable auto-téléchargé ·
+mutagen (ID3, Vorbis, FLAC) · SQLite natif sans ORM · PyInstaller · ruff, mypy, radon, pytest(-cov), SonarLint · i18n JSON maison ·
+CI GitHub Actions (`tests.yml` : 3 OS × Python 3.11-3.13 ; `release.yml`). Spotipy et les libs Google figurent déjà dans `requirements.txt` mais les connecteurs n'existent pas encore.
+Qualité et réinstallation de la stack : `CODE_QUALITY.md`.
 
+## 3. Architecture
 ```text
+main.py                       point d'entrée (AppUserModelID Windows, option --debug-i18n)
 amso/
-├── amso/
-│   ├── core/           # Moteur métier pur (zéro dépendance Qt)
-│   │   ├── scanner.py  # Parcours récursif du disque, détection multithread
-│   │   ├── metadata.py # Extraction tags (Mutagen), formats, pochettes
-│   │   ├── database.py # Schéma SQLite, indexation, requêtes CRUD
-│   │   ├── config.py   # Gestion de la configuration persistante (JSON)
-│   │   ├── scheduler.py# Planification automatique des synchronisations
-│   │   └── i18n.py     # Moteur d'internationalisation et détection de langue
-│   ├── services/       # Services et sous-systèmes
-│   │   ├── player_service.py     # Façade publique du lecteur audio (python-vlc)
-│   │   ├── player_transport.py   # Gestion bas niveau du transport et du volume
-│   │   ├── player_queue.py       # Gestion de la liste de lecture et historique
-│   │   ├── player_transitions.py # Transitions (standard, gapless, crossfade)
-│   │   ├── sleep_inhibitor.py    # Prévention de la veille système
-│   │   └── update_checker.py     # Vérification des mises à jour distantes (GitHub)
-│   └── ui/             # Couche graphique PySide6 (architecture modulaire)
-│       ├── pages/      # Mixins spécialisés de MainWindow (< 500 lignes/fichier)
-│       │   ├── folders_*.py      # Vue arborescente, navigation et corbeille
-│       │   ├── settings_*.py     # Paramètres général, lecteur, sources, à propos
-│       │   ├── navigation.py     # Routage et basculement des tiroirs/onglets
-│       │   └── retranslate.py    # Retraduction dynamique de l'interface
-│       ├── views/      # Vues composites autonomes (PlayerView, PlaylistView, BlindTestView, LogsView)
-│       ├── widgets/    # Composants réutilisables (tiroirs, badges, combos)
-│       ├── dialogs/    # Boîtes de dialogue (sources, VLC, confirmation suppression)
-│       └── workers.py  # QThread et signaux Qt (déport des scans et calculs lourds)
-├── tests/              # Tests unitaires et d'intégration (pytest)
-├── scripts/            # Outils de vérification qualité, synchronisation et build
-├── main.py             # Point d'entrée de l'application
-├── pyproject.toml      # Configuration du projet et dépendances
-└── context.md          # Présent document de référence
+├── core/                     logique métier pure, ZÉRO dépendance Qt
+│   ├── database.py           DatabaseManager (assemble les mixins) + schéma / migrations
+│   ├── db/                   models, sources_repo, tracks_repo, curation_repo, playlists_repo, activity_repo, library_queries, paths
+│   ├── scanner.py            parcours récursif multithread
+│   ├── metadata.py           tags (mutagen), formats, pochettes embarquées
+│   ├── playlist_parser.py    M3U / PLS / XSPF / WPL
+│   ├── cover_art.py          pochettes
+│   ├── scheduler.py          synchronisation automatique planifiée
+│   ├── config.py             préférences persistantes (config.ini)
+│   ├── i18n.py               traduction `tr()`, détection de langue (43 langues)
+│   └── constants.py
+├── services/                 lecteur et services système
+│   ├── player_service.py     façade publique du lecteur
+│   ├── player_transport.py   transport bas niveau
+│   ├── player_queue.py       file d'attente, historique
+│   ├── player_transitions.py transitions (standard, gapless, crossfade)
+│   ├── player_vlc_transitions.py transitions matérielles VLC direct
+│   ├── player_volume.py, player_types.py
+│   ├── audio_engine.py       ContinuousAudioEngine (QAudioSink + ring buffer PCM)
+│   ├── audio_decoder.py      décodeur PCM (amem)
+│   ├── audio_spectrum.py     analyse du spectre
+│   ├── vlc_binding.py, vlc_downloader.py   liaison et auto-installation de VLC
+│   ├── windows_audio.py, sleep_inhibitor.py   spécifique OS
+│   └── update_checker.py     mises à jour via GitHub Releases
+└── ui/                       PySide6
+    ├── views/                vues autonomes : main_window, player, playlist, logs, splash…
+    │   ├── blind_test/       sous-modules du mode Blind Test
+    │   └── effects/          effets visuels (types, painters, barres de spectre)
+    ├── pages/                mixins de MainWindow (folders_*, settings_*, navigation, retranslate, scan_controller…)
+    ├── widgets/              composants réutilisables (tiroirs, badges, combos)
+    ├── dialogs/              boîtes de dialogue (sources, VLC, suppression…)
+    ├── models*.py, folder_track_model.py, playlist_table_model.py   modèles Qt virtualisés
+    ├── theme.py, styles.py, qss_*.py   couleurs et QSS centralisés
+    └── workers.py            QThread / signaux (scans et calculs lourds hors thread UI)
+amso/locales/*.json           43 langues, fr.json = source de vérité
+scripts/                      outils (+ .bat jumeau pour chaque script) : verify, check_file_sizes, check_docs_sync, check_context,
+                              sync_translations(_ollama), audit_translations, build_exe, publish_github_release, sync_skills
+tests/                        pytest, Qt offscreen, config et DB isolées (conftest autouse)
+.agents/skills/               procédures (copie pour Claude dans .claude/skills via scripts/sync_skills.py)
 ```
+Données utilisateur : `%APPDATA%/AMSO/` (config.ini, base SQLite). Hors périmètre de lecture : `.venv`, `build`, `dist`, caches, `*.db`, `screenshots`, `_work`, `scratch` (scripts jetables).
+
+## 4. Le moteur audio (zone la plus sensible)
+Deux moteurs **étanches** (aucun effet de bord de l'un sur l'autre), choisis via `get_audio_engine()` :
+- **`vlc_direct`** — sortie directe LibVLC (WASAPI `mmdevice` ; crossfade en DirectSound). **Finalisé et figé : ne plus y toucher.**
+- **`buffer`** — `ContinuousAudioEngine` : un unique `QAudioSink` (push) ouvert en continu, ring buffer PCM, transitions logicielles
+  (gapless sample-accurate, crossfade égale puissance cos/sin, silence injecté). **Travail en cours.** Ne jamais fermer ni recréer la session matérielle
+  entre deux titres, ni réintroduire deux lecteurs matériels.
+
+Invariants communs : en pause, `previous()` charge sans lire (`load_index`, pas `play_index`) ; tout `seek`/`pause` réinitialise le standby
+(`_reset_standby_player()`) et annule vidages et transitions ; un `seek` sur piste terminée ne saute pas au suivant ; quitter un mode exclusif
+(Blind Test) coupe la lecture, les timers et le préchargement. Détail : skill `audio-pipeline`.
+
+## 5. Conventions clés (le détail est dans GEMINI.md)
+< 500 lignes/fichier, < 60 lignes/fonction · pas de duplication · couleurs via `theme.py`/`styles.py` · textes via `tr()` ; en développement seul `fr.json` change
+(autres langues et docs EN/ES/DE/IT à la release) · tout script Python a son `.bat` jumeau en CRLF · même erreur 2 fois → s'arrêter et expliquer.
+
+## 6. Skills disponibles
+`audio-pipeline` (lecture/transitions) · `add-i18n-key` (textes UI) · `docs-sync` (doc multilingue) · `release` (4 étapes) · `quality-gate` (fin de tâche) ·
+`write-tests` · `split-module` · `db-migration` · `qt-threading` · `add-source-connector` · `build-exe` · `update-context` (maintenir ce fichier).
+
+## 7. Points d'attention connus
+- `test_player.py` et plusieurs vues/modules (blind_test_view, player_view, settings_player, theme, models, metadata, playlist_view) approchent ou dépassent 500 lignes : candidats au skill `split-module`.
+- La documentation Markdown reste en 5 langues (fr/en/es/de/it) mais l'interface compte 43 langues : ne pas confondre les deux (skills, release).
+- Aucune interface de connecteur de source n'existe encore (`SourceType` ne définit que `LOCAL`) : la créer au premier connecteur.

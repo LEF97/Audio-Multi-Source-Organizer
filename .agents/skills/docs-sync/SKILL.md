@@ -6,7 +6,8 @@ description: Mise à jour de la documentation multilingue AMSO (README, CHANGELO
 # Synchronisation de la documentation multilingue
 
 Fichiers : `README.*.md`, `CHANGELOG.*.md`, `ROADMAP.*.md` (+ `RELEASE_PROCESS.*.md`) pour `fr`, `en`, `es`, `de`, `it`.
-Pour une modif de code courante : **ne pas toucher** à ces fichiers.
+- **Au fil de l'eau :** Les versions françaises (`*.fr.md`) sont la source de vérité et sont mises à jour au fur et à mesure des développements.
+- **À la release uniquement :** Les 4 autres langues (`en`, `es`, `de`, `it`) sont traduites et synchronisées lors de la préparation de la release.
 
 ## Procédure
 1. Éditer d'abord la version française (`*.fr.md`), qui sert de référence.

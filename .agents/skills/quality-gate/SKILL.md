@@ -13,6 +13,8 @@ Exécuter depuis la racine, avec le venv (`.venv\Scripts\...`). Toujours limiter
 4. `pytest -q tests/<fichiers concernés>` (suite complète seulement avant release).
 5. `python scripts/check_file_sizes.py` : aucun fichier touché ne doit dépasser 500 lignes ni introduire de fonction > 60 lignes.
 
+6. `python scripts/check_context.py` : `context.md` doit refléter les modules créés/déplacés (skill `update-context`).
+
 ## Checklist de relecture (sur le diff uniquement, pas de relecture complète)
 - Pas de `except:` nu, de `print`, ni de `except Exception: pass` silencieux (au minimum `logger.exception`).
 - Pas de duplication d'une fonction existante : `grep_search` avant d'en créer une.

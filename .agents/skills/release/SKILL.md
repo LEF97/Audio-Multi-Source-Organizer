@@ -40,4 +40,5 @@ Ne lire les 15 fichiers `.md` multilingues que dans cette procédure ; utiliser 
 - Version suivante `v(X).(Y+1).0-dev` dans `amso/__init__.py`.
 - Ajouter `## [X.Y.Z-dev] - ...` en tête des 5 `CHANGELOG.*.md`.
 - `python scripts/check_docs_sync.py`.
+- Mettre à jour le tableau « Vision & état » de `context.md` (skill `update-context`) : version publiée, nouveau cycle `-dev`.
 - Nettoyer les caches et committer l'ouverture du cycle.

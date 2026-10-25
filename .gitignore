@@ -89,3 +89,7 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
+
+# Config Claude Code (skills synchronisés depuis .agents/skills via scripts/sync_skills.py)
+.claude/
+CLAUDE.md
