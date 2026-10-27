@@ -11,8 +11,9 @@ Distribution : GitHub Releases + itch.io (Butler, « Pay What You Want »), dons
 
 | Version | Contenu | État |
 |---|---|---|
-| 0.1–0.3 | scanner local multithread, tags, lecteur VLC, playlists M3U/PLS/XSPF/WPL, Blind Test, corbeille, mises à jour in-app, effets visuels | publiées (0.3.0 actuelle) |
-| **0.4.0-dev** | refonte modulaire + quality gate, 43 langues, moteur audio `buffer` (QAudioSink), crossfade/gapless ; restent : packaging Linux/macOS, artistes/discographie, égaliseur, éditeur de tags, pochettes en ligne, filtres avancés | **en cours** (branche `develop`) |
+| 0.1–0.3 | scanner local multithread, tags, lecteur VLC, playlists M3U/PLS/XSPF/WPL, Blind Test, corbeille, mises à jour in-app, effets visuels | publiées |
+| 0.4.0 | refonte modulaire + quality gate, 43 langues, moteur audio `buffer` (QAudioSink), crossfade/gapless, feuilles CUE | publiée |
+| **0.4.1-dev** | correctifs audio : crossfade au fil du décodage, Blind Test en mode `buffer`, TNR des transitions ; restent (0.4.x) : packaging Linux/macOS, artistes/discographie, égaliseur, éditeur de tags, pochettes en ligne, filtres avancés | **en cours** (branche `develop`) |
 | 0.5.0 | connecteur Google Drive (OAuth2, scan distant, streaming avec cache) | planifié |
 | 0.6.0 | Spotify / Deezer / Amazon Music, matching hybride, vue unifiée | planifié |
 | 1.0.0 | dédoublonnage par empreinte acoustique, packaging signé, doc complète | planifié |
