@@ -36,6 +36,7 @@ amso/
 │   ├── scanner.py            parcours récursif multithread
 │   ├── metadata.py           tags (mutagen), formats, pochettes embarquées
 │   ├── playlist_parser.py    M3U / PLS / XSPF / WPL (+ CUE)
+│   ├── pcm_mixer.py          mixage PCM Int16 stéréo (numpy) : gains égale puissance, StreamingCrossfade (fondu au fil du décodage)
 │   ├── cue_parser.py         feuilles CUE : pistes virtuelles (début/fin dans un fichier audio)
 │   ├── cover_art.py          pochettes
 │   ├── scheduler.py          synchronisation automatique planifiée
@@ -68,9 +69,10 @@ amso/
     └── workers.py            QThread / signaux (scans et calculs lourds hors thread UI)
 amso/locales/*.json           43 langues, fr.json = source de vérité
 scripts/                      outils (+ .bat jumeau pour chaque script) : verify, check_file_sizes, check_docs_sync, check_context,
-                              sync_translations(_ollama), translate_docs (README en 43 langues, CHANGELOG/ROADMAP es/de/it, via Ollama), audit_translations, build_exe, publish_github_release, sync_skills
+                              sync_translations(_ollama), tnr_transitions (non-régression des transitions sur pistes réelles), translate_docs (README en 43 langues, CHANGELOG/ROADMAP es/de/it, via Ollama), audit_translations, build_exe, publish_github_release, sync_skills
 docs/i18n/                    toutes les langues sauf fr et en (README ×41, CHANGELOG et ROADMAP es/de/it), générées par Ollama ; sélecteur de langue partagé
 tests/                        pytest, Qt offscreen, config et DB isolées (conftest autouse)
+tests/tnr/                    banc de non-régression audio (pistes de référence : `_work/tnr/`, sinon NAS) : sortie factice (capture_sink), décodage de référence, analyse, scénario ; lancé par scripts/tnr_transitions.bat ou `pytest -m tnr`
 .agents/skills/               procédures (copie pour Claude dans .claude/skills via scripts/sync_skills.py)
 ```
 Données utilisateur : `%APPDATA%/AMSO/` (config.ini, base SQLite). Hors périmètre de lecture : `.venv`, `build`, `dist`, caches, `*.db`, `screenshots`, `_work`, `scratch` (scripts jetables).
@@ -81,6 +83,11 @@ Deux moteurs **étanches** (aucun effet de bord de l'un sur l'autre), choisis vi
 - **`buffer`** — `ContinuousAudioEngine` : un unique `QAudioSink` (push) ouvert en continu, ring buffer PCM, transitions logicielles
   (gapless sample-accurate, crossfade égale puissance cos/sin, silence injecté). **Travail en cours.** Ne jamais fermer ni recréer la session matérielle
   entre deux titres, ni réintroduire deux lecteurs matériels.
+
+Le décodeur `amem` livre l'audio **en temps réel** (1 s d'audio par seconde) : la fin de la piste sortante n'est pas en mémoire d'avance. Le crossfade est donc
+mixé au fil de l'arrivée des blocs (`arm_crossfade` au préchargement, zone calée sur `durée - fondu`), jamais en bloc. Après un seek, LibVLC se place sur un bloc FLAC
+(jusqu'à ~200 ms d'écart avec la position demandée). Un plantage natif laisse sa pile dans `%APPDATA%/AMSO/crash.log` (faulthandler).
+**Toute modification du moteur `buffer` se valide avec `scripts/tnr_transitions.bat`** (standard, gapless, crossfade sur Sirius → Eye in the Sky).
 
 Invariants communs : en pause, `previous()` charge sans lire (`load_index`, pas `play_index`) ; tout `seek`/`pause` réinitialise le standby
 (`_reset_standby_player()`) et annule vidages et transitions ; un `seek` sur piste terminée ne saute pas au suivant ; quitter un mode exclusif

@@ -1,5 +1,6 @@
 """Audio Multi-Source Organizer (AMSO) — Point d'entrée principal."""
 
+import faulthandler
 import sys
 
 # Sous Windows, définir l'AppUserModelID impérativement AVANT tout import Qt/GUI
@@ -38,6 +39,13 @@ def main() -> int:
         from amso.core.i18n import set_debug_i18n
 
         set_debug_i18n(True)
+
+    # Un crash natif (LibVLC, Qt Multimedia) ferme le processus sans exception Python : faulthandler
+    # écrit la pile dans crash.log, seule trace exploitable ; le fichier doit rester ouvert jusqu'à la sortie.
+    from amso.core.db.paths import get_default_data_dir
+
+    crash_log = (get_default_data_dir() / "crash.log").open("a", encoding="utf-8")
+    faulthandler.enable(file=crash_log, all_threads=True)
 
     # 1. Initialisation prioritaire de l'application Qt pour affichage instantané du splash screen
     app = QApplication(sys.argv)

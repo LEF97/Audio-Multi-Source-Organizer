@@ -116,6 +116,7 @@ class PlayerService(
         self._engine.set_volume(self._volume)
         self._engine.set_muted(self._is_muted)
         self._engine.track_finished.connect(self._on_engine_track_finished)
+        self._engine.crossfade_mixed.connect(self._promote_standby_decoder)
         self._decoder.ready_to_play.connect(self._on_decoder_ready_to_play)
         self._decoder.chunk_decoded.connect(self._on_decoder_chunk_decoded)
         self._decoder.decoding_finished.connect(self._on_decoder_finished)
@@ -210,7 +211,11 @@ class PlayerService(
 
     def _on_engine_track_finished(self) -> None:
         """Appelé lorsque le flux audio de la piste courante est entièrement diffusé."""
-        self.next()
+        self._advancing_after_track_end = True
+        try:
+            self.next()
+        finally:
+            self._advancing_after_track_end = False
 
     def _enforce_volume(self) -> None:
         """Applique sans délai le volume nominal vers le lecteur principal s'il n'est pas en fondu."""
@@ -418,7 +423,7 @@ class PlayerService(
                 self._engine._base_offset_ms = 0
                 self._engine._total_duration_ms = 0
                 self._engine._current_file_path = ""
-                self._engine._crossfade_next_path = ""
+                self._engine._reset_crossfade_locked()
                 self._engine._is_feed_complete = False
                 self._engine._track_finished_emitted = False
 

@@ -13,6 +13,10 @@ from amso.services.vlc_binding import vlc
 
 logger = logging.getLogger(__name__)
 
+# Le décodeur livre l'audio en temps réel : la piste entrante doit être décodée assez tôt pour que sa tête existe
+# quand la zone de fondu commence.
+CROSSFADE_PRELOAD_LEAD_MS = 8000
+
 
 if TYPE_CHECKING:
     from amso.services.player_types import PlayerStateBase
@@ -39,12 +43,18 @@ class PlayerTransitionsMixin(_MixinBase):
 
     def _on_standby_decoder_ready(self, file_path: str, initial_pcm: bytes, duration_ms: int) -> None:
         """Réceptionne le premier bloc du décodeur standby."""
-        if not hasattr(self, "_standby_pcm"):
-            self._standby_pcm = bytearray()
-        self._standby_pcm.extend(initial_pcm)
+        self._on_standby_decoder_chunk(file_path, initial_pcm)
 
     def _on_standby_decoder_chunk(self, file_path: str, chunk: bytes) -> None:
         """Réceptionne les blocs au fur et à mesure sur le décodeur standby."""
+        if self.sender() is self._decoder:
+            # Émis par le décodeur standby avant sa promotion mais livré après : la connexion est choisie à l'émission
+            # (thread audio de VLC). Sans ce routage, ce bloc (~93 ms) serait perdu dans le tampon standby abandonné.
+            self._engine.append_chunk(file_path, chunk)
+            return
+        if self._engine.is_crossfade_armed:
+            self._engine.feed_crossfade_incoming(chunk)
+            return
         if not hasattr(self, "_standby_pcm"):
             self._standby_pcm = bytearray()
         self._standby_pcm.extend(chunk)
@@ -155,45 +165,57 @@ class PlayerTransitionsMixin(_MixinBase):
         self.playlist_updated.emit()
         logger.info("Transition tampon réussie (gapless) vers : %s", track.title)
 
-    def _start_buffer_crossfade(self, next_idx: int, fade_sec: float) -> None:
-        """Déclenche le fondu croisé en mémoire sans changer l'UI avant le terme du titre."""
+    def _arm_buffer_crossfade(self, next_idx: int, fade_ms: int) -> None:
+        """Arme le fondu croisé : le moteur le mixe à l'arrivée des blocs décodés, sans changer l'UI avant son terme."""
         if not (0 <= next_idx < len(self._playlist)):
             return
         track = self._playlist[next_idx]
-        dur_ms = int((track.duration_seconds or 0) * 1000)
-        pcm = bytes(getattr(self, "_standby_pcm", bytearray()))
-        fade_end = self._engine.append_with_crossfade(pcm, fade_sec, file_path=stream_key(track))
-        self._promote_standby_decoder()
+        self._engine.arm_crossfade(fade_ms, stream_key(track))
+        self._engine.feed_crossfade_incoming(bytes(self._standby_pcm))
+        self._standby_pcm.clear()
         self._is_buffer_crossfading = True
         self._buffer_crossfade_next_idx = next_idx
-        self._buffer_crossfade_dur_ms = dur_ms
-        self._buffer_crossfade_fade_ms = int(fade_sec * 1000)
-        self._buffer_crossfade_end_offset = fade_end
-        logger.info("Fondu croisé démarré vers : %s (durée: %.1fs)", track.title, fade_sec)
+        self._buffer_crossfade_dur_ms = int((track.duration_seconds or 0) * 1000)
+        logger.info("Fondu croisé armé vers : %s (durée: %.1fs)", track.title, fade_ms / 1000.0)
 
     def _finish_buffer_crossfade(self) -> None:
-        """Bascule l'UI et la position temporelle à l'extinction du titre sortant."""
+        """Bascule l'UI et la position temporelle quand la lecture a traversé la zone de fondu."""
         self._is_buffer_crossfading = False
         next_idx = getattr(self, "_buffer_crossfade_next_idx", None)
         if next_idx is None or not (0 <= next_idx < len(self._playlist)):
             return
         track = self._playlist[next_idx]
         dur_ms = getattr(self, "_buffer_crossfade_dur_ms", int((track.duration_seconds or 0) * 1000))
-        fade_ms = getattr(self, "_buffer_crossfade_fade_ms", 0)
 
-        # Purge des données jouées dans le moteur et calage précis de la position de départ
-        self._engine.finish_crossfade(stream_key(track), dur_ms, fade_ms)
+        position_ms = self._engine.finish_crossfade(stream_key(track), dur_ms)
 
         self._current_index = next_idx
         self._preloaded_index = None
-        self._current_time_ms = fade_ms
+        self._current_time_ms = position_ms
         self._total_time_ms = dur_ms
 
-        ratio = min(1.0, fade_ms / dur_ms) if dur_ms > 0 else 0.0
-        self.position_changed.emit(fade_ms, dur_ms, ratio)
+        ratio = min(1.0, position_ms / dur_ms) if dur_ms > 0 else 0.0
+        self.position_changed.emit(position_ms, dur_ms, ratio)
         self.track_changed.emit(track)
         self.playlist_updated.emit()
-        logger.info("Fondu croisé achevé vers : %s (position calée à %d ms)", track.title, fade_ms)
+        logger.info("Fondu croisé achevé vers : %s (position calée à %d ms)", track.title, position_ms)
+
+    def _handle_buffer_crossfade(self, next_idx: int, remaining_ms: int, total_ms: int) -> None:
+        """Précharge et arme le fondu ; le mixage lui-même est fait par le moteur, bloc par bloc."""
+        if self._is_buffer_crossfading:
+            if self._engine.crossfade_played_through():
+                self._finish_buffer_crossfade()
+            elif not self._engine.crossfade_pending:
+                self._is_buffer_crossfading = False
+            return
+        fade_ms = int(min(float(get_config_manager().get_crossfade_duration()), total_ms * 0.4 / 1000.0) * 1000)
+        if self._preloaded_index != next_idx:
+            if remaining_ms <= fade_ms + CROSSFADE_PRELOAD_LEAD_MS:
+                self._preload_track(next_idx)
+                if self._preloaded_index == next_idx:
+                    self._arm_buffer_crossfade(next_idx, fade_ms)
+        elif not self._engine.is_crossfade_armed:
+            self._arm_buffer_crossfade(next_idx, fade_ms)
 
     def _handle_transitions(self, remaining_ms: int, total_ms: int = 0) -> None:
         """Gère le préchargement, le passage gapless immédiat et le fondu enchaîné."""
@@ -223,19 +245,7 @@ class PlayerTransitionsMixin(_MixinBase):
                 if trigger_gapless:
                     self._complete_buffer_transition(next_idx)
             elif mode == "crossfade":
-                fade_sec = float(cfg.get_crossfade_duration())
-                fade_sec = min(fade_sec, (total_ms * 0.4) / 1000.0) if total_ms > 0 else fade_sec
-                fade_ms = int(fade_sec * 1000)
-                lead_ms = max(4000, int(fade_ms * 0.5))
-                is_fading = getattr(self, "_is_buffer_crossfading", False)
-                if remaining_ms <= (fade_ms + lead_ms) and self._preloaded_index != next_idx and not is_fading:
-                    self._preload_track(next_idx)
-                if remaining_ms <= fade_ms and self._preloaded_index == next_idx and not is_fading:
-                    self._start_buffer_crossfade(next_idx, fade_sec=fade_sec)
-                if is_fading and (
-                    remaining_ms <= 100 or self._engine._play_offset >= getattr(self, "_buffer_crossfade_end_offset", 0)
-                ):
-                    self._finish_buffer_crossfade()
+                self._handle_buffer_crossfade(next_idx, remaining_ms, total_ms)
             return
 
         if not self._standby_player:

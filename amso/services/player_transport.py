@@ -67,9 +67,11 @@ class PlayerTransportMixin(_MixinBase):
             self._standby_pcm.clear()
         self._preloaded_index = None
         self._is_crossfading = False
-        self._is_buffer_crossfading = False
-        if getattr(self, "_engine", None):
-            self._engine._crossfade_next_path = ""
+        engine = getattr(self, "_engine", None)
+        if engine:
+            engine.cancel_crossfade()
+        # Un fondu déjà mixé reste dans le tampon : le tick bascule l'interface quand la lecture l'a traversé
+        self._is_buffer_crossfading = bool(engine and engine.crossfade_pending)
         self._crossfade_next_index = None
         self._fade_start_time = 0.0
         self._fade_paused_elapsed = 0.0
@@ -81,8 +83,12 @@ class PlayerTransportMixin(_MixinBase):
             except Exception:
                 pass
 
-    def load_index(self, index: int, seek_ms: int = 0) -> None:
-        """Charge un morceau à l'index donné sans démarrer la lecture (en pause silencieuse)."""
+    def load_index(self, index: int, seek_ms: int = 0, announce_track: bool = True) -> None:
+        """Charge un morceau à l'index donné sans démarrer la lecture (en pause silencieuse).
+
+        `announce_track=False` repositionne la piste déjà courante sans émettre `track_changed` : un abonné qui
+        réagit à ce signal en repositionnant la piste (Blind Test) relancerait sinon la même charge à l'infini.
+        """
         if not (0 <= index < len(self._playlist)):
             return
 
@@ -113,7 +119,8 @@ class PlayerTransportMixin(_MixinBase):
             self._current_time_ms = seek_ms
             if file_path and os.path.exists(file_path):
                 start_track_decode(self._decoder, track, seek_ms)
-            self.track_changed.emit(track)
+            if announce_track:
+                self.track_changed.emit(track)
             self.state_changed.emit("paused")
             if dur_ms > 0:
                 ratio = min(1.0, seek_ms / dur_ms)
@@ -187,7 +194,7 @@ class PlayerTransportMixin(_MixinBase):
                         self._media_player.stop()
                     except Exception:
                         pass
-                self._engine.stop()
+                self._engine.stop(keep_output=getattr(self, "_advancing_after_track_end", False))
                 self._pending_seek_ms = seek_ms
                 self._current_time_ms = seek_ms
                 start_track_decode(self._decoder, track, seek_ms)
@@ -457,7 +464,7 @@ class PlayerTransportMixin(_MixinBase):
         if use_buffer:
             was_playing = self.is_playing and not getattr(self, "_is_paused_requested", False)
             if not was_playing:
-                self.load_index(self._current_index, seek_ms=ms)
+                self.load_index(self._current_index, seek_ms=ms, announce_track=False)
                 return
 
             base_ms = getattr(self._engine, "base_offset_ms", 0)

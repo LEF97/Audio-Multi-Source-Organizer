@@ -51,7 +51,8 @@ amso = "main:main"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
-addopts = "-q --tb=short"
+addopts = "-q --tb=short -m \"not tnr\""
+markers = ["tnr: non-régression des transitions sur pistes réelles (lent, hors suite par défaut ; pytest -m tnr)"]
 
 [tool.setuptools.packages.find]
 where = ["."]

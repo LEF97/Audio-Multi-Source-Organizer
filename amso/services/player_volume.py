@@ -41,14 +41,23 @@ class PlayerVolumeMixin(_MixinBase):
     def audio_set_temporary_volume(self, volume: int) -> None:
         """Applique temporairement un volume matériel sans altérer la configuration."""
         self._is_temporary_volume = True
+        if self._uses_buffer_engine and not self._is_muted:
+            self._engine.set_volume(max(0, min(100, volume)))
         if self._media_player and not self._is_muted and not self._is_crossfading:
             self._apply_player_volume(max(0, min(100, volume)))
 
     def restore_volume(self) -> None:
         """Rétablit le volume nominal enregistré après un fondu temporaire."""
         self._is_temporary_volume = False
+        if self._uses_buffer_engine and not self._is_muted:
+            self._engine.set_volume(self._volume)
         if self._media_player and not self._is_muted and not self._is_crossfading:
             self._apply_player_volume(self._volume)
+
+    @property
+    def _uses_buffer_engine(self) -> bool:
+        """Les fondus de volume temporaires (Blind Test) doivent agir sur le moteur réellement actif."""
+        return bool(get_config_manager().get_audio_engine() == "buffer" and self._engine and self._engine.is_available)
 
     def toggle_mute(self) -> None:
         """Bascule le mode silencieux (Mute/Unmute)."""

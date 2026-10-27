@@ -16,6 +16,8 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 ## [0.4.0] - 2026-10-25
 
 ### Added
+- **Non-régression des transitions audio (TNR) :** `scripts/tnr_transitions.bat` rejoue la fin d'un titre puis le début du suivant (Sirius → Eye in the Sky par défaut) dans le vrai lecteur, avec une sortie audio factice, et compare l'enregistrement à une construction idéale (identique à l'échantillon près en gapless, fondu à puissance égale en crossfade, absence de coupure, session audio unique).
+- **Journal de plantage natif :** `crash.log` dans le dossier de données (`%APPDATA%/AMSO/`) reçoit la pile d'un plantage de LibVLC ou de Qt.
 - **Prise en charge des feuilles CUE (`.cue`) :**
   - Un fichier `.cue` apparaît dans l'arborescence comme un dossier virtuel (icône 💿) contenant ses pistes avec leur titre, leur artiste et leur durée ; le fichier audio d'origine reste lisible normalement.
   - Lecture d'une piste CUE en tant que portion du fichier (début `INDEX 01`, fin au début de la piste suivante, dernière piste jusqu'à la fin du fichier) avec position et durée propres à la piste, déplacement dans la piste et enchaînement gapless / crossfade entre portions (moteur à tampon continu uniquement ; le moteur `vlc_direct` affiche un message explicatif).
@@ -35,6 +37,9 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 - **Harnais de validation qualité unifié (Quality Gate) :** Création du script `scripts/verify.py` et de son wrapper racine `verify.bat` exécutant consécutivement le formatage (Ruff), le linter (Ruff check), le typage strict (Mypy sans masquage), le contrôle des plafonds de taille de fichiers et les tests automatisés (Pytest).
 
 ### Fixed
+- **Moteur `buffer` — crossfade :** le fondu enchaîné est désormais mixé au fil du décodage (calculé sur toute la durée demandée, vectorisé). Il ne coupe plus la fin du titre sortant, ne raccourcit plus le fondu et ne provoque plus de saccades (l'ancien calcul échantillon par échantillon bloquait le thread de l'interface).
+- **Blind Test avec le moteur `buffer` :** correction d'une récursion infinie (`track_changed` ↔ `seek_ratio`) qui fermait l'application ; les fondus de volume du Blind Test agissent maintenant aussi sur ce moteur.
+- **Moteur `buffer` — mode « Pas de fondu » :** la session audio matérielle n'est plus fermée puis rouverte entre deux titres.
 - **Playlists et feuilles CUE découvertes : journal d'activité et rafraîchissement de l'arborescence :** un scan qui n'ajoutait que des playlists (M3U, PLS, XSPF, WPL, CUE) n'était mentionné nulle part et ne rafraîchissait pas l'arborescence des dossiers (le nouveau nœud n'apparaissait qu'après un redémarrage). Le journal indique désormais le nombre de playlists / feuilles CUE ajoutées, mises à jour ou supprimées (avec les premiers noms), et l'arborescence se met à jour à la fin du scan.
 - **Moteur audio natif WASAPI & Résolution de la coupure prématurée de fin de piste :**
   - *Sortie audio native Windows WASAPI (`mmdevice`)* : suppression du forçage de `--aout=directsound` sous Windows. Le module DirectSound de VLC tronquait de manière anormale les 1,3 à 1,4 dernières secondes des fichiers audio (coupant la fin de *Sirius*). L'alignement sur `mmdevice` permet à LibVLC de diffuser l'intégralité du flux audio jusqu'à la dernière milliseconde en 32-bit float.

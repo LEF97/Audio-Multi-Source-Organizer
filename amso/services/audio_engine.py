@@ -10,9 +10,7 @@ matérielle du périphérique audio :
 
 from __future__ import annotations
 
-import array
 import logging
-import math
 import os
 import threading
 
@@ -22,6 +20,8 @@ from PySide6.QtMultimedia import (
     QAudioSink,
     QMediaDevices,
 )
+
+from amso.core.pcm_mixer import StreamingCrossfade, bytes_to_ms, ms_to_bytes
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +39,7 @@ class ContinuousAudioEngine(QObject):
     position_updated = Signal(int, int, float)  # position_ms, total_ms, ratio
     state_changed = Signal(str)  # "playing", "paused", "stopped"
     track_finished = Signal()  # émis quand la piste active atteint son terme
+    crossfade_mixed = Signal()  # émis quand la zone de fondu est entièrement mixée dans le tampon
     error_occurred = Signal(str)
 
     def __init__(self, parent: QObject | None = None) -> None:
@@ -65,6 +66,11 @@ class ContinuousAudioEngine(QObject):
         self._is_feed_complete: bool = False
         self._track_finished_emitted: bool = False
         self._crossfade_next_path: str = ""
+        self._xfade: StreamingCrossfade | None = None  # armé dès le préchargement, actif à l'entrée de la zone de fondu
+        self._xfade_fade_ms: int = 0
+        self._xfade_mixing: bool = False
+        self._xfade_end_offset: int | None = None  # fin de la zone mixée dans le tampon, une fois le mixage terminé
+        self._xfade_mixed_ms: float = 0.0
 
         self._lock = threading.Lock()
         self._init_sink()
@@ -114,11 +120,15 @@ class ContinuousAudioEngine(QObject):
         if self._sink:
             self._sink.setVolume(0.0 if muted else self._volume)
 
-    def stop(self) -> None:
-        """Stoppe la lecture et réinitialise les tampons."""
+    def stop(self, keep_output: bool = False) -> None:
+        """Stoppe la lecture et réinitialise les tampons.
+
+        `keep_output=True` laisse la sortie matérielle ouverte : enchaînement automatique de deux titres, où la fin
+        du précédent finit de se jouer et où la session audio ne doit être ni fermée ni recréée.
+        """
         self._is_playing = False
         self._is_paused = False
-        if self._sink:
+        if self._sink and not keep_output:
             self._sink.stop()
             self._audio_io = None
         with self._lock:
@@ -127,7 +137,7 @@ class ContinuousAudioEngine(QObject):
             self._base_offset_ms = 0
             self._total_duration_ms = 0
             self._current_file_path = ""
-            self._crossfade_next_path = ""
+            self._reset_crossfade_locked()
         self.state_changed.emit("stopped")
 
     def play_track(
@@ -152,6 +162,7 @@ class ContinuousAudioEngine(QObject):
             self._is_feed_complete = False
             self._track_finished_emitted = False
             self._play_offset = 0
+            self._reset_crossfade_locked()
 
         if self._sink:
             if self._audio_io is None:
@@ -168,27 +179,32 @@ class ContinuousAudioEngine(QObject):
 
     def mark_feed_complete(self, file_path: str) -> None:
         """Indique que tout le fichier a été décodé et transféré dans le buffer."""
+        mixed = False
         with self._lock:
-            if not self._current_file_path or not file_path:
-                self._is_feed_complete = True
-            elif os.path.normcase(os.path.normpath(file_path)) == os.path.normcase(
-                os.path.normpath(self._current_file_path)
-            ):
-                self._is_feed_complete = True
+            if not self._current_file_path or not file_path or _same_path(file_path, self._current_file_path):
+                if self._xfade is not None:
+                    # La piste sortante s'achève avant la fin théorique du fondu (durée des tags approximative)
+                    self._finalize_crossfade_locked()
+                    mixed = True
+                else:
+                    self._is_feed_complete = True
+        if mixed:
+            self.crossfade_mixed.emit()
 
     def append_chunk(self, file_path: str, chunk_pcm: bytes) -> None:
         """Ajoute un bloc de données PCM décodé en cours de lecture pour la piste courante."""
         if not file_path or not chunk_pcm:
             return
+        mixed = False
         with self._lock:
-            if not self._current_file_path:
+            if not self._current_file_path or not _same_path(file_path, self._current_file_path):
                 return
-            n_file = os.path.normcase(os.path.normpath(file_path))
-            n_curr = os.path.normcase(os.path.normpath(self._current_file_path))
-            next_p = getattr(self, "_crossfade_next_path", "")
-            n_next = os.path.normcase(os.path.normpath(next_p)) if next_p else ""
-            if n_file == n_curr or (n_next and n_file == n_next):
+            if self._xfade is None:
                 self._current_pcm.extend(chunk_pcm)
+            else:
+                mixed = self._append_into_crossfade_locked(chunk_pcm)
+        if mixed:
+            self.crossfade_mixed.emit()
 
     @property
     def is_feed_complete(self) -> bool:
@@ -206,6 +222,7 @@ class ContinuousAudioEngine(QObject):
             self._base_offset_ms = start_offset_ms
             self._is_feed_complete = False
             self._track_finished_emitted = False
+            self._reset_crossfade_locked()
 
     def seek_ms(self, target_ms: int) -> None:
         """Déplace la position de lecture dans le flux audio courant."""
@@ -300,66 +317,100 @@ class ContinuousAudioEngine(QObject):
             self._is_feed_complete = False
             self._track_finished_emitted = False
 
-    def append_with_crossfade(
-        self, next_pcm: bytes, fade_seconds: float, total_duration_ms: int = 0, file_path: str = ""
-    ) -> int:
-        """Raccorde avec un fondu croisé mathématique à égale puissance (Crossfade)."""
-        fade_frames = int(fade_seconds * SAMPLE_RATE)
-        fade_bytes = fade_frames * BYTES_PER_FRAME
+    # -------------------------------------------------------------------------
+    # Fondu croisé au fil du décodage
+    # -------------------------------------------------------------------------
 
+    @property
+    def is_crossfade_armed(self) -> bool:
+        return self._xfade is not None
+
+    @property
+    def crossfade_pending(self) -> bool:
+        """Un fondu est armé, en cours de mixage, ou mixé et pas encore traversé par la lecture."""
+        return self._xfade is not None or self._xfade_end_offset is not None
+
+    def arm_crossfade(self, fade_ms: int, next_path: str) -> None:
+        """Prépare le fondu : la zone de `fade_ms` commencera à `durée - fade_ms` de la piste courante."""
         with self._lock:
-            avail_end = len(self._current_pcm) - self._play_offset
-            actual_fade_bytes = min(fade_bytes, avail_end, len(next_pcm))
-            actual_fade_bytes = (actual_fade_bytes // BYTES_PER_FRAME) * BYTES_PER_FRAME
-            actual_fade_samples = actual_fade_bytes // BYTES_PER_SAMPLE
+            self._xfade = StreamingCrossfade(ms_to_bytes(fade_ms))
+            self._xfade_fade_ms = fade_ms
+            self._xfade_mixing = False
+            self._xfade_end_offset = None
+            self._crossfade_next_path = next_path
 
-            zone_a = bytes(self._current_pcm[self._play_offset : self._play_offset + actual_fade_bytes])
-            head_b = bytes(next_pcm[:actual_fade_bytes])
-            tail_b = bytes(next_pcm[actual_fade_bytes:])
-
-            if actual_fade_samples > 0:
-                arr_a = array.array("h")
-                arr_a.frombytes(zone_a)
-
-                arr_b = array.array("h")
-                arr_b.frombytes(head_b)
-
-                arr_mixed = array.array("h", [0] * actual_fade_samples)
-                num_frames = actual_fade_samples // 2
-
-                for frame_idx in range(num_frames):
-                    t = frame_idx / num_frames if num_frames > 0 else 0.0
-                    gain_b = math.sin(t * (math.pi / 2.0))
-                    gain_a = math.cos(t * (math.pi / 2.0))
-                    idx = frame_idx * 2
-                    val_l = int(arr_a[idx] * gain_a + arr_b[idx] * gain_b)
-                    val_r = int(arr_a[idx + 1] * gain_a + arr_b[idx + 1] * gain_b)
-                    arr_mixed[idx] = max(-32768, min(32767, val_l))
-                    arr_mixed[idx + 1] = max(-32768, min(32767, val_r))
-
-                mixed_bytes = arr_mixed.tobytes()
-            else:
-                mixed_bytes = b""
-
-            fade_end = self._play_offset + actual_fade_bytes
-            del self._current_pcm[self._play_offset :]
-            self._current_pcm.extend(mixed_bytes)
-            self._current_pcm.extend(tail_b)
-
-            if file_path:
-                self._crossfade_next_path = file_path
-            return fade_end
-
-    def finish_crossfade(self, file_path: str, total_duration_ms: int, fade_duration_ms: int) -> None:
-        """Finalise le fondu croisé en purgeant les données lues et en recalant le repère temporel."""
+    def feed_crossfade_incoming(self, chunk_pcm: bytes) -> None:
+        """Reçoit les blocs décodés de la piste entrante tant que le fondu n'est pas mixé."""
         with self._lock:
+            if self._xfade is not None:
+                self._xfade.incoming.extend(chunk_pcm)
+
+    def cancel_crossfade(self) -> None:
+        """Abandonne un fondu armé ou en cours ; un fondu déjà mixé reste dans le tampon."""
+        with self._lock:
+            if self._xfade_end_offset is None:
+                self._reset_crossfade_locked()
+
+    def crossfade_played_through(self) -> bool:
+        """Vrai quand la lecture a traversé toute la zone mixée : la piste entrante devient la piste courante."""
+        with self._lock:
+            return self._xfade_end_offset is not None and self._play_offset >= self._xfade_end_offset
+
+    def finish_crossfade(self, file_path: str, total_duration_ms: int) -> int:
+        """Purge les données lues et recale la position sur la piste entrante ; retourne sa position en ms."""
+        with self._lock:
+            end = self._xfade_end_offset or 0
+            overshoot = max(0, self._play_offset - end)
             if self._play_offset > 0:
                 del self._current_pcm[: self._play_offset]
                 self._play_offset = 0
-
             self._current_file_path = file_path
-            self._crossfade_next_path = ""
             self._total_duration_ms = total_duration_ms
-            self._base_offset_ms = max(0, fade_duration_ms)
-            self._is_feed_complete = False
-            self._track_finished_emitted = False
+            self._base_offset_ms = int(self._xfade_mixed_ms + bytes_to_ms(overshoot))
+            self._reset_crossfade_locked()
+            return self._base_offset_ms
+
+    def _reset_crossfade_locked(self) -> None:
+        self._xfade = None
+        self._xfade_mixing = False
+        self._xfade_end_offset = None
+        self._crossfade_next_path = ""
+
+    def _append_into_crossfade_locked(self, chunk: bytes) -> bool:
+        """Ajoute un bloc de la piste sortante ; retourne True quand la zone de fondu vient d'être entièrement mixée."""
+        xfade = self._xfade
+        if xfade is None:
+            return False
+        if not self._xfade_mixing:
+            zone_start = ms_to_bytes(self._total_duration_ms - self._xfade_fade_ms)
+            split = zone_start - (ms_to_bytes(self._base_offset_ms) + len(self._current_pcm))
+            if split >= len(chunk):
+                self._current_pcm.extend(chunk)
+                return False
+            split = max(0, split) // BYTES_PER_FRAME * BYTES_PER_FRAME
+            self._current_pcm.extend(chunk[:split])
+            chunk = chunk[split:]
+            self._xfade_mixing = True
+        mixed, _consumed = xfade.mix_outgoing(bytes(chunk))
+        self._current_pcm.extend(mixed)
+        if xfade.complete:
+            self._finalize_crossfade_locked()
+            return True
+        return False
+
+    def _finalize_crossfade_locked(self) -> None:
+        xfade = self._xfade
+        if xfade is None:
+            return
+        self._xfade_mixed_ms = xfade.mixed_ms
+        self._xfade_end_offset = len(self._current_pcm)
+        self._current_pcm.extend(xfade.incoming)
+        self._current_file_path = self._crossfade_next_path
+        self._xfade = None
+        self._xfade_mixing = False
+        self._is_feed_complete = False
+        self._track_finished_emitted = False
+
+
+def _same_path(left: str, right: str) -> bool:
+    return os.path.normcase(os.path.normpath(left)) == os.path.normcase(os.path.normpath(right))
