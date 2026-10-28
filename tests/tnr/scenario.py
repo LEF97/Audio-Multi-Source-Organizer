@@ -89,6 +89,7 @@ def run_transition(
         time.sleep(0.001)
     reached = player.current_index == 1
     stops_during_playback = sink.stop_count
+    announced = list(changes)  # le nettoyage ci-dessous réémet track_changed
     player.reset_playback()
     player.deleteLater()
     app.processEvents()
@@ -105,7 +106,7 @@ def run_transition(
         max_pump_gap_ms=max(gaps, default=0.0),
         reached_second_track=reached,
         wall_seconds=time.monotonic() - t0,
-        track_changes=changes,
+        track_changes=announced,
     )
 
 

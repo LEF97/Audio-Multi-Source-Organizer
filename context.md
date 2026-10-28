@@ -73,7 +73,7 @@ scripts/                      outils (+ .bat jumeau pour chaque script) : verify
                               sync_translations(_ollama), tnr_transitions (non-régression des transitions sur pistes réelles), translate_docs (README en 43 langues, CHANGELOG/ROADMAP es/de/it, via Ollama), audit_translations, build_exe, publish_github_release, sync_skills
 docs/i18n/                    toutes les langues sauf fr et en (README ×41, CHANGELOG et ROADMAP es/de/it), générées par Ollama ; sélecteur de langue partagé
 tests/                        pytest, Qt offscreen, config et DB isolées (conftest autouse)
-tests/tnr/                    banc de non-régression audio (pistes de référence : `_work/tnr/`, sinon NAS) : sortie factice (capture_sink), décodage de référence, analyse, scénario ; lancé par scripts/tnr_transitions.bat ou `pytest -m tnr`
+tests/tnr/                    banc de non-régression audio (pistes de référence : `_work/tnr/`, sinon NAS) : sortie factice (capture_sink), décodage de référence, analyse, scénario ; lancé par scripts/tnr_transitions.bat ou `pytest -m tnr` ; journaux horodatés dans `tests/tnr/log/` (ignoré par git)
 .agents/skills/               procédures (copie pour Claude dans .claude/skills via scripts/sync_skills.py)
 ```
 Données utilisateur : `%APPDATA%/AMSO/` (config.ini, base SQLite). Hors périmètre de lecture : `.venv`, `build`, `dist`, caches, `*.db`, `screenshots`, `_work`, `scratch` (scripts jetables).

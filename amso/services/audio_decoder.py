@@ -35,6 +35,7 @@ class AsyncAudioDecoder(QObject):
     chunk_decoded = Signal(str, bytes)  # file_path, bloc pcm supplémentaire
     decoding_finished = Signal(str, bytes, int)  # file_path, pcm total, duration_ms
     error_occurred = Signal(str, str)  # file_path, message d'erreur
+    _vlc_end_signalled = Signal()  # relais du thread d'événements de VLC vers le thread Qt
 
     def __init__(self, vlc_instance: Any = None, parent: QObject | None = None) -> None:
         super().__init__(parent)
@@ -51,6 +52,7 @@ class AsyncAudioDecoder(QObject):
         self._monitor_timer = QTimer(self)
         self._monitor_timer.setInterval(80)
         self._monitor_timer.timeout.connect(self._check_player_state)
+        self._vlc_end_signalled.connect(self._on_vlc_end_signalled)
 
     @property
     def is_finished(self) -> bool:
@@ -90,7 +92,8 @@ class AsyncAudioDecoder(QObject):
             em = self._player.event_manager()
 
             def _on_vlc_end(event: Any) -> None:
-                self._on_vlc_end_reached()
+                # Thread d'événements de VLC : un QTimer ne peut être arrêté que depuis son thread (Qt), on relaie
+                self._vlc_end_signalled.emit()
 
             self._on_end_cb = _on_vlc_end
             em.event_attach(vlc.EventType.MediaPlayerEndReached, self._on_end_cb)
@@ -99,6 +102,11 @@ class AsyncAudioDecoder(QObject):
             logger.error("Erreur d'initialisation du décodeur VLC amem : %s", exc)
             self._player = None
             return False
+
+    def _on_vlc_end_signalled(self) -> None:
+        """Traite en thread Qt la fin de flux annoncée par VLC, sauf si un nouveau décodage a démarré entre-temps."""
+        if self._player and self._player.get_state() in (vlc.State.Ended, vlc.State.Stopped):
+            self._on_vlc_end_reached()
 
     def _on_vlc_end_reached(self) -> None:
         """Déclenché lorsque LibVLC a terminé de décoder l'intégralité du flux audio."""

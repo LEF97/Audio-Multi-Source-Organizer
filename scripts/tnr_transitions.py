@@ -12,6 +12,7 @@ import argparse
 import os
 import sys
 import tempfile
+import traceback
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -52,23 +53,34 @@ def main() -> int:
     from amso.services.player_service import vlc
     from tests.tnr.analysis import evaluate
     from tests.tnr.reference import load_reference
+    from tests.tnr.report import TnrReport
     from tests.tnr.scenario import run_transition
 
     if not vlc.available:
         print("VLC indisponible : la TNR utilise le décodeur LibVLC du moteur à tampon.")
         return 2
-    print("Décodage de référence (mis en cache)...", flush=True)
-    ref_a, ref_b = load_reference(args.a), load_reference(args.b)
+    report = TnrReport()
+    try:
+        report.capture_diagnostics()
+        report.header(sys.argv, (args.a, args.b), args.modes, args.fade)
+        report.line("\nDécodage de référence (mis en cache)...")
+        ref_a, ref_b = load_reference(args.a), load_reference(args.b)
 
-    failures = 0
-    for mode in args.modes:
-        print(f"\n=== {mode} (fondu {args.fade} s) ===", flush=True)
-        result = run_transition(args.a, args.b, mode, fade_s=args.fade)
-        print(f"durée {result.wall_seconds:.0f} s, intervalle de pompage max {result.max_pump_gap_ms:.0f} ms")
-        for check in evaluate(result, ref_a, ref_b):
-            print(f"  [{'OK' if check.ok else 'ECHEC'}] {check.name} : {check.detail}")
-            failures += not check.ok
-    print(f"\n{'TOUT EST CONFORME' if not failures else f'{failures} contrôle(s) en échec'}")
+        failures = 0
+        for mode in args.modes:
+            report.line(f"\n=== {mode} (fondu {args.fade} s) ===")
+            result = run_transition(args.a, args.b, mode, fade_s=args.fade)
+            report.scenario(result)
+            for check in evaluate(result, ref_a, ref_b):
+                report.line(f"  [{'OK' if check.ok else 'ECHEC'}] {check.name} : {check.detail}")
+                failures += not check.ok
+        report.line(f"\n{'TOUT EST CONFORME' if not failures else f'{failures} contrôle(s) en échec'}")
+        report.line(f"Journal : {report.path}")
+    except Exception:
+        report.line(traceback.format_exc())
+        raise
+    finally:
+        report.close()
     return 1 if failures else 0
 
 
