@@ -409,14 +409,7 @@ class PlayerService(
 
         # 2. Réinitialisation complète du moteur Buffer / QAudioSink
         if self._engine:
-            self._engine.stop()
-            if hasattr(self._engine, "_sink") and self._engine._sink:
-                try:
-                    self._engine._sink.stop()
-                except Exception:
-                    pass
-                self._engine._sink = None
-                self._engine._audio_io = None
+            self._engine.reset_output()
             with self._engine._lock:
                 self._engine._current_pcm.clear()
                 self._engine._play_offset = 0

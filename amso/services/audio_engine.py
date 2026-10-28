@@ -140,6 +140,22 @@ class ContinuousAudioEngine(QObject):
             self._reset_crossfade_locked()
         self.state_changed.emit("stopped")
 
+    def reset_output(self) -> bool:
+        """Ferme puis recrée la session audio (changement de configuration à chaud, jamais entre deux titres).
+
+        `_sink` doit rester non nul : `is_available` en dépend, et le lecteur bascule sur le chemin VLC dès qu'il
+        est faux, ce qui rend muettes la lecture et le seek du moteur `buffer`.
+        """
+        self.stop()
+        if self._sink:
+            try:
+                self._sink.stop()
+            except RuntimeError as exc:
+                logger.debug("QAudioSink déjà détruit lors de la réinitialisation : %s", exc)
+        self._sink = None
+        self._audio_io = None
+        return self._init_sink()
+
     def play_track(
         self,
         file_path: str,
