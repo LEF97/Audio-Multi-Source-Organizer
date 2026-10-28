@@ -88,7 +88,7 @@ class PlaybackSettingsMixin(_MixinBase):
 
         # Couper la lecture et réinitialiser complètement le lecteur si le mode change
         if new_mode != old_mode and hasattr(self, "player_service") and self.player_service:
-            self.player_service.reset_playback()
+            self.player_service.reset_playback(keep_position=True)
 
     def _on_crossfade_slider_changed(self, value: int) -> None:
         cfg = get_config_manager()
@@ -208,7 +208,7 @@ class PlaybackSettingsMixin(_MixinBase):
 
         # Si le moteur a changé, couper la lecture et réinitialiser complètement le lecteur
         if new_engine != old_engine and hasattr(self, "player_service") and self.player_service:
-            self.player_service.reset_playback()
+            self.player_service.reset_playback(keep_position=True)
 
     def _on_vlc_latency_slider_changed(self, value: int) -> None:
         """Met à jour la latence DirectSound pour LibVLC."""

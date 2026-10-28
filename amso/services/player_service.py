@@ -398,12 +398,15 @@ class PlayerService(
             return int(self.current_track.duration_seconds * 1000)
         return getattr(self, "_total_time_ms", 0)
 
-    def reset_playback(self) -> None:
+    def reset_playback(self, keep_position: bool = False) -> None:
         """Coupe la lecture et réinitialise intégralement tous les moteurs et tampons.
 
         Permet de basculer de moteur audio ou de mode de transition à chaud
         sans artefacts et sans redémarrer l'application.
+        `keep_position=True` recharge la piste courante en pause à la position qu'elle avait au moment du changement.
         """
+        resume_ms = self.current_time_ms if keep_position and self.current_track else 0
+
         # 1. Arrêter immédiatement tous les flux audio
         self.stop()
 
@@ -463,4 +466,9 @@ class PlayerService(
         if track:
             self.track_changed.emit(track)
         self.playlist_updated.emit()
+        if track and resume_ms > 0:
+            if dur_ms > 0 and resume_ms >= dur_ms:
+                resume_ms = 0
+            # Même chemin qu'un seek en pause : charge sans lire (invariant de previous()/seek).
+            self.load_index(self._current_index, seek_ms=resume_ms, announce_track=False)
         logger.info("Lecteur audio réinitialisé complètement suite à modification de configuration.")
