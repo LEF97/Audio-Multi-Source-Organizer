@@ -22,6 +22,7 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 - **Journal de plantage natif :** `crash.log` dans le dossier de données (`%APPDATA%/AMSO/`) reçoit la pile d'un plantage de LibVLC ou de Qt.
 
 ### Changed
+- **Démarrage :** la table « Tous les morceaux » n'est plus chargée (jusqu'à 3 fois ~50 000 pistes) avant l'ouverture de sa page ; le compteur du bandeau reste exact via une requête `COUNT`.
 - **Démarrage :** l'écran de chargement s'affiche avant l'import de la fenêtre principale et de la base, numpy n'est plus chargé qu'en arrière-plan une fois la fenêtre visible, l'icône et le logo sont mis en cache.
 
 ### Fixed

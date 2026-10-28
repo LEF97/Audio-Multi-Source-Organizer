@@ -103,7 +103,7 @@ class MainWindow(
         self.setWindowIcon(get_app_icon())
 
         # Initialisation des modèles de données virtualisés
-        self.table_model = TrackTableModel(db=self.db, parent=self)
+        self.table_model = TrackTableModel(db=self.db, parent=self, defer_loading=True)
         self.folder_table_model = FolderTrackTableModel(db=self.db, parent=self)
 
         # Service audio central python-vlc
@@ -179,7 +179,6 @@ class MainWindow(
         self._current_active_page: str = "player"
         self.refresh_sources_list()
         self._refresh_folders_tree()
-        self.table_model.reload_data()
         self._update_track_count()
         clock.mark("bibliothèque (sources, dossiers, pistes)")
 

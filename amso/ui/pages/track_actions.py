@@ -50,7 +50,7 @@ class TrackActionsMixin(_MixinBase):
         self._update_track_count()
 
     def _update_track_count(self) -> None:
-        count = self.table_model.rowCount()
+        count = self.table_model.display_count()
         if count <= 1:
             self.track_count_label.setText(tr("topbar.track_count_singular", count=f"{count:,}"))
         else:

@@ -139,6 +139,10 @@ def test_main_window_instantiation(qapp: QApplication, db: DatabaseManager):
     window = MainWindow(db=db)
     assert "AMSO" in window.windowTitle()
     assert __version__ in window.windowTitle()
+    # Chargement différé : la table n'est remplie qu'à l'affichage de la page, mais le compteur est exact.
+    assert window.table_model.rowCount() == 0
+    assert window.table_model.display_count() == 2
+    window._on_all_tracks_clicked()
     assert window.table_model.rowCount() == 2
     assert window.btn_player.isChecked() is True
     window.btn_all_tracks.click()
@@ -511,3 +515,19 @@ def test_effects_combo_and_styles(qapp: QApplication) -> None:
 
     lbl_qss = volume_label_qss(min_width=38)
     assert "min-width: 38px;" in lbl_qss
+
+
+def test_track_model_chargement_differe_ne_lit_pas_la_base_avant_set_filter(qapp: QApplication, db: DatabaseManager):
+    """Tri et reload_data ne chargent rien tant que la page n'est pas affichée ; le compteur reste exact."""
+    model = TrackTableModel(db=db, defer_loading=True)
+
+    model.sort(1, Qt.SortOrder.DescendingOrder)
+    model.reload_data()
+    assert model.rowCount() == 0
+    assert model.display_count() == 2
+
+    model.set_filter()
+    assert model.rowCount() == 2
+    assert model.display_count() == 2
+    # Le tri demandé pendant le différé est appliqué au premier chargement
+    assert model.data(model.index(0, 1), Qt.ItemDataRole.DisplayRole) == "Stairway to Heaven"

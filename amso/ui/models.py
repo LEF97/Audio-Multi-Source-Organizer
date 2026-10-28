@@ -25,8 +25,15 @@ from amso.ui.playlist_table_model import PlaylistTableModel
 class TrackTableModel(BaseTrackTableModel):
     """Modèle de table virtualisé pour l'affichage haute performance des pistes de la bibliothèque."""
 
-    def __init__(self, db: DatabaseManager, parent: QObject | None = None) -> None:
+    # Plafond de lignes chargées par reload_data (au-delà, le modèle virtuel n'affiche que les premières).
+    MAX_LOADED_TRACKS = 50000
+
+    def __init__(self, db: DatabaseManager, parent: QObject | None = None, defer_loading: bool = False) -> None:
         super().__init__(db, parent)
+        # Au démarrage, la configuration de la vue (tri, état des colonnes) déclenche plusieurs rechargements de
+        # toute la bibliothèque (~1 s chacun pour 50 000 pistes) pour une page qui n'est pas encore affichée.
+        # Tant que defer_loading est vrai, seul le premier set_filter() (affichage de la page) charge les données.
+        self._loading_deferred = defer_loading
         self._tracks: list[TrackRecord] = []
         self._source_id_filter: int | None = None
         self._source_type_filter: str | None = None
@@ -35,6 +42,12 @@ class TrackTableModel(BaseTrackTableModel):
     def rowCount(self, parent: QModelIndex | QPersistentModelIndex = QModelIndex()) -> int:
         if parent.isValid():
             return 0
+        return len(self._tracks)
+
+    def display_count(self) -> int:
+        """Nombre de pistes de la bibliothèque, sans charger les lignes si le chargement est différé."""
+        if self._loading_deferred:
+            return min(self.db.count_tracks(), self.MAX_LOADED_TRACKS)
         return len(self._tracks)
 
     def _get_track_at_index(self, row: int) -> TrackRecord | None:
@@ -58,6 +71,7 @@ class TrackTableModel(BaseTrackTableModel):
         self._source_id_filter = source_id
         self._source_type_filter = source_type
         self._search_query = search_query.strip()
+        self._loading_deferred = False
         self.reload_data()
 
     def sort(self, column: int, order: Qt.SortOrder = Qt.SortOrder.AscendingOrder) -> None:
@@ -78,6 +92,8 @@ class TrackTableModel(BaseTrackTableModel):
         sort_order: str | None = None,
     ) -> None:
         """Recharge les pistes depuis la base de données SQLite."""
+        if self._loading_deferred:
+            return
         self._refresh_sources_cache()
         col = sort_by or self.COLUMNS[self._current_sort_col][1]
         direction = sort_order or ("DESC" if self._current_sort_order == Qt.SortOrder.DescendingOrder else "ASC")
@@ -96,7 +112,7 @@ class TrackTableModel(BaseTrackTableModel):
                 pass
         else:
             tracks, _ = self.db.get_tracks(
-                limit=50000,
+                limit=self.MAX_LOADED_TRACKS,
                 offset=0,
                 source_type=self._source_type_filter,
                 source_id=self._source_id_filter,

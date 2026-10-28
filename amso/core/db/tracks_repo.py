@@ -153,6 +153,11 @@ class TracksRepoMixin:
             rows = conn.execute(sql, params).fetchall()
             return [TrackRecord.from_row(r) for r in rows]
 
+    def count_tracks(self) -> int:
+        """Retourne le nombre total de pistes indexées."""
+        with self.get_connection() as conn:
+            return int(conn.execute("SELECT COUNT(*) FROM tracks;").fetchone()[0])
+
     def count_unextracted_tracks(self, source_id: int | None = None) -> int:
         """Retourne le nombre de pistes restant à analyser."""
         where = ["(metadata_extracted = 0 OR metadata_extracted IS NULL)"]
