@@ -10,6 +10,7 @@ from PySide6.QtWidgets import QWidget
 
 from amso.core.database import TrackRecord
 from amso.core.i18n import tr
+from amso.core.network_paths import is_network_path
 from amso.services.player_service import PlayerService
 from amso.ui.models import format_duration
 from amso.ui.views.cover_helper import (
@@ -145,12 +146,14 @@ class PlayerView(PlayerUiMixin, TransportViewMixin, QWidget):
                 self._folder_watcher.removePaths(existing)
 
             folder_to_watch: str | None = None
+            # Pas de surveillance ni de sondage des dossiers réseau : isdir() y bloque le thread UI quand le partage
+            # est injoignable, et QFileSystemWatcher ne reçoit pas les évènements SMB de façon fiable.
             if track:
-                if track.folder_path and os.path.isdir(track.folder_path):
+                if track.folder_path and not is_network_path(track.folder_path) and os.path.isdir(track.folder_path):
                     folder_to_watch = track.folder_path
                 elif track.source_path:
                     parent_dir = os.path.dirname(track.source_path)
-                    if os.path.isdir(parent_dir):
+                    if not is_network_path(parent_dir) and os.path.isdir(parent_dir):
                         folder_to_watch = parent_dir
             if folder_to_watch:
                 self._folder_watcher.addPath(folder_to_watch)

@@ -14,6 +14,7 @@ from pathlib import Path
 from PySide6.QtCore import QFileSystemWatcher, QObject, QTimer, Signal
 
 from amso.core.database import DatabaseManager, SourceRecord, SourceType
+from amso.core.network_paths import is_network_path
 
 
 class SyncScheduler(QObject):
@@ -71,7 +72,9 @@ class SyncScheduler(QObject):
             if src.sync_mode == "realtime" and src.source_type == SourceType.LOCAL and src.id:
                 p = Path(src.path_or_uri)
                 norm_p = os.path.normpath(str(p))
-                if os.path.isdir(norm_p):
+                # Un partage injoignable bloquerait isdir() sur le thread UI ; les sources réseau sont sondées
+                # par le battement périodique, pas par QFileSystemWatcher.
+                if not is_network_path(norm_p) and os.path.isdir(norm_p):
                     self._watcher.addPath(norm_p)
 
     @property
