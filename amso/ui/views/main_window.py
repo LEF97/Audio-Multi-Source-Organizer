@@ -27,6 +27,7 @@ from amso.core.database import (
 )
 from amso.core.i18n import get_i18n, tr
 from amso.core.scheduler import SyncScheduler
+from amso.core.startup_timing import get_startup_clock
 from amso.services.player_service import PlayerService
 from amso.services.sleep_inhibitor import SleepInhibitor
 from amso.services.update_checker import UpdateCheckerWorker
@@ -51,6 +52,7 @@ from amso.ui.pages.table_columns import TableColumnsMixin
 from amso.ui.pages.track_actions import TrackActionsMixin
 from amso.ui.pages.update_controller import UpdateControllerMixin
 from amso.ui.theme import DARK_THEME_QSS
+from amso.ui.views.cover_helper import wait_for_cover_workers
 from amso.ui.views.update_banner import UpdateBannerWidget
 from amso.ui.workers import ScanWorker
 
@@ -107,7 +109,10 @@ class MainWindow(
         # Service audio central python-vlc
         if progress_callback:
             progress_callback(45, tr("splash.loading_audio"))
+        clock = get_startup_clock()
+        clock.mark("MainWindow: modèles")
         self.player_service = PlayerService(parent=self)
+        clock.mark("PlayerService (VLC, audio)")
         self._player_state: str = "stopped"
         self.player_service.error_occurred.connect(self._on_player_error)
         self.player_service.state_changed.connect(self._on_player_state_changed)
@@ -139,6 +144,7 @@ class MainWindow(
         self._setup_ui()
         self._setup_menu_bar()
         self._setup_status_bar()
+        clock.mark("MainWindow: interface")
 
         # Démarrage du planificateur
         self.scheduler.start()
@@ -175,11 +181,14 @@ class MainWindow(
         self._refresh_folders_tree()
         self.table_model.reload_data()
         self._update_track_count()
+        clock.mark("bibliothèque (sources, dossiers, pistes)")
 
         if progress_callback:
             progress_callback(90, tr("splash.restoring_session"))
         self._restore_saved_playlist()
+        clock.mark("restauration playlist")
         self._restore_active_page()
+        clock.mark("restauration page active")
 
         # Vérification non-bloquante des mises à jour en tâche de fond (différée de 3,5s)
         self.update_worker: UpdateCheckerWorker | None = None
@@ -214,6 +223,14 @@ class MainWindow(
         if self.scan_worker and self.scan_worker.isRunning():
             self.scan_worker.cancel()
             self.scan_worker.wait(2000)
+        still_running = wait_for_cover_workers()
+        # Trace les threads qui survivent à la fermeture (E/S réseau bloquées) pour les identifier.
+        get_startup_clock().note(
+            "fermeture: scan actif=%s, mise à jour active=%s, pochettes actives=%d",
+            bool(self.scan_worker and self.scan_worker.isRunning()),
+            bool(self.update_worker and getattr(self.update_worker, "isRunning", lambda: False)()),
+            still_running,
+        )
         self.i18n.remove_listener(self._on_language_changed)
         if hasattr(self, "db") and self.db:
             try:

@@ -25,6 +25,7 @@ from PySide6.QtGui import (
 
 from amso.core.database import TrackRecord
 from amso.core.metadata import extract_cover_art
+from amso.core.network_paths import is_network_path
 
 # Cache mémoire pour les pochettes (file_path, size) -> QPixmap
 _COVER_CACHE: dict[tuple[str, int], QPixmap] = {}
@@ -163,7 +164,9 @@ def _resolve_track_target(track: TrackRecord | None) -> str | None:
     if not track:
         return None
     for cand in (track.source_path, track.source_ref, track.folder_path):
-        if cand and os.path.exists(cand):
+        # Appelé sur le thread UI à chaque changement de piste : jamais d'E/S sur un partage réseau
+        # (injoignable, elle gèlerait la fenêtre). Le worker gère l'absence du fichier.
+        if cand and (is_network_path(cand) or os.path.exists(cand)):
             return cand
     return track.source_path or track.source_ref or track.folder_path
 
@@ -184,7 +187,7 @@ def get_cover_pixmap(
         return _COVER_CACHE[cache_key]
 
     raw_data: bytes | None = None
-    if target_path and os.path.exists(target_path):
+    if target_path and not is_network_path(target_path) and os.path.exists(target_path):
         try:
             raw_data = extract_cover_art(target_path)
         except Exception:
@@ -194,6 +197,7 @@ def get_cover_pixmap(
             not raw_data
             and track
             and track.folder_path
+            and not is_network_path(track.folder_path)
             and os.path.isdir(track.folder_path)
             and track.folder_path != target_path
         ):
@@ -213,7 +217,8 @@ def get_cover_pixmap(
 class CoverWorker(QThread):
     """Worker QThread dédié à l'extraction asynchrone des métadonnées de pochette."""
 
-    finished = Signal(str, int, int, object)  # target_path, size, radius, raw_bytes
+    # Ne pas nommer ce signal `finished` : il masquerait QThread.finished, seul signal sûr pour deleteLater().
+    cover_ready = Signal(str, int, int, object)  # target_path, size, radius, raw_bytes
 
     def __init__(
         self,
@@ -248,7 +253,7 @@ class CoverWorker(QThread):
             except Exception:
                 raw_bytes = None
 
-        self.finished.emit(self.target_path, self.size, self.radius, raw_bytes)
+        self.cover_ready.emit(self.target_path, self.size, self.radius, raw_bytes)
 
 
 _ACTIVE_COVER_WORKERS: list[CoverWorker] = []
@@ -303,11 +308,24 @@ def load_cover_async(
                 except Exception:
                     pass
 
+    def _on_thread_finished() -> None:
         if worker in _ACTIVE_COVER_WORKERS:
             _ACTIVE_COVER_WORKERS.remove(worker)
         worker.deleteLater()
 
-    worker.finished.connect(_on_worker_finished)
+    worker.cover_ready.connect(_on_worker_finished)
+    worker.finished.connect(_on_thread_finished)
     _ACTIVE_COVER_WORKERS.append(worker)
     worker.start()
     return immediate_pix
+
+
+def wait_for_cover_workers(timeout_ms: int = 1500) -> int:
+    """Attend la fin des extractions de pochette en cours ; retourne le nombre de threads encore actifs.
+
+    À appeler à la fermeture : détruire un QThread en cours d'exécution provoque
+    « QThread: Destroyed while thread is still running » et un risque de crash.
+    """
+    for worker in list(_ACTIVE_COVER_WORKERS):
+        worker.wait(timeout_ms)
+    return sum(1 for w in _ACTIVE_COVER_WORKERS if w.isRunning())

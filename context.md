@@ -41,6 +41,8 @@ amso/
 │   ├── cue_parser.py         feuilles CUE : pistes virtuelles (début/fin dans un fichier audio)
 │   ├── cover_art.py          pochettes
 │   ├── scheduler.py          synchronisation automatique planifiée
+│   ├── network_paths.py      détection UNC / lecteur réseau (sans E/S) : jamais de exists()/isdir() réseau sur le thread UI
+│   ├── startup_timing.py     chronométrage des étapes de démarrage → `%APPDATA%/AMSO/startup.log`
 │   ├── config.py             préférences persistantes (config.ini)
 │   ├── i18n.py               traduction `tr()`, détection de langue (43 langues)
 │   └── constants.py

@@ -7,8 +7,6 @@ tampon de la carte son (~185 ms) et provoquait des saccades pendant les fondus.
 
 from __future__ import annotations
 
-import numpy as np
-
 SAMPLE_RATE = 44100
 CHANNELS = 2
 BYTES_PER_SAMPLE = 2
@@ -28,6 +26,14 @@ def silence(duration_ms: float) -> bytes:
     return bytes(ms_to_bytes(duration_ms))
 
 
+def prewarm_numpy() -> None:
+    """Charge numpy hors du chemin audio : son import (~2 s à froid) gèlerait le premier crossfade s'il était fait à la demande.
+
+    Importé à la demande plutôt qu'au niveau module pour ne pas retarder l'affichage de la fenêtre.
+    """
+    import numpy  # noqa: F401
+
+
 def equal_power_mix(outgoing: bytes, incoming: bytes, start_frame: int, total_frames: int) -> bytes:
     """Mixe deux blocs de même longueur appartenant à un fondu de `total_frames` frames, à partir de `start_frame`.
 
@@ -37,6 +43,8 @@ def equal_power_mix(outgoing: bytes, incoming: bytes, start_frame: int, total_fr
     """
     if len(outgoing) != len(incoming):
         raise ValueError("Les deux blocs de fondu doivent avoir la même longueur")
+    import numpy as np
+
     frames = len(outgoing) // BYTES_PER_FRAME
     if frames == 0:
         return b""
