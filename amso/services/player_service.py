@@ -398,14 +398,33 @@ class PlayerService(
             return int(self.current_track.duration_seconds * 1000)
         return getattr(self, "_total_time_ms", 0)
 
-    def reset_playback(self, keep_position: bool = False) -> None:
+    def capture_position_ms(self) -> int:
+        """Position de la piste courante, lisible quel que soit l'état (lecture, pause, après seek).
+
+        À appeler AVANT d'écrire le nouveau moteur dans la config : `current_time_ms` choisit sa source selon le
+        moteur configuré, donc une fois la config changée il interroge le mauvais moteur et renvoie 0.
+        """
+        track = self.current_track
+        if not track:
+            return 0
+        candidates = [self.current_time_ms, self._current_time_ms, self._pending_seek_ms]
+        if get_config_manager().get_audio_engine() == "buffer" and self._engine and self._engine.is_available:
+            if self._engine.is_playing or self._engine.is_paused:
+                candidates.append(self._engine.current_time_ms)
+        position = max(0, *candidates)
+        dur_ms = int((track.duration_seconds or 0) * 1000)
+        if dur_ms > 0 and position >= dur_ms:
+            return 0
+        return position
+
+    def reset_playback(self, resume_ms: int = 0) -> None:
         """Coupe la lecture et réinitialise intégralement tous les moteurs et tampons.
 
         Permet de basculer de moteur audio ou de mode de transition à chaud
         sans artefacts et sans redémarrer l'application.
-        `keep_position=True` recharge la piste courante en pause à la position qu'elle avait au moment du changement.
+        `resume_ms > 0` recharge la piste courante en pause à cette position (voir `capture_position_ms`).
         """
-        resume_ms = self.current_time_ms if keep_position and self.current_track else 0
+        logger.info("Réinitialisation du lecteur : position à restaurer = %d ms", resume_ms)
 
         # 1. Arrêter immédiatement tous les flux audio
         self.stop()
@@ -467,8 +486,6 @@ class PlayerService(
             self.track_changed.emit(track)
         self.playlist_updated.emit()
         if track and resume_ms > 0:
-            if dur_ms > 0 and resume_ms >= dur_ms:
-                resume_ms = 0
             # Même chemin qu'un seek en pause : charge sans lire (invariant de previous()/seek).
             self.load_index(self._current_index, seek_ms=resume_ms, announce_track=False)
         logger.info("Lecteur audio réinitialisé complètement suite à modification de configuration.")

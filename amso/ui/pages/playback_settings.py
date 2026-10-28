@@ -83,12 +83,14 @@ class PlaybackSettingsMixin(_MixinBase):
             return
 
         old_mode = cfg.get_transition_mode()
+        player = getattr(self, "player_service", None)
+        resume_ms = player.capture_position_ms() if player and new_mode != old_mode else 0
         cfg.set_transition_mode(new_mode)
         self._update_crossfade_controls_state()
 
         # Couper la lecture et réinitialiser complètement le lecteur si le mode change
-        if new_mode != old_mode and hasattr(self, "player_service") and self.player_service:
-            self.player_service.reset_playback(keep_position=True)
+        if new_mode != old_mode and player:
+            player.reset_playback(resume_ms)
 
     def _on_crossfade_slider_changed(self, value: int) -> None:
         cfg = get_config_manager()
@@ -203,12 +205,14 @@ class PlaybackSettingsMixin(_MixinBase):
             return
 
         old_engine = cfg.get_audio_engine()
+        player = getattr(self, "player_service", None)
+        resume_ms = player.capture_position_ms() if player and new_engine != old_engine else 0
         cfg.set_audio_engine(new_engine)
         self._update_vlc_latency_controls_state()
 
         # Si le moteur a changé, couper la lecture et réinitialiser complètement le lecteur
-        if new_engine != old_engine and hasattr(self, "player_service") and self.player_service:
-            self.player_service.reset_playback(keep_position=True)
+        if new_engine != old_engine and player:
+            player.reset_playback(resume_ms)
 
     def _on_vlc_latency_slider_changed(self, value: int) -> None:
         """Met à jour la latence DirectSound pour LibVLC."""

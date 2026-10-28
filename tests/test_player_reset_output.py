@@ -55,20 +55,40 @@ def _track() -> TrackRecord:
     )
 
 
-def test_reset_playback_keep_position_conserve_la_position_en_pause(qapp: QApplication) -> None:
-    get_config_manager().set_audio_engine("buffer")
+@pytest.mark.parametrize("old_engine", ["buffer", "vlc_direct"])
+@pytest.mark.parametrize("new_engine", ["buffer", "vlc_direct"])
+def test_changement_de_moteur_conserve_la_position(qapp: QApplication, old_engine: str, new_engine: str) -> None:
+    cfg = get_config_manager()
+    cfg.set_audio_engine(old_engine)
     player = PlayerService()
     if not player._engine.is_available:
         pytest.skip("aucune sortie audio disponible")
-    player.load_playlist([_track()], 0, initial_position_ms=60_000)
+    player.load_playlist([_track()], 0)
+    if old_engine == "buffer":
+        # Lecture en cours : seule la position du moteur à tampon la connaît (rien dans _pending_seek_ms).
+        player._engine._is_playing = True
+        player._engine._base_offset_ms = 90_000
+    else:
+        player._current_time_ms = 90_000
     states: list[str] = []
     player.state_changed.connect(states.append)
 
-    player.reset_playback(keep_position=True)
+    resume_ms = player.capture_position_ms()
+    cfg.set_audio_engine(new_engine)
+    player.reset_playback(resume_ms)
 
-    assert player._pending_seek_ms == 60_000
-    assert player._current_time_ms == 60_000
+    assert resume_ms == 90_000
+    assert player._pending_seek_ms == 90_000
+    assert player._current_time_ms == 90_000
     assert states[-1] == "paused"
+
+
+def test_capture_position_hors_duree_revient_a_zero(qapp: QApplication) -> None:
+    player = PlayerService()
+    player.load_playlist([_track()], 0)
+    player._current_time_ms = 240_000
+
+    assert player.capture_position_ms() == 0
 
 
 def test_reset_playback_par_defaut_revient_a_zero(qapp: QApplication) -> None:
