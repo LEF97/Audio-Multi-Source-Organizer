@@ -21,6 +21,10 @@ from amso.ui.views.cover_helper import (
 from amso.ui.views.player_ui_builder import PlayerUiMixin
 from amso.ui.widgets.transport_mixin import TransportViewMixin
 
+# Les dossiers réseau ne sont pas surveillés (QFileSystemWatcher, isdir() bloquants) : leur pochette est revérifiée
+# périodiquement en arrière-plan. Le premier passage a lieu après un intervalle complet, donc jamais au démarrage.
+NETWORK_COVER_POLL_MS = 30_000
+
 
 class PlayerView(PlayerUiMixin, TransportViewMixin, QWidget):
     """Page dédiée au Lecteur Audio grand format avec jaquette et contrôles complets."""
@@ -43,6 +47,9 @@ class PlayerView(PlayerUiMixin, TransportViewMixin, QWidget):
         self._folder_watch_timer.setSingleShot(True)
         self._folder_watch_timer.setInterval(300)
         self._folder_watch_timer.timeout.connect(self._on_folder_change_debounced)
+        self._network_cover_timer = QTimer(self)
+        self._network_cover_timer.setInterval(NETWORK_COVER_POLL_MS)
+        self._network_cover_timer.timeout.connect(self._poll_network_cover)
 
         # État initial
         self.update_track_info(self.player.current_track)
@@ -81,6 +88,12 @@ class PlayerView(PlayerUiMixin, TransportViewMixin, QWidget):
                 callback=self._on_cover_loaded,
                 force_check=True,
             )
+
+    def _poll_network_cover(self) -> None:
+        """Revérifie la pochette d'une piste réseau (le worker compare un hash : pas de redessin si rien n'a changé)."""
+        track = self.player.current_track
+        if track and self.isVisible():
+            load_cover_async(track, size=320, radius=12, callback=self._on_cover_loaded, force_check=True)
 
     def _update_scaled_cover(self) -> None:
         """Applique l'image actuelle à la taille exacte du lbl_cover avec anticrénelage fluide."""
@@ -157,6 +170,12 @@ class PlayerView(PlayerUiMixin, TransportViewMixin, QWidget):
                         folder_to_watch = parent_dir
             if folder_to_watch:
                 self._folder_watcher.addPath(folder_to_watch)
+
+        if hasattr(self, "_network_cover_timer"):
+            if track and any(is_network_path(p) for p in (track.source_path, track.folder_path) if p):
+                self._network_cover_timer.start()
+            else:
+                self._network_cover_timer.stop()
 
         if hasattr(self, "effect_canvas") and self.effect_canvas:
             self.effect_canvas.set_track(track)

@@ -18,9 +18,15 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 ### Added
 - **Non-régression des transitions audio (TNR) :** `scripts/tnr_transitions.bat` rejoue la fin d'un titre puis le début du suivant (Sirius → Eye in the Sky par défaut) dans le vrai lecteur, avec une sortie audio factice, et compare l'enregistrement à une construction idéale (identique à l'échantillon près en gapless, fondu à puissance égale en crossfade, absence de coupure, session audio unique).
 - **Journal de la TNR :** chaque exécution écrit `tests/tnr/log/tnr_AAAA-MM-JJ_HH-MM-SS.log` (version, commit, pistes, résultats détaillés, messages Qt et journaux du lecteur) ; le dossier est ignoré par git.
+- **Journal de démarrage :** `startup.log` dans le dossier de données chronomètre chaque étape du lancement, la restauration de la session et les threads encore actifs à la fermeture.
 - **Journal de plantage natif :** `crash.log` dans le dossier de données (`%APPDATA%/AMSO/`) reçoit la pile d'un plantage de LibVLC ou de Qt.
 
+### Changed
+- **Démarrage :** l'écran de chargement s'affiche avant l'import de la fenêtre principale et de la base, numpy n'est plus chargé qu'en arrière-plan une fois la fenêtre visible, l'icône et le logo sont mis en cache.
+
 ### Fixed
+- **Démarrage sans réseau :** aucun sondage disque (`exists`, `isdir`) n'est plus fait sur un chemin réseau (UNC ou lecteur mappé) depuis le thread d'interface au démarrage (pochette, surveillance de dossier, restauration de la session) ; un partage injoignable ne fige plus la fenêtre. La pochette d'une piste réseau est revérifiée toutes les 30 s en arrière-plan.
+- **Fermeture :** correction de « QThread: Destroyed while thread is still running » (signal `finished` du worker de pochettes qui masquait celui de `QThread`, threads de pochettes non attendus).
 - **Moteur `buffer` — crossfade :** le fondu enchaîné est désormais mixé au fil du décodage (calculé sur toute la durée demandée, vectorisé). Il ne coupe plus la fin du titre sortant, ne raccourcit plus le fondu et ne provoque plus de saccades (l'ancien calcul échantillon par échantillon bloquait le thread de l'interface).
 - **Blind Test avec le moteur `buffer` :** correction d'une récursion infinie (`track_changed` ↔ `seek_ratio`) qui fermait l'application ; les fondus de volume du Blind Test agissent maintenant aussi sur ce moteur.
 - **Décodeur audio (`amem`) :** la fin de flux annoncée par VLC arrêtait un `QTimer` depuis le thread d'événements de VLC (`QObject::killTimer: Timers cannot be stopped from another thread`, comportement indéfini à chaque piste) ; elle est maintenant relayée au thread Qt.

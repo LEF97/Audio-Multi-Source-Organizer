@@ -60,6 +60,11 @@ AMSO a pour vocation de devenir le **hub musical universel et décentralisé** d
 
 ---
 
+### 🔵 Version 0.4.2 — Compatibilité réseau Linux & macOS
+- [ ] **Détection des montages réseau (Linux & macOS) :** `amso/core/network_paths.py` ne reconnaît aujourd'hui que les chemins UNC et les lecteurs mappés Windows ; reconnaître les montages NFS / SMB / AFP (`/proc/self/mountinfo`, `statfs`) pour éviter tout sondage disque bloquant au démarrage sur ces systèmes.
+
+---
+
 ### 🌟 Version x.0.0 — Dédoublonnage Intelligent & Version Stable
 - [ ] **Détection acoustique d'empreinte (Audio Fingerprinting) :** Identification des doublons même en cas de tags erronés ou de fichiers ré-encodés.
 - [ ] **Assistant de résolution des doublons :** Comparaison intelligente de qualité (sélection automatique du meilleur bitrate / lossless) avec archivage sécurisé.
