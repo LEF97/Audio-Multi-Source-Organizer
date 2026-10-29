@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import urllib.error
 import urllib.request
@@ -158,11 +159,22 @@ def is_untranslated(key: str, val: str, ref_val: str, target_lang: str) -> bool:
 def has_source_leak(val: str, ref_val: str) -> bool:
     """Vrai si la « traduction » reprend le texte français puis y ajoute autre chose (ex. « français (romaji) »)."""
     ref = ref_val.strip()
-    return len(ref) >= 8 and len(val) > len(ref) and ref in val
+    return len(ref) >= 8 and len(val.strip()) > len(ref) and ref in val
+
+
+def placeholders(text: str) -> list[str]:
+    return sorted(re.findall(r"\{[A-Za-z_]+\}", text))
+
+
+def is_invalid_translation(val: str, ref_val: str) -> bool:
+    """Texte français repris, ou marqueurs {nom} perdus / ajoutés (le texte s'afficherait cassé)."""
+    return has_source_leak(val, ref_val) or placeholders(val) != placeholders(ref_val)
 
 
 def needs_retranslation(key: str, val: str, ref_val: str, target_lang: str) -> bool:
-    return is_untranslated(key, val, ref_val, target_lang) or (target_lang != "fr" and has_source_leak(val, ref_val))
+    if target_lang == "fr":
+        return False
+    return is_untranslated(key, val, ref_val, target_lang) or is_invalid_translation(val, ref_val)
 
 
 def translate_batch_with_ollama(
@@ -311,12 +323,12 @@ def sync_locales(
                     )
                     batch_res = translate_batch_with_ollama(chunk_dict, target_lang, ollama_model)
                     # Le modèle double parfois le texte français d'une transcription : un nouvel essai clé par clé suffit
-                    for k in [k for k, v in batch_res.items() if k in chunk_dict and has_source_leak(v, chunk_dict[k])]:
+                    for k in [k for k, v in batch_res.items() if k in chunk_dict and is_invalid_translation(v, chunk_dict[k])]:
                         retry = translate_batch_with_ollama({k: chunk_dict[k]}, target_lang, ollama_model)
-                        if k in retry and not has_source_leak(retry[k], chunk_dict[k]):
+                        if k in retry and not is_invalid_translation(retry[k], chunk_dict[k]):
                             batch_res[k] = retry[k]
                         else:
-                            log(f"    [!] {k} : traduction rejetée (texte français repris), clé laissée en l'état.")
+                            log(f"    [!] {k} : traduction rejetée (texte français repris ou marqueurs altérés), clé laissée en l'état.")
                             del batch_res[k]
                     translated_results.update(batch_res)
 

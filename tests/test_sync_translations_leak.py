@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from sync_translations import has_source_leak, needs_retranslation
+from sync_translations import has_source_leak, is_invalid_translation, needs_retranslation
 
 
 def test_has_source_leak_texte_francais_suivi_de_romaji_est_detecte() -> None:
@@ -27,3 +27,13 @@ def test_needs_retranslation_valeur_identique_ou_doublee_est_a_retraduire() -> N
     assert needs_retranslation("k", ref, ref, "ja")
     assert needs_retranslation("k", ref + " (romaji)", ref, "ja")
     assert not needs_retranslation("k", "曲のつなぎ方を設定します", ref, "ja")
+
+
+def test_is_invalid_translation_marqueur_perdu_ou_ajoute_est_detecte() -> None:
+    assert is_invalid_translation("Charger des morceaux", "Charger {count} morceaux")
+    assert is_invalid_translation("{count} {count_plural}", "{count} morceaux")
+    assert not is_invalid_translation("{count} 曲を読み込む", "Charger {count} morceaux")
+
+
+def test_has_source_leak_valeur_identique_aux_espaces_pres_nest_pas_une_fuite() -> None:
+    assert not has_source_leak("  + {name}", "  + {name}")
