@@ -19,7 +19,7 @@ Fichiers : `README.fr.md` et `README.md` (racine), `docs/i18n/README.<code>.md` 
 ## Procédure
 1. Éditer d'abord la version française (`*.fr.md`), qui sert de référence.
 2. Ne lire que les sections concernées (grep sur le titre `## [`, ou le badge/numéro de ligne), pas les 15 fichiers entiers.
-3. Ne rien reporter à la main dans les autres langues : à la release, traduire `en` depuis `fr`, puis lancer `translate_docs.py --ollama` (Ollama démarré).
+3. Ne rien reporter à la main dans les autres langues : à la release, traduire `en` depuis `fr`, puis lancer `translate_docs.py --ollama --lang es de it` (Ollama démarré). **Attendre la validation de l'utilisateur sur les 5 langues (fr, en, es, de, it)** avant de lancer `translate_docs.py --ollama` pour les 38 autres langues.
 4. Lancer `python scripts/check_docs_sync.py` (`--release` à la release : exige les 43 README) : il détecte les écarts de structure et un sélecteur de langue obsolète. Corriger jusqu'à succès (bloquant en CI).
 5. Si le script échoue 2 fois avec la même erreur, arrêter et expliquer.
 
