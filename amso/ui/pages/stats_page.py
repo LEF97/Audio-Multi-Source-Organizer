@@ -87,7 +87,7 @@ class StatsPageMixin:
         l2.setContentsMargins(16, 14, 16, 14)
         self.lbl_kpi_size_title = QLabel(tr("stats.card_size"))
         self.lbl_kpi_size_title.setStyleSheet("color: #94A3B8; font-size: 12px; font-weight: 600;")
-        self.kpi_size_val = QLabel("0 Go")
+        self.kpi_size_val = QLabel(tr("stats.size_value", size=0))
         self.kpi_size_val.setStyleSheet("color: #10B981; font-size: 26px; font-weight: 700;")
         l2.addWidget(self.lbl_kpi_size_title)
         l2.addWidget(self.kpi_size_val)
@@ -167,20 +167,26 @@ class StatsPageMixin:
         duration_hrs = round(stats["total_duration_seconds"] / 3600, 1)
 
         self.kpi_tracks_val.setText(f"{stats['total_tracks']:,}")
-        self.kpi_size_val.setText(f"{size_gb} Go")
-        self.kpi_duration_val.setText(f"{duration_hrs} h")
+        self.kpi_size_val.setText(tr("stats.size_value", size=size_gb))
+        self.kpi_duration_val.setText(tr("stats.duration_value", hours=duration_hrs))
         self.kpi_sources_val.setText(str(stats["total_sources"]))
 
         # Détail Formats
         if stats["by_format"]:
-            fmts_lines = [f"• <b>{k.upper()}</b> : {v:,} morceaux" for k, v in stats["by_format"].items()]
+            fmts_lines = [
+                f"• <b>{k.upper()}</b> : {tr('folders.track_count', count=f'{v:,}')}"
+                for k, v in stats["by_format"].items()
+            ]
             self.lbl_formats_breakdown.setText("<br>".join(fmts_lines))
         else:
             self.lbl_formats_breakdown.setText(f"<i>{tr('dialog.stats_none')}</i>")
 
         # Détail Sources
         if stats["by_source_type"]:
-            srcs_lines = [f"• <b>{k.capitalize()}</b> : {v:,} morceaux" for k, v in stats["by_source_type"].items()]
+            srcs_lines = [
+                f"• <b>{k.capitalize()}</b> : {tr('folders.track_count', count=f'{v:,}')}"
+                for k, v in stats["by_source_type"].items()
+            ]
             self.lbl_sources_breakdown.setText("<br>".join(srcs_lines))
         else:
             self.lbl_sources_breakdown.setText(f"<i>{tr('dialog.stats_none')}</i>")

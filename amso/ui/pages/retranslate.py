@@ -264,6 +264,8 @@ class RetranslateMixin(_MixinBase):
                 self.lbl_bt_countdown.setText(tr("blind_test.countdown_label"))
                 self.lbl_bt_reveal.setText(tr("blind_test.reveal_label"))
                 self.lbl_bt_fade.setText(tr("blind_test.fade_label"))
+                for spin in (self.spin_bt_countdown, self.spin_bt_reveal, self.spin_bt_fade):
+                    spin.setSuffix(f" {tr('unit.seconds_short')}")
                 self._update_blind_test_summary_label()
 
         # Vues Lecteur, Blind Test et Playlist

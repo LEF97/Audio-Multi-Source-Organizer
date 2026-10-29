@@ -50,12 +50,12 @@ def format_file_size(size_bytes: int | None) -> str:
     if not size_bytes or size_bytes <= 0:
         return "--"
     if size_bytes < 1024:
-        return f"{size_bytes} o"
+        return tr("unit.size_bytes", value=size_bytes)
     elif size_bytes < 1024 * 1024:
-        return f"{size_bytes / 1024:.1f} Ko"
+        return tr("unit.size_kb", value=f"{size_bytes / 1024:.1f}")
     elif size_bytes < 1024 * 1024 * 1024:
-        return f"{size_bytes / (1024 * 1024):.1f} Mo"
-    return f"{size_bytes / (1024 * 1024 * 1024):.2f} Go"
+        return tr("unit.size_mb", value=f"{size_bytes / (1024 * 1024):.1f}")
+    return tr("unit.size_gb", value=f"{size_bytes / (1024 * 1024 * 1024):.2f}")
 
 
 # Spécification unifiée de toutes les colonnes représentant l'ensemble des champs de la table 'tracks' :
