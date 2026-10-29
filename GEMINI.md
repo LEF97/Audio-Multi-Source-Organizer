@@ -75,7 +75,7 @@ Contexte projet : voir `context.md`. Ne pas le relire si déjà connu.
 - **Deux moteurs strictement étanches** : AMSO supporte le mode `vlc_direct` (VLC natif, focus actuel) et le mode `buffer` (`ContinuousAudioEngine` / `QAudioSink`, finalisation en temps 2).
 - **Zéro interférence** : Les deux moteurs sont hermétiques. Aucune modification de code, de logique, de paramétrage ou d'utilisation sur un moteur ne doit avoir d'impact ou d'effet de bord sur l'autre.
 - **Règles spécifiques au mode `buffer` (ContinuousAudioEngine - temps 2)** :
-  - *Flux audio unique* : La sortie physique vers la carte son est gérée exclusivement par un `QAudioSink` unique (mode Push) ouvert en continu.
+  - *Flux audio unique* : La sortie physique vers la carte son est gérée exclusivement par un `QAudioSink` unique (mode pull, hébergé dans un thread audio dédié : `amso/services/audio_output.py`) ouvert en continu. Ne jamais le faire alimenter par le thread d'interface (déplacer la fenêtre l'affame et altère le son).
   - *Tampon mémoire continu (Ring Buffer)* : Les transitions (Gapless 0, Crossfade cos/sin, silences purs) s'opèrent intégralement en mémoire dans le tampon PCM sans coupure matérielle.
   - *Décodage* : Le décodeur (amem) alimente le tampon sans passer par la sortie haut-parleur.
 

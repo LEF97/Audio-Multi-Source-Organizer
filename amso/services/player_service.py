@@ -282,6 +282,11 @@ class PlayerService(
             self._standby_player = None
             return False
 
+    def release_audio_output(self) -> None:
+        """Arrête le thread audio du moteur `buffer` (fermeture de l'application)."""
+        if self._engine:
+            self._engine.shutdown()
+
     def reload_vlc(self) -> bool:
         """Tente de recharger VLC (après un téléchargement automatique ou changement de chemin)."""
         setup_vlc_environment()

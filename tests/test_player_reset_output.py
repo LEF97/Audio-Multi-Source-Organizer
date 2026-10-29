@@ -35,12 +35,12 @@ def test_reset_output_recree_une_session_neuve(qapp: QApplication) -> None:
     player = PlayerService()
     if not player._engine.is_available:
         pytest.skip("aucune sortie audio disponible")
-    old_sink = player._engine._sink
+    old_output = player._engine._output
 
     assert player._engine.reset_output() is True
 
-    assert player._engine._sink is not None
-    assert player._engine._sink is not old_sink
+    assert player._engine._output is not None
+    assert player._engine._output is not old_output
 
 
 def _track() -> TrackRecord:
@@ -73,7 +73,7 @@ def test_reprise_apres_reset_relance_le_timer_de_transfert(qapp: QApplication, v
     else:
         player._resume_from_paused()
 
-    # Sans tick, pump_audio n'est plus appelé : la lecture reprend muette.
+    # Sans tick, poll_progress n'est plus appelé : la lecture reprend muette.
     assert player._timer.isActive()
     assert player._engine.is_playing
 

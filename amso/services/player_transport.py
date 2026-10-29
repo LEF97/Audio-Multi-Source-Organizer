@@ -293,7 +293,7 @@ class PlayerTransportMixin(_MixinBase):
         """Relance le timer de transfert PCM si `stop()` l'a arrêté.
 
         Un titre chargé en pause (`load_index` après un stop, un seek ou un reset) est repris par `engine.resume()`
-        seul : sans tick, `pump_audio` n'est plus appelé et la lecture reste muette.
+        seul : sans tick, `poll_progress` n'est plus appelé et la lecture reste muette.
         """
         if not self._timer.isActive():
             self._timer.start()

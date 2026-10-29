@@ -1,6 +1,6 @@
 ---
 name: audio-pipeline
-description: Architecture audio continue d'AMSO (ContinuousAudioEngine, QAudioSink push mode, Ring Buffer mémoire, décodeur amem). À consulter impérativement pour toute modification touchant la lecture, le streaming ou les transitions audio.
+description: Architecture audio continue d'AMSO (ContinuousAudioEngine, QAudioSink pull mode, thread audio dédié, Ring Buffer mémoire, décodeur amem). À consulter impérativement pour toute modification touchant la lecture, le streaming ou les transitions audio.
 ---
 
 # Architecture Audio et Moteurs de Lecture
@@ -12,7 +12,7 @@ AMSO supporte deux moteurs audio distincts et hermétiques (sélectionnables via
    - 3 types de transitions validés à 100 % et figés : *Pas de fondu*, *Gapless 0 ms* (WASAPI `mmdevice`), et *Crossfade* (DirectSound pour isolation des volumes).
    - Indépendant de QAudioSink et du tampon mémoire PCM. Code figé, plus aucune modification de transport sur ce moteur.
 2. **Mode `buffer` / `ContinuousAudioEngine` (moteur QAudioSink / phase 2 — en cours)** :
-   - Sortie physique vers la carte son gérée exclusivement par un `QAudioSink` unique (mode Push) ouvert en continu.
+   - Sortie physique vers la carte son gérée exclusivement par un `QAudioSink` unique (mode pull) ouvert en continu, hébergé dans son propre thread (`audio_output.py`) : le thread d'interface ne l'alimente pas.
    - Décodeur amem + Tampon mémoire continu (Ring Buffer PCM). Transitions 100% logicielles (gapless sample-accurate, crossfade cos/sin, silences numériques injectés).
 
 **Règle d'étanchéité absolue :**
@@ -29,7 +29,7 @@ AMSO supporte deux moteurs audio distincts et hermétiques (sélectionnables via
 
 2. **Tampon continu en mémoire (Ring Buffer)** :
    - Tout le mixage et les transitions s'opèrent au niveau des échantillons PCM dans `ContinuousAudioEngine` (`amso/services/audio_engine.py`).
-   - `QAudioSink` lit le flux d'octets sans interruption en mode Push (`pump_audio`).
+   - `QAudioSink` tire le flux d'octets sans interruption via `ContinuousAudioEngine.read_pcm` (silence servi si le tampon est vide, sans avancer la position) ; `poll_progress` (tick UI) ne fait que publier la position et détecter la fin de piste.
 
 3. **Les 3 modes de transition dans le tampon** :
    - **Gapless 0** (`append_gapless`) : Les échantillons de la piste suivante sont concaténés directement à la suite du dernier échantillon de la piste courante. Décalage = 0.0 ms, aucun clic, aucun blanc.

@@ -14,7 +14,7 @@ from amso.core.config import get_config_manager
 from amso.core.database import TrackRecord
 from amso.core.pcm_mixer import SAMPLE_RATE
 from amso.services.player_service import PlayerService
-from tests.tnr.capture_sink import CaptureSink, Underrun
+from tests.tnr.capture_sink import CaptureOutput, Underrun
 
 PUMP_GAP_REPORT_MS = 150.0
 
@@ -43,7 +43,7 @@ def make_track(path: Path) -> TrackRecord:
 
 
 def _install_pump_probe(player: PlayerService, gaps: list[float]) -> None:
-    original = player._engine.pump_audio
+    original = player._engine.poll_progress
     last = [0.0]
 
     def probed() -> None:
@@ -53,7 +53,7 @@ def _install_pump_probe(player: PlayerService, gaps: list[float]) -> None:
         last[0] = now
         original()
 
-    player._engine.pump_audio = probed
+    player._engine.poll_progress = probed
 
 
 def run_transition(
@@ -68,8 +68,9 @@ def run_transition(
 
     track_a, track_b = make_track(path_a), make_track(path_b)
     player = PlayerService()
-    sink = CaptureSink()
-    player._engine._sink = sink
+    player._engine.shutdown()  # la vraie sortie est remplacée par l'enregistreur
+    sink = CaptureOutput(player._engine.read_pcm)
+    player._engine._output = sink
     gaps: list[float] = []
     _install_pump_probe(player, gaps)
     changes: list[tuple[int, float]] = []
@@ -90,6 +91,7 @@ def run_transition(
     reached = player.current_index == 1
     stops_during_playback = sink.stop_count
     announced = list(changes)  # le nettoyage ci-dessous réémet track_changed
+    sink.shutdown()
     player.reset_playback()
     player.deleteLater()
     app.processEvents()

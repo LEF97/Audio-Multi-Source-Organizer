@@ -210,6 +210,7 @@ class MainWindow(
             self.scheduler.stop()
         if hasattr(self, "player_service") and self.player_service:
             self.player_service.stop()
+            self.player_service.release_audio_output()
         if (
             hasattr(self, "update_worker")
             and self.update_worker

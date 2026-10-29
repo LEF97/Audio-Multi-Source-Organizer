@@ -2,7 +2,7 @@
 
 Fournit une lecture bit-perfect ininterrompue sans réinitialisation
 matérielle du périphérique audio :
-- Flux unique QAudioSink en mode Push.
+- Flux unique QAudioSink en mode pull, hébergé dans un thread dédié (voir `audio_output.py`).
 - Décodage asynchrone des fichiers locaux ou réseau via QAudioDecoder.
 - Enchaînement parfait (Standard avec silence propre, Gapless 0 au sample près,
   Crossfade mathématique à égale puissance).
@@ -14,14 +14,11 @@ import logging
 import os
 import threading
 
-from PySide6.QtCore import QByteArray, QIODevice, QObject, Signal
-from PySide6.QtMultimedia import (
-    QAudioFormat,
-    QAudioSink,
-    QMediaDevices,
-)
+from PySide6.QtCore import QObject, Signal
+from PySide6.QtMultimedia import QAudioFormat
 
 from amso.core.pcm_mixer import StreamingCrossfade, bytes_to_ms, ms_to_bytes
+from amso.services.audio_output import SinkOutput
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +30,7 @@ BUFFER_SIZE_SINK = 32768  # ~185ms de tampon réactif
 
 
 class ContinuousAudioEngine(QObject):
-    """Moteur de lecture audio continue à flux unique (QAudioSink Push Mode)."""
+    """Moteur de lecture audio continue à flux unique (QAudioSink en mode pull)."""
 
     # Signaux
     position_updated = Signal(int, int, float)  # position_ms, total_ms, ratio
@@ -49,8 +46,10 @@ class ContinuousAudioEngine(QObject):
         self._format.setChannelCount(CHANNELS)
         self._format.setSampleFormat(QAudioFormat.SampleFormat.Int16)
 
-        self._sink: QAudioSink | None = None
-        self._audio_io: QIODevice | None = None
+        self._output: SinkOutput | None = None
+        self._output_started: bool = False
+        self._starved_bytes: int = 0  # silence servi faute de données, une fois la lecture réellement commencée
+        self._has_served_data: bool = False
         self._volume: float = 1.0  # 0.0 à 1.0
         self._is_muted: bool = False
 
@@ -76,21 +75,47 @@ class ContinuousAudioEngine(QObject):
         self._init_sink()
 
     def _init_sink(self) -> bool:
-        """Initialise la sortie audio unique."""
-        try:
-            device = QMediaDevices.defaultAudioOutput()
-            self._sink = QAudioSink(device, self._format)
-            self._sink.setBufferSize(BUFFER_SIZE_SINK)
-            self._sink.setVolume(0.0 if self._is_muted else self._volume)
-            return True
-        except Exception as exc:
-            logger.error("Impossible d'initialiser QAudioSink : %s", exc)
-            self._sink = None
+        """Initialise la sortie audio unique (thread audio dédié)."""
+        output = SinkOutput(self._format, BUFFER_SIZE_SINK, 0.0 if self._is_muted else self._volume, self.read_pcm)
+        if not output.available:
+            output.shutdown()
+            self._output = None
             return False
+        self._output = output
+        self._output_started = False
+        return True
 
     @property
     def is_available(self) -> bool:
-        return self._sink is not None
+        return self._output is not None
+
+    @property
+    def starved_ms(self) -> float:
+        """Durée de silence servie à la carte son faute de données (0 si la lecture n'a jamais manqué de PCM)."""
+        return bytes_to_ms(self._starved_bytes)
+
+    def read_pcm(self, max_bytes: int) -> tuple[bytes, int]:
+        """Appelé par le thread audio : sert jusqu'à `max_bytes` de PCM, complétés par du silence si le tampon est vide.
+
+        Le silence ne fait pas avancer la position : la lecture reprend exactement où elle s'est interrompue.
+        """
+        wanted = max_bytes // BYTES_PER_FRAME * BYTES_PER_FRAME
+        with self._lock:
+            available = len(self._current_pcm) - self._play_offset
+            take = min(wanted, available) // BYTES_PER_FRAME * BYTES_PER_FRAME
+            chunk = bytes(self._current_pcm[self._play_offset : self._play_offset + take])
+            self._play_offset += take
+        padded = wanted - take
+        if take:
+            self._has_served_data = True
+        elif padded and self._has_served_data:
+            self._starved_bytes += padded
+        return (chunk + bytes(padded) if padded else chunk), padded
+
+    def shutdown(self) -> None:
+        """Arrête le thread audio (fermeture de l'application)."""
+        if self._output is not None:
+            self._output.shutdown()
 
     @property
     def is_playing(self) -> bool:
@@ -111,14 +136,14 @@ class ContinuousAudioEngine(QObject):
     def set_volume(self, vol_percent: int) -> None:
         """Volume de 0 à 100."""
         self._volume = max(0.0, min(1.0, vol_percent / 100.0))
-        if self._sink and not self._is_muted:
-            self._sink.setVolume(self._volume)
+        if self._output and not self._is_muted:
+            self._output.set_volume(self._volume)
 
     def set_muted(self, muted: bool) -> None:
         """Active ou désactive le mode muet."""
         self._is_muted = muted
-        if self._sink:
-            self._sink.setVolume(0.0 if muted else self._volume)
+        if self._output:
+            self._output.set_volume(0.0 if muted else self._volume)
 
     def stop(self, keep_output: bool = False) -> None:
         """Stoppe la lecture et réinitialise les tampons.
@@ -128,9 +153,10 @@ class ContinuousAudioEngine(QObject):
         """
         self._is_playing = False
         self._is_paused = False
-        if self._sink and not keep_output:
-            self._sink.stop()
-            self._audio_io = None
+        if self._output and not keep_output:
+            self._output.stop()
+            self._output_started = False
+            self._has_served_data = False
         with self._lock:
             self._current_pcm.clear()
             self._play_offset = 0
@@ -143,17 +169,13 @@ class ContinuousAudioEngine(QObject):
     def reset_output(self) -> bool:
         """Ferme puis recrée la session audio (changement de configuration à chaud, jamais entre deux titres).
 
-        `_sink` doit rester non nul : `is_available` en dépend, et le lecteur bascule sur le chemin VLC dès qu'il
+        `_output` doit rester non nul : `is_available` en dépend, et le lecteur bascule sur le chemin VLC dès qu'il
         est faux, ce qui rend muettes la lecture et le seek du moteur `buffer`.
         """
         self.stop()
-        if self._sink:
-            try:
-                self._sink.stop()
-            except RuntimeError as exc:
-                logger.debug("QAudioSink déjà détruit lors de la réinitialisation : %s", exc)
-        self._sink = None
-        self._audio_io = None
+        if self._output:
+            self._output.shutdown()
+        self._output = None
         return self._init_sink()
 
     def play_track(
@@ -165,7 +187,7 @@ class ContinuousAudioEngine(QObject):
         start_paused: bool = False,
     ) -> bool:
         """Démarre la lecture immédiate d'une piste à partir de son PCM décodé."""
-        if not self._sink:
+        if not self._output:
             if not self._init_sink():
                 self.error_occurred.emit("Sortie audio non disponible")
                 return False
@@ -180,13 +202,14 @@ class ContinuousAudioEngine(QObject):
             self._play_offset = 0
             self._reset_crossfade_locked()
 
-        if self._sink:
-            if self._audio_io is None:
-                self._audio_io = self._sink.start()
-            if start_paused:
-                self._sink.suspend()
+        if self._output:
+            if not self._output_started:
+                self._output.start(start_paused)
+                self._output_started = True
+            elif start_paused:
+                self._output.suspend()
             elif self._is_paused:
-                self._sink.resume()
+                self._output.resume()
 
         self._is_playing = True
         self._is_paused = start_paused
@@ -251,8 +274,8 @@ class ContinuousAudioEngine(QObject):
         if not self._is_playing or self._is_paused:
             return
         self._is_paused = True
-        if self._sink:
-            self._sink.suspend()
+        if self._output:
+            self._output.suspend()
         self.state_changed.emit("paused")
 
     def resume(self) -> None:
@@ -260,27 +283,14 @@ class ContinuousAudioEngine(QObject):
         if not self._is_playing or not self._is_paused:
             return
         self._is_paused = False
-        if self._sink:
-            self._sink.resume()
+        if self._output:
+            self._output.resume()
         self.state_changed.emit("playing")
 
-    def pump_audio(self) -> None:
-        """Transfère les données du tampon continu vers la carte son."""
-        if not self._is_playing or self._is_paused or not self._sink or not self._audio_io:
+    def poll_progress(self) -> None:
+        """Publie la position et détecte la fin de piste (la carte son est alimentée par `read_pcm`)."""
+        if not self._is_playing or self._is_paused or not self._output_started:
             return
-
-        free_bytes = self._sink.bytesFree()
-        if free_bytes <= 0:
-            return
-
-        with self._lock:
-            available = len(self._current_pcm) - self._play_offset
-            if available > 0:
-                chunk_len = min(free_bytes, available)
-                chunk = self._current_pcm[self._play_offset : self._play_offset + chunk_len]
-                written = self._audio_io.write(QByteArray(chunk))
-                if written > 0:
-                    self._play_offset += written
 
         # Calcul de la position courante en ms
         current_ms = self.current_time_ms

@@ -325,7 +325,7 @@ class PlayerTransitionsMixin(_MixinBase):
             and (self._engine.is_playing or getattr(self._decoder, "is_decoding", False))
         )
         if use_buffer:
-            self._engine.pump_audio()
+            self._engine.poll_progress()
             current_ms = self._engine.current_time_ms
             total_ms = self._engine.total_duration_ms
             self._current_time_ms = current_ms

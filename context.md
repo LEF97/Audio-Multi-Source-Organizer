@@ -54,7 +54,8 @@ amso/
 │   ├── player_vlc_transitions.py transitions matérielles VLC direct
 │   ├── player_volume.py, player_types.py
 │   ├── player_cue.py         lecture des pistes CUE (moteur tampon) : décalage/arrêt de décodage, clé de flux
-│   ├── audio_engine.py       ContinuousAudioEngine (QAudioSink + ring buffer PCM)
+│   ├── audio_engine.py       ContinuousAudioEngine (ring buffer PCM, `read_pcm` appelé par le thread audio)
+│   ├── audio_output.py       SinkOutput : QAudioSink en mode pull dans son propre QThread (indépendant du thread UI)
 │   ├── audio_decoder.py      décodeur PCM (amem)
 │   ├── audio_spectrum.py     analyse du spectre
 │   ├── vlc_binding.py, vlc_downloader.py   liaison et auto-installation de VLC
@@ -83,7 +84,7 @@ Données utilisateur : `%APPDATA%/AMSO/` (config.ini, base SQLite). Hors périm�
 ## 4. Le moteur audio (zone la plus sensible)
 Deux moteurs **étanches** (aucun effet de bord de l'un sur l'autre), choisis via `get_audio_engine()` :
 - **`vlc_direct`** — sortie directe LibVLC (WASAPI `mmdevice` ; crossfade en DirectSound). **Finalisé et figé : ne plus y toucher.**
-- **`buffer`** — `ContinuousAudioEngine` : un unique `QAudioSink` (push) ouvert en continu, ring buffer PCM, transitions logicielles
+- **`buffer`** — `ContinuousAudioEngine` : un unique `QAudioSink` (pull, thread audio dédié) ouvert en continu, ring buffer PCM, transitions logicielles
   (gapless sample-accurate, crossfade égale puissance cos/sin, silence injecté). **Travail en cours.** Ne jamais fermer ni recréer la session matérielle
   entre deux titres, ni réintroduire deux lecteurs matériels.
 
