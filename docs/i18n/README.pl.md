@@ -24,6 +24,10 @@
 ---
 
 <p align="center">
+  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+</p>
+
+<p align="center">
   <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
 </p>
 
@@ -41,19 +45,20 @@
 
 | Funkcjonalność | Opis | Status |
 | :--- | :---: | :---: |
-| **Wbudowany silnik odtwarzania VLC** | Lekki i niezależny odtwarzacz audio z automatyczną instalacją VLC portable i płynnym zarządzaniem głośnością | 🟢 Zaimplementowano |
-| **Lokalny skaner wielowątkowy** | Rekurencyjne i szybkie wykrywanie lokalnych plików audio (MP3, FLAC, AAC, OGG...) | 🟢 Zaimplementowano |
+| **Silnik odtwarzania audio** | Lekki i niezależny odtwarzacz audio (VLC portable automatycznie instalowany na Windows). Dwa silniki do wyboru: bezpośrednie wyjście VLC lub ciągły silnik buforowy dla płynnego przechodzenia między dwoma utworami (Gapless 0 ms, płynne przejście o równej mocy, bez przerwy w wyjściu audio) | 🟢 Zaimplementowano |
+| **Zarządzanie biblioteką** | Rekurencyjne skanowanie wielowątkowe lokalnych folderów (MP3, FLAC, AAC, OGG...), synchronizacja ręczna, zaplanowana lub w czasie rzeczywistym, kosz i statystyki biblioteki | 🟢 Zaimplementowano |
 | **Ekstrakcja metadanych** | Odczyt/zapis ID3, Vorbis Comments i obliczanie sygnatury audio (`mutagen`) | 🟢 Zaimplementowano |
-| **Obsługa playlist (M3U, PLS, XSPF, WPL) i arkuszy CUE** | Indeksowanie drzewiaste (🎶), sekwencyjny porządek słuchania, wizualne lokalizowanie brakujących utworów; pliki `.cue` (💿) otwierają się jak folder z wirtualnymi ścieżkami z ich czasem trwania i odtwarzają się jak prawdziwe ścieżki | 🟢 Zaimplementowano |
-| **Menedżer playlist i przeciąganie/upuszczanie** | Wirtualna kolejka, płynne przeciąganie i upuszczanie, odwracalna losowość (shuffle) i pętle | 🟢 Zaimplementowano |
-| **Interaktywny tryb „🎲 Blind Test”** | Immersywna gra muzyczna z animowanym odliczaniem, wyciszeniem dźwięku, łagodnym ujawnianiem i automatycznym ciąganiem | 🟢 Zaimplementowano |
+| **Obsługa playlist (M3U, PLS, XSPF, WPL) i arkuszy CUE** | Indeksowanie drzewiaste (🎶), sekwencyjna kolejność słuchania, wizualne lokalizowanie brakujących utworów; pliki `.cue` (💿) otwierają się jak folder z wirtualnymi ścieżkami z ich czasem trwania i odtwarzają się jak prawdziwe ścieżki | 🟢 Zaimplementowano |
+| **Menedżer playlist i przeciąganie/upuszczanie** | Wirtualizowana kolejka, płynne przeciąganie i upuszczanie, odwracalny losowy układ (shuffle) i pętle | 🟢 Zaimplementowano |
+| **Interaktywny tryb „🎲 Blind Test”** | Immersywna gra muzyczna z animowanym odliczaniem, efektami dźwiękowymi, łagodnym ujawnieniem i automatycznym przejściem | 🟢 Zaimplementowano |
 | **Aktualizacje w aplikacji** | Automatyczna/ręczna weryfikacja wersji za pomocą GitHub Releases | 🟢 Zaimplementowano |
+| **Wersje Linux i macOS** | Pakiety `.AppImage` / `.tar.gz` (Linux) i niepodpisany `.dmg` (macOS), wymagany VLC | 🟡 Eksperymentalne (nie przetestowane) |
 | **Zarządzanie artystami i dyskografią** | Dedykowany widok dla artysty z albumami, singlami i pełną dyskografią | 🟡 Planowane |
 | **Graficzny ekwalizer (EQ)** | Presety audio i parametryczny ekwalizer wielopasmowy | 🟡 Planowane |
-| **Konnektor Google Drive** | Skanowanie i synchronizacja zdalnych kolekcji audio za pomocą OAuth 2.0 | ⚪ Planowane |
-| **Konnektor Amazon Music** | Skanowanie i synchronizacja zdalnych kolekcji za pomocą OAuth 2.0 | ⚪ Planowane |
+| **Konnektor Google Drive** | Skany i synchronizacja zdalnych kolekcji audio za pomocą OAuth 2.0 | ⚪ Planowane |
+| **Konnektor Amazon Music** | Skany i synchronizacja zdalnych kolekcji za pomocą OAuth 2.0 | ⚪ Planowane |
 | **Konnektor Spotify / Deezer** | Importowanie playlist i dopasowywanie utworów | ⚪ Planowane |
-| **Inteligentne usuwanie duplikatów** | Wykrywanie duplikatów (rozmyte tytuły/artyści + odciski akustyczne) | ⚪ Planowane |
+| **Inteligentne usuwanie duplikatów** | Wykrywanie duplikatów (rozmyte tytuły/artyści + wzorce akustyczne) | ⚪ Planowane |
 
 > 💡 *Aby zapoznać się ze szczegółami planowanych kamieni milowych i wersji, zapoznaj się z [Mapą drogową (Roadmap)](../../ROADMAP.md).*
 
@@ -100,6 +105,20 @@ cp .env.example .env
 # 6. Lancer l'application
 python main.py
 ```
+
+---
+
+## 🐧🍎 Linux i macOS: wersje eksperymentalne (nie przetestowane)
+
+Pakiety Linux (`.AppImage` / `.tar.gz`) i macOS (`.dmg`) są dostarczane **bez testowania**: AMSO zostało zweryfikowane tylko na Windowsie. Silnik audio z ciągłym buforem (`buffer`) nie został zweryfikowany na tych systemach. Wasz feedback jest cenny.
+
+- **Wymagane jest VLC** (AMSO pobiera je tylko na Windows) :
+  - Linux : `sudo apt install vlc` (Debian / Ubuntu), `sudo dnf install vlc` (Fedora) lub `sudo pacman -S vlc` (Arch).
+  - macOS : zainstaluj **VLC.app** z [videolan.org](https://www.videolan.org/vlc/) w folderze Applications.
+- **Linux, biblioteki systemowe** : interfejs Qt wymaga między innymi `libpulse0` (dźwięk), `libxcb-cursor0` i `libxkbcommon-x11-0` (np. `sudo apt install libpulse0 libxcb-cursor0 libxkbcommon-x11-0`).
+- **macOS, niepodpisany `.dmg`** : przy pierwszym uruchomieniu, kliknij prawym przyciskiem na AMSO, a następnie **Otwórz**, lub wykonaj `xattr -dr com.apple.quarantine /Applications/AMSO.app`.
+- **Linux, AppImage** : uczynić go wykonywalnym za pomocą `chmod +x AMSO*.AppImage`.
+- **W przypadku problemów**, prosimy o przesłanie plików `startup.log` i `crash.log` (jeśli istnieją) znajdujących się w folderze danych: `~/Library/Application Support/AMSO/` na macOS, `~/.local/share/AMSO/` na Linux. Proszę podać swój system i wersję VLC.
 
 ---
 

@@ -24,6 +24,10 @@
 ---
 
 <p align="center">
+  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+</p>
+
+<p align="center">
   <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
 </p>
 
@@ -39,21 +43,22 @@
 
 ## 📌 Ominaisuudet ja projektin tila
 
-| Toiminto | Kuvaus | Tila |
+| Toiminnallisuus | Kuvaus | Tila |
 | :--- | :---: | :---: |
-| **Integroitu VLC-soittimo** | Kevyt ja itsenäinen äänisoitin, jossa on VLC portable -autoinstallaatio ja sujuva äänenvoimakkuuden hallinta | 🟢 Toteutettu |
-| **Multithreadinen paikallinen skanneri** | Rekursiivinen ja nopea paikallisten äänitiedostojen löytäminen (MP3, FLAC, AAC, OGG...) | 🟢 Toteutettu |
+| **Äänisoittimen moottori** | Kevyt ja itsenäinen äänisoitin (VLC portable asennetaan automaattisesti Windowsille). Kaksi valittavissa olevaa moottoria: suora VLC-ulostulo tai jatkuva puskurimoottori saumattomaan siirtymään kahden kappaleen välillä (Gapless 0 ms, tasavirtainen haalistuminen, ilman äänitulon katkeamista) | 🟢 Toteutettu |
+| **Kirjaston hallinta** | Monitreaalinen rekursiivinen skannaus paikallisista hakemistoista (MP3, FLAC, AAC, OGG...), manuaalinen, aikatautattu tai reaaliaikainen synkronointi, roskakori ja kirjaston tilastot | 🟢 Toteutettu |
 | **Metatietojen poiminta** | ID3- ja Vorbis Comments -lukeminen/kirjoittaminen sekä äänijalanjäljen laskeminen (`mutagen`) | 🟢 Toteutettu |
-| **Soittolistan tuki (M3U, PLS, XSPF, WPL) & CUE-tiedostot** | Puurakenteinen indeksointi (🎶), sarjallinen kuuntelujärjestys, puuttuvien kappaleiden visuaalinen paikannus; .cue-tiedostot (💿) avautuvat kuin virtuaalinen kappalelista, jonka kesto näkyy ja joka toistuu kuin oikea kappale | 🟢 Toteutettu |
-| **Soittolistan hallinta & Vedä-Irrotta** | Virtualisoitu jonotus, sujuva vedä-irrotta, käänteinen satunnaistaminen (shuffle) ja silmukoinnit | 🟢 Toteutettu |
-| **Interaktiivinen "🎲 Blind Test" -tila** | Immersiivinen musiikkipeli animoidulla laskurilla, äänivaaimella, pehmeällä paljastuksella ja automaattisella jatkumisella | 🟢 Toteutettu |
-| **Sovelluksen sisäiset päivitykset** | Versioiden automaattinen/manuaalinen tarkistus GitHub Releasesin kautta | 🟢 Toteutettu |
-| **Artistien ja diskografian hallinta** | Omatoitettu näkymä artistikohtaisesti albumeilla, singleillä ja koko diskografialla | 🟡 Suunniteltu |
-| **Graafinen ekvalisaattori (EQ)** | Äänialustukset ja parametrisen monikaista-ekvalisaattori | 🟡 Suunniteltu |
-| **Google Drive -liitin** | Skannaus ja synkronointi etäpaikkojen äänikokoelmien kanssa OAuth 2.0:n kautta | ⚪ Suunniteltu |
-| **Amazon Music -liitin** | Skannaus ja synkronointi etäpaikkojen kokoelmien kanssa OAuth 2.0:n kautta | ⚪ Suunniteltu |
-| **Spotify / Deezer -liitin** | Soittolistojen tuonti ja kappaleiden vastaavuus | ⚪ Suunniteltu |
-| **Älykäs duplikaattien poisto** | Duplikaattien tunnistus (epäselvä otsikko/artisti + akustiset jälkennäytökset) | ⚪ Suunniteltu |
+| **Soittolistan tuki (M3U, PLS, XSPF, WPL) & CUE-tiedostot** | Puurakenteinen indeksointi (🎶), sarjallinen kuuntelujärjestys, puuttuvien kappaleiden visuaalinen paikannus; `.cue`-tiedostot (💿) avautuvat kuin virtuaalinen kappaleiden hakemisto pituutensa kanssa ja toistuvat kuin oikeat kappaleet | 🟢 Toteutettu |
+| **Soittolistan hallinta & Vedä-aseta** | Virtualisoitu jonotus, sujuva vedä-aseta, kääntäen toistuva satunnaisuus (shuffle) ja silmukoinnit | 🟢 Toteutettu |
+| **Interaktiivinen "🎲 Blind Test" -tila** | Immersiivinen musiikkipeli animaatiolla varustetulla laskurilla, äänihaihtumisella, pehmeällä paljastuksella ja automaattisella siirtymällä | 🟢 Toteutettu |
+| **Sisäiset päivitykset** | Versioiden automaattinen/manuaalinen tarkistus via GitHub Releases | 🟢 Implémenté |
+| **Linux & macOS -versiot** | Pakat .AppImage / .tar.gz (Linux) ja allekirjoittamaton .dmg (macOS), VLC vaaditaan | 🟡 Expérimental (non testé) |
+| **Artistien ja diskografian hallinta** | Artistikohtainen näkymä albumeilla, singleillä ja koko diskografialla | 🟡 Prévu |
+| **Graafinen ekvalaisoija (EQ)** | Äämeläasetukset ja parametrisesti monikaistainen ekvalaisoija | 🟡 Prévu |
+| **Google Drive -liitin** | Skannaus ja synkronointi etäpaikkojen äänikokoelmien kanssa via OAuth 2.0 | ⚪ Planifié |
+| **Amazon Music -liitin** | Skannaus ja synkronointi etäpaikkojen kokoelmien kanssa via OAuth 2.0 | ⚪ Planifié |
+| **Spotify / Deezer -liitin** | Soittolistojen tuonti ja kappaleiden vastaavuus | ⚪ Planifié |
+| **Älykäs duplikaattien poisto** | Duplikaattien tunnistus (sana/artisti epäselvä + akustiikan jälkennäytteet) | ⚪ Planifié |
 
 > 💡 *Suunnitellut virstanpylväät ja versiot löytyvät tarkemmin [Feuille de route (Roadmap)](../../ROADMAP.md).*
 
@@ -100,6 +105,20 @@ cp .env.example .env
 # 6. Lancer l'application
 python main.py
 ```
+
+---
+
+## 🐧🍎 Linux ja macOS: kokeelliset versiot (ei testattu)
+
+Linux-paketit (`.AppImage` / `.tar.gz`) ja macOS (`.dmg`) on saatavilla **ilman että niitä on testattu**: AMSO on validointi vain Windowsilla. Jatkuvan puskurin äänimoottori (`buffer`) erityisesti ei ole tarkistettu näillä järjestelmissä. Palauteenne on arvokasta.
+
+- **VLC on pakollinen** (AMSO lataa sen vain Windowsille) :
+  - Linux: `sudo apt install vlc` (Debian / Ubuntu), `sudo dnf install vlc` (Fedora) tai `sudo pacman -S vlc` (Arch).
+  - macOS: asenna **VLC.app** [videolan.org](https://www.videolan.org/vlc/) -kansion Applications hakemistoon.
+- **Linux, järjestelmäkirjastot** : Qt-rajapinta vaatii erityisesti `libpulse0` (ääni), `libxcb-cursor0` ja `libxkbcommon-x11-0` (esim. `sudo apt install libpulse0 libxcb-cursor0 libxkbcommon-x11-0`).
+- **macOS, allekirjoittamaton `.dmg`** : ensimmäisellä käynnistyksellä, napsauta AMSO-kohdetta oikealla ja valitse **Avaa**, tai suorita `xattr -dr com.apple.quarantine /Applications/AMSO.app`.
+- **Linux, AppImage** : tee se suoritettavaksi komennolla `chmod +x AMSO*.AppImage`.
+- **Ongelman sattuessa**, lähetä tiedostot `startup.log` ja `crash.log` (jos olemassa) tiedostokansiosta: `~/Library/Application Support/AMSO/` macOS:lla, `~/.local/share/AMSO/` Linuxilla. Ilmaise käyttöjärjestelmäsi ja VLC:n versio.
 
 ---
 

@@ -47,16 +47,31 @@ AMSO tiene como vocación convertirse en el **hub musical universal y descentral
 
 ---
 
-### 🟢 Versión 0.4.0 — Experiencia de Audio Avanzada y Hojas CUE *(Actual)*
-- [x] **Rediseño modular de la arquitectura y Quality Gate:** Desglose de la aplicación en módulos cohesivos (< 500 líneas), modularización de MainWindow en mixins dedicados (amso/ui/pages/), descomposición del servicio de audio en subsistemas independientes (player_transport, player_queue, player_transitions) e implementación de un arnés de validación automatizado (scripts/verify.py & .bat : ruff, mypy, pytest, control de tamaños).
-- [x] **Integración Windows Shell y barra de tareas:** Fijación nativa directa desde el icono activo (AppUserModelID explícito LEF97.AMSO.AudioPlayer) desde el punto de entrada main.py y persistencia del acceso directo durante las actualizaciones.
+### 🟢 Versión 0.4.0 — Experiencia de Audio Avanzada & Hojas CUE
+- [x] **Refactorización modular de la arquitectura & Quality Gate:** Desglose de la aplicación en módulos cohesivos (< 500 líneas), modularización de MainWindow en mixins dedicados (amso/ui/pages/), descomposición del servicio de audio en subsistemas independientes (player_transport, player_queue, player_transitions) y establecimiento de un arnés de validación automatizado (scripts/verify.py & .bat : ruff, mypy, pytest, control de tamaños).
+- [x] **Integración Windows Shell & barra de tareas:** Fijación nativa directa desde el icono activo (AppUserModelID explícito LEF97.AMSO.AudioPlayer) desde el punto de entrada main.py y persistencia del acceso directo durante las actualizaciones.
 - [x] **Escucha perfecta Gapless 0 entre dos pistas:** Ahora están disponibles 2 motores, uno basado en VLC_direct, el otro funcionando en modo buffer (funcionamiento preferido). Estos modos permiten una escucha fluida en álbumes con pistas relacionadas (Alan Parsons, Pink Floyd, Mike Oldfield, etc...)
 - [x] **Soporte de hojas CUE (`.cue`):** Un archivo `.cue` se muestra como una carpeta de pistas virtuales (💿) con su duración y se reproduce como pistas reales (motor de búfer continuo).
 
 ---
 
-### 🔵 Version 0.4.1 — Packaging Linux & macOS
-- [ ] **Despliegue multiplataforma automatizado (Linux & macOS) :** Compilación nativa y empaquetado automatizado vía GitHub Actions para Linux (.AppImage / .tar.gz) y macOS Apple Silicon ARM & Intel (.dmg), complementario al ejecutable de Windows.
+### 🟢 Version 0.4.1 — Fiabilidad de audio, registro traducido & versiones Linux / macOS experimentales *(Actual)*
+- [x] **Salida de audio independiente del hilo de interfaz:** el `QAudioSink` del motor `buffer` es alimentado por un hilo de audio dedicado (modo pull); mover o redimensionar la ventana ya no altera el sonido.
+- [x] **Prueba ciega en motor `buffer`:** Reproducir, Siguiente y Anterior inician el sonido sin volver a pulsar Reproducir.
+- [x] **Traducciones completadas:** registro de actividad registrado en clave + parámetros y traducido en pantalla, textos codificados en duro convertidos, reserva en francés, control de los marcadores `{nom}` en la sincronización.
+- [x] **Estado de libVLC:** versión y procedencia (copia AMSO o VLC del sistema) en la configuración del reproductor.
+- [x] **Despliegue multiplataforma (Linux & macOS), versión experimental no probada:** empaquetado automatizado vía GitHub Actions para Linux (.AppImage / .tar.gz) y macOS Apple Silicon ARM & Intel (.dmg no firmado), VLC requerido; los probadores envían `startup.log` y `crash.log`.
+
+---
+
+### 🔵 Version 0.4.2 — Compatibilidad de red Linux & macOS
+- [ ] **Detección de montajes de red (Linux & macOS):** `amso/core/network_paths.py` solo reconoce hoy las rutas UNC y las unidades mapeadas de Windows; reconocer los montajes NFS / SMB / AFP (`/proc/self/mountinfo`, `statfs`) para evitar cualquier sondeo de disco bloqueante al inicio en estos sistemas.
+- [ ] **Validación en Linux y macOS:** motor `buffer`, transiciones y empaquetado a confirmar en sistemas reales a partir de los comentarios de los probadores.
+
+---
+
+### 🔵 Version 0.5.0 — Navegación por álbum en las listas de reproducción
+- [ ] **Listas de reproducción en modo álbum :** opción «Mostrar en modo álbum» (activada por defecto) que agrupa los títulos de una lista de reproducción en carpetas virtuales por álbum en el árbol, con «(álbum desconocido)» para los títulos sin álbum y una supercarga por lista de reproducción por clic derecho.
 
 ---
 

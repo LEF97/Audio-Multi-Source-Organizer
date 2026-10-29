@@ -24,6 +24,10 @@
 ---
 
 <p align="center">
+  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+</p>
+
+<p align="center">
   <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
 </p>
 
@@ -41,19 +45,20 @@
 
 | Functionaliteit | Beschrijving | Status |
 | :--- | :---: | :---: |
-| **Geïntegreerde VLC-mediaspeler** | Lichte, autonome audio-speler met automatische installatie van VLC portable en vloeiende volumeregeling | 🟢 Implémenté |
-| **Multithreaded lokale scanner** | Recursieve en snelle ontdekking van lokale audiobestanden (MP3, FLAC, AAC, OGG...) | 🟢 Implémenté |
-| **Metadata-extractie** | Lezen/schrijven ID3, Vorbis Comments en berekening van audio-vingerafdruk (`mutagen`) | 🟢 Implémenté |
-| **Ondersteuning van Playlists (M3U, PLS, XSPF, WPL) & CUE-bladen** | Boomstructuur-indexering (🎶), sequentiële luistervolgorde, visuele detectie van ontbrekende nummers; de bestanden `.cue` (💿) openen als een virtuele trackmap met hun duur en spelen als echte tracks | 🟢 Implémenté |
-| **Playlistbeheerder & Drag-and-Drop** | Gevirtualiseerde wachtrij, vloeiend drag & drop, omkeerbare willekeurige volgorde (shuffle) en loops | 🟢 Implémenté |
-| **Interactieve « 🎲 Blind Test » modus** | Immersief muzikaal spel met animatie-tijdtelling, geluidsfade, zachte onthulling en automatische opeenvolging | 🟢 Implémenté |
+| **Audio afspeelmotor** | Lichtgewicht en zelfstandige audio-afspeler (VLC portable automatisch geïnstalleerd onder Windows). Twee motoren op keuze: directe VLC-uitvoer, of een continue buffer-engine voor een vloeiende overgang tussen twee tracks (Gapless 0 ms, fade-out met gelijke kracht, zonder onderbreking van de audio-uitvoer) | 🟢 Implémenté |
+| **Bibliotheekbeheer** | Multithreaded recursieve scan van lokale mappen (MP3, FLAC, AAC, OGG...), handmatige, geplande of real-time synchronisatie, prullenbak en bibliotheekstatistieken | 🟢 Implémenté |
+| **Metadata-extractie** | Lezen/schrijven ID3, Vorbis Comments en berekening van audio-handtekening (`mutagen`) | 🟢 Implémenté |
+| **Ondersteuning van afspeellijsten (M3U, PLS, XSPF, WPL) & CUE-bestanden** | Boomindexering (🎶), sequentiële luistervolgorde, visuele detectie van ontbrekende nummers; `.cue` bestanden (💿) openen als een virtuele trackmap met hun duur en spelen af als echte tracks | 🟢 Implémenté |
+| **Afspeellijstbeheer & Drag-and-Drop** | Gevirtualiseerde wachtrij, vloeiende drag & drop, omkeerbare willekeur (shuffle) en loops | 🟢 Implémenté |
+| **Interactieve "🎲 Blind Test" modus** | Immersief muzikaal spel met geanimeerde aftelling, geluidsfade, zachte onthulling en automatische overgang | 🟢 Implémenté |
 | **In-app updates** | Automatische/handmatige versiecontrole via GitHub Releases | 🟢 Geïmplementeerd |
-| **Beheer van artiesten & Discografie** | Specifieke weergave per artiest met albums, singles en volledige discografie | 🟡 Gepland |
+| **Versies Linux & macOS** | Paquets `.AppImage` / `.tar.gz` (Linux) en `.dmg` niet-ondertekend (macOS), VLC vereist | 🟡 Experimenteel (niet getest) |
+| **Beheer van artiesten & discografie** | Specifieke weergave per artiest met albums, singles en volledige discografie | 🟡 Gepland |
 | **Grafische equalizer (EQ)** | Audio presets en parametrische multiband equalizer | 🟡 Gepland |
 | **Google Drive Connector** | Scannen en synchroniseren van externe audio collecties via OAuth 2.0 | ⚪ Gepland |
 | **Amazon Music Connector** | Scannen en synchroniseren van externe collecties via OAuth 2.0 | ⚪ Gepland |
 | **Spotify / Deezer Connector** | Importeren van afspeellijsten en trackmatching | ⚪ Gepland |
-| **Slim deduplicatie** | Detectie van duplicaten (vage titel/artiest + akoestische vingerafdrukken) | ⚪ Gepland |
+| **Slim dedupliceren** | Detectie van duplicaten (vage titel/artiest + akoestische vingerafdrukken) | ⚪ Gepland |
 
 > 💡 *Om de details van de geplande mijlpalen en versies te bekijken, raadpleeg de [Feuille de route (Roadmap)](../../ROADMAP.md).*
 
@@ -100,6 +105,20 @@ cp .env.example .env
 # 6. Lancer l'application
 python main.py
 ```
+
+---
+
+## 🐧🍎 Linux en macOS : experimentele versies (niet getest)
+
+De Linux-pakketten (`.AppImage` / `.tar.gz`) en macOS (`.dmg`) worden geleverd **zonder getest te zijn** : AMSO is alleen gevalideerd onder Windows. De audio-engine met continue buffer (`buffer`) is in het bijzonder niet getest op deze systemen. Uw feedback is waardevol.
+
+- **VLC is vereist** (AMSO downloadt het alleen onder Windows) :
+  - Linux : `sudo apt install vlc` (Debian / Ubuntu), `sudo dnf install vlc` (Fedora) of `sudo pacman -S vlc` (Arch).
+  - macOS : installeer **VLC.app** vanaf [videolan.org](https://www.videolan.org/vlc/) in de map Applicaties.
+- **Linux, systeembibliotheken** : de Qt-interface vereist onder meer `libpulse0` (geluid), `libxcb-cursor0` en `libxkbcommon-x11-0` (bijvoorbeeld `sudo apt install libpulse0 libxcb-cursor0 libxkbcommon-x11-0`).
+- **macOS, niet-ondertekend `.dmg`** : bij de eerste keer opstarten, rechtsklik op AMSO en vervolgens **Openen**, of voer `xattr -dr com.apple.quarantine /Applications/AMSO.app`.
+- **Linux, AppImage** : maak deze uitvoerbaar met `chmod +x AMSO*.AppImage`.
+- **Bij problemen**, gelieve de bestanden `startup.log` en `crash.log` (indien aanwezig) te sturen die zich in de data map bevinden: `~/Library/Application Support/AMSO/` onder macOS, `~/.local/share/AMSO/` onder Linux. Specificeer uw systeem en de versie van VLC.
 
 ---
 

@@ -24,6 +24,10 @@
 ---
 
 <p align="center">
+  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+</p>
+
+<p align="center">
   <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
 </p>
 
@@ -40,20 +44,21 @@
 ## 📌 Funksjoner & Status for prosjektet
 
 | Funksjonalitet | Beskrivelse | Status |
-| :--- | :---: | :---: |
-| **Integrert VLC-avspillingsmotor** | Lett og selvstendig lydspiller med automatisk installasjon av VLC portable og jevn volumkontroll | 🟢 Implémenté |
-| **Multitrådet lokal skanner** | Rask og rekursiv oppdagelse av lokale lydfiler (MP3, FLAC, AAC, OGG...) | 🟢 Implémenté |
+| :--- | :--- | :---: |
+| **Lydavspillingsmotor** | Lett og selvstendig lydspiller (VLC bærbar installert automatisk på Windows). To motorer å velge mellom: direkte VLC-utgang, eller en kontinuerlig buffer-motor for en jevn overgang mellom to spor (Gapless 0 ms, fade-out med lik styrke, uten avbrudd i lydutgangen) | 🟢 Implémenté |
+| **Bibliotekhåndtering** | Rekursiv multitrådet skanning av lokale mapper (MP3, FLAC, AAC, OGG...), manuell, planlagt eller sanntid-synkronisering, søppelbøtte og bibliotkstatistikk | 🟢 Implémenté |
 | **Ekstraksjon av metadata** | Lesing/skriving av ID3, Vorbis Comments og beregning av lydavtrykk (`mutagen`) | 🟢 Implémenté |
-| **Støtte for spillelister (M3U, PLS, XSPF, WPL) & CUE-ark** | Trestrukturert indeksering (🎶), sekvensiell avspillingsrekkefølge, visuell sporing av manglende spor; `.cue`-filer (💿) åpnes som en virtuell spormappe med varighet og spilles av som ekte spor | 🟢 Implémenté |
+| **Støtte for spillelister (M3U, PLS, XSPF, WPL) & CUE-ark** | Trestrukturert indeksering (🎶), sekvensiell avspillingsrekkefølge, visuell lokalisering av manglende spor; `.cue`-filer (💿) åpnes som en virtuell spormappe med varighet og spilles av som ekte spor | 🟢 Implémenté |
 | **Spillelistehåndterer & Dra-og-slipp** | Virtualisert kø, jevn dra-og-slipp, reversibel tilfeldig (shuffle) og looper | 🟢 Implémenté |
-| **Interaktiv « 🎲 Blind Test »-modus** | Immersivt musikalsk spill med animert nedtelling, lydfade, myk avsløring og automatisk sekvensering | 🟢 Implémenté |
-| **In-app-oppdateringer** | Automatisk/manuel versjonskontroll via GitHub Releases | 🟢 Implementert |
-| **Håndtering av artister & diskografi** | Dedikert visning per artist med album, singler og komplett diskografi | 🟡 Planlagt |
-| **Grafisk equalizer (EQ)** | Lydpresets og parametrisk multibånd-equalizer | 🟡 Planlagt |
+| **Interaktiv « 🎲 Blind Test »-modus** | Immersivt musikalsk spill med animert nedtelling, lydfade, myk avsløring og automatisk overgang | 🟢 Implémenté |
+| **Oppdateringer i appen** | Automatisk/manuel versjonskontroll via GitHub Releases | 🟢 Implementert |
+| **Linux- og macOS-versjoner** | Paquets `.AppImage` / `.tar.gz` (Linux) og `.dmg` usignert (macOS), VLC kreves | 🟡 Eksperimentelt (ikke testet) |
+| **Artist- og diskografihåndtering** | Dedikert visning per artist med album, singler og komplett diskografi | 🟡 Planlagt |
+| **Grafisk equalizer (EQ)** | Lydpresets og parametrisk flerbånds-equalizer | 🟡 Planlagt |
 | **Google Drive-kobling** | Skanning og synkronisering av eksterne lydsamlinger via OAuth 2.0 | ⚪ Planlagt |
 | **Amazon Music-kobling** | Skanning og synkronisering av eksterne samlinger via OAuth 2.0 | ⚪ Planlagt |
 | **Spotify / Deezer-kobling** | Import av spillelister og spor-matching | ⚪ Planlagt |
-| **Intelligent duplikatfjerning** | Deteksjon av duplikater (uklar tittel/artist + akustiske fingeravtrykk) | ⚪ Planlagt |
+| **Intelligent duplikatfjerning** | Deteksjon av duplikater (tittel/artist + akustiske fingeravtrykk) | ⚪ Planlagt |
 
 > 💡 *For å se detaljene for de planlagte milepælene og versjonene, se [Veikart (Roadmap)](../../ROADMAP.md).*
 
@@ -100,6 +105,20 @@ cp .env.example .env
 # 6. Lancer l'application
 python main.py
 ```
+
+---
+
+## 🐧🍎 Linux og macOS: eksperimentelle versjoner (ikke testet)
+
+Linux-pakkene (`.AppImage` / `.tar.gz`) og macOS (`.dmg`) blir levert **uten å ha blitt testet**: AMSO er kun validert på Windows. Lydmotoren med kontinuerlig buffer (`buffer`) er spesielt ikke testet på disse systemene. Tilbakemeldingen din er verdifull.
+
+- **VLC er nødvendig** (AMSO laster det kun ned under Windows) :
+  - Linux : `sudo apt install vlc` (Debian / Ubuntu), `sudo dnf install vlc` (Fedora) eller `sudo pacman -S vlc` (Arch).
+  - macOS : installer **VLC.app** fra [videolan.org](https://www.videolan.org/vlc/) i Applications-mappen.
+- **Linux, systembiblioteker** : Qt-grensesnittet krever blant annet `libpulse0` (lyd), `libxcb-cursor0` og `libxkbcommon-x11-0` (for eksempel `sudo apt install libpulse0 libxcb-cursor0 libxkbcommon-x11-0`).
+- **macOS, `.dmg` usignert** : ved første oppstart, høyreklikk på AMSO og deretter **Åpne**, eller kjør `xattr -dr com.apple.quarantine /Applications/AMSO.app`.
+- **Linux, AppImage** : gjør den kjørbart med `chmod +x AMSO*.AppImage`.
+- **I tilfelle problemer**, vennligst send filene `startup.log` og `crash.log` (hvis de eksisterer) plassert i data-mappen: `~/Library/Application Support/AMSO/` under macOS, `~/.local/share/AMSO/` under Linux. Spesifiser ditt system og versjonen av VLC.
 
 ---
 

@@ -13,7 +13,7 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 
 ---
 
-## [0.4.1-dev] - À venir
+## [0.4.1] - 2026-10-29
 
 ### Added
 - **Non-régression des transitions audio (TNR) :** `scripts/tnr_transitions.bat` rejoue la fin d'un titre puis le début du suivant (Sirius → Eye in the Sky par défaut) dans le vrai lecteur, avec une sortie audio factice, et compare l'enregistrement à une construction idéale (identique à l'échantillon près en gapless, fondu à puissance égale en crossfade, absence de coupure, session audio unique).
@@ -22,6 +22,7 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 - **Journal de plantage natif :** `crash.log` dans le dossier de données (`%APPDATA%/AMSO/`) reçoit la pile d'un plantage de LibVLC ou de Qt.
 - **Statut de libVLC :** les réglages du lecteur affichent la version de libVLC réellement chargée et sa provenance (copie AMSO ou VLC du système), avec le chemin en infobulle.
 - **Préparation Linux et macOS :** le téléchargement automatique de VLC (archive Windows) est réservé à Windows ; ailleurs, AMSO indique comment installer VLC (gestionnaire de paquets, VLC.app). Sous macOS, VLC.app est aussi détectée dans `~/Applications`.
+- **Versions Linux et macOS expérimentales (non testées) :** `release.yml` produit une archive `.tar.gz` et une `.AppImage` (Linux x86_64), ainsi qu'un `.dmg` non signé pour macOS Apple Silicon et Intel, via `scripts/package_unix.py`. VLC doit être installé (gestionnaire de paquets ou VLC.app) et, sous Linux, les bibliothèques `libpulse0`, `libxcb-cursor0` et `libxkbcommon-x11-0`. Le moteur audio `buffer` et la non-régression des transitions n'ont été validés que sous Windows : les retours (`startup.log`, `crash.log`) sont bienvenus. Le CI Linux installe désormais `libpulse0` (QtMultimedia échouait à l'import) et le déploiement itch.io du workflow n'a plus lieu que sur un tag.
 
 ### Changed
 - **Démarrage :** la table « Tous les morceaux » n'est plus chargée (jusqu'à 3 fois ~50 000 pistes) avant l'ouverture de sa page ; le compteur du bandeau reste exact via une requête `COUNT`.
@@ -36,7 +37,6 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 - **Traductions :** une clé absente de la langue et de l'anglais (clé récente, présente seulement dans `fr.json`) s'affichait sous son nom technique ; le repli passe désormais par le français. `sync_translations.py` détecte les traductions où le modèle a repris le texte français suivi d'une transcription (« texte (romaji) »), les retraduit, rejette ces réponses et n'envoie plus l'anglais à Ollama.
 - **Textes codés en dur :** la page Statistiques (« morceaux », « Go », « h »), les tailles de fichiers (Ko, Mo, Go) et le suffixe « s » des durées du Blind Test passent par des clés de traduction.
 - **Textes codés en dur (suite) :** les messages du scanner, les erreurs du lecteur et du décodeur, le téléchargement de VLC, « Stéréo / Mono », l'infobulle « Fichier introuvable », « SYSTÈME PRÊT » et l'écran de démarrage passent par des clés de traduction. Les 42 langues sont resynchronisées (Ollama), y compris 15 traductions dont des marqueurs `{count}` / `{name}` avaient disparu.
-- **Packaging Linux et macOS (expérimental, non testé) :** `release.yml` produit une archive `.tar.gz` et une `.AppImage` (Linux x86_64), ainsi qu'un `.dmg` non signé pour macOS Apple Silicon et Intel, via `scripts/package_unix.py`. Le CI Linux installe désormais `libpulse0` (QtMultimedia échouait à l'import, 8 modules de tests en erreur). Le déploiement itch.io du workflow n'a plus lieu que sur un tag : un lancement manuel ne publie plus rien.
 - **Journal d'activité traduit :** « Synchronisation réussie », « Durée », « Morceaux ajoutés », les niveaux (SUCCESS…) et les boîtes d'export s'affichaient en français quelle que soit la langue. Les messages sont désormais enregistrés sous forme de clé et de paramètres (nouvelle colonne `i18n`, ajoutée sans toucher aux entrées existantes) et traduits à l'affichage. Les entrées déjà enregistrées restent en français.
 - **Moteur `buffer` — « Suivant » manuel :** avec la piste suivante préchargée (Gapless 0 ou Crossfade), un « Suivant » démarrait bien la piste suivante mais conservait la position de la piste précédente (ex. 1:00). Le raccord au sample près est désormais réservé à la fin naturelle de la piste ; un « Suivant » manuel redémarre la suivante à 0.
 - **Moteur `buffer` — crossfade :** le fondu enchaîné est désormais mixé au fil du décodage (calculé sur toute la durée demandée, vectorisé). Il ne coupe plus la fin du titre sortant, ne raccourcit plus le fondu et ne provoque plus de saccades (l'ancien calcul échantillon par échantillon bloquait le thread de l'interface).

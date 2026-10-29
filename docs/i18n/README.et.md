@@ -24,6 +24,10 @@
 ---
 
 <p align="center">
+  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+</p>
+
+<p align="center">
   <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
 </p>
 
@@ -39,21 +43,22 @@
 
 ## 📌 Funktsioonid & Staatus projektist
 
-| Funktsionaalus | Kirjeldus | Staatus |
+| Funktsioon | Kirjeldus | Staatus |
 | :--- | :---: | :---: |
-| **Integreeritud VLC toitumemmootor** | Kevelik ja iseseisv, VLC portable automaatne installatsioon ja sümme volumikohutus audiolugija | 🟢 Implementeeritud |
-| **Multithreadne kohalik skanner** | Rekursiivne ja kiire avastamine kohalikest audiolugikutest (MP3, FLAC, AAC, OGG...) | 🟢 Implementeeritud |
-| **Metaandmete ekstraheerimine** | ID3, Vorbis Comments lugemine/kirjutamine ja audiolajuga sünkpunkti arvutamine (`mutagen`) | 🟢 Implementeeritud |
-| **Playlista tugi (M3U, PLS, XSPF, WPL) ja CUE-lehted** | Puuvärvi indekseerimine (🎶), sekventsiaalne kuulamise järgmine, kadunud lõikede visuaalne tuvastamine; `.cue` failid (💿) avanevad nagu virtuaalne lõikede kausta oma kestusega ja toituvad nagu tõelised lõiked | 🟢 Implementeeritud |
-| **Playlista haldaja ja vedaja-asetus** | Virtuaalne ootamisrijad, sümme vedaja-asetus, vastutav (shuffle) ja tsüklid | 🟢 Implementeeritud |
-| **Interaktiivne „🎲 Blind Test“ režiim** | Immersiivne muusika mäng animatiivse laskuriga, helivähemusega, pehme paljastusega ja automaatse järgnevusega | 🟢 Implementeeritud |
-| **Uuendused kasutusliidesel** | Automaatiline/manuaalne versioonide kontrollimine GitHub Releases kaudu | 🟢 Reaal |
-| **Artiste ja diskograafia haldamine** | Arsti dedikeeritud vaade albumite, singlite ja täieliku diskograafiaga | 🟡 Planeeritud |
-| **Graafiline ekvailaator (EQ)** | Audio eelregi ja parametriline hulkva ekvailaator | 🟡 Planeeritud |
-| **Google Drive ühendaja** | Kaugaudio kogumiste skaneerimine ja sünkroonimine OAuth 2.0 kaudu | ⚪ Planeeritud |
-| **Amazon Music ühendaja** | Kaugkogumiste skaneerimine ja sünkroonimine OAuth 2.0 kaudu | ⚪ Planeeritud |
-| **Spotify / Deezer ühendaja** | Playlista impordimine ja loetelu eşitmine | ⚪ Planeeritud |
-| **Nutekorduvus vähendamine** | Duplikaatide tuvastamine (bluus/kunst + akustilised žirgud) | ⚪ Planeeritud |
+| **Audio toitummootor** | Kevetas ja iseseisv audio toitur (VLC portable automaatselt installitud Windowsi all). Kahe toitummootori valik: otsene VLC väljund, või kontinuaalne tellitud mootor kahte loetlist vahel sujuva üleminekuga (Gapless 0 ms, võrdsed vahemikuga fade, ilma audio väljundikohast katkestuse). | 🟢 Implementeeritud |
+| **Biblioteevi haldamine** | Rekursiivne multithreadi skaneerimine kohalikest kaustadest (MP3, FLAC, AAC, OGG...), käsitsi, ajastatud või rajaline sünkroonimine, korvi ja biblioteekistatud statistika | 🟢 Implementeeritud |
+| **Metadata ekstraheerimine** | ID3, Vorbis Comments lugemine/kirjutamine ja audio žärgimuse arvutamine (`mutagen`) | 🟢 Implementeeritud |
+| **Tugitus Playlistidele (M3U, PLS, XSPF, WPL) & CUE-lehtletile** | Arvoomstruktuuriline indekseerimine (🎶), loetlemine järjepikut, puuduvate numbrite visuaalne tuvastamine; `.cue` failid (💿) avanevad nagu virtuaalne numbrite kausta oma kestusega ja toituvad nagu tõelised numbrid | 🟢 Implementeeritud |
+| **Playlista haldaja & Vedamine-asetamine** | Virtuaalne ootamisosa, sujuv vedamine-asetamine, vastutav (shuffle) ja tsüklid | 🟢 Implementeeritud |
+| **Interaktiivne „🎲 Blind Test“ režiim** | Immersiivne muusikaline mäng animatiivse arvutusega, kõlajärgemusega, pehme avaldamisega ja automaatse tellitumega | 🟢 Implementeeritud |
+| **Kasutaja-liidese uuendused** | Versioonide automaatne/manuaalne kontroll GitHub Releases kaudu | 🟢 Implementeeritud |
+| **Linuxi ja macOS versioonid** | Paquets .AppImage / .tar.gz (Linux) ja .dmg mitte-allkirjastatud (macOS), VLC vajalik | 🟡 Eksperimentaals (testitud pole) |
+| **Kunstnikute ja diskograafia haldamine** | Kunstnikile pühendatud vaade albumite, singlite ja täieliku diskograafiaga | 🟡 Planeeritud |
+| **Graafiline ekvailaator (EQ)** | Audio eelregiistrid ja parametriline hulkbåndse ekvailaator | 🟡 Planeeritud |
+| **Google Drive ühendus** | Kaug audio kogumiste skaneerimine ja sünkroonimine OAuth 2.0 kaudu | ⚪ Planeeritud |
+| **Amazon Music ühendus** | Kaug kogumiste skaneerimine ja sünkroonimine OAuth 2.0 kaudu | ⚪ Planeeritud |
+| **Spotify / Deezer ühendus** | Playlista impordimine ja loogade vastavus | ⚪ Planeeritud |
+| **Nutekorduvuse vältimine** | Duplikaatide tuvastamine (peen/kunstnik + akustilised jäljed) | ⚪ Planeeritud |
 
 > 💡 *Et vaadata planeeritud etappide ja versioonide üksikasju, viitugege [Teekart (Roadmap)](../../ROADMAP.md).*
 
@@ -100,6 +105,20 @@ cp .env.example .env
 # 6. Lancer l'application
 python main.py
 ```
+
+---
+
+## 🐧🍎 Linux ja macOS: eksperimentaalsed versioonid (testimataoled)
+
+Linux pakettid (`.AppImage` / `.tar.gz`) ja macOS (`.dmg`) on saadavad **testitamata**: AMSO on valideeritud ainult Windowsi all. Kontinuumse puffer audio mootor (`buffer`) pole eriti kontrollitud need süsteemid. Teie tagasiside on väärtuslik.
+
+- **VLC on vajalik** (AMSO seda ei laadi vaid Windowsi jaoks) :
+  - Linux : `sudo apt install vlc` (Debian / Ubuntu), `sudo dnf install vlc` (Fedora) või `sudo pacman -S vlc` (Arch).
+  - macOS : installige **VLC.app** [videolan.org](https://www.videolan.org/vlc/) Applications kausta alt.
+- **Linux, süsteembibliotekid** : Qt liides nõuab näiteks `libpulse0` (heli), `libxcb-cursor0` ja `libxkbcommon-x11-0` (näiteks `sudo apt install libpulse0 libxcb-cursor0 libxkbcommon-x11-0`).
+- **macOS, ebaallkirjastatud \`.dmg\`** : esimesel käivitamisel klõpsake AMSO päriba paremal pool ja vajutage **Ava**, või käivitage `xattr -dr com.apple.quarantine /Applications/AMSO.app`.
+- **Linux, AppImage** : tehakse see käivitatavaks `chmod +x AMSO*.AppImage`.
+- **Probleemi korral**, palun saata failid `startup.log` ja `crash.log` (kui olemas), asukoohast andmed: `~/Library/Application Support/AMSO/` macOS-i all, `~/.local/share/AMSO/` Linuxi all. Palun täpsustada oma süsteem ja VLC versioon.
 
 ---
 

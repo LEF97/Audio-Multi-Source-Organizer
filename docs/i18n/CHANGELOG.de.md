@@ -13,6 +13,39 @@ und dieses Projekt hält sich an die Spezifikation [Semantic Versioning (SemVer)
 
 ---
 
+## [0.4.1] - 2026-10-29
+
+### Ergänzungen
+- **Non-régression der Audio-Übergänge (TNR):** `scripts/tnr_transitions.bat` spielt das Ende eines Titels und dann den Anfang des nächsten (Standard: Sirius → Eye in the Sky) im echten Player mit einem simulierten Audio-Output ab und vergleicht die Aufnahme mit einer idealen Konstruktion (identisch mit dem Sample in Gapless, gleitender Übergang bei gleicher Lautstärke bei Crossfade, keine Unterbrechung, einzelne Audiositzung).
+- **TNR-Protokoll:** Jede Ausführung schreibt `tests/tnr/log/tnr_AAAA-MM-JJ_HH-MM-SS.log` (Version, Commit, Tracks, detaillierte Ergebnisse, Qt-Nachrichten und Player-Logs); das Verzeichnis wird von git ignoriert.
+- **Startprotokoll:** `startup.log` im Datenverzeichnis protokolliert jeden Schritt des Starts, die Wiederherstellung der Sitzung und die noch aktiven Threads beim Schließen.
+- **Natives Absturzprotokoll:** `crash.log` im Datenverzeichnis (`%APPDATA%/AMSO/`) empfängt den Stack eines Absturzes von LibVLC oder Qt.
+- **libVLC-Status:** Die Player-Einstellungen zeigen die tatsächlich geladene Version von libVLC und deren Herkunft (AMSO-Kopie oder System-VLC) mit dem Pfad in einem Tooltip an.
+- **Vorbereitung für Linux und macOS:** Der automatische Download von VLC (Windows-Archiv) ist nur für Windows reserviert; ansonsten zeigt AMSO an, wie VLC installiert wird (Paketmanager, VLC.app). Unter macOS wird VLC.app auch in `~/Applications` erkannt.
+- **Experimentelle Linux- und macOS-Versionen (nicht getestet):** `release.yml` erzeugt ein `.tar.gz`-Archiv und eine `.AppImage` (Linux x86_64) sowie ein nicht signiertes `.dmg` für macOS Apple Silicon und Intel, über `scripts/package_unix.py`. VLC muss installiert sein (Paketmanager oder VLC.app) und unter Linux sind die Bibliotheken `libpulse0`, `libxcb-cursor0` und `libxkbcommon-x11-0` erforderlich. Der Audio-Engine `buffer` und die Non-Regression der Übergänge wurden nur unter Windows validiert: Feedback (`startup.log`, `crash.log`) ist willkommen. Der Linux CI installiert nun `libpulse0` (QtMultimedia scheiterte beim Import) und die itch.io Bereitstellung des Workflows findet nur noch auf einem Tag statt.
+
+### Geändert
+- **Starten:** Die Tabelle „Alle Titel“ wird nicht mehr geladen (bis zu 3 x ~50.000 Titel) bevor ihre Seite geöffnet wird; der Zähler der Leiste bleibt über eine `COUNT`-Abfrage korrekt.
+- **Starten:** Der Ladebildschirm wird angezeigt, bevor das Hauptfenster und die Datenbank importiert werden; numpy wird nur noch im Hintergrund geladen, sobald das Fenster sichtbar ist; das Icon und das Logo werden zwischengespeichert (cached).
+
+### Fixed
+- **Start ohne Netzwerk:** Es wird kein Laufwerks-Scanning (`exists`, `isdir`) mehr auf einem Netzwerkpfad (UNC oder gemappter Laufwerk) vom Interface-Thread beim Start durchgeführt (Cover, Verzeichnispüberwachung, Sitzungswiederherstellung); ein nicht erreichbares Freigabe friert das Fenster nicht mehr ein. Das Cover eines Netzwerk-Tracks wird alle 30 s im Hintergrund erneut überprüft.
+- **Schließen:** Korrektur von „QThread: Destroyed while thread is still running“ (Signal `finished` des Cover-Workers, das das von `QThread` maskierte, unerwartete Cover-Threads).
+- **Buffer-Engine — Wechsel des Übergangsmodus:** Nach einem Wechsel des Modus in den Player-Einstellungen startete ein Seek und dann die Wiedergabe nichts mehr (das Zurücksetzen ließ die Engine ohne Audioausgabe, und der Player wechselte fälschlicherweise zu VLC). Die Audio-Sitzung wird nun sofort neu erstellt. Der aktuelle Track beginnt nach einem Engine- oder Moduswechsel wieder von vorne. Schließlich startet die Fortsetzung eines pausierten Titels (nach einem Reset oder einem Seek anhalten) den Transfer-Timer der `buffer`-Engine: Ohne ihn erzeugte die Wiedergabe keinen Ton. Der Decoder sendet nicht mehr die Blöcke einer im Zwischenzeit ersetzten Dekodierung (Reset gefolgt von Wiedergabe, enge Seeks): Diese konnten die Position verfälschen oder den Start der `buffer`-Engine verhindern.
+- **Blindtest mit der `buffer`-Engine:** Wiedergabe, Nächster und Vorheriger erzeugten keinen Ton (der Track blieb pausiert, man musste auf Wiedergabe klicken): Der Wechsel des Tracks startete den Zyklus neu, der den Track vor dem Eintreffen des ersten dekodierten Blocks positionierte. Der Zyklus positioniert keinen Track mehr, den der Player selbst gerade gestartet hat.
+- **Moteur \`buffer\` — Ton verändert beim Verschieben oder Neugrößen des Fensters:** Die Soundkarte wurde von einem Timer des Interface-Threads (Puffer von 185 ms) gespeist; dieser Thread, blockiert durch die Windows-Verschiebeschleife (bis zu 400 ms gemessen), ließ sie ohne Daten zurück. Das \`QAudioSink\` wechselt in einen Pull-Modus in einen dedizierten Audio-Thread (\`audio_output.py\`): Der Speicherpuffer, das Gapless und der Crossfade bleiben unverändert, und der Motor \`vlc_direct\` ist nicht betroffen.
+- **Übersetzungen:** Ein Schlüssel, der in der Sprache und im Englischen fehlt (neuer Schlüssel, nur in \`fr.json\` vorhanden), wurde unter seinem technischen Namen angezeigt; der Fallback erfolgt nun über Französisch. \`sync_translations.py\` erkennt Übersetzungen, bei denen das Modell den französischen Text gefolgt von einer Transkription (« texte (romaji) ») übernommen hat, übersetzt diese erneut, lehnt diese Antworten ab und sendet nicht mehr Englisch an Ollama.
+- **Hardcodierte Texte:** Die Seite Statistiken (« morceaux », « Go », « h »), die Dateigrößen (Ko, Mo, Go) und das Suffix « s » der Blind-Test-Dauern werden über Übersetzungsschlüssel geführt.
+- **Hardcodierte Texte (fortgesetzt):** Die Nachrichten des Scanners, die Fehler des Players und des Decoders, der VLC-Download, « Stéréo / Mono », das Tooltip « Fichier introuvable », « SYSTÈME PRÊT » und der Startbildschirm werden über Übersetzungsschlüssel geführt. Die 42 Sprachen werden resynchronisiert (Ollama), einschließlich 15 Übersetzungen, deren Marker \`{count}\` / \`{name}\` verschwunden waren.
+- **Übersetztes Aktivitätsprotokoll:** « Synchronisation réussie », « Durée », « Morceaux ajoutés », die Level (SUCCESS…) und die Exportboxen wurden unabhängig von der Sprache auf Französisch angezeigt. Die Nachrichten werden nun als Schlüssel und Parameter gespeichert (neue Spalte \`i18n\`, hinzugefügt, ohne bestehende Einträge zu berühren) und bei der Anzeige übersetzt. Bereits gespeicherte Einträge bleiben auf Französisch.
+- **Moteur `buffer` — « Suivant » manuel :** mit dem nächsten Titel vorab geladen (Gapless 0 oder Crossfade) würde ein „Nächster“ den nächsten Titel starten, aber die Position des vorherigen Titels beibehalten (z. B. 1:00). Der nahtlose Übergang auf Sample-Ebene ist nun auf das natürliche Ende des Titels beschränkt; ein manueller „Nächster“ startet den nächsten Titel bei 0.
+- **Moteur `buffer` — crossfade :** Der Crossfade wird nun während der Dekodierung gemischt (für die gesamte angeforderte Dauer berechnet, vektorisiert). Er schneidet nicht mehr das Ende des ausgehenden Titels ab, verkürzt den Fade nicht mehr und verursacht keine Ruckler (die frühere Berechnung Sample für Sample blockierte den Interface-Thread).
+- **Blind Test mit le `buffer`-Engine :** Korrektur einer unendlichen Rekursion (`track_changed` ↔ `seek_ratio`), die die Anwendung geschlossen hat; die Lautstärkefades des Blind Tests wirken nun auch auf diese Engine.
+- **Audio-Dekodierer (`amem`) :** Das Ende des Streams, das von VLC gemeldet wurde, stoppte einen `QTimer` aus dem VLC-Ereignis-Thread (`QObject::killTimer: Timers cannot be stopped from another thread`, undefiniertes Verhalten bei jedem Titel); es wird nun in den Qt-Thread weitergeleitet.
+- **Moteur `buffer` — « Kein Fade »-Modus :** Die Hardware-Audiositzung wird nicht mehr zwischen zwei Titeln geschlossen und wieder geöffnet.
+
+---
+
 ## [0.4.0] - 2026-10-25
 
 ### Zugefügt

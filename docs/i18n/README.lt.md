@@ -24,6 +24,10 @@
 ---
 
 <p align="center">
+  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+</p>
+
+<p align="center">
   <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
 </p>
 
@@ -41,19 +45,20 @@
 
 | Funkcija | Aprašymas | Statusas |
 | :--- | :---: | :---: |
-| **Įmontuotas VLC įrašo variklis** | Lekštas ausinio failų, autonomiškai su VLC portanti įraktais ir lengva garumas valdymas | 🟢 Įgyvendintas |
-| **Lokalusis multi-treudinė skanasuotojas** | Rekursyvinė ir greita lokalų ausinio failų paieška (MP3, FLAC, AAC, OGG...) | 🟢 Įgyvendintas |
-| **Metaduomenų ištraukimas** | ID3, Vorbis Comments skaitymas/rašymas ir ausinio įspėjos skaičiavimas (`mutagen`) | 🟢 Įgyvendintas |
-| **Pagalbos failams (M3U, PLS, XSPF, WPL) ir CUE lapams palaikymas** | Medžiaginė indeksavimas (🎶), sekvencinis klausymasis, vizualus praradusių dalų pažymėjimas; `.cue` failai (💿) atsidaro kaip virtualus stulpelių katalogas su jų trumpe ir skaito kaip tikri stulpeliai | 🟢 Įgyvendintas |
-| **Pagalbos failų valdytojas ir įtraukti/ištraukti** | Virtualus eilė, lengvas įtraukti/ištraukti, atgal atkuriamas atsitiktinis (shuffle) ir ciklai | 🟢 Įgyvendintas |
-| **Interaktyvus „🎲 Blind Test“ režimas** | Immersyvus muzikos žaidimas su animaciniu laikmeniu, garso išblėjimais, subtili atskleidimas ir automatinis išsaugavimas | 🟢 Įgyvendintas |
-| **Atnaujinimai į programoje** | Automatinis/manuális versijų patikrinimas per GitHub Releases | 🟢 Įgyvendintas |
-| **Menėjų valdymas ir diskografija** | Išskirtinė peržiūra pagal menėją su albumais, singliais ir pilna diskografija | 🟡 Planuojama |
-| **Grafinis ekvalizatorius (EQ)** | Audio išankstiniai nustatymai ir parametrinis daugiaspadžius ekvalizatorius | 🟡 Planuojama |
-| **Google Drive jungties įranga** | Skaitmeninių audio kolekcijų skenavimas ir sinchronizavimas per OAuth 2.0 | ⚪ Planuojama |
-| **Amazon Music jungties įranga** | Skaitmeninių kolekcijų skenavimas ir sinchronizavimas per OAuth 2.0 | ⚪ Planuojama |
-| **Spotify / Deezer jungties įranga** | Playlistų importavimas ir strogų atitikimas | ⚪ Planuojama |
-| **Išmanus dublikatų pašalinimas** | Dublikatų aptikimas (pašvirškūs pavadinimai/menėjai + akustiniai atspvarai) | ⚪ Planuojama |
+| **Audio reprodukcinis variklis** | Lekštas audio, lengvas ir autonominis (VLC portabilus, automatiškai įdiegtas Windows). Dviejų variklių pasirinkimas: tiesioginis VLC išvestis arba nuolatinio buferio variklis plėsliam pereiti tarp dviejų stravimų (Gapless 0 ms, vienodas garsinis pereinamasis, be audio išvesties nutraukimo) | 🟢 Implémenté |
+| **Bibliotekos valdymas** | Rekursyvinis multi-stradinis skanavimas lokaliais katalogais (MP3, FLAC, AAC, OGG...), rankinis, planotas arba realiu laiku sinchronizavimas, ištrukoslapis ir bibliotekos statistika | 🟢 Implémenté |
+| **Metad duomenų ištraukimas** | ID3, Vorbis Comments skaitymas/rašymas ir audio įspaidų skaičiavimas (`mutagen`) | 🟢 Implémenté |
+| **Pagalbos Playlistams (M3U, PLS, XSPF, WPL) ir CUE lapams** | Žangelinis indeksavimas (🎶), sekvencinis klausymosi tvarka, vizualus paieškos ištrukimų; `.cue` failai (💿) atsiranda kaip virtualus stravimų katalogas su jų trumpe ir grodžiama kaip tikri stravimai | 🟢 Implémenté |
+| **Playlistų valdytojas ir traukimas/išdėgavimas** | Virtualizuotas eilė, plėsliam traukimas ir išdėgavimas, atreversiuojamas atsitiktinis (shuffle) ir ciklai | 🟢 Implémenté |
+| **Interaktyvus „🎲 Blind Test“ režimas** | Immersyvinis muzikos žaidimas su animaciniu laikmeniu, garsiniu pereinamu, subtili atskleidimas ir automatinis plėslimas | 🟢 Implémenté |
+| **Atnaujinimai į programoje** | Automatinis/manuális versijų patikrinimas per GitHub Releases | 🟢 Įgyvendinta |
+| **Linux ir macOS versijos** | `.AppImage` / `.tar.gz` (Linux) ir nepašvestas `.dmg` (macOS) sau įrašai, reikalingas VLC | 🟡 Eksperimentinis (nebaudžintas) |
+| **Menadžerija ir diskografija** | Išskirtinė per menadžerį per albumus, singlius ir pilną diskografiją | 🟡 Planuojama |
+| **Grafinis ekvalizatorius (EQ)** | Audio išankstiniai nustatymai ir parametrinis daugiaspadžienių ekvalizatorius | 🟡 Planuojama |
+| **Google Drive jungties modulis** | Skaitmeninis ir sinchronizavimas išorinių audio kolekcijų per OAuth 2.0 | ⚪ Planuojama |
+| **Amazon Music jungties modulis** | Skaitmeninis ir sinchronizavimas išorinių kolekcijų per OAuth 2.0 | ⚪ Planuojama |
+| **Spotify / Deezer jungties modulis** | Playlist importas ir dainų atitikimas | ⚪ Planuojama |
+| **Išmanus dublikatų pašalinimas** | Dublikatų aptikimas (pažymė/menadžeris + akustiniai įspėjimai) | ⚪ Planuojama |
 
 > 💡 *Norėdami peržiūrėti planuojamų etapų ir versijų detales, patyrėkite į [Feuille de route (Roadmap)](../../ROADMAP.md).*
 
@@ -100,6 +105,20 @@ cp .env.example .env
 # 6. Lancer l'application
 python main.py
 ```
+
+---
+
+## 🐧🍎 Linux ir macOS: eksperimentinės versijos (nebaudytos)
+
+Linux paete beveikliai (`.AppImage` / `.tar.gz`) ir macOS (`.dmg`) yra pateikti **nebuvę išbandyti**: AMSO buvo patvirtintas tik Windows. Audio variklis su nuolatinio buferio (`buffer`) ypač nebuvo patikrintas šiuose sistemose. Jūsų atsiliepimas yra vertingas.
+
+- **VLC yra reikalingas** (AMSO jį atsisiūdo tik Windows) :
+  - Linux : `sudo apt install vlc` (Debian / Ubuntu), `sudo dnf install vlc` (Fedora) arba `sudo pacman -S vlc` (Arch).
+  - macOS : įdiegti **VLC.app** iš [videolan.org](https://www.videolan.org/vlc/) į Programos keliavą.
+- **Linux, sistemos bibliotekos** : Qt sąsaja reikalauja, tarp kitų, `libpulse0` (garsas), `libxcb-cursor0` ir `libxkbcommon-x11-0` (pvz., `sudo apt install libpulse0 libxcb-cursor0 libxkbcommon-x11-0`).
+- **macOS, nepašaruotas .dmg** : pirmoji įdiegimas, paspauskite dešine myšiukės kniopiu AMSO, o tada **Atsidaryti**, arba įvelkite komandą `xattr -dr com.apple.quarantine /Applications/AMSO.app`.
+- **Linux, AppImage** : padaryti jį įgyvendinimu komanda `chmod +x AMSO*.AppImage`.
+- **Jei kyla problemų**, prašome išsiųsti failus `startup.log` ir `crash.log` (jei egzistuoja), esantįs duomenų keliavoje: `~/Library/Application Support/AMSO/` macOS įreidoje, `~/.local/share/AMSO/` Linux įreidoje. Nurodykite savo operacinę sistemą ir VLC versiją.
 
 ---
 

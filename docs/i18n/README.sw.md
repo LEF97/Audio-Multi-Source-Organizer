@@ -24,6 +24,10 @@
 ---
 
 <p align="center">
+  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+</p>
+
+<p align="center">
   <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
 </p>
 
@@ -41,19 +45,20 @@
 
 | Kipengele | Maelezo | Hali |
 | :--- | :---: | :---: |
-| **VLC Engine Iliyojengwa** | Kipokezi sauti kidogo na kujitegemea kwa usakinishaji wa VLC portable na udhibiti laini wa sauti | 🟢 Imetekelezwa |
-| **Kaskazini ya Eneo (Multithreaded)** | Uchunguzi wa kurudiwa na wa haraka wa faili za sauti za eneo (MP3, FLAC, AAC, OGG...) | 🟢 Imetekelezwa |
-| **Utoaji wa Metadata** | Kusoma/kuandika ID3, Vorbis Comments na kuhesabu alama ya sauti (`mutagen`) | 🟢 Imetekelezwa |
-| **Usaidizi wa Playlists (M3U, PLS, XSPF, WPL) & karatasi za CUE** | Uorodheshaji wa mti (🎶), mpangilio wa kusikiliza kwa mpangilio, utambuzi wa kipekee wa vipande visivyopo; faili za `.cue` (💿) zinafunguliwa kama saraka ya vipande vya kidijitali na muda wao na zinachezwa kama vipande halisi | 🟢 Imetekelezwa |
-| **Msimamizi wa Playlist & Kushusha-Kushika** | Orodha ya kusubiri ya kidijitali, drag & drop laini, nasibu (shuffle) inayorejeshwa na mizunguko | 🟢 Imetekelezwa |
-| **Hali ya « 🎲 Blind Test » ya mwingiliano** | Mchezo wa muziki wenye usukani na kuhesabu kwa uhai, kupungua kwa sauti, ufichuzi laini na muunganisho wa kiotomatiki | 🟢 Imetekelezwa |
-| **Sasisho za ndani ya programu** | Uhakiki wa matoleo kiotomatiki/kwa mikono kupitia GitHub Releases | 🟢 Implemented |
-| **Usimamizi wa wasanii na Diskografia** | Mtazamo maalum kwa msanii na albamu, singles, na diskografia kamili | 🟡 Inatubiriwa |
-| **Equalizer wa kielektroniki (EQ)** | Mapendekezo ya sauti na equalizer wa band za nyingi wa kimaelezo | 🟡 Inatubiriwa |
-| **Connecteur Google Drive** | Skana na ulinganifu wa makusanyiko ya sauti ya mbali kupitia OAuth 2.0 | ⚪ Kimepanga |
-| **Connecteur Amazon Music** | Skana na ulinganifu wa makusanyiko ya mbali kupitia OAuth 2.0 | ⚪ Kimepanga |
-| **Connecteur Spotify / Deezer** | Kuhamisha playlists na kupanga nyimbo | ⚪ Kimepanga |
-| **Kuondoa kurudia kwa akili** | Kugundua kurudia (kichwa/msanii vilivyofichwa + alama za sauti) | ⚪ Kimepanga |
+| **Injini ya Kusikiliza sauti** | Kisikilizaji sauti kidogo na kujisimamia (VLC portable inasakinishwa kiotomatiki chini ya Windows). Injini mbili za kuchagua: matokeo ya moja kwa moja ya VLC, au injini ya kibandiko endelevu kwa muunganiko laini kati ya sehemu mbili (Gapless 0 ms, fondu enchaîné à puissance égale, sans coupure de la sortie audio) | 🟢 Implemented |
+| **Usimamizi wa maktaba** | Skanning ya rekursiv na ya 'multithread' ya folda za ndani (MP3, FLAC, AAC, OGG...), usawazishaji wa mikono, kupangwa, au kwa wakati halisi, kikapu cha taka na takwimu za maktaba | 🟢 Implemented |
+| **Kutolewa kwa metadata** | Kuandika/kusoma ID3, Vorbis Comments na kukokotoa alama ya sauti (`mutagen`) | 🟢 Implemented |
+| **Usaidizi wa Playlists (M3U, PLS, XSPF, WPL) & karatasi za CUE** | Uorodheshaji wa mti (🎶), mpangilio wa kusikiliza kwa mpangilio, kutambua kwa macho sehemu zinazokosekana; faili za `.cue` (💿) zinafunguliwa kama folda ya sehemu za kiakili na muda wake na zinausikilizwa kama sehemu halisi | 🟢 Implemented |
+| **Msimamizi wa Playlist & Kushusha-Kushika** | Orodha ya kusubiri ya kubadilishwa, kishusha-kushika laini, nasibu (shuffle) kurevesha na mizunguko | 🟢 Implemented |
+| **Hali ya « 🎲 Blind Test » ya mwingiliano** | Mchezo wa muziki wenye kuingiza kwa kuhesabu kwa uhai, kupungua kwa sauti, kufichuliwa kwa upole na muunganiko wa kiotomatiki | 🟢 Implemented |
+| **Sasisho za ndani** | Uhakiki wa matoleo kiotomatiki/kwa mikono kupitia GitHub Releases | 🟢 Imetekelezwa |
+| **Matoleo ya Linux & macOS** | Paquets `.AppImage` / `.tar.gz` (Linux) et `.dmg` non signé (macOS), VLC requis | 🟡 Ya majaribio (hayajaribiwa) |
+| **Usimamizi wa wasanii & Discografia** | Mtazamo maalum kwa msanii na albamu, singles, na discografia kamili | 🟡 Kimepangwa |
+| **Msawazi wa picha (EQ)** | Mapendekezo ya sauti na msawazi wa band za nyingi wa kimaelezo | 🟡 Kimepangwa |
+| **Kiunganishi cha Google Drive** | Skanning na ulinganishaji wa makusanyiko ya sauti ya mbali kupitia OAuth 2.0 | ⚪ Kimepangwa |
+| **Kiunganishi cha Amazon Music** | Skanning na ulinganishaji wa makusanyiko ya sauti ya mbali kupitia OAuth 2.0 | ⚪ Kimepangwa |
+| **Kiunganishi cha Spotify / Deezer** | Kuingiza playlists na kupanga nyimbo | ⚪ Kimepangwa |
+| **Kuondoa nakala kwa akili** | Kugundua nakala (kichwa/msanii kidogo + alama za sauti) | ⚪ Kimepangwa |
 
 > 💡 *Ili kuona undani wa hatua na matoleo yanayopangwa, tazama [Feuille de route (Roadmap)](../../ROADMAP.md).*
 
@@ -100,6 +105,20 @@ cp .env.example .env
 # 6. Lancer l'application
 python main.py
 ```
+
+---
+
+## 🐧🍎 Linux na macOS: matoleo ya majaribio (hazijaribiwa)
+
+Vifaa vya Linux (`.AppImage` / `.tar.gz`) na macOS (`.dmg`) vinatolewa **bila kupimwa**: AMSO vimehakikiwa tu kwenye Windows. Injini ya sauti yenye *buffer* endelevu (`buffer`) hasa haijathibitishwa kwenye mifumo hii. Maoni yako ni muhimu.
+
+- **VLC inahitajika** (AMSO inapakua tu chini ya Windows) :
+  - Linux : `sudo apt install vlc` (Debian / Ubuntu), `sudo dnf install vlc` (Fedora) au `sudo pacman -S vlc` (Arch).
+  - macOS : weka **VLC.app** kutoka [videolan.org](https://www.videolan.org/vlc/) kwenye folda Applications.
+- **Linux, maktaba za mfumo** : kiolesura cha Qt kinahitaji hasa `libpulse0` (sauti), `libxcb-cursor0` na `libxkbcommon-x11-0` (kwa mfano `sudo apt install libpulse0 libxcb-cursor0 libxkbcommon-x11-0`).
+- **macOS, `.dmg` lisilo saini** : wakati wa kwanza kuendesha, bonyeza kulia kwenye AMSO kisha **Fungua**, au endesha `xattr -dr com.apple.quarantine /Applications/AMSO.app`.
+- **Linux, AppImage** : kuifanya iweze kutekelezwa kwa kutumia `chmod +x AMSO*.AppImage`.
+- **Ikiwa kuna tatizo**, tafadhali tuma faili `startup.log` na `crash.log` (ikiwepo) zilizopo kwenye folda ya data: `~/Library/Application Support/AMSO/` chini ya macOS, `~/.local/share/AMSO/` chini ya Linux. Taja mfumo wako na toleo la VLC.
 
 ---
 

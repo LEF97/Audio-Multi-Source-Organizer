@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "audio-multi-source-organizer"
-version = "0.4.1-dev"
+version = "0.4.1"
 description = "Unificateur, organisateur et synchroniseur de bibliothèques audio hybrides (local, Google Drive, Spotify)"
 readme = "README.md"
 requires-python = ">=3.11"

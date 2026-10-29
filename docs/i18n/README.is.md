@@ -24,6 +24,10 @@
 ---
 
 <p align="center">
+  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+</p>
+
+<p align="center">
   <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
 </p>
 
@@ -39,21 +43,22 @@
 
 ## 📌 Eigishæktir & Staða þróunarverkefnis
 
-| Eigishætti | Greining | Staða |
+| Hæggi | Greining | Staða |
 | :--- | :---: | :---: |
-| **Inntækka VLC spilkerfi** | Ljósvægt og sjálfstætt áðurhöfnarspilkerfi með sjálfvirknun VLC og slétt stjórnun á hljóðnívi | 🟢 Implémenté |
-| **Flanna-þráðar stafrænn skannar** | Endrætt og hraðrar uppgötvun stafræna hljóðskrára stafrænt (MP3, FLAC, AAC, OGG...) | 🟢 Implémenté |
-| **Úrvinning stafrænnra gögnanna** | Lesing/skrifun ID3, Vorbis Comments og reikning stafrænnar vingarnar (`mutagen`) | 🟢 Implémenté |
-| **Stuðningur Playlista (M3U, PLS, XSPF, WPL) og CUE-blöð** | Tré-índeksing (🎶), muntræð lífhöfnun, sýnileg greining á þrautum sem eru fjölaðir; `.cue` skráir (💿) opnast eins og stafrænt skráarhóll með varanlega tíma og spila eins og raunverulegar þrautir | 🟢 Implémenté |
-| **Playlist Stjórnandi og Trekka-og-Droppa** | Sjálfvirk lífhöfnun, slétt trekkja-og-droppa, endurskoðuleg tilfeldig (shuffle) og hringrásir | 🟢 Implémenté |
-| **Interaktív „🎲 Blind Test“ aðgerð** | Innslitleg tónlistaleikur með lífænni afturtelningu, hljóðlegum blöndun, mjúk uppgötvun og sjálfvirnu samræmi | 🟢 Implémenté |
-| **In-app uppdateringar** | Sjálfvirk/handvirkra útgáfuströkkingar með GitHub Releases | 🟢 Framkvæmt |
-| **Stjórnun listamanna og diskógrafía** | Sérstaka sýn fyrir listamanna með albúmum, singlum og fullkominnri diskógrafíu | 🟡 Áætlað |
-| **Grafískur yfirberærsleiki (EQ)** | Ljóðhöfundarinnstillingar ályddu og parametrískur yfirberærsleiki | 🟡 Áætlað |
-| **Google Drive tenging** | Skannun og synkrastilling á fjarlægum ályddu safninu með OAuth 2.0 | ⚪ Áætlað |
-| **Amazon Music tenging** | Skannun og synkrastilling á fjarlægum ályddu safninu með OAuth 2.0 | ⚪ Áætlað |
-| **Spotify / Deezer tenging** | Skráning spillistanna og samræmi stafræða | ⚪ Áætlað |
-| **Snjallraflun** | Greining á sýnilegum stafræðum (titill/listamann + hljóðmyndir) | ⚪ Áætlað |
+| **Láttraudiohraðlætinn** | Léttur og sjálfstæður áudiohraðlætinn (VLC portable hlekkast í Windows). Tveir raunveruleikar til val: bein VLC útvísun, eða staðbundinn hraðlætinn fyrir slök flæði milli tónlistastakka (Gapless 0 ms, jafnsterk flæðandi innlæsing, án áhrif á áudioútganginn) | 🟢 Implémenté |
+| **Stjórnun bókasafns** | Multithreadað endurskannun staðbundinna skjalasafna (MP3, FLAC, AAC, OGG...), handvirk, skipulagð eða í réaltíma samræming, skráning og bókasafnsstaðlistanir | 🟢 Implémenté |
+| **Úrvinning staðlistana** | Lesa/skrifa ID3, Vorbis Comments og reikna áudio-blóðmerki (`mutagen`) | 🟢 Implémenté |
+| **Stuðningur Playlists (M3U, PLS, XSPF, WPL) og CUE blækhljóð** | Tré-índeksing (🎶), viðræðisriðan áheykkun, skoðulegt greining á þörnum stakka; `.cue` skjalefni (💿) opnast eins og skjalasafn virkilegra stakka með varan og lesast eins og raunverulegar staklar | 🟢 Implémenté |
+| **Playlist Stjórnkerfi og Drag & Drop** | Virkilega flæði, slök drag & drop, svofræði (shuffle) endurskráning og hringrásir | 🟢 Implémenté |
+| **Interaktív „🎲 Blind Test“ aðgerð** | Ímyndalegi tónlistaleikur með líflegri reikningu, hljóðflæði, mjúk uppgötvun og sjálfvirku flæði | 🟢 Implémenté |
+| **Uppfæringar innan appinnarinnar** | Automata/handvirkra útgáfustrullunar með GitHub Releases | 🟢 Implémentéð |
+| **Linux og macOS útgáfur** | `.AppImage` / `.tar.gz` pakkar (Linux) og óskrifað `.dmg` (macOS), VLC krafist | 🟡 Tilraunarafkókur (ekki prufað) |
+| **Stjörtastjórn og diskrófa** | Skipt staða fyrir stjörnu með blaðmyndum, singlum og fullkominnri diskrófu | 🟡 Áætlað |
+| **Grafískur yfirberærsleiki (EQ)** |Ljóðhöfundarinnstillingar og raunverulegs yfirberærsleiki (parametric multi-band equalizer) | 🟡 Áætlað |
+| **Google Drive tenging** | Skannun og synkróhanna fjarlægra ályddbyrjunar með OAuth 2.0 | ⚪ Áætlað |
+| **Amazon Music tenging** | Skannun og synkróhanna fjarlægra ályddbyrjunar með OAuth 2.0 | ⚪ Áætlað |
+| **Spotify / Deezer tenging** | Skráning spillistanna og samræmi stakkanna | ⚪ Áætlað |
+| **Snjallt fjallaverð** | Uppgötva raföld (títol/stjarna flous + hljóðmyndir) | ⚪ Áætlað |
 
 > 💡 *Til að skoða detaljar um áhrifastig og áætlaðar útgáfur, vinsamlegast persónuðu þér á [Ferðalög (Roadmap)](../../ROADMAP.md).*
 
@@ -100,6 +105,20 @@ cp .env.example .env
 # 6. Lancer l'application
 python main.py
 ```
+
+---
+
+## 🐧🍎 Linux og macOS: prófunarúrgafa (ekki staðfestar)
+
+Linux-þæknir (`.AppImage` / `.tar.gz`) og macOS (`.dmg`) eru veittir **án að hafa verið prófaðir** : AMSO hefur verið staðfest aðeins á Windows. Sérstaklega staðferð á hljóðkerfi með stöðugum búnað (`buffer`) hefur ekki verið staðfest á þessum kerfum. Tilvísun þín er mikilvæg.
+
+- **VLC er nauðsynlegt** (AMSO aflaður aðeins á Windows) :
+  - Linux : `sudo apt install vlc` (Debian / Ubuntu), `sudo dnf install vlc` (Fedora) eða `sudo pacman -S vlc` (Arch).
+  - macOS : hlekkstu **VLC.app** frá [videolan.org](https://www.videolan.org/vlc/) í Applications skrá.
+- **Linux, kerfisbókaflokkar** : Qt-grenifflokkur krefjast sérstaklega `libpulse0` (ljóð), `libxcb-cursor0` og `libxkbcommon-x11-0` (t.d. `sudo apt install libpulse0 libxcb-cursor0 libxkbcommon-x11-0`).
+- **macOS, óskrifað `.dmg`** : við fyrstu upphafi, svíka án þekktra á AMSO og síðan **Opna**, eða keyra `xattr -dr com.apple.quarantine /Applications/AMSO.app`.
+- **Linux, AppImage** : gerð það framkvæmt með `chmod +x AMSO*.AppImage`.
+- **Í falnum**, vinsamlegast sendu skráarnir `startup.log` og `crash.log` (ef þau eru til) sem eru í gögufilmokkurinn: `~/Library/Application Support/AMSO/` á macOS, `~/.local/share/AMSO/` á Linux. Greina kerfi þitt og útgáfuna VLC.
 
 ---
 
