@@ -155,6 +155,16 @@ def is_untranslated(key: str, val: str, ref_val: str, target_lang: str) -> bool:
     return len(val) >= 4
 
 
+def has_source_leak(val: str, ref_val: str) -> bool:
+    """Vrai si la « traduction » reprend le texte français puis y ajoute autre chose (ex. « français (romaji) »)."""
+    ref = ref_val.strip()
+    return len(ref) >= 8 and len(val) > len(ref) and ref in val
+
+
+def needs_retranslation(key: str, val: str, ref_val: str, target_lang: str) -> bool:
+    return is_untranslated(key, val, ref_val, target_lang) or (target_lang != "fr" and has_source_leak(val, ref_val))
+
+
 def translate_batch_with_ollama(
     items: dict[str, str], target_lang: str, model: str
 ) -> dict[str, str]:
@@ -214,6 +224,10 @@ def sync_locales(
     except Exception:
         all_languages = [c for c in LANG_NAMES.keys() if c != "fr"]
 
+    if ollama_model and not target_languages:
+        # L'anglais est traduit par l'assistant, jamais par Ollama (règle du projet) : il faut le demander avec --lang
+        all_languages = [c for c in all_languages if c != "en"]
+
     if target_languages:
         # Filtrer sur les langues demandées
         selected_langs = [c.strip().lower() for c in target_languages if c.strip().lower() != "fr"]
@@ -255,7 +269,7 @@ def sync_locales(
         obsolete_keys = [k for k in target_data if k not in ref_data]
         untranslated_keys = [
             k for k in ref_keys
-            if k in target_data and is_untranslated(k, target_data[k], ref_data[k], target_lang)
+            if k in target_data and needs_retranslation(k, target_data[k], ref_data[k], target_lang)
         ]
 
         log(f"\n[{target_lang}] Analyse de {target_path.name} ({LANG_NAMES.get(target_lang, target_lang)}) :")
@@ -296,6 +310,14 @@ def sync_locales(
                         f"    -> Lot {batch_num}/{total_batches} ({len(chunk_keys)} clés en cours via {ollama_model})..."
                     )
                     batch_res = translate_batch_with_ollama(chunk_dict, target_lang, ollama_model)
+                    # Le modèle double parfois le texte français d'une transcription : un nouvel essai clé par clé suffit
+                    for k in [k for k, v in batch_res.items() if k in chunk_dict and has_source_leak(v, chunk_dict[k])]:
+                        retry = translate_batch_with_ollama({k: chunk_dict[k]}, target_lang, ollama_model)
+                        if k in retry and not has_source_leak(retry[k], chunk_dict[k]):
+                            batch_res[k] = retry[k]
+                        else:
+                            log(f"    [!] {k} : traduction rejetée (texte français repris), clé laissée en l'état.")
+                            del batch_res[k]
                     translated_results.update(batch_res)
 
             synced_data: dict[str, str] = {}

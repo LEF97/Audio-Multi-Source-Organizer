@@ -175,6 +175,7 @@ class I18nManager:
         self._current_language: str = DEFAULT_LANGUAGE
         self._translations: dict[str, str] = {}
         self._fallback_translations: dict[str, str] = {}
+        self._source_translations: dict[str, str] = {}
         self._listeners: list[Callable[[str], None]] = []
         self.debug_mode: bool = os.getenv("AMSO_DEBUG_I18N", "0").lower() in ("1", "true", "yes")
 
@@ -196,6 +197,9 @@ class I18nManager:
 
     def _load_fallback_translations(self) -> None:
         self._fallback_translations = self._load_json(DEFAULT_LANGUAGE)
+        # En développement, seules les clés de fr.json (source de vérité) existent : sans ce dernier repli,
+        # une clé récente s'afficherait sous son nom technique dans toutes les autres langues.
+        self._source_translations = self._load_json("fr")
 
     def init_language(self) -> str:
         """Détermine la langue à utiliser au démarrage.
@@ -256,13 +260,27 @@ class I18nManager:
         """Active ou désactive l'encadrement de débogage visuel ⟦...⟧."""
         self.debug_mode = enabled
 
+    def tr_source(self, key: str, **kwargs: Any) -> str:
+        """Texte de la langue source (français), quelle que soit la langue active."""
+        template = self._source_translations.get(key, key)
+        try:
+            return template.format(**kwargs) if kwargs else template
+        except (KeyError, IndexError, ValueError):
+            return template
+
     def tr(self, key: str, default: str | None = None, **kwargs: Any) -> str:
         """Traduit une clé selon la langue active avec repli et interpolation."""
-        is_missing = key not in self._translations and key not in self._fallback_translations
+        is_missing = (
+            key not in self._translations
+            and key not in self._fallback_translations
+            and key not in self._source_translations
+        )
 
         template = self._translations.get(key)
         if template is None:
             template = self._fallback_translations.get(key)
+        if template is None:
+            template = self._source_translations.get(key)
         if template is None:
             template = default if default is not None else key
 
