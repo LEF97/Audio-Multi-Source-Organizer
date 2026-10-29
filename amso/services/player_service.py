@@ -16,6 +16,7 @@ from PySide6.QtCore import QObject, QTimer, Signal
 
 from amso.core.config import get_config_manager
 from amso.core.database import TrackRecord
+from amso.core.i18n import tr
 from amso.services.audio_decoder import AsyncAudioDecoder
 from amso.services.audio_engine import ContinuousAudioEngine
 from amso.services.player_queue import PlayerQueueMixin
@@ -261,7 +262,7 @@ class PlayerService(
             except Exception:
                 self._vlc_instance = vlc.Instance("--no-xlib", "--no-video", "--quiet")
             if self._vlc_instance is None:
-                raise RuntimeError("Échec de création de l'instance VLC")
+                raise RuntimeError(tr("player.err_vlc_instance"))
             self._media_player = self._vlc_instance.media_player_new()
             if self._media_player is not None:
                 self._apply_vlc_audio_output(self._media_player)

@@ -8,6 +8,7 @@ import time
 from typing import TYPE_CHECKING, Any
 
 from amso.core.config import get_config_manager
+from amso.core.i18n import tr
 from amso.services.player_cue import start_track_decode
 from amso.services.player_types import RepeatMode
 from amso.services.vlc_binding import vlc
@@ -151,7 +152,7 @@ class PlayerTransportMixin(_MixinBase):
     def play_index(self, index: int, resume_pending: bool = False) -> None:
         """Charge et joue le morceau à l'index donné dans la playlist."""
         if not self.is_vlc_available:
-            self.error_occurred.emit("VLC n'est pas disponible ou installé sur ce système.")
+            self.error_occurred.emit(tr("player.err_vlc_unavailable"))
             return
 
         if getattr(self, "_is_loading_track", False):
@@ -174,7 +175,7 @@ class PlayerTransportMixin(_MixinBase):
 
             file_path = track.source_path
             if not file_path or not os.path.exists(file_path):
-                self.error_occurred.emit(f"Fichier audio introuvable : {file_path}")
+                self.error_occurred.emit(tr("player.err_file_missing", path=file_path))
                 return
 
             use_buffer = (
@@ -184,9 +185,7 @@ class PlayerTransportMixin(_MixinBase):
                 and self._engine.is_available
             )
             if track.is_cue_segment and not use_buffer:
-                self.error_occurred.emit(
-                    "Les pistes CUE nécessitent le moteur à tampon continu (Paramètres > Lecteur)."
-                )
+                self.error_occurred.emit(tr("player.err_cue_needs_buffer"))
                 return
             if use_buffer:
                 if self._media_player:
@@ -229,7 +228,7 @@ class PlayerTransportMixin(_MixinBase):
             self.playlist_updated.emit()
         except Exception as exc:
             logger.error("Erreur lors de la lecture VLC : %s", exc)
-            self.error_occurred.emit(f"Erreur de lecture : {exc}")
+            self.error_occurred.emit(tr("player.err_playback", error=exc))
         finally:
             self._is_loading_track = False
 

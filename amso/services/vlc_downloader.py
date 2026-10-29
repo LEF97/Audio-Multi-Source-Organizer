@@ -18,6 +18,7 @@ from pathlib import Path
 from PySide6.QtCore import QObject, QThread, Signal
 
 from amso.core.database import get_default_data_dir
+from amso.core.i18n import tr
 from amso.services.vlc_info import setup_macos_user_vlc
 
 logger = logging.getLogger(__name__)
@@ -105,11 +106,11 @@ class VlcDownloadWorker(QThread):
 
             for url in VLC_ZIP_URLS:
                 if self._is_cancelled:
-                    self.finished.emit(False, "Téléchargement annulé par l'utilisateur.")
+                    self.finished.emit(False, tr("vlc_download.cancelled_by_user"))
                     return
 
                 try:
-                    self.progress.emit(5, f"Téléchargement depuis {url.split('/')[2]}...")
+                    self.progress.emit(5, tr("vlc_download.from_host", host=url.split("/")[2]))
                     req = urllib.request.Request(url, headers={"User-Agent": "AMSO/1.0 (Windows)"})
                     with urllib.request.urlopen(req, timeout=25) as response:
                         total_bytes = int(response.headers.get("Content-Length", 75 * 1024 * 1024))
@@ -119,7 +120,7 @@ class VlcDownloadWorker(QThread):
                         with open(temp_zip_file, "wb") as f_out:
                             while True:
                                 if self._is_cancelled:
-                                    self.finished.emit(False, "Téléchargement annulé.")
+                                    self.finished.emit(False, tr("vlc_download.cancelled"))
                                     return
                                 chunk = response.read(chunk_size)
                                 if not chunk:
@@ -130,7 +131,12 @@ class VlcDownloadWorker(QThread):
                                 percent = int(5 + (downloaded_bytes / total_bytes) * 75)
                                 mb_done = downloaded_bytes / (1024 * 1024)
                                 mb_total = total_bytes / (1024 * 1024)
-                                msg = f"Téléchargement : {mb_done:.1f} / {mb_total:.1f} Mo ({percent}%)"
+                                msg = tr(
+                                    "vlc_download.progress",
+                                    done=f"{mb_done:.1f}",
+                                    total=f"{mb_total:.1f}",
+                                    percent=percent,
+                                )
                                 self.progress.emit(min(80, percent), msg)
 
                     download_success = True
@@ -141,11 +147,11 @@ class VlcDownloadWorker(QThread):
                     continue
 
             if not download_success:
-                self.finished.emit(False, f"Impossible de télécharger VLC : {last_error}")
+                self.finished.emit(False, tr("vlc_download.failed", error=last_error))
                 return
 
             # 2. Décompression ciblée (uniquement libvlc, libvlccore et plugins/)
-            self.progress.emit(82, "Extraction et installation des décodeurs audio...")
+            self.progress.emit(82, tr("vlc_download.extracting"))
             self.dest_dir.mkdir(parents=True, exist_ok=True)
 
             with zipfile.ZipFile(temp_zip_file, "r") as zf:
@@ -154,7 +160,7 @@ class VlcDownloadWorker(QThread):
 
                 for idx, member in enumerate(members):
                     if self._is_cancelled:
-                        self.finished.emit(False, "Installation annulée.")
+                        self.finished.emit(False, tr("vlc_download.install_cancelled"))
                         return
 
                     filename = member.filename.replace("\\", "/")
@@ -179,15 +185,15 @@ class VlcDownloadWorker(QThread):
 
                     if idx % 100 == 0:
                         progress_pct = int(82 + (idx / max(1, total_files)) * 17)
-                        self.progress.emit(min(99, progress_pct), "Installation des décodeurs audio...")
+                        self.progress.emit(min(99, progress_pct), tr("vlc_download.installing"))
 
             # 3. Finalisation et vérification
             if (self.dest_dir / "libvlc.dll").is_file() and (self.dest_dir / "libvlccore.dll").is_file():
                 setup_vlc_environment()
-                self.progress.emit(100, "Moteur audio prêt !")
-                self.finished.emit(True, "Installation terminée avec succès !")
+                self.progress.emit(100, tr("vlc_download.engine_ready"))
+                self.finished.emit(True, tr("vlc_download.done"))
             else:
-                self.finished.emit(False, "Fichiers libvlc.dll introuvables après décompression.")
+                self.finished.emit(False, tr("vlc_download.dll_missing"))
 
         except Exception as exc:
             logger.error("Erreur durant l'installation automatique de VLC : %s", exc)

@@ -192,9 +192,9 @@ class BaseTrackTableModel(QAbstractTableModel):
                 return f"{track.sample_rate / 1000:.1f} kHz" if track.sample_rate else "--"
             elif field == "channels":
                 if track.channels == 2:
-                    return "Stéréo"
+                    return tr("table.channels_stereo")
                 elif track.channels == 1:
-                    return "Mono"
+                    return tr("table.channels_mono")
                 elif track.channels:
                     return f"{track.channels} ch"
                 return "--"
@@ -255,7 +255,7 @@ class BaseTrackTableModel(QAbstractTableModel):
 
         elif role == Qt.ItemDataRole.ToolTipRole:
             if getattr(track, "is_missing", False):
-                return f"⚠️ Fichier introuvable sur le disque :\n{track.source_path or track.source_ref}"
+                return tr("table.file_missing_tooltip", path=track.source_path or track.source_ref)
             elif field in {"source_path", "folder_path"}:
                 return getattr(track, field, "")
             elif field == "file_hash":

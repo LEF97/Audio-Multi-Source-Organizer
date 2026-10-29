@@ -17,6 +17,7 @@ from typing import Any
 
 from PySide6.QtCore import QObject, QTimer, Signal
 
+from amso.core.i18n import tr
 from amso.services.vlc_binding import vlc
 
 logger = logging.getLogger(__name__)
@@ -166,11 +167,11 @@ class AsyncAudioDecoder(QObject):
         """
         self.stop()
         if not file_path or not Path(file_path).exists():
-            self.error_occurred.emit(file_path, f"Fichier introuvable : {file_path}")
+            self.error_occurred.emit(file_path, tr("player.err_file_missing", path=file_path))
             return
 
         if not self._ensure_player():
-            self.error_occurred.emit(file_path, "Impossible d'initialiser le décodeur audio")
+            self.error_occurred.emit(file_path, tr("player.err_decoder_init"))
             return
 
         self._current_path = key or file_path

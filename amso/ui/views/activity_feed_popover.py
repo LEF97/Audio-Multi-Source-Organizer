@@ -294,7 +294,7 @@ class ActivityFeedPopover(QFrame):
             else:
                 self.cur_progress.setVisible(False)
         else:
-            self.lbl_badge_status.setText("✓ SYSTÈME PRÊT")
+            self.lbl_badge_status.setText(tr("status.system_ready"))
             self.lbl_badge_status.setStyleSheet(
                 "background-color: rgba(34, 197, 94, 0.2); color: #4ADE80; "
                 "border: 1px solid rgba(34, 197, 94, 0.5); font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 8px;"
