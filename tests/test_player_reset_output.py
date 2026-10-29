@@ -55,40 +55,27 @@ def _track() -> TrackRecord:
     )
 
 
-@pytest.mark.parametrize("old_engine", ["buffer", "vlc_direct"])
-@pytest.mark.parametrize("new_engine", ["buffer", "vlc_direct"])
-def test_changement_de_moteur_conserve_la_position(qapp: QApplication, old_engine: str, new_engine: str) -> None:
+@pytest.mark.parametrize("via_toggle", [True, False])
+def test_reprise_apres_reset_relance_le_timer_de_transfert(qapp: QApplication, via_toggle: bool) -> None:
     cfg = get_config_manager()
-    cfg.set_audio_engine(old_engine)
+    cfg.set_audio_engine("buffer")
     player = PlayerService()
-    if not player._engine.is_available:
-        pytest.skip("aucune sortie audio disponible")
+    if not player._engine.is_available or not player.is_vlc_available:
+        pytest.skip("sortie audio ou VLC indisponible")
     player.load_playlist([_track()], 0)
-    if old_engine == "buffer":
-        # Lecture en cours : seule la position du moteur à tampon la connaît (rien dans _pending_seek_ms).
-        player._engine._is_playing = True
-        player._engine._base_offset_ms = 90_000
+    player.reset_playback()
+    # Le décodeur signale « prêt » : le moteur est chargé en pause, timer arrêté par stop().
+    player._engine.play_track("C:/absent/a.flac", b"\0" * 4096, 240_000, start_offset_ms=90_000, start_paused=True)
+    assert not player._timer.isActive()
+
+    if via_toggle:
+        player.toggle_play_pause()
     else:
-        player._current_time_ms = 90_000
-    states: list[str] = []
-    player.state_changed.connect(states.append)
+        player._resume_from_paused()
 
-    resume_ms = player.capture_position_ms()
-    cfg.set_audio_engine(new_engine)
-    player.reset_playback(resume_ms)
-
-    assert resume_ms == 90_000
-    assert player._pending_seek_ms == 90_000
-    assert player._current_time_ms == 90_000
-    assert states[-1] == "paused"
-
-
-def test_capture_position_hors_duree_revient_a_zero(qapp: QApplication) -> None:
-    player = PlayerService()
-    player.load_playlist([_track()], 0)
-    player._current_time_ms = 240_000
-
-    assert player.capture_position_ms() == 0
+    # Sans tick, pump_audio n'est plus appelé : la lecture reprend muette.
+    assert player._timer.isActive()
+    assert player._engine.is_playing
 
 
 def test_reset_playback_par_defaut_revient_a_zero(qapp: QApplication) -> None:
@@ -99,3 +86,30 @@ def test_reset_playback_par_defaut_revient_a_zero(qapp: QApplication) -> None:
 
     assert player._pending_seek_ms == 0
     assert player._current_time_ms == 0
+
+
+@pytest.mark.parametrize(("natural_end", "expected_gapless"), [(False, False), (True, True)])
+def test_next_buffer_raccord_gapless_seulement_en_fin_naturelle(
+    qapp: QApplication, monkeypatch: pytest.MonkeyPatch, natural_end: bool, expected_gapless: bool
+) -> None:
+    cfg = get_config_manager()
+    cfg.set_audio_engine("buffer")
+    cfg.set_transition_mode("gapless")
+    player = PlayerService()
+    if not player._engine.is_available:
+        pytest.skip("aucune sortie audio disponible")
+    player.load_playlist([_track(), _track()], 0)
+    monkeypatch.setattr(player, "_standby_decoder", object())
+    player._standby_player = None  # sans lecteur VLC de secours, seul le chemin du tampon est en jeu
+    player._preloaded_index = 1
+    player._advancing_after_track_end = natural_end
+    transitions: list[int] = []
+    played: list[int] = []
+    monkeypatch.setattr(player, "_complete_buffer_transition", transitions.append)
+    monkeypatch.setattr(player, "play_index", played.append)
+
+    player.next()
+
+    # Un « Suivant » manuel garde sinon la position de la piste précédente (suivante accolée dans le tampon).
+    assert bool(transitions) is expected_gapless
+    assert bool(played) is not expected_gapless

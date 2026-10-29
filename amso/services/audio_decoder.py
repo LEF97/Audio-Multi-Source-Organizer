@@ -36,6 +36,9 @@ class AsyncAudioDecoder(QObject):
     decoding_finished = Signal(str, bytes, int)  # file_path, pcm total, duration_ms
     error_occurred = Signal(str, str)  # file_path, message d'erreur
     _vlc_end_signalled = Signal()  # relais du thread d'événements de VLC vers le thread Qt
+    # Relais du thread audio de VLC vers le thread Qt, estampillés de la génération du décodage qui les a produits
+    _ready_relay = Signal(str, bytes, int, int)
+    _chunk_relay = Signal(str, bytes, int)
 
     def __init__(self, vlc_instance: Any = None, parent: QObject | None = None) -> None:
         super().__init__(parent)
@@ -53,6 +56,18 @@ class AsyncAudioDecoder(QObject):
         self._monitor_timer.setInterval(80)
         self._monitor_timer.timeout.connect(self._check_player_state)
         self._vlc_end_signalled.connect(self._on_vlc_end_signalled)
+        self._generation: int = 0
+        self._ready_relay.connect(self._deliver_ready)
+        self._chunk_relay.connect(self._deliver_chunk)
+
+    def _deliver_ready(self, file_path: str, pcm: bytes, duration_ms: int, generation: int) -> None:
+        """Publie le premier bloc, sauf s'il vient d'un décodage remplacé depuis (signal resté dans la file Qt)."""
+        if generation == self._generation:
+            self.ready_to_play.emit(file_path, pcm, duration_ms)
+
+    def _deliver_chunk(self, file_path: str, chunk: bytes, generation: int) -> None:
+        if generation == self._generation:
+            self.chunk_decoded.emit(file_path, chunk)
 
     @property
     def is_finished(self) -> bool:
@@ -137,9 +152,9 @@ class AsyncAudioDecoder(QObject):
             if dur <= 0 and self._player:
                 dur = max(0, self._player.get_length())
                 self._duration_ms = dur
-            self.ready_to_play.emit(self._current_path, bytes(self._accumulated_pcm), dur)
+            self._ready_relay.emit(self._current_path, bytes(self._accumulated_pcm), dur, self._generation)
         elif self._has_emitted_ready:
-            self.chunk_decoded.emit(self._current_path, chunk)
+            self._chunk_relay.emit(self._current_path, chunk, self._generation)
 
     def start_decode(
         self, file_path: str, start_offset_ms: int = 0, duration_ms: int = 0, stop_offset_ms: int = 0, key: str = ""
@@ -193,6 +208,7 @@ class AsyncAudioDecoder(QObject):
 
     def stop(self) -> None:
         """Arrête le décodage en cours."""
+        self._generation += 1
         self._is_finished = True
         self._monitor_timer.stop()
         if self._player:

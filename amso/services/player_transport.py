@@ -255,6 +255,7 @@ class PlayerTransportMixin(_MixinBase):
             if self._engine.is_paused:
                 self._is_paused_requested = False
                 self._engine.resume()
+                self._ensure_tick_timer()
                 self.state_changed.emit("playing")
                 return
             self._is_paused_requested = False
@@ -288,12 +289,22 @@ class PlayerTransportMixin(_MixinBase):
         else:
             self.play_index(self._current_index, resume_pending=True)
 
+    def _ensure_tick_timer(self) -> None:
+        """Relance le timer de transfert PCM si `stop()` l'a arrêté.
+
+        Un titre chargé en pause (`load_index` après un stop, un seek ou un reset) est repris par `engine.resume()`
+        seul : sans tick, `pump_audio` n'est plus appelé et la lecture reste muette.
+        """
+        if not self._timer.isActive():
+            self._timer.start()
+
     def _resume_from_paused(self) -> None:
         """Reprend la lecture après une pause."""
         self._is_paused_requested = False
         use_buffer = get_config_manager().get_audio_engine() == "buffer" and self._engine and self._engine.is_available
         if use_buffer:
             self._engine.resume()
+            self._ensure_tick_timer()
             self.state_changed.emit("playing")
             return
         if not self._media_player:
@@ -378,17 +389,21 @@ class PlayerTransportMixin(_MixinBase):
             self.stop()
             return
 
-        # Si la piste suivante est déjà préchargée sur le standby_player ou standby_decoder
-        if self._standby_player and self._preloaded_index == next_idx:
-            self._complete_transition(next_idx)
-            return
-
         use_buffer = get_config_manager().get_audio_engine() == "buffer" and self._engine and self._engine.is_available
-        if use_buffer and getattr(self, "_standby_decoder", None) and self._preloaded_index == next_idx:
-            mode = get_config_manager().get_transition_mode()
-            if mode == "gapless":
-                self._complete_buffer_transition(next_idx)
+        # Moteur buffer : le raccord au sample près n'a de sens qu'à la fin naturelle de la piste. Sur un « Suivant »
+        # manuel, le tampon ne contient que le début décodé de la piste en cours : la suivante y serait accolée et
+        # la position affichée resterait celle de la piste précédente.
+        if not (use_buffer and not getattr(self, "_advancing_after_track_end", False)):
+            # Si la piste suivante est déjà préchargée sur le standby_player ou standby_decoder
+            if self._standby_player and self._preloaded_index == next_idx:
+                self._complete_transition(next_idx)
                 return
+
+            if use_buffer and getattr(self, "_standby_decoder", None) and self._preloaded_index == next_idx:
+                mode = get_config_manager().get_transition_mode()
+                if mode == "gapless":
+                    self._complete_buffer_transition(next_idx)
+                    return
 
         self._reset_standby_player()
 
