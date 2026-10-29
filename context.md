@@ -59,6 +59,7 @@ amso/
 │   ├── audio_decoder.py      décodeur PCM (amem)
 │   ├── audio_spectrum.py     analyse du spectre
 │   ├── vlc_binding.py, vlc_downloader.py   liaison et auto-installation de VLC
+│   ├── vlc_info.py           version et provenance de la libvlc chargée, téléchargement réservé à Windows, ~/Applications/VLC.app (macOS)
 │   ├── windows_audio.py, sleep_inhibitor.py   spécifique OS
 │   └── update_checker.py     mises à jour via GitHub Releases
 └── ui/                       PySide6

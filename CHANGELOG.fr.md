@@ -20,6 +20,8 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 - **Journal de la TNR :** chaque exécution écrit `tests/tnr/log/tnr_AAAA-MM-JJ_HH-MM-SS.log` (version, commit, pistes, résultats détaillés, messages Qt et journaux du lecteur) ; le dossier est ignoré par git.
 - **Journal de démarrage :** `startup.log` dans le dossier de données chronomètre chaque étape du lancement, la restauration de la session et les threads encore actifs à la fermeture.
 - **Journal de plantage natif :** `crash.log` dans le dossier de données (`%APPDATA%/AMSO/`) reçoit la pile d'un plantage de LibVLC ou de Qt.
+- **Statut de libVLC :** les réglages du lecteur affichent la version de libVLC réellement chargée et sa provenance (copie AMSO ou VLC du système), avec le chemin en infobulle.
+- **Préparation Linux et macOS :** le téléchargement automatique de VLC (archive Windows) est réservé à Windows ; ailleurs, AMSO indique comment installer VLC (gestionnaire de paquets, VLC.app). Sous macOS, VLC.app est aussi détectée dans `~/Applications`.
 
 ### Changed
 - **Démarrage :** la table « Tous les morceaux » n'est plus chargée (jusqu'à 3 fois ~50 000 pistes) avant l'ouverture de sa page ; le compteur du bandeau reste exact via une requête `COUNT`.

@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMainWindow,
+    QMessageBox,
     QSplitter,
     QTableView,
     QVBoxLayout,
@@ -31,6 +32,7 @@ from amso.core.startup_timing import get_startup_clock
 from amso.services.player_service import PlayerService
 from amso.services.sleep_inhibitor import SleepInhibitor
 from amso.services.update_checker import UpdateCheckerWorker
+from amso.services.vlc_info import supports_vlc_download
 from amso.ui.dialogs.vlc_download_dialog import VlcDownloadDialog
 from amso.ui.models import FolderTrackTableModel, TrackTableModel
 from amso.ui.pages.folders_page import FoldersPageMixin
@@ -357,6 +359,10 @@ class MainWindow(
         """Vérifie si VLC est disponible. Si non, propose le téléchargement automatique."""
         if self.player_service.is_vlc_available:
             return True
+        if not supports_vlc_download():
+            key = "dialog.vlc_missing_macos" if sys.platform == "darwin" else "dialog.vlc_missing_linux"
+            QMessageBox.warning(self, tr("dialog.vlc_title"), tr(key))
+            return False
         dlg = VlcDownloadDialog(self.player_service, parent=self)
         if dlg.exec() == QDialog.DialogCode.Accepted:
             return self.player_service.is_vlc_available

@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 
 from amso.core.config import get_config_manager
 from amso.core.i18n import tr
+from amso.ui.pages.vlc_status import build_vlc_status
 from amso.ui.styles import settings_radio_qss
 
 if TYPE_CHECKING:
@@ -215,12 +216,9 @@ class SettingsPlayerEffectsMixin(_MixinBase):
         l_eng.addLayout(box_vlc)
 
         # Statut LibVLC
-        is_avail = getattr(self, "player_service", None) and self.player_service.is_vlc_available
-        status_txt = tr("settings.player_engine_active") if is_avail else tr("settings.player_engine_inactive")
-        status_color = "#34D399" if is_avail else "#EF4444"
-        self.lbl_vlc_status_val = QLabel(
-            f"• <b>{tr('settings.player_engine_status')}</b> <span style='color: {status_color}; font-weight: 600;'>{status_txt}</span>"
-        )
+        status_html, status_tip = build_vlc_status(getattr(self, "player_service", None))
+        self.lbl_vlc_status_val = QLabel(status_html)
+        self.lbl_vlc_status_val.setToolTip(status_tip)
         self.lbl_vlc_status_val.setStyleSheet("font-size: 12.5px; color: #CBD5E1; margin-top: 4px;")
         l_eng.addWidget(self.lbl_vlc_status_val)
 

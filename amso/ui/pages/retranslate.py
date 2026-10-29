@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 from amso import __version__
 from amso.core.config import get_config_path
 from amso.core.i18n import tr
+from amso.ui.pages.vlc_status import build_vlc_status
 
 logger = logging.getLogger(__name__)
 
@@ -253,12 +254,9 @@ class RetranslateMixin(_MixinBase):
                 self.lbl_eff_none_hint.setText(tr("effects.none_hint"))
 
             if hasattr(self, "lbl_vlc_status_val"):
-                is_avail = self.player_service.is_vlc_available
-                status_txt = tr("settings.player_engine_active") if is_avail else tr("settings.player_engine_inactive")
-                status_color = "#34D399" if is_avail else "#EF4444"
-                self.lbl_vlc_status_val.setText(
-                    f"• <b>{tr('settings.player_engine_status')}</b> <span style='color: {status_color}; font-weight: 600;'>{status_txt}</span>"
-                )
+                status_html, status_tip = build_vlc_status(self.player_service)
+                self.lbl_vlc_status_val.setText(status_html)
+                self.lbl_vlc_status_val.setToolTip(status_tip)
 
             if hasattr(self, "lbl_card_bt_title"):
                 self.lbl_card_bt_title.setText("🎭  " + tr("blind_test.settings_title"))

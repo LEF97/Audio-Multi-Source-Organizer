@@ -18,6 +18,7 @@ from pathlib import Path
 from PySide6.QtCore import QObject, QThread, Signal
 
 from amso.core.database import get_default_data_dir
+from amso.services.vlc_info import setup_macos_user_vlc
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +49,7 @@ def setup_vlc_environment() -> Path | None:
     1. Dossier ./vlc à côté de l'exécutable
     2. Dossier %APPDATA%/AMSO/vlc
     """
+    setup_macos_user_vlc()
     candidates = [
         Path(sys.executable).parent / "vlc",
         Path(__file__).parents[2] / "vlc",
