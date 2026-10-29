@@ -103,6 +103,19 @@ python main.py
 
 ---
 
+## 🐧🍎 Linux et macOS : versions expérimentales (non testées)
+
+Les paquets Linux (`.AppImage` / `.tar.gz`) et macOS (`.dmg`) sont fournis **sans avoir été testés** : AMSO n'a été validé que sous Windows. Le moteur audio à tampon continu (`buffer`) en particulier n'a pas été vérifié sur ces systèmes. Votre retour est précieux.
+
+- **VLC est requis** (AMSO ne le télécharge que sous Windows) :
+  - Linux : `sudo apt install vlc` (Debian / Ubuntu), `sudo dnf install vlc` (Fedora) ou `sudo pacman -S vlc` (Arch).
+  - macOS : installer **VLC.app** depuis [videolan.org](https://www.videolan.org/vlc/) dans le dossier Applications.
+- **macOS, `.dmg` non signé** : au premier lancement, faire un clic droit sur AMSO puis **Ouvrir**, ou exécuter `xattr -dr com.apple.quarantine /Applications/AMSO.app`.
+- **Linux, AppImage** : la rendre exécutable avec `chmod +x AMSO*.AppImage`.
+- **En cas de problème**, merci d'envoyer les fichiers `startup.log` et `crash.log` (s'il existe) situés dans le dossier de données : `~/Library/Application Support/AMSO/` sous macOS, `~/.local/share/AMSO/` sous Linux. Précisez votre système et la version de VLC.
+
+---
+
 ## 🧪 Lancement des tests
 
 Le projet utilise `pytest` avec une suite de tests unitaires et d'intégration :

@@ -56,7 +56,7 @@ AMSO a pour vocation de devenir le **hub musical universel et décentralisé** d
 ---
 
 ### 🔵 Version 0.4.1 — Packaging Linux & macOS
-- [ ] **Déploiement multiplateforme automatisé (Linux & macOS) :** Compilation native et packaging automatisé via GitHub Actions pour Linux (.AppImage / .tar.gz) et macOS Apple Silicon ARM & Intel (.dmg), en complément de l'exécutable Windows.
+- [ ] **Déploiement multiplateforme automatisé (Linux & macOS) :** Compilation native et packaging automatisé via GitHub Actions pour Linux (.AppImage / .tar.gz) et macOS Apple Silicon ARM & Intel (.dmg), en complément de l'exécutable Windows. Livré d'abord comme version expérimentale non testée (VLC requis, `.dmg` non signé) ; les testeurs renvoient `startup.log` et `crash.log`.
 
 ---
 
