@@ -75,7 +75,7 @@ amso/
     └── workers.py            QThread / signaux (scans et calculs lourds hors thread UI)
 amso/locales/*.json           43 langues, fr.json = source de vérité
 scripts/                      outils (+ .bat jumeau pour chaque script) : verify, check_file_sizes, check_docs_sync, check_context,
-                              sync_translations(_ollama), tnr_transitions (non-régression des transitions sur pistes réelles), translate_docs (README en 43 langues, CHANGELOG/ROADMAP es/de/it, via Ollama), audit_translations, build_exe, publish_github_release, sync_skills
+                              sync_translations(_ollama), package_unix (Linux .tar.gz/.AppImage, macOS .dmg), tnr_transitions (non-régression des transitions sur pistes réelles), translate_docs (README en 43 langues, CHANGELOG/ROADMAP es/de/it, via Ollama), audit_translations, build_exe, publish_github_release, sync_skills
 docs/i18n/                    toutes les langues sauf fr et en (README ×41, CHANGELOG et ROADMAP es/de/it), générées par Ollama ; sélecteur de langue partagé
 tests/                        pytest, Qt offscreen, config et DB isolées (conftest autouse)
 tests/tnr/                    banc de non-régression audio (pistes de référence : `_work/tnr/`, sinon NAS) : sortie factice (capture_sink), décodage de référence, analyse, scénario ; lancé par scripts/tnr_transitions.bat ou `pytest -m tnr` ; journaux horodatés dans `tests/tnr/log/` (ignoré par git)

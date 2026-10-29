@@ -43,7 +43,12 @@ jobs:
             libxcb-xfixes0 \
             libxcb-xinerama0 \
             libxrandr2 \
+            libpulse0 \
+            libxcb-cursor0 \
+            libpulse-mainloop-glib0 \
             xvfb
+          # Qt Multimedia charge libpulse (et ALSA) des l'import : sans eux, les modules UI echouent a la collecte
+          sudo apt-get install -y libasound2t64 || sudo apt-get install -y libasound2
 
       - name: Install dependencies
         run: |
