@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
 )
 
+from amso.core.activity_messages import LogMessage, raw_line
 from amso.core.database import (
     SourceRecord,
     SourceType,
@@ -74,11 +75,14 @@ class ScanControllerMixin(_MixinBase):
             self.scheduler.refresh_watched_directories()
 
         self.db.add_activity_log(
-            action=f"Source ajoutée : {source.name}",
+            action=LogMessage("log.source_added", {"source": source.name}),
             level="INFO",
             category="LIBRARY",
             source_name=source.name,
-            details=f"Emplacement: {source.path_or_uri}\nMode de synchronisation: {source.sync_mode}",
+            details=[
+                LogMessage("log.detail_location", {"path": source.path_or_uri}),
+                LogMessage("log.detail_sync_mode", {"mode": source.sync_mode}),
+            ],
         )
         if hasattr(self, "page_logs") and self.page_logs:
             self.page_logs.mark_dirty()
@@ -291,21 +295,21 @@ class ScanControllerMixin(_MixinBase):
         if summary.cancelled:
             self.status_label.setText(tr("status.cancelled"))
             self.db.add_activity_log(
-                action=f"Synchronisation annulée : {source_name}",
+                action=LogMessage("log.sync_cancelled", {"source": source_name}),
                 level="WARNING",
                 category="SYNC",
                 source_name=source_name,
-                details="Le scan a été interrompu par l'utilisateur.",
+                details=[LogMessage("log.detail_cancelled")],
             )
         elif summary.errors and summary.added == 0 and summary.updated == 0 and summary.unchanged == 0:
             err_msg = tr("status.scan_errors", count=len(summary.errors))
             self.status_label.setText(err_msg)
             self.db.add_activity_log(
-                action=f"Échec de synchronisation : {source_name}",
+                action=LogMessage("log.sync_failed", {"source": source_name}),
                 level="ERROR",
                 category="SYNC",
                 source_name=source_name,
-                details="\n".join(summary.errors),
+                details=[raw_line(e) for e in summary.errors],
                 items_errors=len(summary.errors),
             )
             if getattr(self, "_current_scan_user_initiated", False):
@@ -326,30 +330,38 @@ class ScanControllerMixin(_MixinBase):
             )
             lvl = "WARNING" if summary.errors else "SUCCESS"
             detail_lines = [
-                f"Durée : {summary.elapsed_seconds:.1f}s",
-                f"Morceaux ajoutés : {summary.added}",
-                f"Morceaux mis à jour : {summary.updated}",
-                f"Morceaux inchangés : {summary.unchanged}",
-                f"Morceaux supprimés : {summary.deleted}",
+                LogMessage("log.detail_duration", {"seconds": f"{summary.elapsed_seconds:.1f}"}),
+                LogMessage("log.detail_added", {"count": summary.added}),
+                LogMessage("log.detail_updated", {"count": summary.updated}),
+                LogMessage("log.detail_unchanged", {"count": summary.unchanged}),
+                LogMessage("log.detail_deleted", {"count": summary.deleted}),
             ]
             if summary.playlists_changed:
                 detail_lines.append(
-                    f"Playlists / feuilles CUE : {summary.playlists_added} ajoutée(s), "
-                    f"{summary.playlists_updated} mise(s) à jour, {summary.playlists_deleted} supprimée(s)"
+                    LogMessage(
+                        "log.detail_playlists",
+                        {
+                            "added": summary.playlists_added,
+                            "updated": summary.playlists_updated,
+                            "deleted": summary.playlists_deleted,
+                        },
+                    )
                 )
-                detail_lines.extend(f"  + {name}" for name in summary.playlist_names[:10])
+                detail_lines.extend(
+                    LogMessage("log.detail_playlist_name", {"name": n}) for n in summary.playlist_names[:10]
+                )
                 if len(summary.playlist_names) > 10:
-                    detail_lines.append(f"  … et {len(summary.playlist_names) - 10} autre(s)")
+                    detail_lines.append(LogMessage("log.detail_more", {"count": len(summary.playlist_names) - 10}))
             if summary.errors:
-                detail_lines.append(f"Erreurs ({len(summary.errors)}) :")
-                detail_lines.extend(summary.errors[:10])
+                detail_lines.append(LogMessage("log.detail_errors", {"count": len(summary.errors)}))
+                detail_lines.extend(raw_line(e) for e in summary.errors[:10])
 
             self.db.add_activity_log(
-                action=f"Synchronisation réussie : {source_name}",
+                action=LogMessage("log.sync_success", {"source": source_name}),
                 level=lvl,
                 category="SYNC",
                 source_name=source_name,
-                details="\n".join(detail_lines),
+                details=detail_lines,
                 items_added=summary.added,
                 items_updated=summary.updated,
                 items_deleted=summary.deleted,
@@ -385,11 +397,11 @@ class ScanControllerMixin(_MixinBase):
             self.activity_popover.update_progress("", pct=None)
 
         self.db.add_activity_log(
-            action=f"Erreur critique de scan : {source_name}",
+            action=LogMessage("log.scan_critical", {"source": source_name}),
             level="ERROR",
             category="SYNC",
             source_name=source_name,
-            details=err_msg,
+            details=[raw_line(err_msg)],
             items_errors=1,
         )
 

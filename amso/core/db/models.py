@@ -118,6 +118,7 @@ class ActivityLogRecord:
     items_updated: int = 0
     items_deleted: int = 0
     items_errors: int = 0
+    i18n: str | None = None  # JSON clé + paramètres (voir core/activity_messages.py)
 
     @classmethod
     def from_row(cls, row: sqlite3.Row) -> ActivityLogRecord:
@@ -138,6 +139,7 @@ class ActivityLogRecord:
             if "items_deleted" in keys and row["items_deleted"] is not None
             else 0,
             items_errors=int(row["items_errors"]) if "items_errors" in keys and row["items_errors"] is not None else 0,
+            i18n=str(row["i18n"]) if "i18n" in keys and row["i18n"] else None,
         )
 
 

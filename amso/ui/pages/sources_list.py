@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
     QPushButton,
 )
 
+from amso.core.activity_messages import LogMessage
 from amso.core.database import (
     SourceRecord,
     SourceType,
@@ -152,11 +153,11 @@ class SourcesListMixin(_MixinBase):
         if reply == QMessageBox.StandardButton.Yes:
             self.db.delete_source(source.id)
             self.db.add_activity_log(
-                action=f"Source supprimée : {source.name}",
+                action=LogMessage("log.source_removed", {"source": source.name}),
                 level="INFO",
                 category="LIBRARY",
                 source_name=source.name,
-                details=f"Emplacement: {source.path_or_uri}",
+                details=[LogMessage("log.detail_location", {"path": source.path_or_uri})],
             )
             if hasattr(self, "page_logs") and self.page_logs:
                 self.page_logs.mark_dirty()

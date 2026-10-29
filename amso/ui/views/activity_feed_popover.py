@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from amso.core.activity_messages import display_action
 from amso.core.database import DatabaseManager, SourceRecord
 from amso.core.i18n import tr
 from amso.core.scheduler import SyncScheduler
@@ -348,7 +349,7 @@ class ActivityFeedPopover(QFrame):
                     else:
                         icon = "<span style='color: #38BDF8;'>ℹ</span>"
 
-                    summary = log.action
+                    summary = display_action(log)
                     if log.items_added or log.items_updated or log.items_deleted:
                         summary += f" (+{log.items_added}/~{log.items_updated}/-{log.items_deleted})"
 

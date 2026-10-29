@@ -8,6 +8,7 @@ import sqlite3
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
+from amso.core.activity_messages import LogMessage, encode, render_source_language
 from amso.core.db.models import (
     ActivityLogRecord,
 )
@@ -24,11 +25,11 @@ class ActivityRepoMixin:
 
     def add_activity_log(
         self,
-        action: str,
+        action: str | LogMessage,
         level: str = "INFO",
         category: str = "SYNC",
         source_name: str | None = None,
-        details: str | None = None,
+        details: str | list[LogMessage] | None = None,
         items_added: int = 0,
         items_updated: int = 0,
         items_deleted: int = 0,
@@ -37,13 +38,23 @@ class ActivityRepoMixin:
     ) -> int:
         """Insère une nouvelle entrée dans le journal d'activité."""
         now = timestamp or datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
+        i18n_payload: str | None = None
+        if isinstance(action, LogMessage):
+            lines = details if isinstance(details, list) else None
+            i18n_payload = encode(action, lines)
+            # Rendu français conservé : recherche SQL, export et repli si le JSON devenait illisible
+            action = render_source_language(action)
+            if lines is not None:
+                details = "\n".join(render_source_language(m) for m in lines)
+        elif isinstance(details, list):
+            details = "\n".join(render_source_language(m) for m in details)
         with self.get_connection() as conn:
             cur = conn.execute(
                 """
                 INSERT INTO activity_logs (
                     timestamp, level, category, source_name, action, details,
-                    items_added, items_updated, items_deleted, items_errors
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                    items_added, items_updated, items_deleted, items_errors, i18n
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
                 """,
                 (
                     now,
@@ -56,6 +67,7 @@ class ActivityRepoMixin:
                     items_updated,
                     items_deleted,
                     items_errors,
+                    i18n_payload,
                 ),
             )
             return cur.lastrowid or 0

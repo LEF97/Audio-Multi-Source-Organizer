@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from amso.core.activity_messages import display_action, display_details, display_level
 from amso.core.database import ActivityLogRecord, DatabaseManager
 from amso.core.i18n import tr
 from amso.ui.dialogs.log_detail_dialog import LogDetailDialog
@@ -260,7 +261,7 @@ class LogsView(QWidget):
                 self.table.setItem(row, 0, item_ts)
 
                 # 1. Niveau avec couleur et badge
-                item_lvl = QTableWidgetItem(rec.level)
+                item_lvl = QTableWidgetItem(display_level(rec.level))
                 item_lvl.setTextAlignment(align_center)
                 if rec.level == "SUCCESS":
                     item_lvl.setForeground(self._color_success)
@@ -277,7 +278,7 @@ class LogsView(QWidget):
                 self.table.setItem(row, 2, item_src)
 
                 # 3. Action
-                item_act = QTableWidgetItem(rec.action)
+                item_act = QTableWidgetItem(display_action(rec))
                 item_act.setFont(self._font_action)
                 self.table.setItem(row, 3, item_act)
 
@@ -310,7 +311,7 @@ class LogsView(QWidget):
                 self.table.setItem(row, 7, item_err)
 
                 # 8. Détails
-                item_det = QTableWidgetItem(rec.details or "")
+                item_det = QTableWidgetItem(display_details(rec))
                 self.table.setItem(row, 8, item_det)
         finally:
             self.table.blockSignals(False)
@@ -375,17 +376,17 @@ class LogsView(QWidget):
                             r.level,
                             r.category,
                             r.source_name,
-                            r.action,
+                            display_action(r),
                             r.items_added,
                             r.items_updated,
                             r.items_deleted,
                             r.items_errors,
-                            r.details,
+                            display_details(r),
                         ]
                     )
-            QMessageBox.information(self, "Export", "Logs exportés avec succès !")
+            QMessageBox.information(self, tr("logs.export_title"), tr("logs.export_success"))
         except Exception as e:
-            QMessageBox.critical(self, "Erreur d'exportation", f"Impossible d'exporter les logs :\n{e}")
+            QMessageBox.critical(self, tr("logs.export_error_title"), tr("logs.export_error", error=e))
 
     def retranslate_ui(self) -> None:
         """Applique les traductions dynamiques sur les composants de la page des logs."""

@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QTableView,
 )
 
+from amso.core.activity_messages import LogMessage, raw_line
 from amso.core.database import (
     TrackRecord,
 )
@@ -159,11 +160,11 @@ class TrackActionsMixin(_MixinBase):
 
         source_name = tr("sidebar.nav_player").replace("🎵", "").strip()
         self.db.add_activity_log(
-            action=tr("logs.action_player_error"),
+            action=LogMessage("logs.action_player_error"),
             level="WARNING",
             category="PLAYER",
             source_name=source_name,
-            details=message,
+            details=[raw_line(message)],
             items_errors=1,
         )
 
