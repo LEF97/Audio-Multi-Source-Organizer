@@ -42,3 +42,25 @@ def isolate_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
 
     cfg_mod._default_config_manager = None
     i18n_mod._global_i18n = None
+
+
+@pytest.fixture(autouse=True)
+def close_audio_output_threads(monkeypatch: pytest.MonkeyPatch):
+    """Ferme à la fin de chaque test les threads audio (QAudioSink) des moteurs créés.
+
+    Les PlayerService de test ne sont libérés qu'au ramasse-miettes : sans cela, les threads et sorties audio
+    s'accumulent sur la suite complète et finissent par faire échouer `libvlc_new` (abort natif).
+    """
+    from amso.services.audio_output import SinkOutput
+
+    created: list[SinkOutput] = []
+    original_init = SinkOutput.__init__
+
+    def tracking_init(self: SinkOutput, *args, **kwargs) -> None:
+        original_init(self, *args, **kwargs)
+        created.append(self)
+
+    monkeypatch.setattr(SinkOutput, "__init__", tracking_init)
+    yield
+    for output in created:
+        output.shutdown()
