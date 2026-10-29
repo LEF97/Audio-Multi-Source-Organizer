@@ -99,13 +99,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Butler
-        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        if: startsWith(github.ref, 'refs/tags/')
         uses: remarkablegames/setup-butler@v1
         with:
           butler-version: LATEST
 
       - name: Deploy to Itch.io
-        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        if: startsWith(github.ref, 'refs/tags/')
         shell: pwsh
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
