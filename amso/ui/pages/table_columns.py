@@ -63,6 +63,12 @@ class TableColumnsMixin(_MixinBase):
         for col_idx in range(model.columnCount()):
             header.setSectionResizeMode(col_idx, QHeaderView.ResizeMode.Interactive)
 
+        # setSortingEnabled(True) applique l'indicateur par défaut de l'en-tête, décroissant sur certaines versions de Qt :
+        # sans état sauvegardé, la table s'ouvrirait triée à l'envers par rapport au modèle
+        sortable = cast(Any, model)
+        if hasattr(sortable, "_current_sort_col") and hasattr(sortable, "_current_sort_order"):
+            header.setSortIndicator(sortable._current_sort_col, sortable._current_sort_order)
+
         # Restauration de l'état (largeurs, ordre, masquage) ou application des valeurs par défaut
         if not self._restore_table_header_state(table_view, storage_key):
             columns = getattr(model, "COLUMNS", [])

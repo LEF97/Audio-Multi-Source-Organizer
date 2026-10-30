@@ -99,7 +99,12 @@ class AsyncAudioDecoder(QObject):
             def _audio_play(opaque: Any, samples: int, count: int, pts: int) -> None:
                 num_bytes = count * BYTES_PER_FRAME
                 chunk = ctypes.string_at(samples, num_bytes)
-                self._handle_pcm_samples(chunk)
+                try:
+                    self._handle_pcm_samples(chunk)
+                except RuntimeError:
+                    # Le thread audio de VLC peut livrer un dernier bloc après la destruction des relais Qt :
+                    # une exception ici remonte dans un thread natif et abat le processus
+                    logger.debug("Bloc PCM ignoré : décodeur déjà détruit")
 
             self._on_play_cb = _audio_play
             self._player.audio_set_callbacks(self._on_play_cb, None, None, None, None, None)
