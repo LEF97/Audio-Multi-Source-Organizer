@@ -13,6 +13,11 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 
 ---
 
+## [0.5.0-dev] - 2026-10-30
+
+### Added
+- *(à compléter)*
+
 ## [0.4.1] - 2026-10-29
 
 ### Added
@@ -43,6 +48,8 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 - **Blind Test avec le moteur `buffer` :** correction d'une récursion infinie (`track_changed` ↔ `seek_ratio`) qui fermait l'application ; les fondus de volume du Blind Test agissent maintenant aussi sur ce moteur.
 - **Décodeur audio (`amem`) :** la fin de flux annoncée par VLC arrêtait un `QTimer` depuis le thread d'événements de VLC (`QObject::killTimer: Timers cannot be stopped from another thread`, comportement indéfini à chaque piste) ; elle est maintenant relayée au thread Qt.
 - **Moteur `buffer` — mode « Pas de fondu » :** la session audio matérielle n'est plus fermée puis rouverte entre deux titres.
+- **Moteur `vlc_direct` — pause :** `pause()` ne mettait en pause que le moteur `buffer` (toujours instancié) et laissait LibVLC jouer ; ouvrir le Blind Test pendant une lecture du Lecteur ne coupait donc pas la musique.
+- **Écran de chargement :** le libellé « Connexion à la base de données » restait affiché pendant les imports (~5 s) ; il indique maintenant « Démarrage de l'application... ».
 
 ---
 

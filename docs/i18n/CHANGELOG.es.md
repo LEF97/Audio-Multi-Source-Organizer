@@ -13,6 +13,11 @@ y este proyecto se adhiere a la especificación [Semantic Versioning (SemVer)](h
 
 ---
 
+## [0.5.0-dev] - 2026-10-30
+
+### Added
+- *(TBD)*
+
 ## [0.4.1] - 2026-10-29
 
 ### Added

@@ -13,6 +13,11 @@ e questo progetto aderisce alla specifica [Semantic Versioning (SemVer)](https:/
 
 ---
 
+## [0.5.0-dev] - 2026-10-30
+
+### Added
+- *(TBD)*
+
 ## [0.4.1] - 2026-10-29
 
 ### Added

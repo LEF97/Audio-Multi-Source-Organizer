@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning (SemVer)](https://semver.org/).
 
 ---
 
+## [0.5.0-dev] - 2026-10-30
+
+### Added
+- *(TBD)*
+
 ## [0.4.1] - 2026-10-29
 
 ### Added
