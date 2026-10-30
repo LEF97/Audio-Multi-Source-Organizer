@@ -83,6 +83,7 @@
   "stats.card_tracks": "Total tracks",
   "stats.size_value": "{size} GB",
   "stats.duration_value": "{hours} h",
+  "stats.source_type_local": "Local",
   "unit.seconds_short": "s",
   "unit.size_bytes": "{value} B",
   "unit.size_kb": "{value} KB",
