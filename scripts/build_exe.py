@@ -80,8 +80,10 @@ def build(onefile: bool = False) -> int:
     print("\nExécution de la compilation PyInstaller...")
     res = subprocess.run(cmd, cwd=str(project_root))
     if res.returncode == 0:
-        # Copie de sécurité des fichiers de traduction dans les dossiers de l'exécutable
-        if not onefile:
+        # Copie de sécurité des fichiers de traduction dans les dossiers de l'exécutable. Ignorée sur macOS : le
+        # système de fichiers n'y distingue pas la casse, `dist/AMSO/amso` y désignerait l'exécutable `AMSO`, et les
+        # données sont déjà dans le bundle .app
+        if not onefile and sys.platform != "darwin":
             for sub_target in [
                 "amso/locales",
                 "locales",
