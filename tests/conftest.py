@@ -64,3 +64,14 @@ def close_audio_output_threads(monkeypatch: pytest.MonkeyPatch):
     yield
     for output in created:
         output.shutdown()
+
+
+@pytest.fixture(autouse=True)
+def no_blocking_vlc_prompts(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Évite les boîtes modales « VLC absent » : sur un poste de CI sans VLC, `exec()` attend indéfiniment."""
+    from PySide6.QtWidgets import QDialog, QMessageBox
+
+    from amso.ui.dialogs.vlc_download_dialog import VlcDownloadDialog
+
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args, **kwargs: QMessageBox.StandardButton.Ok)
+    monkeypatch.setattr(VlcDownloadDialog, "exec", lambda self: QDialog.DialogCode.Rejected)
