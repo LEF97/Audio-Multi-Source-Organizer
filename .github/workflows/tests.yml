@@ -51,6 +51,18 @@ jobs:
           # Qt Multimedia charge libpulse (et ALSA) des l'import : sans eux, les modules UI echouent a la collecte
           sudo apt-get install -y libasound2t64 || sudo apt-get install -y libasound2
 
+      - name: Install VLC (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y vlc
+
+      - name: Install VLC (macOS)
+        if: runner.os == 'macOS'
+        run: brew install --cask vlc
+
+      - name: Install VLC (Windows)
+        if: runner.os == 'Windows'
+        run: choco install vlc -y --no-progress
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip

@@ -34,6 +34,9 @@ def isolate_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("AMSO_PLAYLIST_PATH", str(test_data_dir / "saved_playlist.json"))
     monkeypatch.setenv("AMSO_DB_PATH", str(test_data_dir / "amso_library.db"))
 
+    # Les assertions portent sur les textes français : la langue de l'OS (anglais sur la CI) ne doit pas jouer
+    monkeypatch.setattr(i18n_mod, "detect_os_language", lambda: "fr")
+
     # Réinitialisation des singletons
     cfg_mod._default_config_manager = None
     i18n_mod._global_i18n = None
