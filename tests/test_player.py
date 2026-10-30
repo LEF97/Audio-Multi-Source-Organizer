@@ -2083,6 +2083,28 @@ def test_player_previous_respects_paused_state(sample_tracks: list[TrackRecord])
         assert play_called == [0]
 
 
+def test_player_pause_vlc_direct_pauses_libvlc_not_buffer_engine(sample_tracks: list[TrackRecord]) -> None:
+    """Mode vlc_direct : pause() met LibVLC en pause même si le moteur buffer est instancié et disponible."""
+    import vlc
+
+    get_config_manager().set_audio_engine("vlc_direct")
+    player = PlayerService()
+    player._playlist = list(sample_tracks)
+    player._current_index = 0
+    player._media_player = MagicMock()
+    player._media_player.get_state.return_value = vlc.State.Playing
+    player._engine = MagicMock()
+    player._engine.is_available = True
+
+    with patch.object(PlayerService, "is_vlc_available", new_callable=PropertyMock) as mock_available:
+        mock_available.return_value = True
+        player.pause()
+
+    player._media_player.set_pause.assert_called_once_with(1)
+    player._engine.pause.assert_not_called()
+    assert player._is_paused_requested
+
+
 def test_player_seek_resets_standby_and_draining(sample_tracks: list[TrackRecord]) -> None:
     """Vérifie que seek_ms réinitialise le lecteur standby et annule le vidage standard."""
     player = PlayerService()

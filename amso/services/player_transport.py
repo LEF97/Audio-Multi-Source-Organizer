@@ -341,7 +341,10 @@ class PlayerTransportMixin(_MixinBase):
         """Met en pause la lecture."""
         self._stop_playback_fade_in()
         self._reset_standby_player()
-        if self._engine and self._engine.is_available:
+        # Le moteur buffer est instancié même en mode vlc_direct : sans le test du moteur choisi, la pause
+        # l'arrêterait seul et LibVLC continuerait à jouer (Blind Test ouvert pendant une lecture du Lecteur).
+        use_buffer = get_config_manager().get_audio_engine() == "buffer" and self._engine and self._engine.is_available
+        if use_buffer:
             self._engine.pause()
             self.state_changed.emit("paused")
             return
