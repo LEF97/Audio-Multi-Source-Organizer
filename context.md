@@ -72,6 +72,7 @@ amso/
     ├── dialogs/              boîtes de dialogue (sources, VLC, suppression…)
     ├── models*.py, folder_track_model.py, playlist_table_model.py   modèles Qt virtualisés
     ├── theme.py, styles.py, qss_*.py   couleurs et QSS centralisés
+    ├── table_settings.py     réglages Qt des tables (colonnes, tri) ; `AMSO_QSETTINGS_PATH` les redirige vers un fichier (tests)
     └── workers.py            QThread / signaux (scans et calculs lourds hors thread UI)
 amso/locales/*.json           43 langues, fr.json = source de vérité
 scripts/                      outils (+ .bat jumeau pour chaque script) : verify, check_file_sizes, check_docs_sync, check_context,

@@ -6,7 +6,7 @@ et un tableau détaillé de la file d'attente en dessous.
 
 from __future__ import annotations
 
-from PySide6.QtCore import QPoint, QSettings, Qt, QTimer
+from PySide6.QtCore import QPoint, Qt, QTimer
 from PySide6.QtGui import QAction, QCursor, QPixmap, QShowEvent
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -18,6 +18,7 @@ from amso.core.database import TrackRecord
 from amso.core.i18n import tr
 from amso.services.player_service import PlayerService
 from amso.ui.models import PlaylistTableModel, format_duration
+from amso.ui.table_settings import app_settings
 from amso.ui.views.cover_helper import load_cover_async
 from amso.ui.views.playlist_ui_builder import PlaylistUiMixin
 from amso.ui.widgets.playlist_table_view import PlaylistTableView
@@ -121,12 +122,12 @@ class PlaylistView(PlaylistUiMixin, TransportViewMixin, QWidget):
 
     def save_table_state(self) -> None:
         """Sauvegarde la configuration des colonnes du tableau de playlist (largeurs, ordre, masquage)."""
-        settings = QSettings("AMSO", "AudioMultiSourceOrganizer")
+        settings = app_settings()
         settings.setValue("header_state_playlist", self.table_view.horizontalHeader().saveState())
 
     def restore_table_state(self) -> bool:
         """Restaure la configuration des colonnes du tableau de playlist."""
-        settings = QSettings("AMSO", "AudioMultiSourceOrganizer")
+        settings = app_settings()
         state = settings.value("header_state_playlist")
         if state is not None:
             return bool(self.table_view.horizontalHeader().restoreState(state))

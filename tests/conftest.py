@@ -34,13 +34,9 @@ def isolate_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("AMSO_PLAYLIST_PATH", str(test_data_dir / "saved_playlist.json"))
     monkeypatch.setenv("AMSO_DB_PATH", str(test_data_dir / "amso_library.db"))
 
-    # QSettings (tri et colonnes des tables) écrit dans le registre / ~/.config : sans isolation, l'état d'un test
-    # fuit dans le suivant et dans les réglages réels de l'utilisateur
-    from PySide6.QtCore import QSettings
-
-    previous_format = QSettings.defaultFormat()
-    QSettings.setDefaultFormat(QSettings.Format.IniFormat)
-    QSettings.setPath(QSettings.Format.IniFormat, QSettings.Scope.UserScope, str(test_data_dir / "qsettings"))
+    # Réglages Qt (tri et colonnes des tables) : sans fichier dédié, l'état d'un test fuit dans le suivant
+    # et dans le registre / les préférences réelles de l'utilisateur
+    monkeypatch.setenv("AMSO_QSETTINGS_PATH", str(test_data_dir / "qt_settings.ini"))
 
     # Les assertions portent sur les textes français : la langue de l'OS (anglais sur la CI) ne doit pas jouer
     monkeypatch.setattr(i18n_mod, "detect_os_language", lambda: "fr")
@@ -51,7 +47,6 @@ def isolate_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
 
     yield
 
-    QSettings.setDefaultFormat(previous_format)
     cfg_mod._default_config_manager = None
     i18n_mod._global_i18n = None
 

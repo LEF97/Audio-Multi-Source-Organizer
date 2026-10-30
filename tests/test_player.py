@@ -300,7 +300,7 @@ def test_dynamic_cover_reload_on_folder_change(tmp_path: Path, qapp: QApplicatio
     assert raw_ico is not None and len(raw_ico) > 0
 
 
-def test_main_window_player_drawer_and_views(qapp: QApplication, monkeypatch: pytest.MonkeyPatch):
+def test_main_window_player_drawer_and_views(qapp: QApplication):
     """Vérifie la présence du tiroir Lecteur, des boutons et de la navigation."""
     db = DatabaseManager(":memory:")
     src = db.add_source(SourceType.LOCAL, "Dossier 1", "D:/Music")
@@ -333,24 +333,6 @@ def test_main_window_player_drawer_and_views(qapp: QApplication, monkeypatch: py
         ]
     )
 
-    import traceback
-
-    from amso.ui.models import TrackTableModel
-
-    sort_calls: list[str] = []
-    original_sort = TrackTableModel.sort
-
-    def traced_sort(self, column, order=Qt.SortOrder.AscendingOrder):
-        sort_calls.append(f"sort({column}, {order})" + "".join(traceback.format_stack(limit=7)[:-1]))
-        original_sort(self, column, order)
-
-    monkeypatch.setattr(TrackTableModel, "sort", traced_sort)
-
-    from PySide6.QtCore import QSettings
-
-    pre = QSettings("AMSO", "AudioMultiSourceOrganizer")
-    pre_info = f"reglages={pre.fileName()} fmt={pre.format()} cles={pre.allKeys()}"
-
     window = MainWindow(db=db)
 
     # 1. Présence du tiroir Lecteur
@@ -379,11 +361,6 @@ def test_main_window_player_drawer_and_views(qapp: QApplication, monkeypatch: py
     # La playlist contient tous les morceaux de la vue avec démarrage sur le morceau cliqué (index 1 -> Song B)
     playlist = window.player_service.playlist
     assert len(playlist) == 3
-    model = window.table_model
-    diag = (f"tri={model._current_sort_col}/{model._current_sort_order} "
-            f"modele={[(t.title, t.file_name) for t in (model.get_track_at(r) for r in range(model.rowCount())) if t]} "
-            f"playlist={[t.title for t in playlist]} appels_sort={len(sort_calls)} {pre_info} " + " ### ".join(sort_calls))
-    assert [t.title for t in playlist] == ["Song A", "Song B", "Song C"], diag
     assert playlist[0].title == "Song A"
     assert playlist[1].title == "Song B"
     assert playlist[2].title == "Song C"
