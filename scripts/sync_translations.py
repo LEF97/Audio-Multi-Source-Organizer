@@ -189,7 +189,8 @@ def translate_batch_with_ollama(
         "1. Return ONLY a valid JSON dictionary mapping the exact same keys to their translations.\n"
         "2. Keep all placeholders like {title}, {count}, {name}, {path}, {version}, {format}, {time}, {seconds}, {bitrate} EXACTLY intact.\n"
         "3. Keep any emojis or leading symbols (e.g. 🔄, 🗑️, 💾, ⚡, ✓, •, 👍, 💖, 🌐, 🎵, 📁, 📜, ⚙️, 📊) exactly at their position.\n"
-        "4. Do not include markdown code blocks, prefixes or explanations.\n\n"
+        "4. French unit symbols (o, Ko, Mo, Go for bytes; h for hours; s for seconds) must be rewritten with the symbols or words that users of the target language actually use (for example B, KB, MB, GB for bytes).\n"
+        "5. Do not include markdown code blocks, prefixes or explanations.\n\n"
         + json.dumps(items, ensure_ascii=False)
     )
     payload = json.dumps(
@@ -219,6 +220,7 @@ def sync_locales(
     ollama_model: str | None = None,
     retranslate_untranslated: bool = False,
     target_languages: list[str] | None = None,
+    forced_keys: frozenset[str] = frozenset(),
 ) -> int:
     ref_file = locales_dir / "fr.json"
     if not ref_file.exists():
@@ -281,7 +283,8 @@ def sync_locales(
         obsolete_keys = [k for k in target_data if k not in ref_data]
         untranslated_keys = [
             k for k in ref_keys
-            if k in target_data and needs_retranslation(k, target_data[k], ref_data[k], target_lang)
+            if k in target_data
+            and (k in forced_keys or needs_retranslation(k, target_data[k], ref_data[k], target_lang))
         ]
 
         log(f"\n[{target_lang}] Analyse de {target_path.name} ({LANG_NAMES.get(target_lang, target_lang)}) :")
@@ -384,6 +387,12 @@ def main() -> int:
         default=None,
         help="Code(s) de langue(s) spécifique(s) à traiter (ex: --lang pt ja ru)",
     )
+    parser.add_argument(
+        "--keys",
+        nargs="+",
+        default=[],
+        help="Clés à retraduire même si leur valeur diffère déjà du français (ex: --keys stats.size_value)",
+    )
     args = parser.parse_args()
 
     locales_dir = get_locales_dir()
@@ -393,6 +402,7 @@ def main() -> int:
         ollama_model=args.ollama,
         retranslate_untranslated=args.retranslate_untranslated or (args.ollama is not None),
         target_languages=args.lang,
+        forced_keys=frozenset(args.keys),
     )
 
 

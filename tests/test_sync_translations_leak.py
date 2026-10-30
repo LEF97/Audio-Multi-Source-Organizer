@@ -37,3 +37,26 @@ def test_is_invalid_translation_marqueur_perdu_ou_ajoute_est_detecte() -> None:
 
 def test_has_source_leak_valeur_identique_aux_espaces_pres_nest_pas_une_fuite() -> None:
     assert not has_source_leak("  + {name}", "  + {name}")
+
+
+def test_sync_locales_forced_key_flagged_even_when_value_differs_from_french(tmp_path, monkeypatch, capsys):
+    """`--keys` désigne des clés à retraduire alors que leur valeur n'est pas restée identique au français."""
+    import json
+
+    import sync_translations as st
+
+    (tmp_path / "fr.json").write_text(json.dumps({"unit.size_gb": "{value} Go"}), encoding="utf-8")
+    (tmp_path / "ja.json").write_text(json.dumps({"unit.size_gb": "{value} ギガ"}), encoding="utf-8")
+    monkeypatch.setattr(st, "is_ollama_online", lambda: True)
+
+    st.sync_locales(tmp_path, check_only=True, retranslate_untranslated=True, target_languages=["ja"])
+    assert "Parfaitement synchronisé" in capsys.readouterr().out
+
+    st.sync_locales(
+        tmp_path,
+        check_only=True,
+        retranslate_untranslated=True,
+        target_languages=["ja"],
+        forced_keys=frozenset({"unit.size_gb"}),
+    )
+    assert "unit.size_gb" in capsys.readouterr().out

@@ -15,9 +15,16 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from amso.core.db.models import SourceType
 from amso.core.i18n import tr
 
 logger = logging.getLogger(__name__)
+
+
+def _source_type_label(source_type: str) -> str:
+    if source_type == SourceType.LOCAL:
+        return tr("stats.source_type_local")
+    return source_type.capitalize()
 
 
 class StatsPageMixin:
@@ -184,7 +191,7 @@ class StatsPageMixin:
         # Détail Sources
         if stats["by_source_type"]:
             srcs_lines = [
-                f"• <b>{k.capitalize()}</b> : {tr('folders.track_count', count=f'{v:,}')}"
+                f"• <b>{_source_type_label(k)}</b> : {tr('folders.track_count', count=f'{v:,}')}"
                 for k, v in stats["by_source_type"].items()
             ]
             self.lbl_sources_breakdown.setText("<br>".join(srcs_lines))

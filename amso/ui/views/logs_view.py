@@ -422,4 +422,6 @@ class LogsView(QWidget):
                 tr("logs.col_details"),
             ]
         )
-        self.lbl_count.setText(tr("logs.count_entries", count=len(self._current_records)))
+        # Les lignes affichées (niveau, action, détails) sont rendues dans la langue active au chargement : sans
+        # rechargement, elles restent dans l'ancienne langue après un changement de langue à chaud
+        self.refresh_logs()
