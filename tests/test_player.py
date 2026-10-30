@@ -361,6 +361,11 @@ def test_main_window_player_drawer_and_views(qapp: QApplication):
     # La playlist contient tous les morceaux de la vue avec démarrage sur le morceau cliqué (index 1 -> Song B)
     playlist = window.player_service.playlist
     assert len(playlist) == 3
+    model = window.table_model
+    diag = (f"tri={model._current_sort_col}/{model._current_sort_order} "
+            f"modele={[(t.title, t.file_name) for t in (model.get_track_at(r) for r in range(model.rowCount())) if t]} "
+            f"playlist={[t.title for t in playlist]}")
+    assert [t.title for t in playlist] == ["Song A", "Song B", "Song C"], diag
     assert playlist[0].title == "Song A"
     assert playlist[1].title == "Song B"
     assert playlist[2].title == "Song C"
