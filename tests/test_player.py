@@ -346,6 +346,11 @@ def test_main_window_player_drawer_and_views(qapp: QApplication, monkeypatch: py
 
     monkeypatch.setattr(TrackTableModel, "sort", traced_sort)
 
+    from PySide6.QtCore import QSettings
+
+    pre = QSettings("AMSO", "AudioMultiSourceOrganizer")
+    pre_info = f"reglages={pre.fileName()} fmt={pre.format()} cles={pre.allKeys()}"
+
     window = MainWindow(db=db)
 
     # 1. Présence du tiroir Lecteur
@@ -377,7 +382,7 @@ def test_main_window_player_drawer_and_views(qapp: QApplication, monkeypatch: py
     model = window.table_model
     diag = (f"tri={model._current_sort_col}/{model._current_sort_order} "
             f"modele={[(t.title, t.file_name) for t in (model.get_track_at(r) for r in range(model.rowCount())) if t]} "
-            f"playlist={[t.title for t in playlist]} appels_sort={len(sort_calls)} " + " ### ".join(sort_calls))
+            f"playlist={[t.title for t in playlist]} appels_sort={len(sort_calls)} {pre_info} " + " ### ".join(sort_calls))
     assert [t.title for t in playlist] == ["Song A", "Song B", "Song C"], diag
     assert playlist[0].title == "Song A"
     assert playlist[1].title == "Song B"
