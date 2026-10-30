@@ -48,6 +48,8 @@ and this project adheres to [Semantic Versioning (SemVer)](https://semver.org/).
 - **Blind Test with the `buffer` engine:** fixed an infinite recursion (`track_changed` ↔ `seek_ratio`) that closed the application; the Blind Test volume fades now also act on this engine.
 - **Audio decoder (`amem`):** the end of stream announced by VLC stopped a `QTimer` from VLC's event thread (`QObject::killTimer: Timers cannot be stopped from another thread`, undefined behavior on every track); it is now relayed to the Qt thread.
 - **`buffer` engine — « No fade » mode:** the hardware audio session is no longer closed and reopened between two tracks.
+- **`vlc_direct` engine — pause:** `pause()` only paused the `buffer` engine (always instantiated) and left LibVLC playing, so opening Blind Test during a Player playback did not stop the music.
+- **Splash screen:** the "Connecting to the database" label stayed displayed during the ~5 s of imports; it now reads "Starting the application...".
 
 ---
 

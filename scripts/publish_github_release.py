@@ -99,7 +99,7 @@ def get_target_version(project_root: Path, explicit_tag: str | None = None) -> t
         pass
 
     # Repli : première version publiée dans CHANGELOG.fr.md
-    changelog = project_root / "CHANGELOG.fr.md"
+    changelog = project_root / "CHANGELOG.md"
     if changelog.exists():
         for line in changelog.read_text(encoding="utf-8").splitlines():
             m = re.match(r"^##\s+\[(\d+\.\d+\.\d+)\]", line)
@@ -111,7 +111,7 @@ def get_target_version(project_root: Path, explicit_tag: str | None = None) -> t
 
 
 def extract_changelog_section(changelog_path: Path, version: str) -> str:
-    """Extrait la section correspondant à la version dans CHANGELOG.fr.md."""
+    """Extrait la section correspondant à la version dans un CHANGELOG."""
     if not changelog_path.exists():
         return ""
 
@@ -165,14 +165,14 @@ def build_release_body(
 
     sections.append(f"# 🎵 Audio Multi-Source Organizer (AMSO) {tag}\n")
     sections.append(
-        "> **AMSO** est une application open-source pour unifier, dédoublonner et synchroniser "
-        "vos bibliothèques musicales locales, cloud et streaming.\n"
+        "> **AMSO** is an open-source application that unifies, deduplicates and synchronizes "
+        "your local, cloud and streaming music libraries.\n"
     )
     sections.append("---\n")
 
     # Screenshots intégrés
     if screenshots:
-        sections.append("### 📸 Aperçu de la version\n")
+        sections.append("### 📸 Release preview\n")
         for s in screenshots:
             url_s = urllib.parse.quote(s)
             img_url = f"https://raw.githubusercontent.com/{repo_slug}/{tag}/screenshots/{url_s}"
@@ -182,22 +182,22 @@ def build_release_body(
         sections.append("---\n")
 
     # Tableau des téléchargements
-    sections.append("## 📦 Téléchargements officiels Windows\n")
-    sections.append("| Fichier | Description | Format |")
+    sections.append("## 📦 Official Windows downloads\n")
+    sections.append("| File | Description | Format |")
     sections.append("| :--- | :--- | :--- |")
     sections.append(
-        f"| **`AMSO-Windows-{tag}.zip`** | **Archive complète recommandée** (Exécutable portable + traductions + documentation) | `.zip` |"
+        f"| **`AMSO-Windows-{tag}.zip`** | **Recommended full archive** (portable executable + translations + documentation) | `.zip` |"
     )
     sections.append(
-        "| **`AMSO.exe`** | Exécutable Windows autonome portable direct | `.exe` |\n"
+        "| **`AMSO.exe`** | Standalone portable Windows executable | `.exe` |\n"
     )
-    sections.append("### 🐧🍎 Linux et macOS — expérimental, non testé\n")
+    sections.append("### 🐧🍎 Linux and macOS — experimental, untested\n")
     sections.append(
-        "Ces paquets sont produits automatiquement par la CI mais **n'ont pas été testés** sur de vrais systèmes. "
-        "**VLC doit être installé** ; le `.dmg` n'est pas signé (clic droit → Ouvrir). Voir le README pour les détails ; "
-        "vos retours (`startup.log`, `crash.log`) sont les bienvenus.\n"
+        "These packages are built automatically by the CI but have **not been tested** on real systems. "
+        "**VLC must be installed**; the `.dmg` is unsigned (right-click → Open). See the README for details; "
+        "your feedback (`startup.log`, `crash.log`) is welcome.\n"
     )
-    sections.append("| Fichier | Système |")
+    sections.append("| File | System |")
     sections.append("| :--- | :--- |")
     sections.append(f"| `AMSO-Linux-{tag}-x86_64.AppImage` / `.tar.gz` | Linux x86_64 |")
     sections.append(f"| `AMSO-macOS-arm64-{tag}.dmg` | macOS Apple Silicon |")
@@ -205,19 +205,19 @@ def build_release_body(
     sections.append("---\n")
 
     # Journal des modifications
-    sections.append("## 📝 Journal des modifications\n")
+    sections.append("## 📝 Changelog\n")
     if changelog_notes:
         sections.append(changelog_notes)
     else:
-        sections.append("Consultez `CHANGELOG.fr.md` pour le détail des modifications.")
+        sections.append("See `CHANGELOG.md` for the list of changes.")
     sections.append("\n---\n")
 
     # Liens utiles
     sections.append(
-        "**Liens utiles :**\n"
-        f"- 🌟 [Dépôt GitHub](https://github.com/{repo_slug})\n"
-        "- 🎮 [Page officielle Itch.io](https://arnaudlef97.itch.io/amso)\n"
-        "- ☕ [Soutenir le projet sur Ko-fi](https://ko-fi.com/arnaudlef97)\n"
+        "**Useful links:**\n"
+        f"- 🌟 [GitHub repository](https://github.com/{repo_slug})\n"
+        "- 🎮 [Official itch.io page](https://arnaudlef97.itch.io/amso)\n"
+        "- ☕ [Support the project on Ko-fi](https://ko-fi.com/arnaudlef97)\n"
     )
 
     return "\n".join(sections)
@@ -235,7 +235,7 @@ def publish_github_release(tag: str | None = None) -> int:
     print(f"  Dépôt : {repo_slug}")
     print("=" * 60)
 
-    changelog_file = project_root / "CHANGELOG.fr.md"
+    changelog_file = project_root / "CHANGELOG.md"
     notes = extract_changelog_section(changelog_file, clean_ver)
     screenshots = find_release_screenshots(project_root, clean_ver)
     body = build_release_body(repo_slug, tag_name, clean_ver, notes, screenshots)
