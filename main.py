@@ -87,14 +87,16 @@ def main() -> int:
     app.setStyleSheet(DARK_THEME_QSS)
     startup_clock.mark("thème QSS")
 
-    # Étape 3 : Base de données SQLite3 (35%)
-    splash.set_progress(35, tr("splash.loading_db"))
+    # Étape 3 : Imports lourds (35%) puis base de données SQLite3 (40%)
+    # Le libellé « base de données » restait affiché pendant ~5 s d'imports : il décrivait une étape de 0,05 s.
+    splash.set_progress(35, tr("splash.starting"))
     # Importés après l'affichage du splash : ces modules concentrent l'essentiel du temps d'import
     # (mutagen, VLC, toutes les pages), et le splash doit apparaître sans attendre.
     from amso.core.database import DatabaseManager, get_database_path
     from amso.ui.views.main_window import MainWindow
 
     startup_clock.mark("imports (DB, MainWindow)")
+    splash.set_progress(40, tr("splash.loading_db"))
     db_path = get_database_path()
     db = DatabaseManager(db_path=db_path)
     startup_clock.mark("base SQLite (schéma)")
