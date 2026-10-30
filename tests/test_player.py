@@ -1069,6 +1069,8 @@ def test_audio_spectrum_service() -> None:
 
     svc = get_audio_spectrum_service()
     assert svc is not None
+    if not svc.is_available:
+        pytest.skip("capture du spectre réservée à Windows (repli visuel ailleurs)")
 
     # Test calcul FFT et bandes de fréquences
     spec = svc.get_spectrum(32)
