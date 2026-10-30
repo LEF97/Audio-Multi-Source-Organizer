@@ -47,16 +47,31 @@ AMSO ist bestrebt, das **universelle und dezentrale Musik-Hub** der Wahl zu werd
 
 ---
 
-### 🟢 Version 0.4.0 — Erweiterte Audio-Erfahrung & CUE-Sheets *(Aktuell)*
-- [x] **Modulare Neugestaltung der Architektur & Quality Gate:** Aufteilung der Anwendung in kohäsive Module (< 500 Zeilen), Modularisierung von MainWindow in dedizierte Mixins (amso/ui/pages/), Zerlegung des Audio-Dienstes in unabhängige Subsysteme (player_transport, player_queue, player_transitions) und Einrichtung eines automatisierten Validierungs-Frameworks (scripts/verify.py & .bat : ruff, mypy, pytest, Größenkontrolle).
-- [x] **Integration der Windows Shell & Taskleiste:** Natives Anheften direkt von dem aktiven Icon (AppUserModelID explizit LEF97.AMSO.AudioPlayer) ab dem Einstiegspunkt main.py und Persistenz des Shortcuts bei Updates.
-- [x] **Perfektes Gapless 0 Abspielen zwischen zwei Tracks:** Es stehen nun zwei Engines zur Verfügung, eine basiert auf VLC_direct, die andere arbeitet im Puffer-Modus (bevorzugter Betrieb). Diese Modi ermöglichen ein flüssiges Abspielen von Alben mit verbundenen Tracks (Alan Parsons, Pink Floyd, Mike Oldfield, etc...)
-- [x] **Unterstützung von CUE-Sheets (`.cue`) :** Eine `.cue`-Datei wird als Verzeichnis virtueller Tracks (💿) mit deren Dauer angezeigt und wird wie echte Tracks abgespielt (kontinuierlicher Puffer-Engine).
+### 🟢 Version 0.4.0 — Erweiterte Audio-Erfahrung & CUE-Sheets
+- [x] **Modulare Architektur-Überarbeitung & Quality Gate:** Aufteilung der Anwendung in kohäsive Module (< 500 Zeilen), Modularisierung von MainWindow in dedizierte Mixins (amso/ui/pages/), Zerlegung des Audio-Services in unabhängige Subsysteme (player_transport, player_queue, player_transitions) und Implementierung eines automatisierten Validierungs-Harnischs (scripts/verify.py & .bat: ruff, mypy, pytest, Größenkontrolle).
+- [x] **Windows Shell & Taskleisten-Integration:** Direktes, natives Anheften vom aktiven Icon (AppUserModelID explizit LEF97.AMSO.AudioPlayer) ab dem Einstiegspunkt main.py und Persistenz des Shortcuts bei Updates.
+- [x] **Perfektes Gapless 0 zwischen zwei Tracks:** Zwei Engines sind nun verfügbar, eine basiert auf VLC_direct, die andere arbeitet im Puffer-Modus (bevorzugter Betrieb). Diese Modi ermöglichen ein flüssiges Hören von Alben mit verbundenen Tracks (Alan Parsons, Pink Floyd, Mike Oldfield, etc...)
+- [x] **Unterstützung für CUE-Sheets (`.cue`)**: Eine `.cue`-Datei wird als Verzeichnis virtueller Tracks (💿) mit deren Dauer angezeigt und wird wie echte Tracks abgespielt (kontinuierlicher Puffer-Engine).
 
 ---
 
-### 🔵 Version 0.4.1 — Packaging Linux & macOS
-- [ ] **Automatisierte Multiplattform-Bereitstellung (Linux & macOS) :** Native Kompilierung und automatisierte Verpackung über GitHub Actions für Linux (.AppImage / .tar.gz) und macOS Apple Silicon ARM & Intel (.dmg), ergänzend zum Windows-Executable.
+### 🟢 Version 0.4.1 — Audiozuverlässigkeit, übersetztes Protokoll & experimentelle Linux/macOS-Versionen *(Aktuell)*
+- [x] **Audioausgabe unabhängig vom Interface-Thread:** Der `QAudioSink` des `buffer`-Motors wird von einem dedizierten Audiothread (Pull-Modus) versorgt; das Verschieben oder Größenändern des Fensters beeinflusst den Ton nicht mehr.
+- [x] **Blindtest im `buffer`-Motor:** Abspielen, Nächster und Vorheriger starten den Ton, ohne erneut auf Abspielen zu klicken.
+- [x] **Übersetzungen abgeschlossen:** Aktivitätsprotokoll wird in Schlüssel + Parameter gespeichert und angezeigt, hartcodierte Texte konvertiert, Rückfall auf Französisch, Steuerung der Marker `{nom}` bei der Synchronisation.
+- [x] **libVLC-Status:** Version und Herkunft (AMSO-Kopie oder VLC des Systems) in den Player-Einstellungen.
+- [x] **Multiplattform-Deployment (Linux & macOS), experimentelle, nicht getestete Version:** Automatisches Packaging über GitHub Actions für Linux (.AppImage / .tar.gz) und macOS Apple Silicon ARM & Intel (.dmg nicht signiert), VLC erforderlich; Tester senden `startup.log` und `crash.log` zurück.
+
+---
+
+### 🔵 Version 0.4.2 — Netzwerkkompatibilität Linux & macOS
+- [ ] **Erkennung von Netzwerkmounts (Linux & macOS) :** `amso/core/network_paths.py` erkennt heute nur UNC-Pfade und gemappte Windows-Laufwerke; Erkennung von NFS / SMB / AFP-Mounts (`/proc/self/mountinfo`, `statfs`), um jegliches blockierende Festplatten-Probing beim Start auf diesen Systemen zu vermeiden.
+- [ ] **Validierung unter Linux und macOS :** Engine `buffer`, Übergänge und Packaging müssen anhand des Feedbacks der Tester auf echten Systemen bestätigt werden.
+
+---
+
+### 🔵 Version 0.5.0 — Navigation nach Album in Playlists
+- [ ] **Playlists im Albummodus:** Option « Im Albummodus anzeigen » (standardmäßig aktiviert), die die Titel einer Playlist in virtuellen Albumordnern in der Baumstruktur gruppiert, mit « (unbekanntes Album) » für Titel ohne Album und einer Kontextmenüoption pro Playlist per Rechtsklick.
 
 ---
 

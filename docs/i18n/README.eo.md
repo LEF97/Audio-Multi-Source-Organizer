@@ -24,6 +24,10 @@
 ---
 
 <p align="center">
+  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+</p>
+
+<p align="center">
   <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
 </p>
 
@@ -39,21 +43,22 @@
 
 ## 📌 Funkciójoj & Statuo de la projekto
 
-| Funkcio | Prilogo | Stato |
+| Funkcionaleco | Altigo | Stato |
 | :--- | :---: | :---: |
-| **Integrita VLC-lektilmoto** | Lega kaj aŭtonoma aŭdovlektilo kun aŭtomatika instalado de portabla VLC kaj flua volumeno-administrado | 🟢 Implementita |
-| **Lokala multitreada skanilo** | Rekuziva kaj rapida m'/>skovado de lokaj aŭdofajloj (MP3, FLAC, AAC, OGG...) | 🟢 Implementita |
-| **Ekstraktado de metadajoj** | Lekta/skribi ID3, Vorbis Komentoj kaj kalkulo de aŭdofingerto (`mutagen`) | 🟢 Implementita |
-| **Subteno de plejlistoj (M3U, PLS, XSPF, WPL) & CUE-foliaj** | Arboreca indeksado (🎶), sekvenca ordo de aŭdado, vizuala lokigado de mankitaj strojoj; la `.cue` fajloj (💿) malfermiĝas kiel dosiero de virtuelaj trajektoj kun ilia daŭro kaj legiĝas kiel veraj trajektoj | 🟢 Implementita |
-| **Plejlist-administrado & Drag-Drop** | Virtualigita atendaslisto, flua drag & drop, revertibilaj alekaj (shuffle) kaj cikloj | 🟢 Implementita |
-| **Interagiva "🎲 Blind Test" Modo** | Immersiva muzika ludo kun animata kontajektado, son-fundo, milda rivelado kaj aŭtomatika sekvencado | 🟢 Implementita |
-| **Aplikaj ĝisdatigoj** | Automata/manuala verigo de versioj per GitHub Releases | 🟢 Implementita |
-| **Administrado de artistoj & Diskografio** | Dedikita vido por artikisto kun albumoj, singloj kaj kompleta diskografio | 🟡 Planigita |
-| **Grafika egalizilo (EQ)** | Audio presetoj kaj parametrika multbanda egalizilo | 🟡 Planigita |
-| **Google Drive konektoro** | Skano kaj sinkronigo de malproksimaj audio-kolekcioj per OAuth 2.0 | ⚪ Planigita |
-| **Amazon Music konektoro** | Skano kaj sinkronigo de malproksimaj kolekcioj per OAuth 2.0 | ⚪ Planigita |
-| **Spotify / Deezer konektoro** | Importado de plejlistoj kaj korespondado de trakoj | ⚪ Planigita |
-| **Inteligenta duplikado-elimino** | Detekto de duplikoj (titolo/artisto flus + akustikaj prientoj) | ⚪ Planigita |
+| **Audiolektila motoro** | Lega kaj aŭtonoma audiolektilo (VLC portabla aŭtomate instigita sous Windows). Du motoroj por elekto: direkta VLC eliro, aŭ kontinua tamponmotoro por flua enĉeno inter du trakoj (Gapless 0 ms, fondu enĉeno kun ekvuala potenco, sen interpunkto de la audioeliro) | 🟢 Implimentita |
+| **Ĝistamento de la biblioteko** | Rekurziva multithreada skano de lokaj dosieroj (MP3, FLAC, AAC, OGG...), manaĝa, planigita aŭ en reala tempo sinkronigo, papiroĵkesto kaj statistiko de la biblioteko | 🟢 Implimentita |
+| **Ekstraktado de metadatumoj** | Legado/skribado de ID3, Vorbis Comments kaj kalkulo de audio-imprinto (`mutagen`) | 🟢 Implimentita |
+| **Subteno de plejlistoj (M3U, PLS, XSPF, WPL) & CUE-foliaj** | Arbara indeksado (🎶), sekvenca ordono de aŭskultado, vizuala lokado de mankantaj trakoj; la `.cue` dosieroj (💿) forigas kiel dosiero de virtualaj trakoj kun ilia daŭro kaj ludas kiel veraj trakoj | 🟢 Implimentita |
+| **Plejlist-administrado kaj Drag-&Drop** | Virtualigita ventoj, flua drag & drop, reversaj kaj cikliĝaj aleĝoj (shuffle) | 🟢 Implimentita |
+| **Interagativa « 🎲 Blind Test » modo** | Immergeva muzika ludo kun animata kontaŭo, son-fondu, milda rivelado kaj aŭtomatika enĉeno | 🟢 Implimentita |
+| **Aŭordigoj en la apliko** | Automata/manuala verigo de versioj tra GitHub Releases | 🟢 Implementita |
+| **Versioj por Linux & macOS** | Paĉoj `.AppImage` / `.tar.gz` (Linux) kaj ne-signita `.dmg` (macOS), VLC necesa | 🟡 Eksperimenta (ne testita) |
+| **Administrado de artistoj & Diskografio** | Dedikita vido por artisto kun albumoj, singloj kaj kompleta diskografio | 🟡 Planita |
+| **Grafika egalizilo (EQ)** | Audio presetoj kaj parametra multbanda egalizilo | 🟡 Planita |
+| **Konekto por Google Drive** | Skano kaj sinkronigo de malproksimaj audio-kolekcioj tra OAuth 2.0 | ⚪ Planigita |
+| **Konekto por Amazon Music** | Skano kaj sinkronigo de malproksimaj kolecioj tra OAuth 2.0 | ⚪ Planigita |
+| **Konekto por Spotify / Deezer** | Importado de plejlistoj kaj korespondado de trakoj | ⚪ Planigita |
+| **Inteligenta duplikado-elimino** | Detekto de duplikoj (titolo/artisto flusitaj + akustikaj prientoj) | ⚪ Planigita |
 
 > 💡 *Por konsulti la detalo de la milestonoj kaj planitaj versioj, atentuoksu la [Milestonaj paŝoj (Roadmap)](../../ROADMAP.md).*
 
@@ -100,6 +105,20 @@ cp .env.example .env
 # 6. Lancer l'application
 python main.py
 ```
+
+---
+
+## 🐧🍎 Linux kaj macOS : ekperimentaĵaj versioj (ne testitaj)
+
+La pakoj de Linux (`.AppImage` / `.tar.gz`) kaj macOS (`.dmg`) estas provizitaj **sen esti testitaj**: AMSO estis validigita nur sub Windows. La audio-motoro kun konstanta tampon (`buffer`) en specialo ne estis verigita sur tiuj sistemoj. Via retopo estas precia.
+
+- **VLC estas necesa** (AMSO elĉargigas ĝin nur sub Windows) :
+  - Linux : `sudo apt install vlc` (Debian / Ubuntu), `sudo dnf install vlc` (Fedora) aŭ `sudo pacman -S vlc` (Arch).
+  - macOS : instalu **VLC.app** el [videolan.org](https://www.videolan.org/vlc/) en la Aplikaĵoj dosiero.
+- **Linux, sistemaj bibliotekoj** : la Qt-interfaco petas ekzemple `libpulse0` (sono), `libxcb-cursor0` kaj `libxkbcommon-x11-0` (ekzemple `sudo apt install libpulse0 libxcb-cursor0 libxkbcommon-x11-0`).
+- **macOS, ne-signata `.dmg`** : dum la unua lancigo, faru klak-dekstre sur AMSO kaj poste **Malfermi**, aŭ ekzekutu `xattr -dr com.apple.quarantine /Applications/AMSO.app`.
+- **Linux, AppImage** : farigu ĝin ekzekutebla kun `chmod +x AMSO*.AppImage`.
+- **En la kazo de problemo**, bonvolu sendi la fajlojn `startup.log` kaj `crash.log` (se ili ekzistas) situantaj en la datumoj dosiero: `~/Library/Application Support/AMSO/` sub macOS, `~/.local/share/AMSO/` sub Linux. Specigu vian sistemon kaj la version de VLC.
 
 ---
 

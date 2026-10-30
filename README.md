@@ -24,6 +24,10 @@
 ---
 
 <p align="center">
+  <img src="screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Audio player with the Hyperspace (3D starfield) visual ambience" width="850">
+</p>
+
+<p align="center">
   <img src="screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Folder tree & CUE sheet 💿 (virtual tracks)" width="850">
 </p>
 
@@ -41,13 +45,14 @@
 
 | Feature | Description | Status |
 | :--- | :--- | :---: |
-| **Integrated VLC Playback Engine** | Lightweight, standalone audio player with automatic portable VLC setup and smooth volume control | 🟢 Implemented |
-| **High-Speed Multithreaded Scanner** | Fast recursive traversal and indexing of local audio files (MP3, FLAC, AAC, OGG...) | 🟢 Implemented |
+| **Audio Playback Engine** | Lightweight, standalone audio player (portable VLC set up automatically on Windows). Two engines to choose from: direct VLC output, or a continuous buffer engine for smooth transitions between two tracks (Gapless 0 ms, equal-power crossfade, no cut in the audio output) | 🟢 Implemented |
+| **Library Management** | Multithreaded recursive scan of local folders (MP3, FLAC, AAC, OGG...), manual, scheduled or real-time synchronization, trash and library statistics | 🟢 Implemented |
 | **Metadata & Artwork Extraction** | ID3 tags, Vorbis Comments, and audio fingerprinting extraction (`mutagen`) | 🟢 Implemented |
 | **Playlist Files Support (M3U, PLS, XSPF, WPL) & CUE sheets** | Tree-based indexing (🎶), natural sequential track ordering, visual missing track alerts; `.cue` files (💿) open like a folder of virtual tracks with their duration and play like real tracks | 🟢 Implemented |
 | **Playlist & Queue Management** | Virtualized queue table, smooth drag & drop reordering, reversible shuffle, and repeat modes | 🟢 Implemented |
 | **Interactive « 🎲 Blind Test » Mode** | Immersive music guessing game with animated pulsing countdown, soft audio fade-out, smooth reveal, and auto-progression | 🟢 Implemented |
 | **In-App Update Checker** | Automatic and manual version checking via GitHub Releases | 🟢 Implemented |
+| **Linux & macOS versions** | `.AppImage` / `.tar.gz` packages (Linux) and unsigned `.dmg` (macOS), VLC required | 🟡 Experimental (untested) |
 | **Artists & Discography Hub** | Dedicated artist overview with albums, singles, and full discographies | 🟡 Planned |
 | **Graphical Equalizer (EQ)** | Curated sound presets and multi-band parametric equalizer | 🟡 Planned |
 | **Google Drive Cloud Connector** | Remote audio library indexing and streaming via OAuth 2.0 | ⚪ Planned |
@@ -93,6 +98,20 @@ cp .env.example .env
 # 6. Launch AMSO
 python main.py
 ```
+
+---
+
+## 🐧🍎 Linux and macOS: experimental versions (untested)
+
+The Linux (`.AppImage` / `.tar.gz`) and macOS (`.dmg`) packages are provided **without having been tested**: AMSO has only been validated on Windows. The continuous buffer audio engine (`buffer`) in particular has not been verified on these systems. Your feedback is valuable.
+
+- **VLC is required** (AMSO only downloads it on Windows):
+  - Linux: `sudo apt install vlc` (Debian / Ubuntu), `sudo dnf install vlc` (Fedora) or `sudo pacman -S vlc` (Arch).
+  - macOS: install **VLC.app** from [videolan.org](https://www.videolan.org/vlc/) into the Applications folder.
+- **Linux, system libraries**: the Qt interface notably needs `libpulse0` (sound), `libxcb-cursor0` and `libxkbcommon-x11-0` (for example `sudo apt install libpulse0 libxcb-cursor0 libxkbcommon-x11-0`).
+- **macOS, unsigned `.dmg`**: on first launch, right-click AMSO then choose **Open**, or run `xattr -dr com.apple.quarantine /Applications/AMSO.app`.
+- **Linux, AppImage**: make it executable with `chmod +x AMSO*.AppImage`.
+- **If you run into a problem**, please send the `startup.log` and `crash.log` files (if it exists) located in the data folder: `~/Library/Application Support/AMSO/` on macOS, `~/.local/share/AMSO/` on Linux. Please mention your system and your VLC version.
 
 ---
 

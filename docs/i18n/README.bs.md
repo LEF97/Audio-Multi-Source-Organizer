@@ -24,6 +24,10 @@
 ---
 
 <p align="center">
+  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+</p>
+
+<p align="center">
   <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
 </p>
 
@@ -41,19 +45,20 @@
 
 | Funkcionalnost | Opis | Status |
 | :--- | :---: | :---: |
-| **Integrisani VLC reprodukcioni motor** | Lagani i samostalan audio plejer sa automatskim instaliranjem VLC portable i glatkim upravljanjem volumena | 🟢 Implementirano |
-| **Multithread lokalni skener** | Rekurzivno i brzo otkrivanje lokalnih audio fajlova (MP3, FLAC, AAC, OGG...) | 🟢 Implementirano |
-| **Ekstrakcija metapodataka** | Čitanje/pisanje ID3, Vorbis Comments i izračun audio otiska prsta (`mutagen`) | 🟢 Implementirano |
-| **Podrška za plejliste (M3U, PLS, XSPF, WPL) i CUE listu** | Stablo indeksiranje (🎶), sekvencijalni red slušanja, vizuelno lociranje nedostajućih pjesama; fajlovi `.cue` (💿) se otvaraju kao direktorijum virtualnih staza sa trajanjem i reprodukuju se kao prave staze | 🟢 Implementirano |
-| **Menadžer plejliste i Povlačenje-Pritiskanje** | Virtualizovana red za reprodukciju, glatko drag & drop, obrnuti nasumični red (shuffle) i petlje | 🟢 Implementirano |
-| **Interaktivni režim « 🎲 Blind Test »** | Imurzivna muzička igra sa animiranim brojačem, zvučnim fade-om, blagom otkrićem i automatskim povezivanjem | 🟢 Implementirano |
-| **Ažuriranja unutar aplikacije** | Automatska/ručna provjera verzija putem GitHub Releases | 🟢 Implementirano |
-| **Upravljanje izvođačima i diskografijom** | Posvećeni pregled po izvođaču sa albumima, singlovima i kompletnom diskografijom | 🟡 Planirano |
-| **Grafički ekvailizer (EQ)** | Audio preduređivači i parametrični multiband ekvailizer | 🟡 Planirano |
-| **Google Drive konektor** | Skeniranje i sinhronizacija udaljenih audio kolekcija putem OAuth 2.0 | ⚪ Planirano |
-| **Amazon Music konektor** | Skeniranje i sinhronizacija udaljenih kolekcija putem OAuth 2.0 | ⚪ Planirano |
-| **Spotify / Deezer konektor** | Uvoz plejlista i mapiranje numera | ⚪ Planirano |
-| **Inteligentno uklanjanje duplikata** | Detekcija duplikata (zamagljeno/nejasno ime/izvođač + akustički otisci) | ⚪ Planirano |
+| **Audio reprodukciono jezgro** | Lagani i samostalni audio plejer (VLC portable automatski instaliran pod Windows-om). Dva jezgra na izbor: direktni izlaz VLC, ili kontinuirano keširano jezgro za glatko povezivanje između dvije pjesme (Gapless 0 ms, preklapanje jednakom snagom, bez prekida audio izlaza) | 🟢 Implementirano |
+| **Upravljanje bibliotekom** | Rekurzivno multithreadovanje lokalnih foldera (MP3, FLAC, AAC, OGG...), ručna, zakazana ili u realnom vremenu sinhronizacija, kante i statistika biblioteke | 🟢 Implementirano |
+| **Ekstrakcija metapodataka** | Čitanje/pisanje ID3, Vorbis Comments i izračun audio otiska (`mutagen`) | 🟢 Implementirano |
+| **Podrška za plejliste (M3U, PLS, XSPF, WPL) & CUE listice** | Arhivsko indeksiranje (🎶), sekvencijalni redoslijed slušanja, vizuelno lociranje nedostajućih pjesama; datoteke `.cue` (💿) se otvaraju kao direktorijum virtualnih pjesama sa njihovom dužinom i reprodukuju se kao prave pjesme | 🟢 Implementirano |
+| **Upravljač plejlistama & Povlačenje-Pritiskanje** | Virtualizovana redoslijednost, glatko povlačenje-pritiskanje, obrnuti nasumični redoslijed (shuffle) i petlje | 🟢 Implementirano |
+| **Interaktivni režim « 🎲 Blind Test »** | Imersivna muzička igra sa animiranim brojačem, zvučnim prelazom, blagom otkrićem i automatskim povezivanjem | 🟢 Implementirano |
+| **Ažuriranja u aplikaciji** | Automatska/ručna provjera verzija putem GitHub Releases | 🟢 Implementirano |
+| **Verzije za Linux i macOS** | Paketi `.AppImage` / `.tar.gz` (Linux) i neoznačeni `.dmg` (macOS), potreban je VLC | 🟡 Eksperimentalno (nije testirano) |
+| **Upravljanje izvođačima i diskografijom** | Posveđeni pregled po izvođaču sa albumima, singlovima i kompletnom diskografijom | 🟡 Planirano |
+| **Grafički ekvalizator (EQ)** | Audio predlošci i parametrični multiband ekvalizator | 🟡 Planirano |
+| **Konektor Google Drive** | Skeniranje i sinhronizacija udaljenih audio kolekcija putem OAuth 2.0 | ⚪ Planirano |
+| **Konektor Amazon Music** | Skeniranje i sinhronizacija udaljenih kolekcija putem OAuth 2.0 | ⚪ Planirano |
+| **Konektor Spotify / Deezer** | Uvoz plejlista i podudarnost numera | ⚪ Planirano |
+| **Pametno uklanjanje duplikata** | Detekcija duplikata (zamagljeno ime/izvođač + akustički otisci) | ⚪ Planirano |
 
 > 💡 *Da biste pregledali detalje planiranih prekretnica i verzija, pogledajte [Feuille de route (Roadmap)](../../ROADMAP.md).*
 
@@ -100,6 +105,20 @@ cp .env.example .env
 # 6. Lancer l'application
 python main.py
 ```
+
+---
+
+## 🐧🍎 Linux i macOS: eksperimentalne verzije (nije testirano)
+
+Linux paketi (`.AppImage` / `.tar.gz`) i macOS (`.dmg`) dostavljeni su **bez testiranja**: AMSO je validiran samo na Windows-u. Audio motor sa kontinuirnim bufferom (`buffer`), posebno, nije provjereno na ovim sistemima. Vaš povratak je dragocjen.
+
+- **VLC je neophodan** (AMSO ga preuzima samo pod Windows-om):
+  - Linux: `sudo apt install vlc` (Debian / Ubuntu), `sudo dnf install vlc` (Fedora) ili `sudo pacman -S vlc` (Arch).
+  - macOS: instalirati **VLC.app** sa [videolan.org](https://www.videolan.org/vlc/) u direktorijum Applications.
+- **Linux, sistemske biblioteke**: Qt interfejs zahtijeva, između ostalog, `libpulse0` (zvuk), `libxcb-cursor0` i `libxkbcommon-x11-0` (na primjer `sudo apt install libpulse0 libxcb-cursor0 libxkbcommon-x11-0`).
+- **macOS, neoznačeni `.dmg`**: pri prvom pokretanju, desni klik na AMSO, zatim **Otvori**, ili izvršiti `xattr -dr com.apple.quarantine /Applications/AMSO.app`.
+- **Linux, AppImage**: učiniti ga izvršnim sa `chmod +x AMSO*.AppImage`.
+- **U slučaju problema**, molimo pošaljite fajlove `startup.log` i `crash.log` (ako postoje) smještene u direktorijum podataka: `~/Library/Application Support/AMSO/` pod macOS-om, `~/.local/share/AMSO/` pod Linux-om. Navedite svoj sistem i verziju VLC-a.
 
 ---
 

@@ -74,8 +74,14 @@ class BlindTestRoundMixin(_MixinBase):
                 next_track = playlist[next_idx]
                 load_cover_async(next_track, size=280, radius=16)
 
-    def _start_round_for_track(self, track: TrackRecord | None, auto_play: bool = False) -> None:
-        """Initialise une manche de Blind Test sur la piste fournie, démarrant à 0 seconde."""
+    def _start_round_for_track(
+        self, track: TrackRecord | None, auto_play: bool = False, player_started: bool = False
+    ) -> None:
+        """Initialise une manche de Blind Test sur la piste fournie, démarrant à 0 seconde.
+
+        `player_started` : le lecteur vient de lancer lui-même cette piste à 0 (suivant, précédent, Lecture). Moteur
+        `buffer` : un `seek_ratio` à ce stade (premier bloc pas encore décodé) la rechargerait en pause.
+        """
         if not track:
             self._reset_to_empty_state()
             return
@@ -123,7 +129,8 @@ class BlindTestRoundMixin(_MixinBase):
             self.lbl_cover.setPixmap(pix)
 
         # Positionner la lecture impérativement à 0 seconde
-        self.player.seek_ratio(0.0)
+        if not player_started:
+            self.player.seek_ratio(0.0)
 
         # Précharger immédiatement le fichier suivant en mémoire tampon
         self._preload_next_track()
@@ -138,9 +145,10 @@ class BlindTestRoundMixin(_MixinBase):
             self._session_playing = True
             # Démarrer à 0% et monter en fondu progressif de 2 secondes vers 100%
             self._apply_temporary_volume(0)
-            if not self.player.is_playing:
-                self.player.play()
-            self.player.seek_ratio(0.0)
+            if not player_started:
+                if not self.player.is_playing:
+                    self.player.play()
+                self.player.seek_ratio(0.0)
             self._start_fade_in(2.0)
             self.btn_play_pause.setText("⏸")
             self.lbl_status_badge.setText(tr("blind_test.status_searching"))

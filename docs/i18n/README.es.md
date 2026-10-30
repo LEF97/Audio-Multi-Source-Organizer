@@ -24,6 +24,10 @@
 ---
 
 <p align="center">
+  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+</p>
+
+<p align="center">
   <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
 </p>
 
@@ -41,19 +45,20 @@
 
 | Funcionalidad | Descripción | Estado |
 | :--- | :---: | :---: |
-| **Motor de reproducción VLC integrado** | Reproductor de audio ligero y autónomo con auto-instalación VLC portable y gestión fluida del volumen | 🟢 Implementado |
-| **Escáner local multihilo** | Detección recursiva y rápida de archivos de audio locales (MP3, FLAC, AAC, OGG...) | 🟢 Implementado |
+| **Motor de reproducción de audio** | Reproductor de audio ligero y autónomo (VLC portable instalado automáticamente bajo Windows). Dos motores opcionales: salida directa VLC, o motor de búfer continuo para una transición fluida entre dos pistas (Gapless 0 ms, fundido cruzado a potencia igual, sin interrupción de la salida de audio) | 🟢 Implementado |
+| **Gestión de la biblioteca** | Escaneo recursivo multihilo de carpetas locales (MP3, FLAC, AAC, OGG...), sincronización manual, programada o en tiempo real, papelera y estadísticas de la biblioteca | 🟢 Implementado |
 | **Extracción de metadatos** | Lectura/escritura ID3, Vorbis Comments y cálculo de huella de audio (`mutagen`) | 🟢 Implementado |
-| **Soporte de Playlists (M3U, PLS, XSPF, WPL) y hojas CUE** | Indexación arborescente (🎶), orden secuencial de escucha, localización visual de pistas faltantes; los archivos `.cue` (💿) se abren como una carpeta de pistas virtuales con su duración y se reproducen como pistas reales | 🟢 Implementado |
-| **Gestor de Playlists y Arrastrar-Soltar** | Cola virtualizada, arrastrar y soltar fluido, aleatorio (shuffle) reversible y bucles | 🟢 Implementado |
-| **Modo « 🎲 Blind Test » interactivo** | Juego musical inmersivo con cuenta regresiva animada, fundido de sonido, revelación suave y encadenamiento automático | 🟢 Implementado |
-| **Actualizaciones en la aplicación** | Verificación automática/manual de versiones vía GitHub Releases | 🟢 Implementado |
-| **Gestión de artistas y discografía** | Vista dedicada por artista con álbumes, sencillos y discografía completa | 🟡 Planificado |
+| **Soporte de Playlists (M3U, PLS, XSPF, WPL) y hojas CUE** | Indexación arborescente (🎶), orden de escucha secuencial, localización visual de pistas faltantes; los archivos `.cue` (💿) se abren como una carpeta de pistas virtuales con su duración y se reproducen como pistas reales | 🟢 Implementado |
+| **Gestor de Playlist y Arrastrar-Soltar** | Cola virtualizada, arrastrar y soltar fluido, aleatorio (shuffle) reversible y bucles | 🟢 Implementado |
+| **Modo « 🎲 Blind Test » interactivo** | Juego musical inmersivo con cuenta regresiva animada, fundido sonoro, revelación suave y enlazado automático | 🟢 Implementado |
+| **Actualizaciones in-app** | Verificación automática/manual de versiones vía GitHub Releases | 🟢 Implementado |
+| **Versiones Linux & macOS** | Paquetes `.AppImage` / `.tar.gz` (Linux) y `.dmg` no firmado (macOS), VLC requerido | 🟡 Experimental (no probado) |
+| **Gestión de artistas & Discografía** | Vista dedicada por artista con álbumes, sencillos y discografía completa | 🟡 Planificado |
 | **Ecualizador gráfico (EQ)** | Preajustes de audio y ecualizador multibanda paramétrico | 🟡 Planificado |
-| **Connectador Google Drive** | Escaneo y sincronización de colecciones de audio remotas vía OAuth 2.0 | ⚪ Planificado |
-| **Connectador Amazon Music** | Escaneo y sincronización de colecciones remotas vía OAuth 2.0 | ⚪ Planificado |
-| **Connectador Spotify / Deezer** | Importación de listas de reproducción y coincidencia de pistas | ⚪ Planificado |
-| **Desduplicación inteligente** | Detección de duplicados (título/artista borrosos + huellas acústicas) | ⚪ Planificado |
+| **Conector Google Drive** | Escaneo y sincronización de colecciones de audio remotas vía OAuth 2.0 | ⚪ Planificado |
+| **Conector Amazon Music** | Escaneo y sincronización de colecciones remotas vía OAuth 2.0 | ⚪ Planificado |
+| **Conector Spotify / Deezer** | Importación de listas de reproducción y coincidencia de pistas | ⚪ Planificado |
+| **Deduplicación inteligente** | Detección de duplicados (título/artista borrosos + huellas acústicas) | ⚪ Planificado |
 
 > 💡 *Para consultar el detalle de los hitos y versiones previstas, consulte la [Hoja de ruta (Roadmap)](ROADMAP.es.md).*
 
@@ -100,6 +105,20 @@ cp .env.example .env
 # 6. Lancer l'application
 python main.py
 ```
+
+---
+
+## 🐧🍎 Linux y macOS: versiones experimentales (no probadas)
+
+Los paquetes Linux (`.AppImage` / `.tar.gz`) y macOS (`.dmg`) se proporcionan **sin haber sido probados**: AMSO solo fue validado en Windows. El motor de audio de búfer continuo (`buffer`), en particular, no ha sido verificado en estos sistemas. Su opinión es valiosa.
+
+- **VLC es requerido** (AMSO solo lo descarga en Windows) :
+  - Linux : `sudo apt install vlc` (Debian / Ubuntu), `sudo dnf install vlc` (Fedora) o `sudo pacman -S vlc` (Arch).
+  - macOS : instalar **VLC.app** desde [videolan.org](https://www.videolan.org/vlc/) en la carpeta Applications.
+- **Linux, bibliotecas del sistema** : la interfaz Qt requiere, entre otras, `libpulse0` (sonido), `libxcb-cursor0` y `libxkbcommon-x11-0` (por ejemplo `sudo apt install libpulse0 libxcb-cursor0 libxkbcommon-x11-0`).
+- **macOS, `.dmg` no firmado** : al primer lanzamiento, hacer clic derecho en AMSO y luego **Abrir**, o ejecutar `xattr -dr com.apple.quarantine /Applications/AMSO.app`.
+- **Linux, AppImage** : hacerla ejecutable con `chmod +x AMSO*.AppImage`.
+- **En caso de problemas**, por favor envía los archivos `startup.log` y `crash.log` (si existen) ubicados en la carpeta de datos: `~/Library/Application Support/AMSO/` en macOS, `~/.local/share/AMSO/` en Linux. Especifica tu sistema y la versión de VLC.
 
 ---
 

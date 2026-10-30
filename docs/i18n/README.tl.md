@@ -24,6 +24,10 @@
 ---
 
 <p align="center">
+  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+</p>
+
+<p align="center">
   <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
 </p>
 
@@ -39,21 +43,22 @@
 
 ## 📌 Mga Tampok & Katayuan ng Proyekto
 
-| Pag-andar | Paglalarawan | Katayuan |
+| Katangian | Deskripsyon | Katayuan |
 | :--- | :---: | :---: |
-| **Integrated VLC Playback Engine** | Lightweight and standalone audio player with auto-installation VLC portable and smooth volume management | 🟢 Naipatupad |
-| **Multithreaded Local Scanner** | Recursive and fast discovery of local audio files (MP3, FLAC, AAC, OGG...) | 🟢 Naipatupad |
-| **Metadata Extraction** | Reading/writing ID3, Vorbis Comments, and audio fingerprint calculation (`mutagen`) | 🟢 Naipatupad |
-| **Playlist Support (M3U, PLS, XSPF, WPL) & CUE sheets** | Tree indexing (🎶), sequential listening order, visual identification of missing tracks; `.cue` files (💿) open like a virtual track folder with their duration and play like real tracks | 🟢 Naipatupad |
-| **Playlist Manager & Drag-and-Drop** | Virtualized queue, smooth drag & drop, reversible random (shuffle), and loops | 🟢 Naipatupad |
-| **Interactive "🎲 Blind Test" Mode** | Immersive musical game with animated countdown, sound fade, soft reveal, and automatic sequencing | 🟢 Naipatupad |
-| **Pag-update sa loob ng app** | Awtomatikong/manu-manong pag-verify ng bersyon via GitHub Releases | 🟢 Naipatupad |
-| **Pamamahala ng Artista at Diskograpiya** | Nakatutok na view bawat artista na may mga album, singles, at kumpletong diskograpiya | 🟡 Plano |
-| **Graphic Equalizer (EQ)** | Audio presets at parametric multi-band equalizer | 🟡 Plano |
-| **Google Drive Connector** | Pag-scan at pag-sync ng malayong koleksyon ng audio via OAuth 2.0 | ⚪ Plano |
-| **Amazon Music Connector** | Pag-scan at pag-sync ng malayong koleksyon via OAuth 2.0 | ⚪ Plano |
-| **Spotify / Deezer Connector** | Pag-import ng playlists at pagtutugma ng mga track | ⚪ Plano |
-| **Smart Deduplication** | Pagtukoy ng duplicate (malabong pamagat/artista + acoustic fingerprints) | ⚪ Plano |
+| **Audio Playback Engine** | Magaan at self-contained na audio player (VLC portable na awtomatikong naka-install sa Windows). Dalawang engine na pagpipilian: direktang output ng VLC, o continuous buffer engine para sa maayos na paglipat sa pagitan ng dalawang track (Gapless 0 ms, equal power crossfade, walang putol sa audio output) | 🟢 Naipatupad |
+| **Library Management** | Recursive multithreaded scan ng mga lokal na folder (MP3, FLAC, AAC, OGG...), manual, scheduled, o real-time synchronization, trash, at library statistics | 🟢 Naipatupad |
+| **Metadata Extraction** | Pagbasa/pagsulat ng ID3, Vorbis Comments, at pag-compute ng audio fingerprint (`mutagen`) | 🟢 Naipatupad |
+| **Support for Playlists (M3U, PLS, XSPF, WPL) & CUE sheets** | Tree indexing (🎶), sequential listening order, visual locator para sa mga nawawalang kanta; ang mga file na `.cue` (💿) ay nagbubukas tulad ng isang virtual track folder kasama ang kanilang tagal at pinapatugtog tulad ng totoong track | 🟢 Naipatupad |
+| **Playlist Manager & Drag-and-Drop** | Virtualized queue, smooth drag & drop, reversible shuffle, at loops | 🟢 Naipatupad |
+| **Interactive "🎲 Blind Test" Mode** | Immersive music game na may animated countdown, sound fade, soft reveal, at automatic sequencing | 🟢 Naipatupad |
+| **Mga Pag-update sa App** | Automatic/manual version checking via GitHub Releases | 🟢 Na-implementa |
+| **Mga Bersyon ng Linux & macOS** | Paquets `.AppImage` / `.tar.gz` (Linux) at `.dmg` non-signed (macOS), VLC required | 🟡 Eksperimental (hindi pa nasubukan) |
+| **Pamamahala ng Artista & Diskograpiya** | Dedicated view per artist with albums, singles, and complete discography | 🟡 Planado |
+| **Graphic Equalizer (EQ)** | Audio presets at parametric multi-band equalizer | 🟡 Planado |
+| **Google Drive Connector** | Scanning and synchronizing remote audio collections via OAuth 2.0 | ⚪ Planado |
+| **Amazon Music Connector** | Scanning and synchronizing remote collections via OAuth 2.0 | ⚪ Planado |
+| **Spotify / Deezer Connector** | Importing playlists and track matching | ⚪ Planado |
+| **Smart Deduplication** | Duplicate detection (fuzzy title/artist + acoustic fingerprints) | ⚪ Planado |
 
 > 💡 *Upang tingnan ang detalye ng mga nakaplanong milestone at bersyon, tumukoy sa [Feuille de route (Roadmap)](../../ROADMAP.md).*
 
@@ -100,6 +105,20 @@ cp .env.example .env
 # 6. Lancer l'application
 python main.py
 ```
+
+---
+
+## 🐧🍎 Linux at macOS: mga bersyon na eksperimental (hindi nasubukan)
+
+Ang mga package ng Linux (`.AppImage` / `.tar.gz`) at macOS (`.dmg`) ay ibinibigay **nang hindi nasubukan**: Ang AMSO ay na-validate lamang sa Windows. Ang audio engine na may continuous buffer (`buffer`) ay partikular na hindi na-check sa mga sistemang ito. Mahalaga ang iyong feedback.
+
+- **Kailangan ang VLC** (Ang AMSO ay nagda-download lamang nito sa Windows):
+  - Linux : `sudo apt install vlc` (Debian / Ubuntu), `sudo dnf install vlc` (Fedora) o `sudo pacman -S vlc` (Arch).
+  - macOS : i-install ang **VLC.app** mula sa [videolan.org](https://www.videolan.org/vlc/) sa Applications folder.
+- **Linux, system libraries** : Hinihingi ng Qt interface ang `libpulse0` (tunog), `libxcb-cursor0` at `libxkbcommon-x11-0` (halimbawa `sudo apt install libpulse0 libxcb-cursor0 libxkbcommon-x11-0`).
+- **macOS, hindi nilagdaan na `.dmg`** : sa unang paglunsad, mag-right-click sa AMSO pagkatapos ay **Open**, o patakbuhin ang `xattr -dr com.apple.quarantine /Applications/AMSO.app`.
+- **Linux, AppImage** : gawin itong executable gamit ang `chmod +x AMSO*.AppImage`.
+- **Kung may problema**, paki-send ang mga file na `startup.log` at `crash.log` (kung umiiral) na matatagpuan sa data folder: `~/Library/Application Support/AMSO/` sa macOS, `~/.local/share/AMSO/` sa Linux. Tukuyin ang iyong sistema at ang bersyon ng VLC.
 
 ---
 

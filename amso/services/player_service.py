@@ -16,6 +16,7 @@ from PySide6.QtCore import QObject, QTimer, Signal
 
 from amso.core.config import get_config_manager
 from amso.core.database import TrackRecord
+from amso.core.i18n import tr
 from amso.services.audio_decoder import AsyncAudioDecoder
 from amso.services.audio_engine import ContinuousAudioEngine
 from amso.services.player_queue import PlayerQueueMixin
@@ -116,6 +117,7 @@ class PlayerService(
         self._engine.set_volume(self._volume)
         self._engine.set_muted(self._is_muted)
         self._engine.track_finished.connect(self._on_engine_track_finished)
+        self._engine.crossfade_mixed.connect(self._promote_standby_decoder)
         self._decoder.ready_to_play.connect(self._on_decoder_ready_to_play)
         self._decoder.chunk_decoded.connect(self._on_decoder_chunk_decoded)
         self._decoder.decoding_finished.connect(self._on_decoder_finished)
@@ -210,7 +212,11 @@ class PlayerService(
 
     def _on_engine_track_finished(self) -> None:
         """Appelé lorsque le flux audio de la piste courante est entièrement diffusé."""
-        self.next()
+        self._advancing_after_track_end = True
+        try:
+            self.next()
+        finally:
+            self._advancing_after_track_end = False
 
     def _enforce_volume(self) -> None:
         """Applique sans délai le volume nominal vers le lecteur principal s'il n'est pas en fondu."""
@@ -256,7 +262,7 @@ class PlayerService(
             except Exception:
                 self._vlc_instance = vlc.Instance("--no-xlib", "--no-video", "--quiet")
             if self._vlc_instance is None:
-                raise RuntimeError("Échec de création de l'instance VLC")
+                raise RuntimeError(tr("player.err_vlc_instance"))
             self._media_player = self._vlc_instance.media_player_new()
             if self._media_player is not None:
                 self._apply_vlc_audio_output(self._media_player)
@@ -276,6 +282,11 @@ class PlayerService(
             self._media_player = None
             self._standby_player = None
             return False
+
+    def release_audio_output(self) -> None:
+        """Arrête le thread audio du moteur `buffer` (fermeture de l'application)."""
+        if self._engine:
+            self._engine.shutdown()
 
     def reload_vlc(self) -> bool:
         """Tente de recharger VLC (après un téléchargement automatique ou changement de chemin)."""
@@ -397,28 +408,21 @@ class PlayerService(
         """Coupe la lecture et réinitialise intégralement tous les moteurs et tampons.
 
         Permet de basculer de moteur audio ou de mode de transition à chaud
-        sans artefacts et sans redémarrer l'application.
+        sans artefacts et sans redémarrer l'application. La piste courante repart du début.
         """
         # 1. Arrêter immédiatement tous les flux audio
         self.stop()
 
         # 2. Réinitialisation complète du moteur Buffer / QAudioSink
         if self._engine:
-            self._engine.stop()
-            if hasattr(self._engine, "_sink") and self._engine._sink:
-                try:
-                    self._engine._sink.stop()
-                except Exception:
-                    pass
-                self._engine._sink = None
-                self._engine._audio_io = None
+            self._engine.reset_output()
             with self._engine._lock:
                 self._engine._current_pcm.clear()
                 self._engine._play_offset = 0
                 self._engine._base_offset_ms = 0
                 self._engine._total_duration_ms = 0
                 self._engine._current_file_path = ""
-                self._engine._crossfade_next_path = ""
+                self._engine._reset_crossfade_locked()
                 self._engine._is_feed_complete = False
                 self._engine._track_finished_emitted = False
 

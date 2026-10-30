@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from amso.core.activity_messages import display_action, display_details, display_level
 from amso.core.database import ActivityLogRecord
 from amso.core.i18n import tr
 
@@ -61,7 +62,7 @@ class LogDetailDialog(QDialog):
         layout.setSpacing(12)
 
         # En-tête
-        header = QLabel(f"<b>{record.action}</b>")
+        header = QLabel(f"<b>{display_action(record)}</b>")
         header.setStyleSheet("font-size: 16px; color: #38BDF8;")
         layout.addWidget(header)
 
@@ -75,13 +76,19 @@ class LogDetailDialog(QDialog):
             else ("#FBBF24" if record.level == "WARNING" else ("#F87171" if record.level == "ERROR" else "#38BDF8"))
         )
         lbl_lvl = QLabel(
-            f"<b>{tr('logs.col_level')} :</b> <span style='color: {lvl_color}; font-weight: bold;'>{record.level}</span>"
+            f"<b>{tr('logs.col_level')} :</b> <span style='color: {lvl_color}; font-weight: bold;'>{display_level(record.level)}</span>"
         )
         lbl_time = QLabel(f"<b>{tr('logs.col_time')} :</b> {record.timestamp or '-'}")
         lbl_src = QLabel(f"<b>{tr('table.col_source')} :</b> {record.source_name or '-'}")
 
-        stats_str = f"+{record.items_added} ajouts, ~{record.items_updated} modifiés, -{record.items_deleted} supprimés, !{record.items_errors} erreurs"
-        lbl_stats = QLabel(f"<b>Statistiques :</b> {stats_str}")
+        stats_str = tr(
+            "logs.detail_stats_values",
+            added=record.items_added,
+            updated=record.items_updated,
+            deleted=record.items_deleted,
+            errors=record.items_errors,
+        )
+        lbl_stats = QLabel(f"<b>{tr('logs.detail_stats')}</b> {stats_str}")
 
         meta_grid.addWidget(lbl_lvl)
         meta_grid.addWidget(lbl_time)
@@ -93,7 +100,7 @@ class LogDetailDialog(QDialog):
         layout.addWidget(QLabel(f"<b>{tr('logs.col_details')} :</b>"))
         self.txt_details = QTextEdit()
         self.txt_details.setReadOnly(True)
-        self.txt_details.setPlainText(record.details or "(Aucun détail supplémentaire)")
+        self.txt_details.setPlainText(display_details(record) or tr("logs.detail_none"))
         layout.addWidget(self.txt_details, 1)
 
         # Bouton fermer

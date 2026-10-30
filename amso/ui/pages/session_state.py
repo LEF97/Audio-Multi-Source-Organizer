@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import threading
+import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -18,8 +19,10 @@ from amso.core.database import (
     TrackRecord,
     get_saved_playlist_path,
 )
+from amso.core.network_paths import is_network_path
 
 logger = logging.getLogger(__name__)
+startup_logger = logging.getLogger("amso.startup")
 
 if TYPE_CHECKING:
     _MixinBase = QMainWindow
@@ -256,6 +259,9 @@ class SessionStateMixin(_MixinBase):
             # Optimisation majeure : si la piste provient de la base SQLite active (db_tracks),
             # elle est déjà validée en mémoire (O(1)) et on évite des milliers d'I/O disque bloquantes (Path.exists).
             valid_tracks: list[TrackRecord] = []
+            fs_checks = 0
+            fs_seconds = 0.0
+            slowest = (0.0, "")
             for trk in restored_tracks:
                 if trk.id is not None and trk.id in db_tracks:
                     valid_tracks.append(trk)
@@ -263,11 +269,28 @@ class SessionStateMixin(_MixinBase):
                     valid_tracks.append(trk)
                 else:
                     path_str = trk.source_path or trk.source_ref
-                    if path_str and Path(path_str).exists():
+                    t_fs = time.perf_counter()
+                    # Partage réseau : pas de sondage au démarrage (délai SMB), la piste est validée à la lecture.
+                    path_exists = bool(path_str) and (is_network_path(path_str) or Path(path_str).exists())
+                    elapsed = time.perf_counter() - t_fs
+                    fs_checks += 1
+                    fs_seconds += elapsed
+                    slowest = max(slowest, (elapsed, path_str or ""))
+                    if path_exists:
                         valid_tracks.append(trk)
                     elif self.db and path_str and self.db.get_track_by_ref(path_str):
                         valid_tracks.append(trk)
 
+            startup_logger.info(
+                "restauration: %d pistes lues, %d en base, %d validées, %d exists() disque = %.3fs (pire %.3fs: %s)",
+                len(restored_tracks),
+                len(db_tracks),
+                len(valid_tracks),
+                fs_checks,
+                fs_seconds,
+                slowest[0],
+                slowest[1] or "-",
+            )
             if not valid_tracks:
                 logger.info("Playlist sauvegardée ignorée : aucun fichier valide trouvé.")
                 return
@@ -281,10 +304,16 @@ class SessionStateMixin(_MixinBase):
                 else:
                     saved_pos_ms = max(0, saved_pos_ms)
 
+            t_load = time.perf_counter()
             self.player_service.load_playlist(
                 valid_tracks,
                 current_index=saved_index,
                 initial_position_ms=saved_pos_ms,
+            )
+            startup_logger.info(
+                "restauration: load_playlist (piste %s) = %.3fs",
+                current_track.source_path,
+                time.perf_counter() - t_load,
             )
             if hasattr(self, "page_playlist") and self.page_playlist:
                 self.page_playlist._update_stats_label()

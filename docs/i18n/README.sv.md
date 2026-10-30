@@ -24,6 +24,10 @@
 ---
 
 <p align="center">
+  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+</p>
+
+<p align="center">
   <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
 </p>
 
@@ -39,21 +43,22 @@
 
 ## 📌 Funktioner & Projektstatus
 
-| Funktion | Beskrivning | Status |
+| Funktionalitet | Beskrivning | Status |
 | :--- | :---: | :---: |
-| **Integrerad VLC-spelare** | Lättviktig och oberoende ljudspelare med automatisk installation av portabel VLC och smidig volymhantering | 🟢 Implementerad |
-| **Multitrådad lokal skanner** | Rekursiv och snabb upptäckt av lokala ljudfiler (MP3, FLAC, AAC, OGG...) | 🟢 Implementerad |
-| **Metadataextraktion** | Läsa/skriva ID3, Vorbis Comments och beräkna ljudfingeravtryck (`mutagen`) | 🟢 Implementerad |
-| **Stöd för spellistor (M3U, PLS, XSPF, WPL) & CUE-ark** | Träindexering (🎶), sekventiell lyssningsordning, visuell identifiering av saknade låtar; `.cue`-filer (💿) öppnas som en virtuell spårkatalog med varaktighet och spelas som riktiga spår | 🟢 Implementerad |
-| **Spellistthanterare & Drag-and-Drop** | Virtualiserad kö, smidigt drag & drop, reversibel slumpmässighet (shuffle) och loopar | 🟢 Implementerad |
-| **Interaktivt "🎲 Blind Test"-läge** | Immersivt musikspel med animerad nedräkning, ljudfade, mjuk avslöjande och automatisk sekvensering | 🟢 Implementerad |
-| **Uppdateringar i appen** | Automatisk/manuell versionskontroll via GitHub Releases | 🟢 Implementerat |
-| **Hantering av artister & diskografi** | Dedikerad vy per artist med album, singlar och komplett diskografi | 🟡 Planerat |
-| **Grafisk equalizer (EQ)** | Audio-presets och parametrisk flerbånds-equalizer | 🟡 Planerat |
-| **Google Drive-anslutning** | Skanning och synkronisering av fjärr-audio-samlingar via OAuth 2.0 | ⚪ Planerat |
-| **Amazon Music-anslutning** | Skanning och synkronisering av fjärr-samlingar via OAuth 2.0 | ⚪ Planerat |
-| **Spotify / Deezer-anslutning** | Importera spellistor och spårmatchning | ⚪ Planerat |
-| **Smart deduplicering** | Detektering av dubletter (oskarp titel/artist + akustiska fingeravtryck) | ⚪ Planerat |
+| **Ljudspelaremotor** | Lätt och fristående ljudspelare (VLC bärbar installerad automatiskt på Windows). Två motorer att välja mellan: direkt VLC-utgång, eller buffertmotor för sömlös övergång mellan två spår (Gapless 0 ms, fade-out vid lika effekt, utan avbrott i ljudutgången) | 🟢 Implémenté |
+| **Bibliotekshantering** | Multitrådad rekursiv skanning av lokala kataloger (MP3, FLAC, AAC, OGG...), manuell, schemalagd eller i realtid synkronisering, papperskorg och biblioteksstatistik | 🟢 Implémenté |
+| **Extraktion av metadata** | Läsning/skrivning av ID3, Vorbis Comments och beräkning av ljudfingeravtryck (`mutagen`) | 🟢 Implémenté |
+| **Stöd för spellistor (M3U, PLS, XSPF, WPL) & CUE-ark** | Trädstrukturindeksering (🎶), sekventiell lyssningsordning, visuell identifiering av saknade spår; `.cue`-filer (💿) öppnas som en virtuell spårkatalog med deras varaktighet och spelas som riktiga spår | 🟢 Implémenté |
+| **Spellistthanterare & Drag-and-drop** | Virtualiserad kö, smidigt drag & drop, reversibel slumpmässighet (shuffle) och loopar | 🟢 Implémenté |
+| **Interaktivt "🎲 Blind Test"-läge** | Immersivt musikspel med animerad nedräkning, ljudfade, mjuk avslöjande och automatisk övergång | 🟢 Implémenté |
+| **In-app uppdateringar** | Automatisk/manuell versionskontroll via GitHub Releases | 🟢 Implementerat |
+| **Versioner för Linux & macOS** | Paketet .AppImage / .tar.gz (Linux) och icke-signerat .dmg (macOS), VLC krävs | 🟡 Experimentellt (inte testat) |
+| **Hantering av artister & Discografi** | Dedikerad vy per artist med album, singlar och komplett discografi | 🟡 Planerat |
+| **Grafisk equalizer (EQ)** | Audio-presets och parametrisk multiband-equalizer | 🟡 Planerat |
+| **Google Drive-anslutning** | Skanning och synkronisering av avlägsna ljudsamlingar via OAuth 2.0 | ⚪ Planerat |
+| **Amazon Music-anslutning** | Skanning och synkronisering av avlägsna samlingar via OAuth 2.0 | ⚪ Planerat |
+| **Spotify / Deezer-anslutning** | Import av spellistor och spårmatchning | ⚪ Planerat |
+| **Intelligent dubblettkontroll** | Detektering av dubbletter (låt/artist + akustiska fingeravtryck) | ⚪ Planerat |
 
 > 💡 *För att se detaljer om de planerade milstolparna och versionerna, hänvisa till [Karta (Roadmap)](../../ROADMAP.md).*
 
@@ -100,6 +105,20 @@ cp .env.example .env
 # 6. Lancer l'application
 python main.py
 ```
+
+---
+
+## 🐧🍎 Linux och macOS: experimentella versioner (inte testade)
+
+Linux- och macOS-paket (`.AppImage` / `.tar.gz`) och (`.dmg`) tillhandahålls **utan att ha testats**: AMSO har endast validerats på Windows. Den kontinuerliga buffertljudmotorn (`buffer`) har särskilt inte verifierats på dessa system. Din feedback är värdefull.
+
+- **VLC krävs** (AMSO laddar bara ner det på Windows) :
+  - Linux : `sudo apt install vlc` (Debian / Ubuntu), `sudo dnf install vlc` (Fedora) eller `sudo pacman -S vlc` (Arch).
+  - macOS : installera **VLC.app** från [videolan.org](https://www.videolan.org/vlc/) i mappen Applikationer.
+- **Linux, systembibliotek** : Qt-gränssnittet kräver bland annat `libpulse0` (ljud), `libxcb-cursor0` och `libxkbcommon-x11-0` (till exempel `sudo apt install libpulse0 libxcb-cursor0 libxkbcommon-x11-0`).
+- **macOS, `.dmg` ej signerad** : vid första uppstarten, högerklicka på AMSO och sedan **Öppna**, eller kör `xattr -dr com.apple.quarantine /Applications/AMSO.app`.
+- **Linux, AppImage** : gör det körbart med `chmod +x AMSO*.AppImage`.
+- **I fall något problem**, vänligen skicka filerna `startup.log` och `crash.log` (om de finns) som finns i data-mappen: `~/Library/Application Support/AMSO/` på macOS, `~/.local/share/AMSO/` på Linux. Ange ditt system och VLC:s version.
 
 ---
 

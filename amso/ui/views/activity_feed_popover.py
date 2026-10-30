@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from amso.core.activity_messages import display_action
 from amso.core.database import DatabaseManager, SourceRecord
 from amso.core.i18n import tr
 from amso.core.scheduler import SyncScheduler
@@ -293,7 +294,7 @@ class ActivityFeedPopover(QFrame):
             else:
                 self.cur_progress.setVisible(False)
         else:
-            self.lbl_badge_status.setText("✓ SYSTÈME PRÊT")
+            self.lbl_badge_status.setText(tr("status.system_ready"))
             self.lbl_badge_status.setStyleSheet(
                 "background-color: rgba(34, 197, 94, 0.2); color: #4ADE80; "
                 "border: 1px solid rgba(34, 197, 94, 0.5); font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 8px;"
@@ -348,7 +349,7 @@ class ActivityFeedPopover(QFrame):
                     else:
                         icon = "<span style='color: #38BDF8;'>ℹ</span>"
 
-                    summary = log.action
+                    summary = display_action(log)
                     if log.items_added or log.items_updated or log.items_deleted:
                         summary += f" (+{log.items_added}/~{log.items_updated}/-{log.items_deleted})"
 

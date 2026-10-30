@@ -423,6 +423,9 @@ class DatabaseManager(
                 );
                 """
             )
+            cols_logs = {r["name"] for r in conn.execute("PRAGMA table_info(activity_logs);").fetchall()}
+            if "i18n" not in cols_logs:
+                conn.execute("ALTER TABLE activity_logs ADD COLUMN i18n TEXT;")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_activity_logs_ts ON activity_logs(timestamp DESC);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_activity_logs_level ON activity_logs(level);")
 

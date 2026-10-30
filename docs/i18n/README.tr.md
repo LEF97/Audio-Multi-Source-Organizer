@@ -24,6 +24,10 @@
 ---
 
 <p align="center">
+  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+</p>
+
+<p align="center">
   <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
 </p>
 
@@ -41,19 +45,20 @@
 
 | Özellik | Açıklama | Durum |
 | :--- | :---: | :---: |
-| **Entegre VLC oynatma motoru** | Taşınabilir VLC otomatik kurulumu ve akıcı ses yönetimi ile hafif ve bağımsız ses oynatıcı | 🟢 Implémenté |
-| **Çok iş parçacıklı yerel tarayıcı** | Yerel ses dosyalarının (MP3, FLAC, AAC, OGG...) özyinelemeli ve hızlı keşfi | 🟢 Implémenté |
-| **Metaveri Çıkarma** | ID3, Vorbis Comments okuma/yazma ve ses parmak izi hesaplama (`mutagen`) | 🟢 Implémenté |
-| **Playlist Desteği (M3U, PLS, XSPF, WPL) ve CUE sayfaları** | Ağaç yapısı indeksleme (🎶), sıralı dinleme sırası, eksik parçaların görsel tespiti; \`.cue\` dosyaları (💿) süresiyle birlikte sanal bir parça klasörü gibi açılır ve gerçek parçalar gibi çalınır | 🟢 Implémenté |
-| **Playlist Yöneticisi & Sürükle-Bırak** | Sanal kuyruk, akıcı sürükle bırak, geri alınabilir rastgele (shuffle) ve döngüler | 🟢 Implémenté |
-| **Etkileşimli « 🎲 Kör Test » Modu** | Canlı sayaç, ses geçişi, yumuşak ifşa ve otomatik ardışıklık içeren sürükleyici müzik oyunu | 🟢 Implémenté |
+| **Ses Çalma Motoru** | Hafif ve bağımsız ses oynatıcı (Windows altında otomatik yüklenen VLC portable). Seçenekli iki motor: doğrudan VLC çıkışı veya iki parça arasında akıcı geçiş için sürekli tampon motoru (Gapless 0 ms, eşit güce sahip geçiş, ses çıkışında kesinti yok) | 🟢 Uygulanmış |
+| **Kütüphane Yönetimi** | Yerel klasörlerin özyinelemeli çok iş parçacıklı taraması (MP3, FLAC, AAC, OGG...), manuel, planlanmış veya gerçek zamanlı senkronizasyon, çöp kutusu ve kütüphane istatistikleri | 🟢 Uygulanmış |
+| **Meta Veri Çıkarma** | ID3, Vorbis Comments okuma/yazma ve ses parmak izi hesaplama (`mutagen`) | 🟢 Uygulanmış |
+| **Playlist Desteği (M3U, PLS, XSPF, WPL) & CUE dosyaları** | Ağaç yapısı indeksleme (🎶), sıralı dinleme sırası, eksik parçaların görsel tespiti; `.cue` dosyaları (💿) süresiyle birlikte sanal bir parça klasörü gibi açılır ve gerçek parçalar gibi çalınır | 🟢 Uygulanmış |
+| **Çalma Listesi Yöneticisi & Sürükle-Bırak** | Sanallaştırılmış kuyruk, akıcı sürükle-bırak, geri alınabilir rastgele (shuffle) ve döngüler | 🟢 Uygulanmış |
+| **Etkileşimli "🎲 Kör Test" Modu** | Animasyonlu sayaç, ses geçişi, yumuşak ortaya çıkarma ve otomatik sıralama içeren sürükleyici müzik oyunu | 🟢 Uygulanmış |
 | **Uygulama içi güncellemeler** | GitHub Releases üzerinden otomatik/manuel sürüm kontrolü | 🟢 Uygulandı |
-| **Sanatçı Yönetimi & Diskografi** | Albümler, single'lar ve tam diskografi ile sanatçıya özel görünüm | 🟡 Planlanıyor |
+| **Linux ve macOS Sürümleri** | `.AppImage` / `.tar.gz` (Linux) ve imzalanmamış `.dmg` (macOS) paketleri, VLC gerekli | 🟡 Deneysel (test edilmedi) |
+| **Sanatçı ve Diskografi Yönetimi** | Albümler, single'lar ve tam diskografi ile sanatçıya özel görünüm | 🟡 Planlanıyor |
 | **Grafik Ekolayzır (EQ)** | Ses ön ayarları ve parametrik çok bantlı ekolayzır | 🟡 Planlanıyor |
 | **Google Drive Bağlayıcısı** | OAuth 2.0 üzerinden uzaktaki ses koleksiyonlarının taranması ve senkronizasyonu | ⚪ Planlandı |
 | **Amazon Music Bağlayıcısı** | OAuth 2.0 üzerinden uzaktaki koleksiyonların taranması ve senkronizasyonu | ⚪ Planlandı |
 | **Spotify / Deezer Bağlayıcısı** | Çalma listelerinin içe aktarılması ve parça eşleştirme | ⚪ Planlandı |
-| **Akıllı Yinelenme Kaldırma** | Yinelenenlerin tespiti (başlık/sanatçı bulanık + akustik parmak izleri) | ⚪ Planlandı |
+| **Akıllı Yinelenme Kaldırma** | Dublikat algılama (başlık/sanatçı bulanık + akustik parmak izleri) | ⚪ Planlandı |
 
 > 💡 *Planlanan kilometre taşları ve sürümlerin ayrıntılarını görmek için, [Yol Haritası (Roadmap)](../../ROADMAP.md)'e bakın.*
 
@@ -100,6 +105,20 @@ cp .env.example .env
 # 6. Lancer l'application
 python main.py
 ```
+
+---
+
+## 🐧🍎 Linux ve macOS: deneme sürümleri (test edilmemiş)
+
+Linux paketleri (`.AppImage` / `.tar.gz`) ve macOS (`.dmg`) **test edilmemiş olarak** sağlanmıştır: AMSO yalnızca Windows altında doğrulanmıştır. Özellikle sürekli tamponlu (`buffer`) ses motoru bu sistemlerde kontrol edilmemiştir. Geri bildiriminiz değerlidir.
+
+- **VLC gereklidir** (AMSO sadece Windows'ta indirir) :
+  - Linux : `sudo apt install vlc` (Debian / Ubuntu), `sudo dnf install vlc` (Fedora) veya `sudo pacman -S vlc` (Arch).
+  - macOS : Applications klasöründeki [videolan.org](https://www.videolan.org/vlc/) adresinden **VLC.app** kurun.
+- **Linux, sistem kütüphaneleri** : Qt arayüzü özellikle `libpulse0` (ses), `libxcb-cursor0` ve `libxkbcommon-x11-0` talep eder (örneğin `sudo apt install libpulse0 libxcb-cursor0 libxkbcommon-x11-0`).
+- **macOS, imzalanmamış `.dmg`** : ilk çalıştırmada, AMSO üzerine sağ tıklayıp **Aç** yapın veya `xattr -dr com.apple.quarantine /Applications/AMSO.app` komutunu çalıştırın.
+- **Linux, AppImage** : çalıştırılabilir yapmak için `chmod +x AMSO*.AppImage` kullanın.
+- **Bir sorun olması durumunda**, lütfen veri klasöründe bulunan `startup.log` ve `crash.log` dosyalarını (varsa) gönderin: macOS'ta `~/Library/Application Support/AMSO/` altında, Linux'ta `~/.local/share/AMSO/` altında. Sisteminizi ve VLC sürümünüzü belirtin.
 
 ---
 

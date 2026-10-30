@@ -265,3 +265,21 @@ def test_player_error_logs_and_clickable_status(temp_db: DatabaseManager, qapp):
     assert window.stacked_widget.currentWidget() == window.page_logs
 
     window.close()
+
+
+def test_logs_view_retranslate_rerenders_rows_in_new_language(temp_db: DatabaseManager, qapp):
+    """Un changement de langue à chaud retraduit aussi les lignes déjà affichées (action et niveau)."""
+    from amso.core.activity_messages import LogMessage
+    from amso.core.i18n import get_i18n
+
+    temp_db.add_activity_log(LogMessage("log.sync_success", {"source": "S1"}), level="SUCCESS", source_name="S1")
+    i18n = get_i18n()
+    i18n.set_language("fr", save_to_config=False)
+    view = LogsView(temp_db)
+    view.refresh_logs()
+    assert view.table.item(0, 3).text() == "Synchronisation réussie : S1"
+
+    i18n.set_language("en", save_to_config=False)
+    view.retranslate_ui()
+
+    assert view.table.item(0, 3).text() == "Synchronization succeeded: S1"

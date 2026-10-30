@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
 )
 
 from amso import __version__
+from amso.core.i18n import tr
 
 
 class SplashScreen(QWidget):
@@ -133,7 +134,7 @@ class SplashScreen(QWidget):
         status_box = QHBoxLayout()
         status_box.setContentsMargins(0, 0, 0, 4)
 
-        self.lbl_status = QLabel("Démarrage de l'application...")
+        self.lbl_status = QLabel(tr("splash.starting"))
         self.lbl_status.setStyleSheet("color: #94A3B8; font-size: 12px; font-weight: 500;")
         status_box.addWidget(self.lbl_status)
 

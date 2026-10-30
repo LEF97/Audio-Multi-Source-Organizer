@@ -13,6 +13,39 @@ and this project adheres to [Semantic Versioning (SemVer)](https://semver.org/).
 
 ---
 
+## [0.4.1] - 2026-10-29
+
+### Added
+- **Audio transition non-regression test (TNR):** `scripts/tnr_transitions.bat` replays the end of a track and then the start of the next one (Sirius → Eye in the Sky by default) in the real player, with a dummy audio output, and compares the recording with an ideal construction (sample-identical in gapless, equal-power fade in crossfade, no cut, single audio session).
+- **TNR log:** every run writes `tests/tnr/log/tnr_YYYY-MM-DD_HH-MM-SS.log` (version, commit, tracks, detailed results, Qt messages and player logs); the folder is ignored by git.
+- **Startup log:** `startup.log` in the data folder times each launch step, the session restoration and the threads still running at shutdown.
+- **Native crash log:** `crash.log` in the data folder (`%APPDATA%/AMSO/`) receives the stack of a LibVLC or Qt crash.
+- **libVLC status:** the player settings show the version of the libVLC actually loaded and where it comes from (AMSO copy or system VLC), with the path in a tooltip.
+- **Linux and macOS preparation:** the automatic VLC download (Windows archive) is reserved for Windows; elsewhere, AMSO explains how to install VLC (package manager, VLC.app). On macOS, VLC.app is also detected in `~/Applications`.
+- **Experimental Linux and macOS versions (untested):** `release.yml` produces a `.tar.gz` archive and an `.AppImage` (Linux x86_64), as well as an unsigned `.dmg` for macOS Apple Silicon and Intel, through `scripts/package_unix.py`. VLC must be installed (package manager or VLC.app) and, on Linux, the `libpulse0`, `libxcb-cursor0` and `libxkbcommon-x11-0` libraries. The `buffer` audio engine and the transition non-regression test have only been validated on Windows: feedback (`startup.log`, `crash.log`) is welcome. The Linux CI now installs `libpulse0` (QtMultimedia failed to import) and the workflow's itch.io deployment now only happens on a tag.
+
+### Changed
+- **Startup:** the « All tracks » table is no longer loaded (up to 3 times ~50,000 tracks) before its page is opened; the banner counter stays exact through a `COUNT` query.
+- **Startup:** the loading screen is displayed before the main window and the database are imported, numpy is only loaded in the background once the window is visible, the icon and the logo are cached.
+
+### Fixed
+- **Startup without network:** no disk probing (`exists`, `isdir`) is done anymore on a network path (UNC or mapped drive) from the UI thread at startup (cover art, folder watching, session restoration); an unreachable share no longer freezes the window. The cover art of a network track is re-checked every 30 s in the background.
+- **Shutdown:** fixed « QThread: Destroyed while thread is still running » (the cover worker's `finished` signal hid the one from `QThread`, cover threads were not awaited).
+- **`buffer` engine — transition mode change:** after changing the mode in the player settings, a seek followed by Play no longer started anything (the reset left the engine without audio output, and the player wrongly switched to the VLC path). The audio session is now recreated immediately. The current track restarts from the beginning after an engine or mode change. Finally, resuming a track loaded in pause (after a reset or a seek while stopped) restarts the `buffer` engine's transfer timer: without it, Play produced no sound. The decoder no longer emits the blocks of a decoding that has been replaced in the meantime (reset followed by Play, close seeks): they could distort the position or prevent the `buffer` engine from starting.
+- **Blind Test with the `buffer` engine:** Play, Next and Previous started no sound (the track stayed loaded in pause, Play had to be pressed again): the track change restarted the round, which repositioned the track before the first decoded block arrived. The round now only repositions a track that the player has not just started itself.
+- **`buffer` engine — distorted sound when moving or resizing the window:** the sound card was fed by a UI thread timer (185 ms buffer); this thread, blocked by the Windows move loop (up to 400 ms measured), left it without data. The `QAudioSink` now runs in pull mode in a dedicated audio thread (`audio_output.py`): the memory buffer, gapless and crossfade are unchanged, and the `vlc_direct` engine is not affected.
+- **Translations:** a key missing from the language and from English (recent key, only present in `fr.json`) was displayed under its technical name; the fallback now goes through French. `sync_translations.py` detects translations where the model repeated the French text followed by a transcription (« text (romaji) »), retranslates them, rejects such answers and no longer sends English to Ollama.
+- **Hard-coded texts:** the Statistics page (« tracks », « GB », « h »), file sizes (KB, MB, GB) and the « s » suffix of the Blind Test durations now go through translation keys.
+- **Hard-coded texts (continued):** scanner messages, player and decoder errors, the VLC download, « Stereo / Mono », the « File not found » tooltip, « SYSTEM READY » and the startup screen now go through translation keys. The 42 languages are resynchronized (Ollama), including 15 translations whose `{count}` / `{name}` placeholders had disappeared.
+- **Translated activity log:** « Synchronization succeeded », « Duration », « Tracks added », the levels (SUCCESS…) and the export dialogs were displayed in French whatever the language. Messages are now stored as a key and parameters (new `i18n` column, added without touching existing entries) and translated when displayed. Entries already recorded remain in French.
+- **`buffer` engine — manual « Next »:** with the next track preloaded (Gapless 0 or Crossfade), a « Next » did start the next track but kept the position of the previous one (e.g. 1:00). The sample-accurate join is now reserved for the natural end of the track; a manual « Next » restarts the next track at 0.
+- **`buffer` engine — crossfade:** the crossfade is now mixed as decoding progresses (computed over the whole requested duration, vectorized). It no longer cuts the end of the outgoing track, no longer shortens the fade and no longer causes stutters (the former sample-by-sample computation blocked the UI thread).
+- **Blind Test with the `buffer` engine:** fixed an infinite recursion (`track_changed` ↔ `seek_ratio`) that closed the application; the Blind Test volume fades now also act on this engine.
+- **Audio decoder (`amem`):** the end of stream announced by VLC stopped a `QTimer` from VLC's event thread (`QObject::killTimer: Timers cannot be stopped from another thread`, undefined behavior on every track); it is now relayed to the Qt thread.
+- **`buffer` engine — « No fade » mode:** the hardware audio session is no longer closed and reopened between two tracks.
+
+---
+
 ## [0.4.0] - 2026-10-25
 
 ### Added

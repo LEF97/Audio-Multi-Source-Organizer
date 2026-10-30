@@ -2,7 +2,7 @@
 
 Fournit une lecture bit-perfect ininterrompue sans réinitialisation
 matérielle du périphérique audio :
-- Flux unique QAudioSink en mode Push.
+- Flux unique QAudioSink en mode pull, hébergé dans un thread dédié (voir `audio_output.py`).
 - Décodage asynchrone des fichiers locaux ou réseau via QAudioDecoder.
 - Enchaînement parfait (Standard avec silence propre, Gapless 0 au sample près,
   Crossfade mathématique à égale puissance).
@@ -10,18 +10,15 @@ matérielle du périphérique audio :
 
 from __future__ import annotations
 
-import array
 import logging
-import math
 import os
 import threading
 
-from PySide6.QtCore import QByteArray, QIODevice, QObject, Signal
-from PySide6.QtMultimedia import (
-    QAudioFormat,
-    QAudioSink,
-    QMediaDevices,
-)
+from PySide6.QtCore import QObject, Signal
+from PySide6.QtMultimedia import QAudioFormat
+
+from amso.core.pcm_mixer import StreamingCrossfade, bytes_to_ms, ms_to_bytes
+from amso.services.audio_output import SinkOutput
 
 logger = logging.getLogger(__name__)
 
@@ -33,12 +30,13 @@ BUFFER_SIZE_SINK = 32768  # ~185ms de tampon réactif
 
 
 class ContinuousAudioEngine(QObject):
-    """Moteur de lecture audio continue à flux unique (QAudioSink Push Mode)."""
+    """Moteur de lecture audio continue à flux unique (QAudioSink en mode pull)."""
 
     # Signaux
     position_updated = Signal(int, int, float)  # position_ms, total_ms, ratio
     state_changed = Signal(str)  # "playing", "paused", "stopped"
     track_finished = Signal()  # émis quand la piste active atteint son terme
+    crossfade_mixed = Signal()  # émis quand la zone de fondu est entièrement mixée dans le tampon
     error_occurred = Signal(str)
 
     def __init__(self, parent: QObject | None = None) -> None:
@@ -48,8 +46,10 @@ class ContinuousAudioEngine(QObject):
         self._format.setChannelCount(CHANNELS)
         self._format.setSampleFormat(QAudioFormat.SampleFormat.Int16)
 
-        self._sink: QAudioSink | None = None
-        self._audio_io: QIODevice | None = None
+        self._output: SinkOutput | None = None
+        self._output_started: bool = False
+        self._starved_bytes: int = 0  # silence servi faute de données, une fois la lecture réellement commencée
+        self._has_served_data: bool = False
         self._volume: float = 1.0  # 0.0 à 1.0
         self._is_muted: bool = False
 
@@ -65,26 +65,57 @@ class ContinuousAudioEngine(QObject):
         self._is_feed_complete: bool = False
         self._track_finished_emitted: bool = False
         self._crossfade_next_path: str = ""
+        self._xfade: StreamingCrossfade | None = None  # armé dès le préchargement, actif à l'entrée de la zone de fondu
+        self._xfade_fade_ms: int = 0
+        self._xfade_mixing: bool = False
+        self._xfade_end_offset: int | None = None  # fin de la zone mixée dans le tampon, une fois le mixage terminé
+        self._xfade_mixed_ms: float = 0.0
 
         self._lock = threading.Lock()
         self._init_sink()
 
     def _init_sink(self) -> bool:
-        """Initialise la sortie audio unique."""
-        try:
-            device = QMediaDevices.defaultAudioOutput()
-            self._sink = QAudioSink(device, self._format)
-            self._sink.setBufferSize(BUFFER_SIZE_SINK)
-            self._sink.setVolume(0.0 if self._is_muted else self._volume)
-            return True
-        except Exception as exc:
-            logger.error("Impossible d'initialiser QAudioSink : %s", exc)
-            self._sink = None
+        """Initialise la sortie audio unique (thread audio dédié)."""
+        output = SinkOutput(self._format, BUFFER_SIZE_SINK, 0.0 if self._is_muted else self._volume, self.read_pcm)
+        if not output.available:
+            output.shutdown()
+            self._output = None
             return False
+        self._output = output
+        self._output_started = False
+        return True
 
     @property
     def is_available(self) -> bool:
-        return self._sink is not None
+        return self._output is not None
+
+    @property
+    def starved_ms(self) -> float:
+        """Durée de silence servie à la carte son faute de données (0 si la lecture n'a jamais manqué de PCM)."""
+        return bytes_to_ms(self._starved_bytes)
+
+    def read_pcm(self, max_bytes: int) -> tuple[bytes, int]:
+        """Appelé par le thread audio : sert jusqu'à `max_bytes` de PCM, complétés par du silence si le tampon est vide.
+
+        Le silence ne fait pas avancer la position : la lecture reprend exactement où elle s'est interrompue.
+        """
+        wanted = max_bytes // BYTES_PER_FRAME * BYTES_PER_FRAME
+        with self._lock:
+            available = len(self._current_pcm) - self._play_offset
+            take = min(wanted, available) // BYTES_PER_FRAME * BYTES_PER_FRAME
+            chunk = bytes(self._current_pcm[self._play_offset : self._play_offset + take])
+            self._play_offset += take
+        padded = wanted - take
+        if take:
+            self._has_served_data = True
+        elif padded and self._has_served_data:
+            self._starved_bytes += padded
+        return (chunk + bytes(padded) if padded else chunk), padded
+
+    def shutdown(self) -> None:
+        """Arrête le thread audio (fermeture de l'application)."""
+        if self._output is not None:
+            self._output.shutdown()
 
     @property
     def is_playing(self) -> bool:
@@ -105,30 +136,47 @@ class ContinuousAudioEngine(QObject):
     def set_volume(self, vol_percent: int) -> None:
         """Volume de 0 à 100."""
         self._volume = max(0.0, min(1.0, vol_percent / 100.0))
-        if self._sink and not self._is_muted:
-            self._sink.setVolume(self._volume)
+        if self._output and not self._is_muted:
+            self._output.set_volume(self._volume)
 
     def set_muted(self, muted: bool) -> None:
         """Active ou désactive le mode muet."""
         self._is_muted = muted
-        if self._sink:
-            self._sink.setVolume(0.0 if muted else self._volume)
+        if self._output:
+            self._output.set_volume(0.0 if muted else self._volume)
 
-    def stop(self) -> None:
-        """Stoppe la lecture et réinitialise les tampons."""
+    def stop(self, keep_output: bool = False) -> None:
+        """Stoppe la lecture et réinitialise les tampons.
+
+        `keep_output=True` laisse la sortie matérielle ouverte : enchaînement automatique de deux titres, où la fin
+        du précédent finit de se jouer et où la session audio ne doit être ni fermée ni recréée.
+        """
         self._is_playing = False
         self._is_paused = False
-        if self._sink:
-            self._sink.stop()
-            self._audio_io = None
+        if self._output and not keep_output:
+            self._output.stop()
+            self._output_started = False
+            self._has_served_data = False
         with self._lock:
             self._current_pcm.clear()
             self._play_offset = 0
             self._base_offset_ms = 0
             self._total_duration_ms = 0
             self._current_file_path = ""
-            self._crossfade_next_path = ""
+            self._reset_crossfade_locked()
         self.state_changed.emit("stopped")
+
+    def reset_output(self) -> bool:
+        """Ferme puis recrée la session audio (changement de configuration à chaud, jamais entre deux titres).
+
+        `_output` doit rester non nul : `is_available` en dépend, et le lecteur bascule sur le chemin VLC dès qu'il
+        est faux, ce qui rend muettes la lecture et le seek du moteur `buffer`.
+        """
+        self.stop()
+        if self._output:
+            self._output.shutdown()
+        self._output = None
+        return self._init_sink()
 
     def play_track(
         self,
@@ -139,7 +187,7 @@ class ContinuousAudioEngine(QObject):
         start_paused: bool = False,
     ) -> bool:
         """Démarre la lecture immédiate d'une piste à partir de son PCM décodé."""
-        if not self._sink:
+        if not self._output:
             if not self._init_sink():
                 self.error_occurred.emit("Sortie audio non disponible")
                 return False
@@ -152,14 +200,16 @@ class ContinuousAudioEngine(QObject):
             self._is_feed_complete = False
             self._track_finished_emitted = False
             self._play_offset = 0
+            self._reset_crossfade_locked()
 
-        if self._sink:
-            if self._audio_io is None:
-                self._audio_io = self._sink.start()
-            if start_paused:
-                self._sink.suspend()
+        if self._output:
+            if not self._output_started:
+                self._output.start(start_paused)
+                self._output_started = True
+            elif start_paused:
+                self._output.suspend()
             elif self._is_paused:
-                self._sink.resume()
+                self._output.resume()
 
         self._is_playing = True
         self._is_paused = start_paused
@@ -168,27 +218,32 @@ class ContinuousAudioEngine(QObject):
 
     def mark_feed_complete(self, file_path: str) -> None:
         """Indique que tout le fichier a été décodé et transféré dans le buffer."""
+        mixed = False
         with self._lock:
-            if not self._current_file_path or not file_path:
-                self._is_feed_complete = True
-            elif os.path.normcase(os.path.normpath(file_path)) == os.path.normcase(
-                os.path.normpath(self._current_file_path)
-            ):
-                self._is_feed_complete = True
+            if not self._current_file_path or not file_path or _same_path(file_path, self._current_file_path):
+                if self._xfade is not None:
+                    # La piste sortante s'achève avant la fin théorique du fondu (durée des tags approximative)
+                    self._finalize_crossfade_locked()
+                    mixed = True
+                else:
+                    self._is_feed_complete = True
+        if mixed:
+            self.crossfade_mixed.emit()
 
     def append_chunk(self, file_path: str, chunk_pcm: bytes) -> None:
         """Ajoute un bloc de données PCM décodé en cours de lecture pour la piste courante."""
         if not file_path or not chunk_pcm:
             return
+        mixed = False
         with self._lock:
-            if not self._current_file_path:
+            if not self._current_file_path or not _same_path(file_path, self._current_file_path):
                 return
-            n_file = os.path.normcase(os.path.normpath(file_path))
-            n_curr = os.path.normcase(os.path.normpath(self._current_file_path))
-            next_p = getattr(self, "_crossfade_next_path", "")
-            n_next = os.path.normcase(os.path.normpath(next_p)) if next_p else ""
-            if n_file == n_curr or (n_next and n_file == n_next):
+            if self._xfade is None:
                 self._current_pcm.extend(chunk_pcm)
+            else:
+                mixed = self._append_into_crossfade_locked(chunk_pcm)
+        if mixed:
+            self.crossfade_mixed.emit()
 
     @property
     def is_feed_complete(self) -> bool:
@@ -206,6 +261,7 @@ class ContinuousAudioEngine(QObject):
             self._base_offset_ms = start_offset_ms
             self._is_feed_complete = False
             self._track_finished_emitted = False
+            self._reset_crossfade_locked()
 
     def seek_ms(self, target_ms: int) -> None:
         """Déplace la position de lecture dans le flux audio courant."""
@@ -218,8 +274,8 @@ class ContinuousAudioEngine(QObject):
         if not self._is_playing or self._is_paused:
             return
         self._is_paused = True
-        if self._sink:
-            self._sink.suspend()
+        if self._output:
+            self._output.suspend()
         self.state_changed.emit("paused")
 
     def resume(self) -> None:
@@ -227,27 +283,14 @@ class ContinuousAudioEngine(QObject):
         if not self._is_playing or not self._is_paused:
             return
         self._is_paused = False
-        if self._sink:
-            self._sink.resume()
+        if self._output:
+            self._output.resume()
         self.state_changed.emit("playing")
 
-    def pump_audio(self) -> None:
-        """Transfère les données du tampon continu vers la carte son."""
-        if not self._is_playing or self._is_paused or not self._sink or not self._audio_io:
+    def poll_progress(self) -> None:
+        """Publie la position et détecte la fin de piste (la carte son est alimentée par `read_pcm`)."""
+        if not self._is_playing or self._is_paused or not self._output_started:
             return
-
-        free_bytes = self._sink.bytesFree()
-        if free_bytes <= 0:
-            return
-
-        with self._lock:
-            available = len(self._current_pcm) - self._play_offset
-            if available > 0:
-                chunk_len = min(free_bytes, available)
-                chunk = self._current_pcm[self._play_offset : self._play_offset + chunk_len]
-                written = self._audio_io.write(QByteArray(chunk))
-                if written > 0:
-                    self._play_offset += written
 
         # Calcul de la position courante en ms
         current_ms = self.current_time_ms
@@ -300,66 +343,100 @@ class ContinuousAudioEngine(QObject):
             self._is_feed_complete = False
             self._track_finished_emitted = False
 
-    def append_with_crossfade(
-        self, next_pcm: bytes, fade_seconds: float, total_duration_ms: int = 0, file_path: str = ""
-    ) -> int:
-        """Raccorde avec un fondu croisé mathématique à égale puissance (Crossfade)."""
-        fade_frames = int(fade_seconds * SAMPLE_RATE)
-        fade_bytes = fade_frames * BYTES_PER_FRAME
+    # -------------------------------------------------------------------------
+    # Fondu croisé au fil du décodage
+    # -------------------------------------------------------------------------
 
+    @property
+    def is_crossfade_armed(self) -> bool:
+        return self._xfade is not None
+
+    @property
+    def crossfade_pending(self) -> bool:
+        """Un fondu est armé, en cours de mixage, ou mixé et pas encore traversé par la lecture."""
+        return self._xfade is not None or self._xfade_end_offset is not None
+
+    def arm_crossfade(self, fade_ms: int, next_path: str) -> None:
+        """Prépare le fondu : la zone de `fade_ms` commencera à `durée - fade_ms` de la piste courante."""
         with self._lock:
-            avail_end = len(self._current_pcm) - self._play_offset
-            actual_fade_bytes = min(fade_bytes, avail_end, len(next_pcm))
-            actual_fade_bytes = (actual_fade_bytes // BYTES_PER_FRAME) * BYTES_PER_FRAME
-            actual_fade_samples = actual_fade_bytes // BYTES_PER_SAMPLE
+            self._xfade = StreamingCrossfade(ms_to_bytes(fade_ms))
+            self._xfade_fade_ms = fade_ms
+            self._xfade_mixing = False
+            self._xfade_end_offset = None
+            self._crossfade_next_path = next_path
 
-            zone_a = bytes(self._current_pcm[self._play_offset : self._play_offset + actual_fade_bytes])
-            head_b = bytes(next_pcm[:actual_fade_bytes])
-            tail_b = bytes(next_pcm[actual_fade_bytes:])
-
-            if actual_fade_samples > 0:
-                arr_a = array.array("h")
-                arr_a.frombytes(zone_a)
-
-                arr_b = array.array("h")
-                arr_b.frombytes(head_b)
-
-                arr_mixed = array.array("h", [0] * actual_fade_samples)
-                num_frames = actual_fade_samples // 2
-
-                for frame_idx in range(num_frames):
-                    t = frame_idx / num_frames if num_frames > 0 else 0.0
-                    gain_b = math.sin(t * (math.pi / 2.0))
-                    gain_a = math.cos(t * (math.pi / 2.0))
-                    idx = frame_idx * 2
-                    val_l = int(arr_a[idx] * gain_a + arr_b[idx] * gain_b)
-                    val_r = int(arr_a[idx + 1] * gain_a + arr_b[idx + 1] * gain_b)
-                    arr_mixed[idx] = max(-32768, min(32767, val_l))
-                    arr_mixed[idx + 1] = max(-32768, min(32767, val_r))
-
-                mixed_bytes = arr_mixed.tobytes()
-            else:
-                mixed_bytes = b""
-
-            fade_end = self._play_offset + actual_fade_bytes
-            del self._current_pcm[self._play_offset :]
-            self._current_pcm.extend(mixed_bytes)
-            self._current_pcm.extend(tail_b)
-
-            if file_path:
-                self._crossfade_next_path = file_path
-            return fade_end
-
-    def finish_crossfade(self, file_path: str, total_duration_ms: int, fade_duration_ms: int) -> None:
-        """Finalise le fondu croisé en purgeant les données lues et en recalant le repère temporel."""
+    def feed_crossfade_incoming(self, chunk_pcm: bytes) -> None:
+        """Reçoit les blocs décodés de la piste entrante tant que le fondu n'est pas mixé."""
         with self._lock:
+            if self._xfade is not None:
+                self._xfade.incoming.extend(chunk_pcm)
+
+    def cancel_crossfade(self) -> None:
+        """Abandonne un fondu armé ou en cours ; un fondu déjà mixé reste dans le tampon."""
+        with self._lock:
+            if self._xfade_end_offset is None:
+                self._reset_crossfade_locked()
+
+    def crossfade_played_through(self) -> bool:
+        """Vrai quand la lecture a traversé toute la zone mixée : la piste entrante devient la piste courante."""
+        with self._lock:
+            return self._xfade_end_offset is not None and self._play_offset >= self._xfade_end_offset
+
+    def finish_crossfade(self, file_path: str, total_duration_ms: int) -> int:
+        """Purge les données lues et recale la position sur la piste entrante ; retourne sa position en ms."""
+        with self._lock:
+            end = self._xfade_end_offset or 0
+            overshoot = max(0, self._play_offset - end)
             if self._play_offset > 0:
                 del self._current_pcm[: self._play_offset]
                 self._play_offset = 0
-
             self._current_file_path = file_path
-            self._crossfade_next_path = ""
             self._total_duration_ms = total_duration_ms
-            self._base_offset_ms = max(0, fade_duration_ms)
-            self._is_feed_complete = False
-            self._track_finished_emitted = False
+            self._base_offset_ms = int(self._xfade_mixed_ms + bytes_to_ms(overshoot))
+            self._reset_crossfade_locked()
+            return self._base_offset_ms
+
+    def _reset_crossfade_locked(self) -> None:
+        self._xfade = None
+        self._xfade_mixing = False
+        self._xfade_end_offset = None
+        self._crossfade_next_path = ""
+
+    def _append_into_crossfade_locked(self, chunk: bytes) -> bool:
+        """Ajoute un bloc de la piste sortante ; retourne True quand la zone de fondu vient d'être entièrement mixée."""
+        xfade = self._xfade
+        if xfade is None:
+            return False
+        if not self._xfade_mixing:
+            zone_start = ms_to_bytes(self._total_duration_ms - self._xfade_fade_ms)
+            split = zone_start - (ms_to_bytes(self._base_offset_ms) + len(self._current_pcm))
+            if split >= len(chunk):
+                self._current_pcm.extend(chunk)
+                return False
+            split = max(0, split) // BYTES_PER_FRAME * BYTES_PER_FRAME
+            self._current_pcm.extend(chunk[:split])
+            chunk = chunk[split:]
+            self._xfade_mixing = True
+        mixed, _consumed = xfade.mix_outgoing(bytes(chunk))
+        self._current_pcm.extend(mixed)
+        if xfade.complete:
+            self._finalize_crossfade_locked()
+            return True
+        return False
+
+    def _finalize_crossfade_locked(self) -> None:
+        xfade = self._xfade
+        if xfade is None:
+            return
+        self._xfade_mixed_ms = xfade.mixed_ms
+        self._xfade_end_offset = len(self._current_pcm)
+        self._current_pcm.extend(xfade.incoming)
+        self._current_file_path = self._crossfade_next_path
+        self._xfade = None
+        self._xfade_mixing = False
+        self._is_feed_complete = False
+        self._track_finished_emitted = False
+
+
+def _same_path(left: str, right: str) -> bool:
+    return os.path.normcase(os.path.normpath(left)) == os.path.normcase(os.path.normpath(right))

@@ -34,6 +34,13 @@ def isolate_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("AMSO_PLAYLIST_PATH", str(test_data_dir / "saved_playlist.json"))
     monkeypatch.setenv("AMSO_DB_PATH", str(test_data_dir / "amso_library.db"))
 
+    # Réglages Qt (tri et colonnes des tables) : sans fichier dédié, l'état d'un test fuit dans le suivant
+    # et dans le registre / les préférences réelles de l'utilisateur
+    monkeypatch.setenv("AMSO_QSETTINGS_PATH", str(test_data_dir / "qt_settings.ini"))
+
+    # Les assertions portent sur les textes français : la langue de l'OS (anglais sur la CI) ne doit pas jouer
+    monkeypatch.setattr(i18n_mod, "detect_os_language", lambda: "fr")
+
     # Réinitialisation des singletons
     cfg_mod._default_config_manager = None
     i18n_mod._global_i18n = None
@@ -42,3 +49,36 @@ def isolate_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
 
     cfg_mod._default_config_manager = None
     i18n_mod._global_i18n = None
+
+
+@pytest.fixture(autouse=True)
+def close_audio_output_threads(monkeypatch: pytest.MonkeyPatch):
+    """Ferme à la fin de chaque test les threads audio (QAudioSink) des moteurs créés.
+
+    Les PlayerService de test ne sont libérés qu'au ramasse-miettes : sans cela, les threads et sorties audio
+    s'accumulent sur la suite complète et finissent par faire échouer `libvlc_new` (abort natif).
+    """
+    from amso.services.audio_output import SinkOutput
+
+    created: list[SinkOutput] = []
+    original_init = SinkOutput.__init__
+
+    def tracking_init(self: SinkOutput, *args, **kwargs) -> None:
+        original_init(self, *args, **kwargs)
+        created.append(self)
+
+    monkeypatch.setattr(SinkOutput, "__init__", tracking_init)
+    yield
+    for output in created:
+        output.shutdown()
+
+
+@pytest.fixture(autouse=True)
+def no_blocking_vlc_prompts(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Évite les boîtes modales « VLC absent » : sur un poste de CI sans VLC, `exec()` attend indéfiniment."""
+    from PySide6.QtWidgets import QDialog, QMessageBox
+
+    from amso.ui.dialogs.vlc_download_dialog import VlcDownloadDialog
+
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args, **kwargs: QMessageBox.StandardButton.Ok)
+    monkeypatch.setattr(VlcDownloadDialog, "exec", lambda self: QDialog.DialogCode.Rejected)

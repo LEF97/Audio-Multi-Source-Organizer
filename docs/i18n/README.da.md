@@ -24,6 +24,10 @@
 ---
 
 <p align="center">
+  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+</p>
+
+<p align="center">
   <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
 </p>
 
@@ -39,21 +43,22 @@
 
 ## 📌 Funktionaliteter & Status for projektet
 
-| Funktion | Beskrivelse | Status |
+| Funktionalitet | Beskrivelse | Status |
 | :--- | :---: | :---: |
-| **Integreret VLC afspilningsmotor** | Letvægts, selvstændig lydafspiller med automatisk installation af VLC portable og flydende volumenkontrol | 🟢 Implementeret |
-| **Multitrådet lokal scanner** | Hurtig og rekursiv opdagelse af lokale lydfiler (MP3, FLAC, AAC, OGG...) | 🟢 Implementeret |
-| **Metadataekstraktion** | Læsning/skrivning af ID3, Vorbis Comments og beregning af lydaftryk (`mutagen`) | 🟢 Implementeret |
-| **Understøttelse af playlister (M3U, PLS, XSPF, WPL) & CUE-ark** | Træindeksering (🎶), sekventiel lytteorden, visuel identifikation af manglende numre; .cue-filer (💿) åbnes som en mappe med virtuelle spor med deres varighed og afspilles som rigtige spor | 🟢 Implementeret |
-| **Playlist-administrator & Træk-og-slip** | Virtualiseret kø, flydende drag & drop, reversibel tilfældig (shuffle) og loops | 🟢 Implementeret |
-| **Interaktiv "🎲 Blind Test" tilstand** | Immersiv musikalsk spil med animeret nedtælling, lydfade, blød afsløring og automatisk sekvensering | 🟢 Implementeret |
+| **Lydafspilningsmotor** | Let og selvstændigt lydafspiller (VLC portable installeret automatisk på Windows). To motorer at vælge imellem: direkte VLC-output, eller kontinuerlig buffer-motor for en flydende overgang mellem to spor (Gapless 0 ms, fade ud/ind med ensartet styrke, uden afbrydelse af lydoutput) | 🟢 Implémenté |
+| **Biblioteksstyring** | Multitrådet rekursiv scanning af lokale mapper (MP3, FLAC, AAC, OGG...), manuel, planlagt eller realtids synkronisering, skraldespand og biblioteksstatistikker | 🟢 Implémenté |
+| **Metadataekstraktion** | Læsning/skrivning af ID3, Vorbis Comments og beregning af lydaftryk (`mutagen`) | 🟢 Implémenté |
+| **Understøttelse af Playlister (M3U, PLS, XSPF, WPL) & CUE-ark** | Træindeksering (🎶), sekventiel lytteorden, vis lokalisering af manglende spor; `.cue`-filer (💿) åbnes som en mappe med virtuelle spor med deres varighed og afspilles som rigtige spor | 🟢 Implémenté |
+| **Playliste- og Drag-and-Drop-styring** | Virtualiseret kø, flydende drag & drop, reversibel tilfældig (shuffle) og loops | 🟢 Implémenté |
+| **Interaktiv "🎲 Blind Test" tilstand** | Immersiv musikalsk spil med animeret nedtælling, lydfade, blød afsløring og automatisk overgang | 🟢 Implémenté |
 | **Opdateringer i appen** | Automatisk/manuel versionskontrol via GitHub Releases | 🟢 Implementeret |
-| **Håndtering af kunstnere & diskografi** | Dedikeret visning pr. kunstner med album, singler og komplet diskografi | 🟡 Planlagt |
-| **Grafisk equalizer (EQ)** | Audio presets og parametrisk multi-bånd equalizer | 🟡 Planlagt |
+| **Linux & macOS versioner** | Pakker .AppImage / .tar.gz (Linux) og ulåst .dmg (macOS), VLC påkrævet | 🟡 Eksperimentelt (ikke testet) |
+| **Håndtering af kunstnere & diskografi** | Dedikeret visning pr. kunstner med albums, singler og komplet diskografi | 🟡 Planlagt |
+| **Grafisk equalizer (EQ)** | Audio presets og parametrisk multibånd equalizer | 🟡 Planlagt |
 | **Google Drive-forbindelse** | Scan og synkronisering af fjerne lydsamlinger via OAuth 2.0 | ⚪ Planlagt |
 | **Amazon Music-forbindelse** | Scan og synkronisering af fjerne samlinger via OAuth 2.0 | ⚪ Planlagt |
-| **Spotify / Deezer-forbindelse** | Import af playlister og spor-matching | ⚪ Planlagt |
-| **Intelligent deduplikering** | Detektion af duplikater (fuzzy titel/artist + akustiske fingeraftryk) | ⚪ Planlagt |
+| **Spotify / Deezer-forbindelse** | Import af playlister og spor-matchning | ⚪ Planlagt |
+| **Intelligent deduplikering** | Detektion af duplikater (slørede titel/kunstner + akustiske fingeraftryk) | ⚪ Planlagt |
 
 > 💡 *For at se detaljerne for milepælene og de planlagte versioner, henvis til [Roadmap (Roadmap)](../../ROADMAP.md).*
 
@@ -100,6 +105,20 @@ cp .env.example .env
 # 6. Lancer l'application
 python main.py
 ```
+
+---
+
+## 🐧🍎 Linux og macOS: eksperimentelle versioner (ikke testet)
+
+Linux-pakkerne (`.AppImage` / `.tar.gz`) og macOS (`.dmg`) leveres **uden at være testet**: AMSO er kun valideret under Windows. Den kontinuerlige buffer lydmotor (`buffer`) er især ikke blevet verificeret på disse systemer. Jeres feedback er værdifuldt.
+
+- **VLC er påkrævet** (AMSO downloader det kun under Windows) :
+  - Linux : `sudo apt install vlc` (Debian / Ubuntu), `sudo dnf install vlc` (Fedora) eller `sudo pacman -S vlc` (Arch).
+  - macOS : installer **VLC.app** fra [videolan.org](https://www.videolan.org/vlc/) i mappen Applications.
+- **Linux, systembiblioteker** : Qt-grænsefladen kræver bl.a. `libpulse0` (lyd), `libxcb-cursor0` og `libxkbcommon-x11-0` (for eksempel `sudo apt install libpulse0 libxcb-cursor0 libxkbcommon-x11-0`).
+- **macOS, usigneret `.dmg`** : ved første opstart, højreklik på AMSO og derefter **Åbn**, eller kør `xattr -dr com.apple.quarantine /Applications/AMSO.app`.
+- **Linux, AppImage** : gør den eksekverbar med `chmod +x AMSO*.AppImage`.
+- **I tilfælde af problemer**, venligst send filerne `startup.log` og `crash.log` (hvis de eksisterer), der findes i datafolderen: `~/Library/Application Support/AMSO/` under macOS, `~/.local/share/AMSO/` under Linux. Angiv dit system og versionen af VLC.
 
 ---
 

@@ -24,6 +24,10 @@
 ---
 
 <p align="center">
+  <img src="screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+</p>
+
+<p align="center">
   <img src="screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
 </p>
 
@@ -41,13 +45,14 @@
 
 | Fonctionnalité | Description | Statut |
 | :--- | :--- | :---: |
-| **Moteur de lecture VLC intégré** | Lecteur audio léger et autonome avec auto-installation VLC portable et gestion fluide du volume | 🟢 Implémenté |
-| **Scanner local multithreadé** | Découverte récursive et rapide des fichiers audio locaux (MP3, FLAC, AAC, OGG...) | 🟢 Implémenté |
+| **Moteur de lecture audio** | Lecteur audio léger et autonome (VLC portable installé automatiquement sous Windows). Deux moteurs au choix : sortie directe VLC, ou moteur à tampon continu pour un enchaînement fluide entre deux pistes (Gapless 0 ms, fondu enchaîné à puissance égale, sans coupure de la sortie audio) | 🟢 Implémenté |
+| **Gestion de la bibliothèque** | Scan récursif multithreadé des dossiers locaux (MP3, FLAC, AAC, OGG...), synchronisation manuelle, planifiée ou en temps réel, corbeille et statistiques de la bibliothèque | 🟢 Implémenté |
 | **Extraction de métadonnées** | Lecture/écriture ID3, Vorbis Comments et calcul d'empreinte audio (`mutagen`) | 🟢 Implémenté |
 | **Support des Playlists (M3U, PLS, XSPF, WPL) & feuilles CUE** | Indexation arborescente (🎶), ordre séquentiel d'écoute, repérage visuel des morceaux manquants ; les fichiers `.cue` (💿) s'ouvrent comme un dossier de pistes virtuelles avec leur durée et se lisent comme de vraies pistes | 🟢 Implémenté |
 | **Gestionnaire de Playlist & Glisser-Déposer** | File d'attente virtualisée, drag & drop fluide, aléatoire (shuffle) réversible et boucles | 🟢 Implémenté |
 | **Mode « 🎲 Blind Test » interactif** | Jeu musical immersif avec décompte animé, fondu sonore, révélation douce et enchaînement automatique | 🟢 Implémenté |
 | **Mises à jour in-app** | Vérification automatique/manuelle des versions via GitHub Releases | 🟢 Implémenté |
+| **Versions Linux & macOS** | Paquets `.AppImage` / `.tar.gz` (Linux) et `.dmg` non signé (macOS), VLC requis | 🟡 Expérimental (non testé) |
 | **Gestion des artistes & Discographie** | Vue dédiée par artiste avec albums, singles et discographie complète | 🟡 Prévu |
 | **Égaliseur graphique (EQ)** | Presets audio et égaliseur multibandes paramétrique | 🟡 Prévu |
 | **Connecteur Google Drive** | Scan et synchronisation de collections audio distantes via OAuth 2.0 | ⚪ Planifié |
@@ -100,6 +105,20 @@ cp .env.example .env
 # 6. Lancer l'application
 python main.py
 ```
+
+---
+
+## 🐧🍎 Linux et macOS : versions expérimentales (non testées)
+
+Les paquets Linux (`.AppImage` / `.tar.gz`) et macOS (`.dmg`) sont fournis **sans avoir été testés** : AMSO n'a été validé que sous Windows. Le moteur audio à tampon continu (`buffer`) en particulier n'a pas été vérifié sur ces systèmes. Votre retour est précieux.
+
+- **VLC est requis** (AMSO ne le télécharge que sous Windows) :
+  - Linux : `sudo apt install vlc` (Debian / Ubuntu), `sudo dnf install vlc` (Fedora) ou `sudo pacman -S vlc` (Arch).
+  - macOS : installer **VLC.app** depuis [videolan.org](https://www.videolan.org/vlc/) dans le dossier Applications.
+- **Linux, bibliothèques système** : l'interface Qt demande notamment `libpulse0` (son), `libxcb-cursor0` et `libxkbcommon-x11-0` (par exemple `sudo apt install libpulse0 libxcb-cursor0 libxkbcommon-x11-0`).
+- **macOS, `.dmg` non signé** : au premier lancement, faire un clic droit sur AMSO puis **Ouvrir**, ou exécuter `xattr -dr com.apple.quarantine /Applications/AMSO.app`.
+- **Linux, AppImage** : la rendre exécutable avec `chmod +x AMSO*.AppImage`.
+- **En cas de problème**, merci d'envoyer les fichiers `startup.log` et `crash.log` (s'il existe) situés dans le dossier de données : `~/Library/Application Support/AMSO/` sous macOS, `~/.local/share/AMSO/` sous Linux. Précisez votre système et la version de VLC.
 
 ---
 

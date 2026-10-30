@@ -50,12 +50,12 @@ def format_file_size(size_bytes: int | None) -> str:
     if not size_bytes or size_bytes <= 0:
         return "--"
     if size_bytes < 1024:
-        return f"{size_bytes} o"
+        return tr("unit.size_bytes", value=size_bytes)
     elif size_bytes < 1024 * 1024:
-        return f"{size_bytes / 1024:.1f} Ko"
+        return tr("unit.size_kb", value=f"{size_bytes / 1024:.1f}")
     elif size_bytes < 1024 * 1024 * 1024:
-        return f"{size_bytes / (1024 * 1024):.1f} Mo"
-    return f"{size_bytes / (1024 * 1024 * 1024):.2f} Go"
+        return tr("unit.size_mb", value=f"{size_bytes / (1024 * 1024):.1f}")
+    return tr("unit.size_gb", value=f"{size_bytes / (1024 * 1024 * 1024):.2f}")
 
 
 # Spécification unifiée de toutes les colonnes représentant l'ensemble des champs de la table 'tracks' :
@@ -192,9 +192,9 @@ class BaseTrackTableModel(QAbstractTableModel):
                 return f"{track.sample_rate / 1000:.1f} kHz" if track.sample_rate else "--"
             elif field == "channels":
                 if track.channels == 2:
-                    return "Stéréo"
+                    return tr("table.channels_stereo")
                 elif track.channels == 1:
-                    return "Mono"
+                    return tr("table.channels_mono")
                 elif track.channels:
                     return f"{track.channels} ch"
                 return "--"
@@ -255,7 +255,7 @@ class BaseTrackTableModel(QAbstractTableModel):
 
         elif role == Qt.ItemDataRole.ToolTipRole:
             if getattr(track, "is_missing", False):
-                return f"⚠️ Fichier introuvable sur le disque :\n{track.source_path or track.source_ref}"
+                return tr("table.file_missing_tooltip", path=track.source_path or track.source_ref)
             elif field in {"source_path", "folder_path"}:
                 return getattr(track, field, "")
             elif field == "file_hash":

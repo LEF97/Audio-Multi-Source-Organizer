@@ -24,6 +24,10 @@
 ---
 
 <p align="center">
+  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+</p>
+
+<p align="center">
   <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
 </p>
 
@@ -39,21 +43,22 @@
 
 ## 📌 Funktionen & Status des Projekts
 
-| Funktion | Beschreibung | Status |
-| :--- | :---: | :---: |
-| **Integrierter VLC-Player** | Leichter, eigenständiger Audioplayer mit automatischer Installation von VLC Portable und flüssiger Lautstärkeregelung | 🟢 Implémenté |
-| **Multithread-Lokaler Scanner** | Rekursive und schnelle Entdeckung lokaler Audiodateien (MP3, FLAC, AAC, OGG...) | 🟢 Implémenté |
-| **Metadaten-Extraktion** | Lesen/Schreiben von ID3, Vorbis Comments und Berechnung des Audio-Fingerabdrucks (`mutagen`) | 🟢 Implémenté |
-| **Unterstützung von Playlists (M3U, PLS, XSPF, WPL) & CUE-Sheets** | Baumartige Indizierung (🎶), sequenzieller Abspielordnungsplan, visuelle Lokalisierung fehlender Titel; die Dateien `.cue` (💿) öffnen sich wie ein virtuelles Spurenverzeichnis mit ihrer Dauer und werden wie echte Spuren abgespielt | 🟢 Implémenté |
-| **Playlist-Manager & Drag-and-Drop** | Virtualisierte Warteschlange, flüssiges Drag & Drop, umkehrbares Zufallsprinzip (shuffle) und Schleifen | 🟢 Implémenté |
-| **Interaktiver „🎲 Blind Test“-Modus** | Immersives Musikspiel mit animiertem Countdown, Sound-Fade, sanfter Enthüllung und automatischer Abfolge | 🟢 Implémenté |
-| **In-App-Updates** | Automatische/Manuelle Versionsprüfung über GitHub Releases | 🟢 Implémenté |
-| **Künstler- und Diskographieverwaltung** | Dedizierte Ansicht pro Künstler mit Alben, Singles und vollständiger Diskographie | 🟡 Prévu |
-| **Grafischer Equalizer (EQ)** | Audio-Presets und parametrisierter Multiband-Equalizer | 🟡 Prévu |
-| **Google Drive Connector** | Scan und Synchronisierung entfernter Audio-Sammlungen über OAuth 2.0 | ⚪ Planifié |
-| **Amazon Music Connector** | Scan und Synchronisierung entfernter Sammlungen über OAuth 2.0 | ⚪ Planifié |
-| **Spotify / Deezer Connector** | Import von Playlists und Titelabgleich | ⚪ Planifié |
-| **Intelligente Duplikatentfernung** | Erkennung von Duplikaten (verschwommener Titel/Künstler + akustische Fingerabdrücke) | ⚪ Planifié |
+| Funktionalität | Beschreibung | Status |
+| :--- | :--- | :---: |
+| **Audio-Wiedergabemotor** | Leichter, eigenständiger Audio-Player (VLC portable wird automatisch unter Windows installiert). Zwei Motoren zur Auswahl: direkte VLC-Ausgabe oder ein kontinuierlicher Puffermotor für einen nahtlosen Übergang zwischen zwei Tracks (Gapless 0 ms, sanfter Übergang bei gleicher Lautstärke, ohne Unterbrechung der Audioausgabe) | 🟢 Implementiert |
+| **Bibliotheksverwaltung** | Multithread-Rekursiv-Scan lokaler Ordner (MP3, FLAC, AAC, OGG...), manuelle, geplante oder Echtzeit-Synchronisierung, Papierkorb und Bibliotheksstatistiken | 🟢 Implementiert |
+| **Metadaten-Extraktion** | ID3-, Vorbis Comments-Lese-/Schreibzugriff und Berechnung des Audio-Fingerabdrucks (`mutagen`) | 🟢 Implementiert |
+| **Unterstützung von Playlists (M3U, PLS, XSPF, WPL) & CUE-Dateien** | Baumartige Indizierung (🎶), sequenzieller Abspielordner, visuelle Erkennung fehlender Tracks; .cue-Dateien (💿) öffnen sich wie ein virtueller Trackordner mit ihrer Dauer und werden wie echte Tracks abgespielt | 🟢 Implementiert |
+| **Playlist-Manager & Drag-and-Drop** | Virtualisierte Warteschlange, flüssiges Drag & Drop, umkehrbares Zufallsprinzip (shuffle) und Schleifen | 🟢 Implementiert |
+| **Interaktiver „🎲 Blind Test“-Modus** | Immersives Musikspiel mit animiertem Countdown, Sound-Fade, sanfter Enthüllung und automatischer Abfolge | 🟢 Implementiert |
+| **In-App-Updates** | Automatische/Manuelle Versionsprüfung über GitHub Releases | 🟢 Implementiert |
+| **Versions Linux & macOS** | Pakete .AppImage / .tar.gz (Linux) und nicht signiertes .dmg (macOS), VLC erforderlich | 🟡 Experimentell (nicht getestet) |
+| **Künstler- & Diskographieverwaltung** | Dedizierte Ansicht pro Künstler mit Alben, Singles und vollständiger Diskographie | 🟡 Geplant |
+| **Graphischer Equalizer (EQ)** | Audio-Presets und parametrisierter Multiband-Equalizer | 🟡 Geplant |
+| **Google Drive-Konnektor** | Scan und Synchronisierung von entfernten Audio-Sammlungen via OAuth 2.0 | ⚪ Geplant |
+| **Amazon Music-Konnektor** | Scan und Synchronisierung von entfernten Sammlungen via OAuth 2.0 | ⚪ Geplant |
+| **Spotify / Deezer-Konnektor** | Import von Playlists und Titelabgleich | ⚪ Geplant |
+| **Intelligente Duplikaterkennung** | Duplikaterkennung (verschwommene Titel/Künstler + akustische Fingerabdrücke) | ⚪ Geplant |
 
 > 💡 *Um die Details der geplanten Meilensteine und Versionen einzusehen, verweisen Sie auf die [Feuille de route (Roadmap)](ROADMAP.de.md).*
 
@@ -100,6 +105,20 @@ cp .env.example .env
 # 6. Lancer l'application
 python main.py
 ```
+
+---
+
+## 🐧🍎 Linux und macOS : experimentelle Versionen (nicht getestet)
+
+Die Linux-Pakete (`.AppImage` / `.tar.gz`) und macOS (`.dmg`) werden **ohne Testung** geliefert: AMSO wurde nur unter Windows validiert. Der kontinuierliche Puffer-Audiotreiber (`buffer`) wurde insbesondere auf diesen Systemen nicht überprüft. Ihr Feedback ist wertvoll.
+
+- **VLC ist erforderlich** (AMSO lädt es nur unter Windows herunter) :
+  - Linux : `sudo apt install vlc` (Debian / Ubuntu), `sudo dnf install vlc` (Fedora) oder `sudo pacman -S vlc` (Arch).
+  - macOS : **VLC.app** von [videolan.org](https://www.videolan.org/vlc/) im Ordner Anwendungen installieren.
+- **Linux, Systembibliotheken** : Die Qt-Schnittstelle erfordert unter anderem `libpulse0` (Audio), `libxcb-cursor0` und `libxkbcommon-x11-0` (zum Beispiel `sudo apt install libpulse0 libxcb-cursor0 libxkbcommon-x11-0`).
+- **macOS, nicht signifiziertes \`.dmg\`** : Beim ersten Start mit der rechten Maustaste auf AMSO klicken und dann **Öffnen**, oder `xattr -dr com.apple.quarantine /Applications/AMSO.app` ausführen.
+- **Linux, AppImage** : Es mit `chmod +x AMSO*.AppImage` ausführbar machen.
+- **Bei Problemen**, senden Sie bitte die Dateien `startup.log` und `crash.log` (falls vorhanden), die sich im Datenverzeichnis befinden: `~/Library/Application Support/AMSO/` unter macOS, `~/.local/share/AMSO/` unter Linux. Geben Sie Ihr System und die VLC-Version an.
 
 ---
 

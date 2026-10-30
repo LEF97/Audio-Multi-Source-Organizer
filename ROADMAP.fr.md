@@ -47,7 +47,7 @@ AMSO a pour vocation de devenir le **hub musical universel et décentralisé** d
 
 ---
 
-### 🟢 Version 0.4.0 — Expérience Audio Avancée & Feuilles CUE *(Actuel)*
+### 🟢 Version 0.4.0 — Expérience Audio Avancée & Feuilles CUE
 - [x] **Refonte modulaire de l'architecture & Quality Gate :** Découpage de l'application en modules cohésifs (< 500 lignes), modularisation de MainWindow en mixins dédiés (amso/ui/pages/), décomposition du service audio en sous-systèmes indépendants (player_transport, player_queue, player_transitions) et mise en place d'un harnais de validation automatisé (scripts/verify.py & .bat : ruff, mypy, pytest, contrôle des tailles).
 - [x] **Intégration Windows Shell & barre des tâches :** Épinglage natif direct depuis l'icône active (AppUserModelID explicite LEF97.AMSO.AudioPlayer) dès le point d'entrée main.py et persistance du raccourci lors des mises à jour.
 - [x] **Ecoute parfaite Gapless 0 entre deux pistes :** 2 moteurs sont désormais disponibles, un basé sur VLC_direct, l'autre fonctionnant en mode buffer (fonctionnement privilégié). Ces modes permettent une écoute fluide sur les albums avec pistes liés (Alan Parsons, Pink Floyd, Mike Oldfield, etc...)
@@ -55,8 +55,23 @@ AMSO a pour vocation de devenir le **hub musical universel et décentralisé** d
 
 ---
 
-### 🔵 Version 0.4.1 — Packaging Linux & macOS
-- [ ] **Déploiement multiplateforme automatisé (Linux & macOS) :** Compilation native et packaging automatisé via GitHub Actions pour Linux (.AppImage / .tar.gz) et macOS Apple Silicon ARM & Intel (.dmg), en complément de l'exécutable Windows.
+### 🟢 Version 0.4.1 — Fiabilité audio, journal traduit & versions Linux / macOS expérimentales *(Actuel)*
+- [x] **Sortie audio indépendante du thread d'interface :** le `QAudioSink` du moteur `buffer` est alimenté par un thread audio dédié (mode pull) ; déplacer ou redimensionner la fenêtre n'altère plus le son.
+- [x] **Blind Test en moteur `buffer` :** Lecture, Suivant et Précédent démarrent le son sans rappuyer sur Lecture.
+- [x] **Traductions complétées :** journal d'activité enregistré en clé + paramètres et traduit à l'affichage, textes codés en dur convertis, repli sur le français, contrôle des marqueurs `{nom}` à la synchronisation.
+- [x] **Statut de libVLC :** version et provenance (copie AMSO ou VLC du système) dans les réglages du lecteur.
+- [x] **Déploiement multiplateforme (Linux & macOS), version expérimentale non testée :** packaging automatisé via GitHub Actions pour Linux (.AppImage / .tar.gz) et macOS Apple Silicon ARM & Intel (.dmg non signé), VLC requis ; les testeurs renvoient `startup.log` et `crash.log`.
+
+---
+
+### 🔵 Version 0.4.2 — Compatibilité réseau Linux & macOS
+- [ ] **Détection des montages réseau (Linux & macOS) :** `amso/core/network_paths.py` ne reconnaît aujourd'hui que les chemins UNC et les lecteurs mappés Windows ; reconnaître les montages NFS / SMB / AFP (`/proc/self/mountinfo`, `statfs`) pour éviter tout sondage disque bloquant au démarrage sur ces systèmes.
+- [ ] **Validation sur Linux et macOS :** moteur `buffer`, transitions et packaging à confirmer sur de vrais systèmes à partir des retours des testeurs.
+
+---
+
+### 🔵 Version 0.5.0 — Navigation par album dans les playlists
+- [ ] **Playlists en mode album :** option « Afficher en mode album » (activée par défaut) qui regroupe les titres d'une playlist en dossiers virtuels par album dans l'arborescence, avec « (album inconnu) » pour les titres sans album et une surcharge par playlist par clic droit.
 
 ---
 

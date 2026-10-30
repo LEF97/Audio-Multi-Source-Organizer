@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import sys
+from functools import cache, lru_cache
 from pathlib import Path
 
 from PySide6.QtGui import QIcon, QPixmap
 
 
+# Mis en cache : ces fonctions sont appelées par le splash, la fenêtre et plusieurs pages, et chaque appel
+# refait des stat() sur disque et recharge/décode le fichier image.
+@cache
 def get_resource_path(relative_name: str) -> Path:
     """Retourne le chemin absolu d'une ressource embarquée (gère l'exécution dev et PyInstaller)."""
     candidates: list[Path] = []
@@ -68,6 +72,7 @@ def get_resource_path(relative_name: str) -> Path:
     return candidates[0] if candidates else Path(relative_name)
 
 
+@lru_cache(maxsize=1)
 def get_app_icon() -> QIcon:
     """Retourne l'icône officielle de l'application AMSO adaptée à l'OS (Windows .ico, macOS .icns, Linux .png)."""
     icon = QIcon()
@@ -96,6 +101,7 @@ def get_app_icon() -> QIcon:
     return icon
 
 
+@lru_cache(maxsize=1)
 def get_app_logo_pixmap() -> QPixmap:
     """Retourne le logo / icône sous forme de QPixmap haute définition."""
     for name in ["AMSO.png", "icon.png", "logo.png"]:

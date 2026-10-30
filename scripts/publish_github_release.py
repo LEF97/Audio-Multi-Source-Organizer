@@ -191,6 +191,17 @@ def build_release_body(
     sections.append(
         "| **`AMSO.exe`** | Exécutable Windows autonome portable direct | `.exe` |\n"
     )
+    sections.append("### 🐧🍎 Linux et macOS — expérimental, non testé\n")
+    sections.append(
+        "Ces paquets sont produits automatiquement par la CI mais **n'ont pas été testés** sur de vrais systèmes. "
+        "**VLC doit être installé** ; le `.dmg` n'est pas signé (clic droit → Ouvrir). Voir le README pour les détails ; "
+        "vos retours (`startup.log`, `crash.log`) sont les bienvenus.\n"
+    )
+    sections.append("| Fichier | Système |")
+    sections.append("| :--- | :--- |")
+    sections.append(f"| `AMSO-Linux-{tag}-x86_64.AppImage` / `.tar.gz` | Linux x86_64 |")
+    sections.append(f"| `AMSO-macOS-arm64-{tag}.dmg` | macOS Apple Silicon |")
+    sections.append(f"| `AMSO-macOS-x86_64-{tag}.dmg` | macOS Intel |\n")
     sections.append("---\n")
 
     # Journal des modifications

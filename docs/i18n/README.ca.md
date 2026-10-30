@@ -24,6 +24,10 @@
 ---
 
 <p align="center">
+  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+</p>
+
+<p align="center">
   <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
 </p>
 
@@ -41,19 +45,20 @@
 
 | Funcionalitat | Descripció | Estat |
 | :--- | :---: | :---: |
-| **Motor de reproducció VLC integrat** | Reproductor de àudio lleuger i autònom amb auto-instal·lació VLC portàtil i gestió fluida del volum | 🟢 Implémentat |
-| **Scanner local multihilo** | Descoberta recursiva i ràpida de fitxers de àudio locals (MP3, FLAC, AAC, OGG...) | 🟢 Implémentat |
-| **Extracció de metadades** | Lectura/escritura ID3, Vorbis Comments i càlcul d'empressa de àudio (`mutagen`) | 🟢 Implémentat |
-| **Suport de Playlists (M3U, PLS, XSPF, WPL) i fulles CUE** | Indexació arborescente (🎶), ordre seqüencial d'escolta, localització visual de les peces faltants; els fitxers `.cue` (💿) s'obreixen com una carpeta de pistes virtuals amb la seva durada i es reproduuen com a pistes reals | 🟢 Implémentat |
-| **Gestor de Playlist i Arrastar-Soltar** | Fila d'espera virtualitzada, drag & drop fluida, aleatori (shuffle) reversible i bucles | 🟢 Implémentat |
-| **Mode « 🎲 Blind Test » interactiu** | Joc musical immersiu amb compte regressiu animat, fonada sonora, revelació suau i enllaçament automàtic | 🟢 Implémentat |
-| **Actualitzacions in-app** | Verificació automàtica/manual de les versions a través de GitHub Releases | 🟢 Implémentat |
-| **Gestió d'artistes i discografia** | Vista dedicada per artista amb àlbums, singles i discografia completa | 🟡 Prévu |
-| **Ecualitzador gràfic (EQ)** | Presets audio i ecualitzador multibandes paramètric | 🟡 Prévu |
-| **Connectador Google Drive** | Escaneig i sincronització de col·leccions audio distants a través d'OAuth 2.0 | ⚪ Planificat |
-| **Connectador Amazon Music** | Escaneig i sincronització de col·leccions distants a través d'OAuth 2.0 | ⚪ Planificat |
-| **Connectador Spotify / Deezer** | Importació de *playlists* i correspondència de pistes | ⚪ Planificat |
-| **Eliminació de duplicats intel·ligent** | Detecció de duplicats (títol/artista borros + emprentes acústiques) | ⚪ Planificat |
+| **Motor de reproducció de àudio** | Reproductor de àudio lleuger i autònom (VLC portàtil instal·lat automàticament amb Windows). Dos motors a escollir: sortida directa VLC, o motor de buffer contínu per a una transició fluida entre dues pistes (Gapless 0 ms, fonament de transició a potència igual, sense interrupció de la sortida de àudio) | 🟢 Implementat |
+| **Gestió de la biblioteca** | Scan recursiu multihilo de carpetes locals (MP3, FLAC, AAC, OGG...), sincronització manual, programada o en temps real, papureres i estadístiques de la biblioteca | 🟢 Implementat |
+| **Extracció de metadades** | Lectura/escritura ID3, Vorbis Comments i càlcul d'empressat de àudio (`mutagen`) | 🟢 Implementat |
+| **Suport de llistes de reproducció (M3U, PLS, XSPF, WPL) & fitxes CUE** | Indexació arborescente (🎶), ordre seqüencial d'escolta, localització visual de les peces faltants; els fitxers `.cue` (💿) s'obre com una carpeta de pistes virtuals amb la seva durada i es reproduuen com a pistes reals | 🟢 Implementat |
+| **Gestor de llista de reproducció i Arrastar-Soltar** | Cola virtualitzada, arrastrar i soltar fluida, aleatori (shuffle) reversible i bucles | 🟢 Implementat |
+| **Mode « 🎲 Blind Test » interactiu** | Joc musical immersiu amb compte regressiu animat, fonament sonorr, revelació suau i transició automàtica | 🟢 Implementat |
+| **Actualitzacions in-app** | Verificació automàtica/manual de versions a través de GitHub Releases | 🟢 Implementat |
+| **Versió de Linux i macOS** | Paquets .AppImage / .tar.gz (Linux) i .dmg no signat (macOS), VLC requerit | 🟡 Experimental (no provat) |
+| **Gestió d'artistes i discografia** | Vista dedicada per artista amb àlbums, singles i discografia completa | 🟡 Previst |
+| **Ecualitzador gràfic (EQ)** | Presets de l'àudio i ecualitzador multibanda paramètric | 🟡 Previst |
+| **Conector Google Drive** | Scan i sincronització de col·leccions d'àudio distants a través d'OAuth 2.0 | ⚪ Planificat |
+| **Conector Amazon Music** | Scan i sincronització de col·leccions distants a través d'OAuth 2.0 | ⚪ Planificat |
+| **Conector Spotify / Deezer** | Importació de playlists i correspondència de pistes | ⚪ Planificat |
+| **Deduplicació intel·ligent** | Detecció de duplicats (títol/artista borros + improntes acústiques) | ⚪ Planificat |
 
 > 💡 *Per consultar el detall dels hito i les versions previstes, refereu-vos a la [Feuella de ruta (Roadmap)](../../ROADMAP.md).*
 
@@ -100,6 +105,20 @@ cp .env.example .env
 # 6. Lancer l'application
 python main.py
 ```
+
+---
+
+## 🐧🍎 Linux i macOS: versions experimentals (no provades)
+
+Els paquets Linux (`.AppImage` / `.tar.gz`) i macOS (`.dmg`) són proveïts **sense haver estat provats** : AMSO només s'ha validat amb Windows. El motor de àudio de búfer continu (`buffer`) en particular no s'ha verificat en aquests sistemes. La vostra retroalimentació és preu.
+
+- **VLC és requerit** (AMSO només el descarrega amb Windows) :
+  - Linux : `sudo apt install vlc` (Debian / Ubuntu), `sudo dnf install vlc` (Fedora) o `sudo pacman -S vlc` (Arch).
+  - macOS : instal·lar **VLC.app** des de [videolan.org](https://www.videolan.org/vlc/) a la carpeta Applications.
+- **Linux, bibliothèques de sistema** : l'interface Qt demana especialment `libpulse0` (son), `libxcb-cursor0` i `libxkbcommon-x11-0` (per exemple `sudo apt install libpulse0 libxcb-cursor0 libxkbcommon-x11-0`).
+- **macOS, `.dmg` no signat** : al primer inici, fer un clic dret sobre AMSO i després **Obrir**, o executar `xattr -dr com.apple.quarantine /Applications/AMSO.app`.
+- **Linux, AppImage** : fer-la ejecutable amb `chmod +x AMSO*.AppImage`.
+- **En cas de problema**, si us plau envieu els fitxers `startup.log` i `crash.log` (si existeixen) situats a la carpeta de dades: `~/Library/Application Support/AMSO/` amb macOS, `~/.local/share/AMSO/` amb Linux. Especificueu el vostre sistema i la versió de VLC.
 
 ---
 

@@ -8,6 +8,7 @@ import time
 from typing import TYPE_CHECKING, Any
 
 from amso.core.config import get_config_manager
+from amso.core.i18n import tr
 from amso.services.player_cue import start_track_decode
 from amso.services.player_types import RepeatMode
 from amso.services.vlc_binding import vlc
@@ -67,9 +68,11 @@ class PlayerTransportMixin(_MixinBase):
             self._standby_pcm.clear()
         self._preloaded_index = None
         self._is_crossfading = False
-        self._is_buffer_crossfading = False
-        if getattr(self, "_engine", None):
-            self._engine._crossfade_next_path = ""
+        engine = getattr(self, "_engine", None)
+        if engine:
+            engine.cancel_crossfade()
+        # Un fondu déjà mixé reste dans le tampon : le tick bascule l'interface quand la lecture l'a traversé
+        self._is_buffer_crossfading = bool(engine and engine.crossfade_pending)
         self._crossfade_next_index = None
         self._fade_start_time = 0.0
         self._fade_paused_elapsed = 0.0
@@ -81,8 +84,12 @@ class PlayerTransportMixin(_MixinBase):
             except Exception:
                 pass
 
-    def load_index(self, index: int, seek_ms: int = 0) -> None:
-        """Charge un morceau à l'index donné sans démarrer la lecture (en pause silencieuse)."""
+    def load_index(self, index: int, seek_ms: int = 0, announce_track: bool = True) -> None:
+        """Charge un morceau à l'index donné sans démarrer la lecture (en pause silencieuse).
+
+        `announce_track=False` repositionne la piste déjà courante sans émettre `track_changed` : un abonné qui
+        réagit à ce signal en repositionnant la piste (Blind Test) relancerait sinon la même charge à l'infini.
+        """
         if not (0 <= index < len(self._playlist)):
             return
 
@@ -113,7 +120,8 @@ class PlayerTransportMixin(_MixinBase):
             self._current_time_ms = seek_ms
             if file_path and os.path.exists(file_path):
                 start_track_decode(self._decoder, track, seek_ms)
-            self.track_changed.emit(track)
+            if announce_track:
+                self.track_changed.emit(track)
             self.state_changed.emit("paused")
             if dur_ms > 0:
                 ratio = min(1.0, seek_ms / dur_ms)
@@ -144,7 +152,7 @@ class PlayerTransportMixin(_MixinBase):
     def play_index(self, index: int, resume_pending: bool = False) -> None:
         """Charge et joue le morceau à l'index donné dans la playlist."""
         if not self.is_vlc_available:
-            self.error_occurred.emit("VLC n'est pas disponible ou installé sur ce système.")
+            self.error_occurred.emit(tr("player.err_vlc_unavailable"))
             return
 
         if getattr(self, "_is_loading_track", False):
@@ -167,7 +175,7 @@ class PlayerTransportMixin(_MixinBase):
 
             file_path = track.source_path
             if not file_path or not os.path.exists(file_path):
-                self.error_occurred.emit(f"Fichier audio introuvable : {file_path}")
+                self.error_occurred.emit(tr("player.err_file_missing", path=file_path))
                 return
 
             use_buffer = (
@@ -177,9 +185,7 @@ class PlayerTransportMixin(_MixinBase):
                 and self._engine.is_available
             )
             if track.is_cue_segment and not use_buffer:
-                self.error_occurred.emit(
-                    "Les pistes CUE nécessitent le moteur à tampon continu (Paramètres > Lecteur)."
-                )
+                self.error_occurred.emit(tr("player.err_cue_needs_buffer"))
                 return
             if use_buffer:
                 if self._media_player:
@@ -187,7 +193,7 @@ class PlayerTransportMixin(_MixinBase):
                         self._media_player.stop()
                     except Exception:
                         pass
-                self._engine.stop()
+                self._engine.stop(keep_output=getattr(self, "_advancing_after_track_end", False))
                 self._pending_seek_ms = seek_ms
                 self._current_time_ms = seek_ms
                 start_track_decode(self._decoder, track, seek_ms)
@@ -222,7 +228,7 @@ class PlayerTransportMixin(_MixinBase):
             self.playlist_updated.emit()
         except Exception as exc:
             logger.error("Erreur lors de la lecture VLC : %s", exc)
-            self.error_occurred.emit(f"Erreur de lecture : {exc}")
+            self.error_occurred.emit(tr("player.err_playback", error=exc))
         finally:
             self._is_loading_track = False
 
@@ -248,6 +254,7 @@ class PlayerTransportMixin(_MixinBase):
             if self._engine.is_paused:
                 self._is_paused_requested = False
                 self._engine.resume()
+                self._ensure_tick_timer()
                 self.state_changed.emit("playing")
                 return
             self._is_paused_requested = False
@@ -281,12 +288,22 @@ class PlayerTransportMixin(_MixinBase):
         else:
             self.play_index(self._current_index, resume_pending=True)
 
+    def _ensure_tick_timer(self) -> None:
+        """Relance le timer de transfert PCM si `stop()` l'a arrêté.
+
+        Un titre chargé en pause (`load_index` après un stop, un seek ou un reset) est repris par `engine.resume()`
+        seul : sans tick, `poll_progress` n'est plus appelé et la lecture reste muette.
+        """
+        if not self._timer.isActive():
+            self._timer.start()
+
     def _resume_from_paused(self) -> None:
         """Reprend la lecture après une pause."""
         self._is_paused_requested = False
         use_buffer = get_config_manager().get_audio_engine() == "buffer" and self._engine and self._engine.is_available
         if use_buffer:
             self._engine.resume()
+            self._ensure_tick_timer()
             self.state_changed.emit("playing")
             return
         if not self._media_player:
@@ -324,7 +341,10 @@ class PlayerTransportMixin(_MixinBase):
         """Met en pause la lecture."""
         self._stop_playback_fade_in()
         self._reset_standby_player()
-        if self._engine and self._engine.is_available:
+        # Le moteur buffer est instancié même en mode vlc_direct : sans le test du moteur choisi, la pause
+        # l'arrêterait seul et LibVLC continuerait à jouer (Blind Test ouvert pendant une lecture du Lecteur).
+        use_buffer = get_config_manager().get_audio_engine() == "buffer" and self._engine and self._engine.is_available
+        if use_buffer:
             self._engine.pause()
             self.state_changed.emit("paused")
             return
@@ -371,17 +391,21 @@ class PlayerTransportMixin(_MixinBase):
             self.stop()
             return
 
-        # Si la piste suivante est déjà préchargée sur le standby_player ou standby_decoder
-        if self._standby_player and self._preloaded_index == next_idx:
-            self._complete_transition(next_idx)
-            return
-
         use_buffer = get_config_manager().get_audio_engine() == "buffer" and self._engine and self._engine.is_available
-        if use_buffer and getattr(self, "_standby_decoder", None) and self._preloaded_index == next_idx:
-            mode = get_config_manager().get_transition_mode()
-            if mode == "gapless":
-                self._complete_buffer_transition(next_idx)
+        # Moteur buffer : le raccord au sample près n'a de sens qu'à la fin naturelle de la piste. Sur un « Suivant »
+        # manuel, le tampon ne contient que le début décodé de la piste en cours : la suivante y serait accolée et
+        # la position affichée resterait celle de la piste précédente.
+        if not (use_buffer and not getattr(self, "_advancing_after_track_end", False)):
+            # Si la piste suivante est déjà préchargée sur le standby_player ou standby_decoder
+            if self._standby_player and self._preloaded_index == next_idx:
+                self._complete_transition(next_idx)
                 return
+
+            if use_buffer and getattr(self, "_standby_decoder", None) and self._preloaded_index == next_idx:
+                mode = get_config_manager().get_transition_mode()
+                if mode == "gapless":
+                    self._complete_buffer_transition(next_idx)
+                    return
 
         self._reset_standby_player()
 
@@ -457,7 +481,7 @@ class PlayerTransportMixin(_MixinBase):
         if use_buffer:
             was_playing = self.is_playing and not getattr(self, "_is_paused_requested", False)
             if not was_playing:
-                self.load_index(self._current_index, seek_ms=ms)
+                self.load_index(self._current_index, seek_ms=ms, announce_track=False)
                 return
 
             base_ms = getattr(self._engine, "base_offset_ms", 0)

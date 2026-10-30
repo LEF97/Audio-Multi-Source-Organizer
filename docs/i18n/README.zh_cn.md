@@ -24,6 +24,10 @@
 ---
 
 <p align="center">
+  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+</p>
+
+<p align="center">
   <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
 </p>
 
@@ -41,19 +45,20 @@
 
 | 功能 | 描述 | 状态 |
 | :--- | :--- | :---: |
-| **集成 VLC 播放引擎** | 轻量级、独立的音频播放器，支持 VLC 便携版自动安装和流畅音量管理 | 🟢 已实现 |
-| **多线程本地扫描** | 快速递归发现本地音频文件 (MP3, FLAC, AAC, OGG...) | 🟢 已实现 |
-| **元数据提取** | 读取/写入 ID3、Vorbis Comments 并计算音频指纹 (`mutagen`) | 🟢 已实现 |
-| **支持播放列表 (M3U, PLS, XSPF, WPL) 和 CUE 文件** | 树状索引 (🎶)，顺序播放，可视化缺失曲目定位；`.cue` 文件 (💿) 像一个包含时长和可播放的虚拟曲目文件夹一样打开 | 🟢 已实现 |
-| **播放列表管理器和拖放** | 虚拟播放队列，流畅拖放，可逆随机播放 (shuffle) 和循环 | 🟢 已实现 |
-| **交互式“🎲 盲测”模式** | 沉浸式音乐游戏，带有动画倒计时、音效淡入淡出、平滑揭示和自动衔接 | 🟢 已实现 |
-| **应用内更新** | 通过 GitHub Releases 的自动/手动版本检查 | 🟢 已实现 |
-| **艺人与唱片管理** | 艺术家专用视图，包含专辑、单曲和完整唱片目录 | 🟡 计划中 |
+| **音频播放引擎** | 轻量级独立音频播放器 (VLC portable 自动安装于 Windows)。可选两种引擎：VLC 直接输出，或连续缓冲区引擎，用于两曲之间流畅衔接 (Gapless 0 ms, 等功率淡入淡出，无音频输出中断) | 🟢 已实现 |
+| **库管理** | 本地文件夹多线程递归扫描 (MP3, FLAC, AAC, OGG...)，手动、计划或实时同步，垃圾箱和库统计 | 🟢 已实现 |
+| **元数据提取** | 读取/写入 ID3, Vorbis Comments 并计算音频指纹 (`mutagen`) | 🟢 已实现 |
+| **播放列表支持 (M3U, PLS, XSPF, WPL) & CUE 文件** | 树形索引 (🎶)，顺序播放，缺失曲目可视化定位；`.cue` 文件 (💿) 像一个包含其持续时间和可作为真实曲目播放的虚拟曲目文件夹打开 | 🟢 已实现 |
+| **播放列表管理器和拖放** | 虚拟播放队列，流畅的 drag & drop，可逆随机播放 (shuffle) 和循环 | 🟢 已实现 |
+| **互动模式 « 🎲 Blind Test »** | 沉浸式音乐游戏，包含动画倒计时、音频淡出、平滑揭示和自动衔接 | 🟢 已实现 |
+| **应用内更新** | 通过 GitHub Releases 进行自动/手动版本检查 | 🟢 已实现 |
+| **Linux 和 macOS 版本** | Paquets `.AppImage` / `.tar.gz` (Linux) et `.dmg` non signé (macOS), VLC requis | 🟡 实验性 (未测试) |
+| **艺术家和唱片目录管理** | 艺术家专用视图，包含专辑、单曲和完整唱片目录 | 🟡 计划中 |
 | **图形均衡器 (EQ)** | 音频预设和参数多频带均衡器 | 🟡 计划中 |
-| **Google Drive 连接器** | 通过 OAuth 2.0 扫描和同步远程音频收藏 | ⚪ 待规划 |
-| **Amazon Music 连接器** | 通过 OAuth 2.0 扫描和同步远程收藏 | ⚪ 待规划 |
-| **Spotify / Deezer 连接器** | 导入播放列表和匹配曲目 | ⚪ 待规划 |
-| **智能去重** | 重复检测（模糊标题/艺术家 + 声学指纹） | ⚪ 待规划 |
+| **Google Drive 连接器** | 通过 OAuth 2.0 扫描和同步远程音频收藏 | ⚪ 已计划 |
+| **Amazon Music 连接器** | 通过 OAuth 2.0 扫描和同步远程收藏 | ⚪ 已计划 |
+| **Spotify / Deezer 连接器** | 导入播放列表和匹配曲目 | ⚪ 已计划 |
+| **智能去重** | 重复内容检测（模糊标题/艺术家 + 声学指纹） | ⚪ 已计划 |
 
 > 💡 *要查看计划的里程碑和版本详情，请参阅 [路线图 (Roadmap)](../../ROADMAP.md)。*
 
@@ -100,6 +105,20 @@ cp .env.example .env
 # 6. Lancer l'application
 python main.py
 ```
+
+---
+
+## 🐧🍎 Linux 和 macOS：实验版本（未测试）
+
+Linux 包 (`.AppImage` / `.tar.gz`) 和 macOS (`.dmg`) 包提供的 **未经测试**：AMSO 仅在 Windows 上进行了验证。特别是连续缓冲区音频引擎 (`buffer`) 在这些系统上尚未经过测试。您的反馈对我们非常宝贵。
+
+- **需要 VLC** (AMSO 仅在 Windows 下下载)：
+  - Linux：`sudo apt install vlc` (Debian / Ubuntu)，`sudo dnf install vlc` (Fedora) 或 `sudo pacman -S vlc` (Arch)。
+  - macOS：从 [videolan.org](https://www.videolan.org/vlc/) 下载 **VLC.app** 并将其放入 Applications 文件夹。
+- **Linux，系统库**：Qt 界面尤其需要 `libpulse0` (音频)，`libxcb-cursor0` 和 `libxkbcommon-x11-0` (例如 `sudo apt install libpulse0 libxcb-cursor0 libxkbcommon-x11-0`)。
+- **macOS，未签名的 .dmg**：首次启动时，右键单击 AMSO，然后选择 **打开**，或运行 `xattr -dr com.apple.quarantine /Applications/AMSO.app`。
+- **Linux，AppImage**：使用 `chmod +x AMSO*.AppImage` 使其可执行。
+- **如果遇到问题**，请发送位于数据文件夹中的 `startup.log` 和 `crash.log` 文件（如果存在）：macOS 下的 `~/Library/Application Support/AMSO/`，Linux 下的 `~/.local/share/AMSO/`。请注明您的系统和 VLC 版本。
 
 ---
 

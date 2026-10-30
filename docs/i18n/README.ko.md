@@ -24,6 +24,10 @@
 ---
 
 <p align="center">
+  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+</p>
+
+<p align="center">
   <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
 </p>
 
@@ -41,19 +45,20 @@
 
 | 기능 | 설명 | 상태 |
 | :--- | :---: | :---: |
-| **통합 VLC 플레이어** | 휴대용 VLC 자동 설치 및 부드러운 볼륨 관리가 가능한 가볍고 독립적인 오디오 플레이어 | 🟢 구현됨 |
-| **멀티스레드 로컬 스캐너** | 로컬 오디오 파일(MP3, FLAC, AAC, OGG...)의 빠르고 재귀적인 검색 | 🟢 구현됨 |
-| **메타데이터 추출** | ID3, Vorbis Comments 읽기/쓰기 및 오디오 지문 계산 (`mutagen`) | 🟢 구현됨 |
-| **플레이리스트 지원 (M3U, PLS, XSPF, WPL) 및 CUE 시트** | 트리 인덱싱 (🎶), 순차적 청취 순서, 누락된 트랙 시각적 식별; `.cue` 파일 (💿)은 길이와 함께 가상 트랙 폴더처럼 열리고 실제 트랙처럼 재생됩니다 | 🟢 구현됨 |
-| **플레이리스트 관리자 및 드래그 앤 드롭** | 가상 대기열, 부드러운 드래그 앤 드롭, 되돌릴 수 있는 무작위 재생(shuffle) 및 루프 | 🟢 구현됨 |
-| **« 🎲 블라인드 테스트 » 인터랙티브 모드** | 애니메이션 카운트다운, 사운드 페이드, 부드러운 공개 및 자동 연결이 있는 몰입형 음악 게임 | 🟢 구현됨 |
+| **오디오 재생 엔진** | 가볍고 독립적인 오디오 플레이어 (Windows에서 자동으로 설치되는 VLC portable). 선택 가능한 두 가지 엔진: 직접 VLC 출력, 또는 두 트랙 간의 부드러운 연결을 위한 연속 버퍼 엔진 (Gapless 0 ms, 동일한 볼륨의 페이드, 오디오 출력 끊김 없음) | 🟢 Implémenté |
+| **라이브러리 관리** | 로컬 폴더의 멀티스레드 재귀 스캔 (MP3, FLAC, AAC, OGG...), 수동, 예약 또는 실시간 동기화, 휴지통 및 라이브러리 통계 | 🟢 Implémenté |
+| **메타데이터 추출** | ID3, Vorbis Comments 읽기/쓰기 및 오디오 지문 계산 (`mutagen`) | 🟢 Implémenté |
+| **플레이리스트 지원 (M3U, PLS, XSPF, WPL) 및 CUE 시트** | 트리 인덱싱 (🎶), 순차 청취 순서, 누락된 트랙 시각적 식별; `.cue` 파일 (💿)은 길이와 함께 가상 트랙 폴더처럼 열리고 실제 트랙처럼 재생됩니다. | 🟢 Implémenté |
+| **플레이리스트 관리자 및 드래그 앤 드롭** | 가상 대기열, 부드러운 드래그 앤 드롭, 되돌릴 수 있는 무작위(shuffle) 및 루프 | 🟢 Implémenté |
+| **« 🎲 블라인드 테스트 » 인터랙티브 모드** | 애니메이션 카운트다운, 사운드 페이드, 부드러운 공개 및 자동 연결이 있는 몰입형 음악 게임 | 🟢 Implémenté |
 | **인앱 업데이트** | GitHub Releases를 통한 자동/수동 버전 확인 | 🟢 구현됨 |
+| **Linux 및 macOS 버전** | 패키지 `.AppImage` / `.tar.gz` (Linux) 및 서명되지 않은 `.dmg` (macOS), VLC 필요 | 🟡 실험적 (테스트되지 않음) |
 | **아티스트 및 디스코그래피 관리** | 앨범, 싱글 및 전체 디스코그래피가 포함된 아티스트 전용 보기 | 🟡 예정 |
 | **그래픽 이퀄라이저 (EQ)** | 오디오 프리셋 및 파라메트릭 멀티밴드 이퀄라이저 | 🟡 예정 |
-| **Google Drive 커넥터** | OAuth 2.0을 통한 원격 오디오 컬렉션 스캔 및 동기화 | ⚪ 계획 |
-| **Amazon Music 커넥터** | OAuth 2.0을 통한 원격 컬렉션 스캔 및 동기화 | ⚪ 계획 |
-| **Spotify / Deezer 커넥터** | 플레이리스트 가져오기 및 트랙 매칭 | ⚪ 계획 |
-| **스마트 중복 제거** | 중복 감지 (퍼지 제목/아티스트 + 음향 지문) | ⚪ 계획 |
+| **Google Drive 커넥터** | OAuth 2.0을 통한 원격 오디오 컬렉션 스캔 및 동기화 | ⚪ 계획됨 |
+| **Amazon Music 커넥터** | OAuth 2.0을 통한 원격 컬렉션 스캔 및 동기화 | ⚪ 계획됨 |
+| **Spotify / Deezer 커넥터** | 플레이리스트 가져오기 및 트랙 매칭 | ⚪ 계획됨 |
+| **스마트 중복 제거** | 중복 감지 (제목/아티스트 흐림 + 음향 지문) | ⚪ 계획됨 |
 
 > 💡 *계획된 마일스톤 및 버전에 대한 자세한 내용은 [로드맵 (Roadmap)](../../ROADMAP.md)을 참조하십시오.*
 
@@ -100,6 +105,20 @@ cp .env.example .env
 # 6. Lancer l'application
 python main.py
 ```
+
+---
+
+## 🐧🍎 Linux 및 macOS: 실험 버전 (테스트되지 않음)
+
+Linux 패키지 (`.AppImage` / `.tar.gz`)와 macOS (`.dmg`) 패키지는 **테스트되지 않은 상태**로 제공됩니다: AMSO는 Windows에서만 검증되었습니다. 특히 연속 버퍼 오디오 엔진 (`buffer`)은 이 시스템에서 확인되지 않았습니다. 귀하의 피드백은 소중합니다.
+
+- **VLC가 필요합니다** (AMSO는 Windows에서만 다운로드합니다):
+  - Linux : `sudo apt install vlc` (Debian / Ubuntu), `sudo dnf install vlc` (Fedora) 또는 `sudo pacman -S vlc` (Arch).
+  - macOS : Applications 폴더에서 [videolan.org](https://www.videolan.org/vlc/)를 통해 **VLC.app**을 설치하세요.
+- **Linux, 시스템 라이브러리**: Qt 인터페이스는 특히 `libpulse0` (사운드), `libxcb-cursor0` 및 `libxkbcommon-x11-0`을 요구합니다 (예: `sudo apt install libpulse0 libxcb-cursor0 libxkbcommon-x11-0`).
+- **macOS, 서명되지 않은 \`.dmg\`**: 처음 실행할 때 AMSO를 마우스 오른쪽 버튼으로 클릭한 후 **열기**를 선택하거나, `xattr -dr com.apple.quarantine /Applications/AMSO.app`을 실행하세요.
+- **Linux, AppImage**: `chmod +x AMSO*.AppImage`를 사용하여 실행 가능하게 만드세요.
+- **문제가 발생한 경우**, 데이터 폴더에 있는 `startup.log` 및 `crash.log` 파일을 (존재하는 경우) 보내주십시오: macOS의 경우 `~/Library/Application Support/AMSO/`, Linux의 경우 `~/.local/share/AMSO/`. 사용 중인 시스템과 VLC 버전을 명시해 주십시오.
 
 ---
 

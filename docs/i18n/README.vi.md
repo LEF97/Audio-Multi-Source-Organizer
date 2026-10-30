@@ -24,6 +24,10 @@
 ---
 
 <p align="center">
+  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+</p>
+
+<p align="center">
   <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
 </p>
 
@@ -41,19 +45,20 @@
 
 | Tính năng | Mô tả | Trạng thái |
 | :--- | :---: | :---: |
-| **Công cụ phát VLC tích hợp** | Trình phát âm thanh nhẹ và độc lập với tự động cài đặt VLC portable và quản lý âm lượng mượt mà | 🟢 Đã triển khai |
-| **Quét cục bộ đa luồng** | Khám phá các tệp âm thanh cục bộ (MP3, FLAC, AAC, OGG...) một cách đệ quy và nhanh chóng | 🟢 Đã triển khai |
+| **Công cụ phát âm thanh** | Trình phát âm thanh nhẹ và độc lập (VLC portable được cài đặt tự động trên Windows). Hai công cụ lựa chọn: xuất trực tiếp VLC, hoặc công cụ bộ đệm liên tục để chuyển tiếp mượt mà giữa hai bản nhạc (Gapless 0 ms, fade bằng công suất bằng nhau, không gián đoạn đầu ra âm thanh) | 🟢 Đã triển khai |
+| **Quản lý thư viện** | Quét đệ quy đa luồng các thư mục cục bộ (MP3, FLAC, AAC, OGG...), đồng bộ hóa thủ công, theo lịch hoặc thời gian thực, thùng rác và thống kê thư viện | 🟢 Đã triển khai |
 | **Trích xuất siêu dữ liệu** | Đọc/ghi ID3, Vorbis Comments và tính toán dấu vân tay âm thanh (`mutagen`) | 🟢 Đã triển khai |
-| **Hỗ trợ Playlist (M3U, PLS, XSPF, WPL) & tệp CUE** | Lập chỉ mục dạng cây (🎶), thứ tự nghe tuần tự, xác định trực quan các bài hát bị thiếu; các tệp `.cue` (💿) mở như một thư mục các bản nhạc ảo với thời lượng của chúng và phát như các bản nhạc thực tế | 🟢 Đã triển khai |
+| **Hỗ trợ Playlist (M3U, PLS, XSPF, WPL) & sheet CUE** | Lập chỉ mục cây (🎶), thứ tự nghe tuần tự, định vị trực quan các bài hát bị thiếu; các tệp `.cue` (💿) mở như một thư mục các bản nhạc ảo với thời lượng của chúng và phát như các bản nhạc thực tế | 🟢 Đã triển khai |
 | **Trình quản lý Playlist & Kéo-Thả** | Hàng đợi ảo, kéo & thả mượt mà, ngẫu nhiên (shuffle) có thể đảo ngược và vòng lặp | 🟢 Đã triển khai |
-| **Chế độ "🎲 Blind Test" tương tác** | Trò chơi âm nhạc nhập vai với đếm ngược hoạt hình, mờ dần âm thanh, tiết lộ nhẹ nhàng và nối tiếp tự động | 🟢 Đã triển khai |
+| **Chế độ tương tác « 🎲 Blind Test »** | Trò chơi âm nhạc nhập vai với bộ đếm thời gian hoạt hình, fade âm thanh, tiết lộ nhẹ nhàng và chuyển tiếp tự động | 🟢 Đã triển khai |
 | **Cập nhật trong ứng dụng** | Kiểm tra phiên bản tự động/thủ công qua GitHub Releases | 🟢 Đã triển khai |
-| **Quản lý nghệ sĩ & Discography** | Chế độ xem dành riêng cho từng nghệ sĩ với album, single và discography đầy đủ | 🟡 Dự kiến |
+| **Phiên bản Linux & macOS** | Gói `.AppImage` / `.tar.gz` (Linux) và `.dmg` không ký (macOS), yêu cầu VLC | 🟡 Thử nghiệm (chưa kiểm tra) |
+| **Quản lý nghệ sĩ & Discography** | Chế độ xem dành riêng cho nghệ sĩ với album, single và discography đầy đủ | 🟡 Dự kiến |
 | **Bộ cân bằng đồ họa (EQ)** | Thiết lập âm thanh và bộ cân bằng đa băng tần tham số | 🟡 Dự kiến |
 | **Kết nối Google Drive** | Quét và đồng bộ hóa các bộ sưu tập âm thanh từ xa qua OAuth 2.0 | ⚪ Lên kế hoạch |
 | **Kết nối Amazon Music** | Quét và đồng bộ hóa các bộ sưu tập từ xa qua OAuth 2.0 | ⚪ Lên kế hoạch |
 | **Kết nối Spotify / Deezer** | Nhập danh sách phát và khớp bài hát | ⚪ Lên kế hoạch |
-| **Loại bỏ trùng lặp thông minh** | Phát hiện trùng lặp (tiêu đề/nghệ sĩ mờ + dấu vân tay âm học) | ⚪ Lên kế hoạch |
+| **Loại bỏ trùng lặp thông minh** | Phát hiện bản sao (tiêu đề/nghệ sĩ mờ + dấu vân âm thanh) | ⚪ Lên kế hoạch |
 
 > 💡 *Để xem chi tiết các cột mốc và phiên bản dự kiến, vui lòng tham khảo [Feuille de route (Roadmap)](../../ROADMAP.md).*
 
@@ -100,6 +105,20 @@ cp .env.example .env
 # 6. Lancer l'application
 python main.py
 ```
+
+---
+
+## 🐧🍎 Linux và macOS: phiên bản thử nghiệm (chưa được kiểm tra)
+
+Các gói Linux (`.AppImage` / `.tar.gz`) và macOS (`.dmg`) được cung cấp **mà chưa được kiểm tra**: AMSO chỉ được xác nhận trên Windows. Đặc biệt, công cụ âm thanh bộ đệm liên tục (`buffer`) chưa được kiểm tra trên các hệ thống này. Phản hồi của bạn rất quý giá.
+
+- **VLC là bắt buộc** (AMSO chỉ tải xuống trên Windows) :
+  - Linux : `sudo apt install vlc` (Debian / Ubuntu), `sudo dnf install vlc` (Fedora) hoặc `sudo pacman -S vlc` (Arch).
+  - macOS : cài đặt **VLC.app** từ [videolan.org](https://www.videolan.org/vlc/) vào thư mục Applications.
+- **Linux, thư viện hệ thống** : giao diện Qt yêu cầu đặc biệt `libpulse0` (âm thanh), `libxcb-cursor0` và `libxkbcommon-x11-0` (ví dụ: `sudo apt install libpulse0 libxcb-cursor0 libxkbcommon-x11-0`).
+- **macOS, `.dmg` chưa được ký** : lần khởi chạy đầu tiên, hãy nhấp chuột phải vào AMSO rồi **Mở**, hoặc chạy `xattr -dr com.apple.quarantine /Applications/AMSO.app`.
+- **Linux, AppImage** : làm cho nó có thể thực thi bằng `chmod +x AMSO*.AppImage`.
+- **Trong trường hợp gặp sự cố**, vui lòng gửi các tệp `startup.log` và `crash.log` (nếu có) nằm trong thư mục dữ liệu: `~/Library/Application Support/AMSO/` trên macOS, `~/.local/share/AMSO/` trên Linux. Vui lòng nêu rõ hệ điều hành và phiên bản VLC của bạn.
 
 ---
 

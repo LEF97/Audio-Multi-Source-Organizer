@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, cast
 
-from PySide6.QtCore import QAbstractTableModel, QPoint, QSettings, Qt
+from PySide6.QtCore import QAbstractTableModel, QPoint, Qt
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 from amso.core.i18n import tr
+from amso.ui.table_settings import app_settings
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +44,11 @@ class TableColumnsMixin(_MixinBase):
         - Sauvegarde et restauration persistante dans QSettings.
         """
         table_view.setModel(model)
+        # setSortingEnabled(True) trie selon l'indicateur courant de l'en-tête, décroissant par défaut : sans état
+        # sauvegardé, la table s'ouvrirait à l'envers du tri initial du modèle (lu avant que ce tri ne l'écrase)
+        sortable = cast(Any, model)
+        if hasattr(sortable, "_current_sort_col") and hasattr(sortable, "_current_sort_order"):
+            table_view.horizontalHeader().setSortIndicator(sortable._current_sort_col, sortable._current_sort_order)
         table_view.setSortingEnabled(True)
         table_view.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         table_view.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
@@ -160,7 +166,7 @@ class TableColumnsMixin(_MixinBase):
         self._save_table_header_state(table_view, storage_key)
 
     def _save_table_header_state(self, table_view: QTableView, storage_key: str) -> None:
-        settings = QSettings("AMSO", "AudioMultiSourceOrganizer")
+        settings = app_settings()
         settings.setValue(f"header_state_{storage_key}", table_view.horizontalHeader().saveState())
         model = cast(Any, table_view.model())
         if hasattr(model, "_current_sort_col"):
@@ -173,7 +179,7 @@ class TableColumnsMixin(_MixinBase):
             settings.setValue(f"sort_order_{storage_key}", order_val)
 
     def _restore_table_header_state(self, table_view: QTableView, storage_key: str) -> bool:
-        settings = QSettings("AMSO", "AudioMultiSourceOrganizer")
+        settings = app_settings()
         state = settings.value(f"header_state_{storage_key}")
         restored = False
         if state is not None:

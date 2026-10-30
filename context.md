@@ -11,8 +11,9 @@ Distribution : GitHub Releases + itch.io (Butler, « Pay What You Want »), dons
 
 | Version | Contenu | État |
 |---|---|---|
-| 0.1–0.3 | scanner local multithread, tags, lecteur VLC, playlists M3U/PLS/XSPF/WPL, Blind Test, corbeille, mises à jour in-app, effets visuels | publiées (0.3.0 actuelle) |
-| **0.4.0-dev** | refonte modulaire + quality gate, 43 langues, moteur audio `buffer` (QAudioSink), crossfade/gapless ; restent : packaging Linux/macOS, artistes/discographie, égaliseur, éditeur de tags, pochettes en ligne, filtres avancés | **en cours** (branche `develop`) |
+| 0.1–0.3 | scanner local multithread, tags, lecteur VLC, playlists M3U/PLS/XSPF/WPL, Blind Test, corbeille, mises à jour in-app, effets visuels | publiées |
+| 0.4.0 | refonte modulaire + quality gate, 43 langues, moteur audio `buffer` (QAudioSink), crossfade/gapless, feuilles CUE | publiée |
+| **0.4.1-dev** | correctifs audio : crossfade au fil du décodage, Blind Test en mode `buffer`, TNR des transitions ; restent (0.4.x) : packaging Linux/macOS, artistes/discographie, égaliseur, éditeur de tags, pochettes en ligne, filtres avancés | **en cours** (branche `develop`) |
 | 0.5.0 | connecteur Google Drive (OAuth2, scan distant, streaming avec cache) | planifié |
 | 0.6.0 | Spotify / Deezer / Amazon Music, matching hybride, vue unifiée | planifié |
 | 1.0.0 | dédoublonnage par empreinte acoustique, packaging signé, doc complète | planifié |
@@ -33,12 +34,16 @@ amso/
 ├── core/                     logique métier pure, ZÉRO dépendance Qt
 │   ├── database.py           DatabaseManager (assemble les mixins) + schéma / migrations
 │   ├── db/                   models, sources_repo, tracks_repo, curation_repo, playlists_repo, activity_repo, library_queries, paths
+│   ├── activity_messages.py  messages du journal d'activité en clé + paramètres (colonne `i18n`), traduits à l'affichage
 │   ├── scanner.py            parcours récursif multithread
 │   ├── metadata.py           tags (mutagen), formats, pochettes embarquées
 │   ├── playlist_parser.py    M3U / PLS / XSPF / WPL (+ CUE)
+│   ├── pcm_mixer.py          mixage PCM Int16 stéréo (numpy) : gains égale puissance, StreamingCrossfade (fondu au fil du décodage)
 │   ├── cue_parser.py         feuilles CUE : pistes virtuelles (début/fin dans un fichier audio)
 │   ├── cover_art.py          pochettes
 │   ├── scheduler.py          synchronisation automatique planifiée
+│   ├── network_paths.py      détection UNC / lecteur réseau (sans E/S) : jamais de exists()/isdir() réseau sur le thread UI
+│   ├── startup_timing.py     chronométrage des étapes de démarrage → `%APPDATA%/AMSO/startup.log`
 │   ├── config.py             préférences persistantes (config.ini)
 │   ├── i18n.py               traduction `tr()`, détection de langue (43 langues)
 │   └── constants.py
@@ -50,10 +55,12 @@ amso/
 │   ├── player_vlc_transitions.py transitions matérielles VLC direct
 │   ├── player_volume.py, player_types.py
 │   ├── player_cue.py         lecture des pistes CUE (moteur tampon) : décalage/arrêt de décodage, clé de flux
-│   ├── audio_engine.py       ContinuousAudioEngine (QAudioSink + ring buffer PCM)
+│   ├── audio_engine.py       ContinuousAudioEngine (ring buffer PCM, `read_pcm` appelé par le thread audio)
+│   ├── audio_output.py       SinkOutput : QAudioSink en mode pull dans son propre QThread (indépendant du thread UI)
 │   ├── audio_decoder.py      décodeur PCM (amem)
 │   ├── audio_spectrum.py     analyse du spectre
 │   ├── vlc_binding.py, vlc_downloader.py   liaison et auto-installation de VLC
+│   ├── vlc_info.py           version et provenance de la libvlc chargée, téléchargement réservé à Windows, ~/Applications/VLC.app (macOS)
 │   ├── windows_audio.py, sleep_inhibitor.py   spécifique OS
 │   └── update_checker.py     mises à jour via GitHub Releases
 └── ui/                       PySide6
@@ -65,12 +72,14 @@ amso/
     ├── dialogs/              boîtes de dialogue (sources, VLC, suppression…)
     ├── models*.py, folder_track_model.py, playlist_table_model.py   modèles Qt virtualisés
     ├── theme.py, styles.py, qss_*.py   couleurs et QSS centralisés
+    ├── table_settings.py     réglages Qt des tables (colonnes, tri) ; `AMSO_QSETTINGS_PATH` les redirige vers un fichier (tests)
     └── workers.py            QThread / signaux (scans et calculs lourds hors thread UI)
 amso/locales/*.json           43 langues, fr.json = source de vérité
 scripts/                      outils (+ .bat jumeau pour chaque script) : verify, check_file_sizes, check_docs_sync, check_context,
-                              sync_translations(_ollama), translate_docs (README en 43 langues, CHANGELOG/ROADMAP es/de/it, via Ollama), audit_translations, build_exe, publish_github_release, sync_skills
+                              sync_translations(_ollama), package_unix (Linux .tar.gz/.AppImage, macOS .dmg), tnr_transitions (non-régression des transitions sur pistes réelles), translate_docs (README en 43 langues, CHANGELOG/ROADMAP es/de/it, via Ollama), audit_translations, build_exe, publish_github_release, sync_skills
 docs/i18n/                    toutes les langues sauf fr et en (README ×41, CHANGELOG et ROADMAP es/de/it), générées par Ollama ; sélecteur de langue partagé
 tests/                        pytest, Qt offscreen, config et DB isolées (conftest autouse)
+tests/tnr/                    banc de non-régression audio (pistes de référence : `_work/tnr/`, sinon NAS) : sortie factice (capture_sink), décodage de référence, analyse, scénario ; lancé par scripts/tnr_transitions.bat ou `pytest -m tnr` ; journaux horodatés dans `tests/tnr/log/` (ignoré par git)
 .agents/skills/               procédures (copie pour Claude dans .claude/skills via scripts/sync_skills.py)
 ```
 Données utilisateur : `%APPDATA%/AMSO/` (config.ini, base SQLite). Hors périmètre de lecture : `.venv`, `build`, `dist`, caches, `*.db`, `screenshots`, `_work`, `scratch` (scripts jetables).
@@ -78,9 +87,14 @@ Données utilisateur : `%APPDATA%/AMSO/` (config.ini, base SQLite). Hors périm�
 ## 4. Le moteur audio (zone la plus sensible)
 Deux moteurs **étanches** (aucun effet de bord de l'un sur l'autre), choisis via `get_audio_engine()` :
 - **`vlc_direct`** — sortie directe LibVLC (WASAPI `mmdevice` ; crossfade en DirectSound). **Finalisé et figé : ne plus y toucher.**
-- **`buffer`** — `ContinuousAudioEngine` : un unique `QAudioSink` (push) ouvert en continu, ring buffer PCM, transitions logicielles
+- **`buffer`** — `ContinuousAudioEngine` : un unique `QAudioSink` (pull, thread audio dédié) ouvert en continu, ring buffer PCM, transitions logicielles
   (gapless sample-accurate, crossfade égale puissance cos/sin, silence injecté). **Travail en cours.** Ne jamais fermer ni recréer la session matérielle
   entre deux titres, ni réintroduire deux lecteurs matériels.
+
+Le décodeur `amem` livre l'audio **en temps réel** (1 s d'audio par seconde) : la fin de la piste sortante n'est pas en mémoire d'avance. Le crossfade est donc
+mixé au fil de l'arrivée des blocs (`arm_crossfade` au préchargement, zone calée sur `durée - fondu`), jamais en bloc. Après un seek, LibVLC se place sur un bloc FLAC
+(jusqu'à ~200 ms d'écart avec la position demandée). Un plantage natif laisse sa pile dans `%APPDATA%/AMSO/crash.log` (faulthandler).
+**Toute modification du moteur `buffer` se valide avec `scripts/tnr_transitions.bat`** (standard, gapless, crossfade sur Sirius → Eye in the Sky).
 
 Invariants communs : en pause, `previous()` charge sans lire (`load_index`, pas `play_index`) ; tout `seek`/`pause` réinitialise le standby
 (`_reset_standby_player()`) et annule vidages et transitions ; un `seek` sur piste terminée ne saute pas au suivant ; quitter un mode exclusif

@@ -8,7 +8,7 @@ Ce document détaille la procédure standardisée et immuable en 4 étapes pour 
 
 ```mermaid
 flowchart TD
-    A["Étape 1 : Pré-release / 1<br>(Recette, Qualité du code, Tests)"] --> B["Étape 2 : Pré-release / 2<br>(Screenshots, Documentation .md, Build exe & zip)"]
+    A["Étape 1 : Pré-release / 1<br>(Recette, Qualité du code, Tests)"] --> B["Étape 2 : Pré-release / 2<br>(Documentation 5 langues, validation, 38 langues, essai CI, build)"]
     B --> C["Étape 3 : Release<br>(Merge main, Tag Git, GitHub Release & itch.io)"]
     C --> D["Étape 4 : Post-release<br>(Incrément vX.Y.Z-dev sur develop)"]
 ```
@@ -52,7 +52,11 @@ flowchart TD
 3. **Actualisation des fichiers Markdown (FR source, EN par l'assistant, toutes les autres langues par Ollama) :**
    - **Français (source de vérité)** : `CHANGELOG.fr.md` (clôturer `[X.Y.Z-dev]` sous `## [X.Y.Z] - AAAA-MM-JJ`), `README.fr.md` (badges, captures `screenshots/*vX.Y.Z*.png`, texte d'introduction, tableau des fonctionnalités de 13 lignes) et `ROADMAP.fr.md` (cocher `- [x]` les objectifs atteints, réajuster les jalons `- [ ]`).
    - **Anglais** : `CHANGELOG.md`, `README.md`, `ROADMAP.md` traduits depuis le français par l'assistant (seule langue traduite par un assistant).
-   - **Toutes les autres langues : Ollama uniquement, jamais de traduction manuelle.** Démarrer Ollama, puis `python scripts/translate_docs.py --ollama` (ou `scripts\translate_docs.bat`, modèle par défaut `gemma4:latest`) : README en 41 langues (`docs/i18n/README.<code>.md`), CHANGELOG et ROADMAP en `es`, `de`, `it`. Seuls les blocs modifiés sont retraduits ; si des fragments restent en français, relancer. Les sélecteurs de langue sont régénérés par ce même script (`--nav-only` pour les régénérer seuls).
+   - **Espagnol, allemand, italien (CHANGELOG, ROADMAP, README) : Ollama uniquement, jamais de traduction manuelle.** Démarrer Ollama, puis `python scripts/translate_docs.py --ollama --lang es de it` (modèle par défaut `gemma4:latest`). Les blocs déjà traduits sont mémorisés : seuls les blocs modifiés sont retraduits.
+
+> 🛑 **JALON DE VALIDATION 2a :** l'utilisateur relit et valide la documentation dans les 5 langues (fr, en, es, de, it). **Aucune traduction des 38 autres langues n'est lancée avant cet accord explicite.**
+
+   - **Après validation, les 38 autres langues (README) : Ollama uniquement.** `python scripts/translate_docs.py --ollama` (ou `scripts\translate_docs.bat`) traduit le README des 41 langues de `docs/i18n/` ; es, de et it sont déjà à jour grâce au cache. Si le texte français change ensuite, repasser par le jalon 2a.
 4. **Vérification automatisée de l'alignement multilingue :**
    - Exécuter le contrôle i18n : `python scripts/sync_translations.py --check-only`
    - Exécuter le contrôle documentaire : `python scripts/check_docs_sync.py --release` (exige en plus les 43 README et un sélecteur de langue à jour)
@@ -64,11 +68,14 @@ flowchart TD
      - Les 6 fichiers Markdown de la racine à jour : `README.md`, `README.fr.md`, `CHANGELOG.md`, `CHANGELOG.fr.md`, `ROADMAP.md`, `ROADMAP.fr.md` (le dossier `docs/i18n/` n'est pas dans l'archive : ils sont consultables sur GitHub).
      - Le dossier `locales/` (43 langues) et le fichier `LICENSE`.
    - Créer l'archive zip finale : `dist/AMSO-Windows-vX.Y.Z.zip`.
-   - *(Note jalon v0.4.0+) :* Extension du packaging multiplateforme via GitHub Actions (`runs-on: [ubuntu-latest, macos-latest]`) pour générer également les paquets Linux (`.AppImage`) et macOS (`.dmg`).
-6. **Validation manuelle de l'exécutable :**
+   - Les paquets Linux (`.tar.gz`, `.AppImage`) et macOS (`.dmg`, Apple Silicon et Intel) sont produits par les jobs `build-linux` et `build-macos` de `.github/workflows/release.yml` (script `scripts/package_unix.py`). Tant qu'ils n'ont pas été testés sur de vrais systèmes, la release les annonce comme **expérimentaux, non testés** (VLC requis, `.dmg` non signé).
+6. **Essai à blanc de la CI avant le tag :**
+   - Pousser `develop` (le workflow `tests.yml` s'exécute sur Linux, Windows et macOS), puis lancer à la main `release.yml` sur `develop` (onglet Actions, « Run workflow »). Sans tag, rien n'est publié : ni release GitHub, ni itch.io. Les paquets sont téléchargeables en pièces jointes de l'exécution (`AMSO-Linux`, `AMSO-macOS-arm64`, `AMSO-macOS-x86_64`).
+   - Corriger les jobs en échec et relancer jusqu'à ce que les trois systèmes réussissent.
+7. **Validation manuelle de l'exécutable :**
    - Tester le lancement de `AMSO.exe` directement depuis le dossier compilé (hors environnement virtuel Python).
 
-> 🛑 **JALON DE VALIDATION 2 :** Validation manuelle du bon fonctionnement de l'exécutable packagé et validation des textes de documentation dans les 5 langues avant publication.
+> 🛑 **JALON DE VALIDATION 2b :** Validation manuelle du bon fonctionnement de l'exécutable packagé (et, si possible, des paquets Linux et macOS) avant publication.
 
 ---
 
@@ -91,7 +98,7 @@ flowchart TD
      - La création ou la mise à jour de la release via l'API REST GitHub (avec jeton d'authentification récupéré automatiquement).
      - Le téléversement de l'archive binaire `dist/AMSO-Windows-vX.Y.Z.zip`.
 3. **Publication sur itch.io (automatisée via GitHub Actions & Butler) :**
-   - Le workflow `.github/workflows/release.yml` déploie automatiquement l'archive sur le canal `arnaudlef97/amso:windows` via **Itch.io Butler** à chaque push de tag `v*` (ou via déclenchement manuel `workflow_dispatch`).
+   - Le workflow `.github/workflows/release.yml` déploie automatiquement l'archive sur le canal `arnaudlef97/amso:windows` via **Itch.io Butler** à chaque push de tag `v*` uniquement : un déclenchement manuel (`workflow_dispatch`) construit les paquets mais ne publie rien.
    - **Nommage des fichiers Itch.io :**
      - Butler nomme automatiquement le fichier généré selon le projet et le canal : `amso-windows.zip` avec le tag officiel vert `[windows]`.
      - L'intitulé lisible (*« Nom affiché »*) personnalisé sur Itch.io (ex: `AMSO — Windows (Portable 64-bit)`) est pérenne et automatiquement conservé par Itch.io à chaque nouvelle version poussée par Butler.

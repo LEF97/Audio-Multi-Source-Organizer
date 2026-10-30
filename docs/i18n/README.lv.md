@@ -24,6 +24,10 @@
 ---
 
 <p align="center">
+  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+</p>
+
+<p align="center">
   <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
 </p>
 
@@ -39,21 +43,22 @@
 
 ## 📌 Funkcionalitātes & Stāvoklis projekta
 
-| Funkcija | Apraksts | Stāvoklis |
+| Funkcionalitāte | Apraksts | Stāvoklis |
 | :--- | :--- | :---: |
-| **Integrēts VLC atspēlēšanas motors** | 가벼vs unautonomisks audio atspēlētājs ar VLC portatīva automātiskā instalāciju un glāsu volumkontroli | 🟢 Implementēts |
-| **Multithredisks vietējais skeneris** | Rekurzīva un ātra vietējo audio failu atklāšana (MP3, FLAC, AAC, OGG...) | 🟢 Implementēts |
-| **Metadatu ekstrakcija** | ID3, Vorbis Comments lasīšana/rakstīšana un audio atspoguļojuma (mutagen) aprēķināšana | 🟢 Implementēts |
-| **Atbalsts për spēklı (M3U, PLS, XSPF, WPL) un CUE lapas** | Izakstīšana (🎶), sekvenciāls klausīšanās pasākums, vizuāla atzīšana trūkstošo dziesmu; `.cue` faili (💿) atver kā virtuālu dziesmu sarakstu ar to trūkumu un atspēlē kā patiešas dziesmas | 🟢 Implementēts |
-| **Spēklı vadītājs un Drag-Drop** | Virtualizēta gaidašana, glāss Drag & Drop, reversīva izrādīšana (shuffle) un cikli | 🟢 Implementēts |
-| **Interaktīvs "🎲 Blind Test" režīms** | Izdīcināta mūzikas spēle ar animētu skaitītāju, audio fade, maigu atklāšanu un automātisku pārliecību | 🟢 Implementēts |
-| **Atjauninājumi lietotnē** | Otomātiska/Manuālā versiju pārbaude via GitHub Releases | 🟢 Implementēts |
-| **Izgatavošana un diskogrāfija** | Ieceltā skatīšanās pēc izskata ar albumiem, singliem un pilnu diskogrāfiju | 🟡 Plānotas |
+| **Audio atspēdes motors** | 가벼vs un autonoms audio atspēdes spēklais (VLC portable automātiski instalēts Windows lietotājiem). Divi motorsu izvēles: tieša VLC izgāde vai turpmaka bumba motors glāsi pārejai divās dziesmās (Gapless 0 ms, vienā vērienā spēcīgā fade, bez audio izgādes pārtraukumu) | 🟢 Implementēts |
+| **Bibliotēkas vadība** | Rekurzīvs multithreaded skenēšana no vietējiem karordiņiem (MP3, FLAC, AAC, OGG...), manuāla, plāno vai real-time senkronizācija, papērba un bibliotēkas statistika | 🟢 Implementēts |
+| **Metadatu ekstrakcija** | ID3, Vorbis Comments lasīšana/rakstīšana un audio atspoguļojuma (fingerprint) aprēķināšana (`mutagen`) | 🟢 Implementēts |
+| **Atbalsts playlistām (M3U, PLS, XSPF, WPL) un CUE lapām** | Izakrojums (🎶), sekvenciāls klausīšanās pasākums, vizuāla atzīšana trūkstošajās dziesmās; `.cue` faili (💿) atver kā virtuālu dziesmu karordiņu ar to trūkumu un atspēlo kā patiešas dziesmas | 🟢 Implementēts |
+| **Playlist vadītājs un Drag & Drop** | Virtualizēta gaida, glāds drag & drop, reversīvs izrīkojums (shuffle) un cikli | 🟢 Implementēts |
+| **Interaktīvs « 🎲 Blind Test » režīms** | Imazīgs mūzikas spēles spēle ar animētu skaitītāju, skaņas fade, maigu atklāšanu un automātisku pāreju | 🟢 Implementēts |
+| **In-app atjauninājumi** | Otomātiska/manuālā versiju pārbaude caur GitHub Releases | 🟢 Implementēts |
+| **Linux & macOS versijas** | Pirksti .AppImage / .tar.gz (Linux) un neparakstīts .dmg (macOS), nepieciešams VLC | 🟡 Eksperimentāls (neierobešots) |
+| **Iznaudotāju & Diskografijas pārvaldība** | Idedinata skatīšanās pēc iznaudotājiem ar albumiem, singliem un pilnu diskografiju | 🟡 Plānotas |
 | **Grafisks ekvalizators (EQ)** | Audio iestatījumi un parametrisisks multi-bandu ekvalizators | 🟡 Plānotas |
-| **Google Drive konektors** | Skeneris un sinhkronizācija attālām audio kolekcijām via OAuth 2.0 | ⚪ Plānotas |
-| **Amazon Music konektors** | Skeneris un sinhkronizācija attālām kolekcijām via OAuth 2.0 | ⚪ Plānotas |
-| **Spotify / Deezer konektors** | Playlista importēšana un trajektoru atbilstība | ⚪ Plānotas |
-| **Gudrs dubultu noņemšana** | Dubultu detekcija (vārds/izskats + akustiskie atspoguļojumi) | ⚪ Plānotas |
+| **Google Drive konektors** | Skeneris un senkronizācija attālām audio kolekcijām caur OAuth 2.0 | ⚪ Plānotas |
+| **Amazon Music konektors** | Skeneris un senkronizācija attālām kolekcijām caur OAuth 2.0 | ⚪ Plānotas |
+| **Spotify / Deezer konektors** | Reproduktorietuveju importēšana un dziesmu atbalstība | ⚪ Plānotas |
+| **Gudrs dubultu dzēšana** | Dubultu atklāšana (tituls/iznaudotājs + akustiskie atspoguļojumi) | ⚪ Plānotas |
 
 > 💡 *Lai uzzinātu plānotas milestones un versijas detalizāciju, atsaucieties uz [Ceļveikls (Roadmap)](../../ROADMAP.md).*
 
@@ -100,6 +105,20 @@ cp .env.example .env
 # 6. Lancer l'application
 python main.py
 ```
+
+---
+
+## 🐧🍎 Linux un macOS: eksperimentālie versijas (neierobežotas)
+
+Linux paketi (`.AppImage` / `.tar.gz`) un macOS (`.dmg`) tiek nodoti **bez testēšanas**: AMSO ir validizēts tikai Windows lietotā. Akustiskais motors ar turpinającego tamponu (`buffer`) īpaši nav pārbaudīts šajos sistēmās. Jūsu atgriezenums ir vērtīgs.
+
+- **VLC ir nepieciešams** (AMSO nedlejalo tikai Windows lietotā.​):
+  - Linux: `sudo apt install vlc` (Debian / Ubuntu), `sudo dnf install vlc` (Fedora) vai `sudo pacman -S vlc` (Arch).
+  - macOS: instalējiet **VLC.app** no [videolan.org](https://www.videolan.org/vlc/) "Applications" kataloga.
+- **Linux, sistēmas bibliotēkas**: Qt interfeiss prasa, piemēram, `libpulse0` (audio), `libxcb-cursor0` un `libxkbcommon-x11-0` (piemēram, `sudo apt install libpulse0 libxcb-cursor0 libxkbcommon-x11-0`).
+- **macOS, nav parakstīts .dmg**: pirmo startu veikt, noklikšķiniet labā (right click) uz AMSO un izvēli **Ouvrir**, vai izpildiet komandu `xattr -dr com.apple.quarantine /Applications/AMSO.app`.
+- **Linux, AppImage**: padarīt to izpildījamu ar `chmod +x AMSO*.AppImage`.
+- **Ja ir problēma**, lūdzu, nosūtiet failus `startup.log` un `crash.log` (ja tie nav) datu kataloggā: `~/Library/Application Support/AMSO/` macOS lietotā, `~/.local/share/AMSO/` Linux lietotā. Norādiet savu operētājsistēmu un VLC versiju.
 
 ---
 

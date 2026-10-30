@@ -58,6 +58,9 @@ class BlindTestView(BlindTestUiMixin, BlindTestRoundMixin, BlindTestFadesMixin, 
         self._saved_player_index: int | None = None
         self._saved_player_position_ms: int = 0
         self._session_playing: bool = False
+        # `play()` émet `track_changed` ; la manche est déjà prête, la relancer re-positionnerait la piste
+        # (`seek_ratio` → `load_index`) avant que le décodeur ait livré son premier bloc et la remettrait en pause.
+        self._is_starting_playback: bool = False
 
         self._setup_ui()
         self._connect_signals()
@@ -299,7 +302,11 @@ class BlindTestView(BlindTestUiMixin, BlindTestRoundMixin, BlindTestFadesMixin, 
                 self.player.seek_ratio(0.0)
                 self._apply_temporary_volume(0)
 
-            self.player.play()
+            self._is_starting_playback = True
+            try:
+                self.player.play()
+            finally:
+                self._is_starting_playback = False
 
             if self._is_active_page:
                 self._game_timer.start(1000)
@@ -340,9 +347,15 @@ class BlindTestView(BlindTestUiMixin, BlindTestRoundMixin, BlindTestFadesMixin, 
         """Appelé lors d'un changement de piste dans le PlayerService."""
         if hasattr(self, "effect_canvas") and self.effect_canvas:
             self.effect_canvas.set_track(track)
-        if self._is_active_page:
+        if self._is_active_page and not self._is_starting_playback:
             auto_play = self._session_playing or self.player.is_playing
-            self._start_round_for_track(track, auto_play=auto_play)
+            # Moteur buffer uniquement : le chemin VLC est validé tel quel et garde son repositionnement.
+            player_started = (
+                auto_play
+                and get_config_manager().get_audio_engine() == "buffer"
+                and not getattr(self.player, "_is_paused_requested", True)
+            )
+            self._start_round_for_track(track, auto_play=auto_play, player_started=player_started)
 
     def _on_playback_state_changed(self, state: str) -> None:
         if hasattr(self, "effect_canvas") and self.effect_canvas:

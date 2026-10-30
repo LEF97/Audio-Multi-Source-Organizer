@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "audio-multi-source-organizer"
-version = "0.4.0"
+version = "0.4.1"
 description = "Unificateur, organisateur et synchroniseur de bibliothèques audio hybrides (local, Google Drive, Spotify)"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -33,6 +33,7 @@ dependencies = [
     "google-auth-oauthlib>=1.2.0",
     "google-auth-httplib2>=0.2.0",
     "python-vlc>=3.0.20123",
+    "numpy>=1.26",
 ]
 
 [project.optional-dependencies]
@@ -51,7 +52,8 @@ amso = "main:main"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
-addopts = "-q --tb=short"
+addopts = "-q --tb=short -m \"not tnr\""
+markers = ["tnr: non-régression des transitions sur pistes réelles (lent, hors suite par défaut ; pytest -m tnr)"]
 
 [tool.setuptools.packages.find]
 where = ["."]

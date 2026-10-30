@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from amso.core.database import DatabaseManager, SourceRecord, SourceType, TrackRecord
+from amso.core.i18n import tr
 from amso.core.metadata import SUPPORTED_AUDIO_EXTENSIONS, extract_metadata
 from amso.core.playlist_parser import SUPPORTED_PLAYLIST_EXTENSIONS, parse_playlist_file
 
@@ -95,14 +96,14 @@ class LocalScanner:
 
         root_path = Path(source.path_or_uri).resolve()
         if not root_path.exists() or not root_path.is_dir():
-            err = f"Répertoire source introuvable ou inaccessible : {source.path_or_uri}"
+            err = tr("scan.source_missing", path=source.path_or_uri)
             summary.errors.append(err)
             if on_status:
                 on_status(err)
             return summary, []
 
         if on_status:
-            on_status(f"Découverte rapide des fichiers dans {root_path}...")
+            on_status(tr("scan.discovering", path=root_path))
 
         # 1. Récupération préalable de l'état existant en base pour comparaison instantanée
         existing_tracks_map: dict[str, tuple[float, int, bool]] = {}
@@ -231,9 +232,9 @@ class LocalScanner:
                                     self.db.upsert_tracks_batch(inventory_buffer)
                                     inventory_buffer.clear()
                 except (OSError, PermissionError) as e:
-                    summary.errors.append(f"Erreur d'accès à {current_dir} : {e}")
+                    summary.errors.append(tr("scan.access_error", path=current_dir, error=e))
         except Exception as e:
-            summary.errors.append(f"Erreur lors du parcours du dossier : {e}")
+            summary.errors.append(tr("scan.walk_error", error=e))
 
         summary.total_found = len(audio_files)
 
@@ -278,9 +279,9 @@ class LocalScanner:
                     summary.playlists_updated += 1
                 else:
                     summary.playlists_added += 1
-                summary.playlist_names.append(f"{pl_name} ({len(parsed_entries)} pistes)")
+                summary.playlist_names.append(tr("scan.playlist_entry", name=pl_name, count=len(parsed_entries)))
             except Exception as e:
-                summary.errors.append(f"Erreur d'analyse de la playlist {pl_name} : {e}")
+                summary.errors.append(tr("scan.playlist_error", name=pl_name, error=e))
 
         # Nettoyage des playlists qui n'existent plus sur le disque et liaison automatique avec tracks
         if not summary.cancelled and source.id is not None:
@@ -290,8 +291,15 @@ class LocalScanner:
         summary.elapsed_seconds = round(time.perf_counter() - start_time, 2)
         if on_status:
             on_status(
-                f"Inventaire terminé en {summary.elapsed_seconds}s : {summary.total_found} fichiers trouvés "
-                f"(+{summary.added} ajouts, {summary.updated} modifiés, -{summary.deleted} supprimés, {summary.unchanged} inchangés)."
+                tr(
+                    "scan.inventory_done",
+                    seconds=summary.elapsed_seconds,
+                    found=summary.total_found,
+                    added=summary.added,
+                    updated=summary.updated,
+                    deleted=summary.deleted,
+                    unchanged=summary.unchanged,
+                )
             )
 
         return summary, audio_files
@@ -317,12 +325,12 @@ class LocalScanner:
 
         if total_to_analyze == 0:
             if on_status:
-                on_status("Toutes les métadonnées audio sont déjà extraites et à jour.")
+                on_status(tr("scan.metadata_uptodate"))
             summary.elapsed_seconds = round(time.perf_counter() - start_time, 2)
             return summary
 
         if on_status:
-            on_status(f"Analyse audio de {total_to_analyze} fichier(s)...")
+            on_status(tr("scan.analyzing", count=total_to_analyze))
 
         buffer: list[TrackRecord] = []
         analyzed_count = 0
@@ -354,7 +362,7 @@ class LocalScanner:
                     buffer.append(record)
                     summary.analyzed += 1
                 except Exception as exc:
-                    summary.errors.append(f"Erreur d'extraction sur {futures[future].source_path}: {exc}")
+                    summary.errors.append(tr("scan.extract_error", path=futures[future].source_path, error=exc))
 
                 analyzed_count += 1
                 if on_progress and (analyzed_count % 10 == 0 or analyzed_count == total_to_analyze):
@@ -377,8 +385,12 @@ class LocalScanner:
         summary.elapsed_seconds = round(time.perf_counter() - start_time, 2)
         if on_status:
             on_status(
-                f"Analyse audio terminée en {summary.elapsed_seconds}s : "
-                f"{summary.analyzed}/{total_to_analyze} fichiers enrichis."
+                tr(
+                    "scan.analysis_done",
+                    seconds=summary.elapsed_seconds,
+                    done=summary.analyzed,
+                    total=total_to_analyze,
+                )
             )
 
         return summary

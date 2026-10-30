@@ -24,6 +24,10 @@
 ---
 
 <p align="center">
+  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+</p>
+
+<p align="center">
   <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
 </p>
 
@@ -41,19 +45,20 @@
 
 | Funkció | Leírás | Státusz |
 | :--- | :---: | :---: |
-| **Beépített VLC lejátszó motor** | Könnyű, önálló hanglejátszó, hordozható VLC automatikus telepítésével és zökkenőmentes hangszín szabályozásával | 🟢 Implementált |
-| **Multithread-es helyi szkanner** | Rekurziív és gyors helyi hang fájlok felfedezése (MP3, FLAC, AAC, OGG...) | 🟢 Implementált |
-| **Metadát-kivonás** | ID3, Vorbis Comments olvasása/írása és hangajakkép számítása (`mutagen`) | 🟢 Implementált |
-| **Playlista támogatás (M3U, PLS, XSPF, WPL) és CUE lapok** | Árkok indexelés (🎶), sorrendi hallgatási sorrend, hiányzó darabok vizuális azonosítása; a .cue fájlok (💿) virtuális sávok mappájaként nyílnak, időtartammal, és való sávokként játszhatók | 🟢 Implementált |
-| **Playlista menedzsment és húz-dobálás** | Virtualizált sorbaépítés, zökkenőmentes húz-dobálás, visszafordítható véletlenszerű (shuffle) és ciklusok | 🟢 Implementált |
-| **Interaktív „🎲 Blind Test” mód** | Immerziós zenei játék animált számlálóval, hangfadekkal, puha felfedezéssel és automatikus sorrendel | 🟢 Implementált |
-| **In-app frissítések** | Automata/manuális verzióellenőrzés GitHub Releases-en keresztül | 🟢 Implémenté |
-| **Művészek és diskográfia kezelése** | Dedikált nézet művészről albumokkal, single-ekkel és teljes diskográfiával | 🟡 Prévu |
-| **Grafikus égalizer (EQ)** | Hangpresetek és paraméteres multibánd égalizer | 🟡 Prévu |
-| **Google Drive kapcsoló** | Táv hangkolekciók szkennelése és szinkronizálása OAuth 2.0-on keresztül | ⚪ Planifié |
-| **Amazon Music kapcsoló** | Táv kolekciók szkennelése és szinkronizálása OAuth 2.0-on keresztül | ⚪ Planifié |
-| **Spotify / Deezer kapcsoló** | Playlist importálás és dalek eşleştirése | ⚪ Planifié |
-| **Intelligens duplikátumeltávolítás** | Duplikatok felismerése (homályos cím/művész + hangajomtatványok) | ⚪ Planifié |
+| **Hangjátszási motor** | Könnyű és független hangjátszó (VLC portable automatikusan telepítve Windows alatt). Két motor választékban: közvetlen VLC kimenet, vagy folyamatos tamponmotor két dal között zökkenőmentes átmenethez (Gapless 0 ms, egyenletes teljesítményű fade, hangkimenet megszakítás nélkül) | 🟢 Megvalósítva |
+| **Könyvtárkezelés** | Multithread rékurzív szkennelés helyi könyvtárakból (MP3, FLAC, AAC, OGG...), kézi, ütemezett vagy valós idejű szinkronizáció, kosár és könyvtárstatisztika | 🟢 Megvalósítva |
+| **Metadátum-kivonás** | ID3, Vorbis Comments olvasása/írása és hangajnyom számítása (`mutagen`) | 🟢 Megvalósítva |
+| **Playlist támogatás (M3U, PLS, XSPF, WPL) és CUE lapok** | Önváló indexelés (🎶), sorrendi hallgatási sorrend, hiányzó dalok vizuális azonosítása; a .cue fájlok (💿) virtuális dalok mappájaként nyílnak, időtartalmukkal, és való dalokként játszhatók | 🟢 Megvalósítva |
+| **Playlist Kezelő & Húzás-Dobozás** | Virtualizált sorbaépítés, zökkenőmentes drag & drop, visszafordítható véletlenszerű (shuffle) és ciklusok | 🟢 Megvalósítva |
+| **Interaktív „🎲 Blind Test” mód** | Immerziós zenei játék animált számlálóval, hangfade-vel, puha felfedezéssel és automatikus átmenettel | 🟢 Megvalósítva |
+| **Alkalmazásbelüli frissítések** | Automatikus/manuális verzióellenőrzés a GitHub Releases-en keresztül | 🟢 Megvalósítva |
+| **Linux és macOS verziók** | `.AppImage` / `.tar.gz` csomagok (Linux) és nem aláírt `.dmg` (macOS), VLC szükséges | 🟡 Eksperimentális (nem tesztelt) |
+| **Artistok és diskográfia kezelése** | Dedikált nézet művősök számára albumokkal, singlekkel és teljes diskográfíával | 🟡 Tervezett |
+| **Grafikus égalizer (EQ)** | Hangszín alapok és paraméteres többbandás égalizer | 🟡 Tervezett |
+| **Google Drive kapcsolat** | Táv hangszíngyűjtemények szkennelése és szinkronizálása OAuth 2.0 segítségével | ⚪ Tervezett |
+| **Amazon Music kapcsolat** | Táv gyűjtemények szkennelése és szinkronizálása OAuth 2.0 segítségével | ⚪ Tervezett |
+| **Spotify / Deezer kapcsolat** | Playlistek importálása és dalek eşleştirése | ⚪ Tervezett |
+| **Okos duplikátkezelés** | Duplikatok detektálása (cím/művész borús + hangajomlatok) | ⚪ Tervezett |
 
 > 💡 *A tervezett mérföldkövei és verziók részletes áttekintéséhez, kérjük, tekintse meg a [Feuille de route (Roadmap)](../../ROADMAP.md).*
 
@@ -100,6 +105,20 @@ cp .env.example .env
 # 6. Lancer l'application
 python main.py
 ```
+
+---
+
+## 🐧🍎 Linux és macOS: eksperimentális verziók (nem tesztelt)
+
+A Linux (`.AppImage` / `.tar.gz`) és macOS (`.dmg`) csomagok **tesztelés nélkül** biztosítottak: Az AMSO csak Windows alatt volt validálva. A folyamatos tamponú hangmotor (`buffer`) különösen ezeken a rendszereken nem volt ellenőrizve. Az Ön visszajelzése értékes.
+
+- **A VLC szükséges** (AMSO csak Windows alatt töltse le) :
+  - Linux : `sudo apt install vlc` (Debian / Ubuntu), `sudo dnf install vlc` (Fedora) vagy `sudo pacman -S vlc` (Arch).
+  - macOS : telepíteni **VLC.app**-et [videolan.org](https://www.videolan.org/vlc/) adreséről az Applications mappában.
+- **Linux, rendszerbibliothékok** : az Qt felület például `libpulse0`-t (hang), `libxcb-cursor0`-t és `libxkbcommon-x11-0`-t igényel (például `sudo apt install libpulse0 libxcb-cursor0 libxkbcommon-x11-0`).
+- **macOS, nem aláírt \`.dmg\`** : az első indításkor jobb gombbal kattintson az AMSO-ra, majd **Megnyitás**, vagy futtassa el `xattr -dr com.apple.quarantine /Applications/AMSO.app`-et.
+- **Linux, AppImage** : teheti végrehajthatóvá `chmod +x AMSO*.AppImage`-del.
+- **Probléma esetén**, kérjük küldje el a `startup.log` és `crash.log` fájlokat (ha léteznek), amelyek a adatkönyvtárban találhatók: `~/Library/Application Support/AMSO/` macOS alatt, `~/.local/share/AMSO/` Linux alatt. Kérjük pontosítsa a rendszerét és a VLC verzióját.
 
 ---
 

@@ -93,3 +93,6 @@ $RECYCLE.BIN/
 # Config Claude Code (skills synchronisés depuis .agents/skills via scripts/sync_skills.py)
 .claude/
 CLAUDE.md
+
+# Journaux de la TNR des transitions audio
+tests/tnr/log/

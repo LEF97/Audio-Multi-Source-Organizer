@@ -10,6 +10,7 @@ jobs:
   test:
     name: Test on ${{ matrix.os }} - Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -18,10 +19,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
           cache: "pip"
@@ -43,7 +44,24 @@ jobs:
             libxcb-xfixes0 \
             libxcb-xinerama0 \
             libxrandr2 \
+            libpulse0 \
+            libxcb-cursor0 \
+            libpulse-mainloop-glib0 \
             xvfb
+          # Qt Multimedia charge libpulse (et ALSA) des l'import : sans eux, les modules UI echouent a la collecte
+          sudo apt-get install -y libasound2t64 || sudo apt-get install -y libasound2
+
+      - name: Install VLC (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y vlc
+
+      - name: Install VLC (macOS)
+        if: runner.os == 'macOS'
+        run: brew install --cask vlc
+
+      - name: Install VLC (Windows)
+        if: runner.os == 'Windows'
+        run: choco install vlc -y --no-progress
 
       - name: Install dependencies
         run: |
@@ -59,9 +77,9 @@ jobs:
       - name: Run pytest (Linux with xvfb)
         if: runner.os == 'Linux'
         run: |
-          xvfb-run --auto-servernum pytest -v
+          xvfb-run --auto-servernum python -u -m pytest -v -o faulthandler_timeout=120
 
       - name: Run pytest (Windows & macOS)
         if: runner.os != 'Linux'
         run: |
-          pytest -v
+          python -u -m pytest -v -o faulthandler_timeout=120

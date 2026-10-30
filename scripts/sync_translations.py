@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import urllib.error
 import urllib.request
@@ -155,6 +156,27 @@ def is_untranslated(key: str, val: str, ref_val: str, target_lang: str) -> bool:
     return len(val) >= 4
 
 
+def has_source_leak(val: str, ref_val: str) -> bool:
+    """Vrai si la « traduction » reprend le texte français puis y ajoute autre chose (ex. « français (romaji) »)."""
+    ref = ref_val.strip()
+    return len(ref) >= 8 and len(val.strip()) > len(ref) and ref in val
+
+
+def placeholders(text: str) -> list[str]:
+    return sorted(re.findall(r"\{[A-Za-z_]+\}", text))
+
+
+def is_invalid_translation(val: str, ref_val: str) -> bool:
+    """Texte français repris, ou marqueurs {nom} perdus / ajoutés (le texte s'afficherait cassé)."""
+    return has_source_leak(val, ref_val) or placeholders(val) != placeholders(ref_val)
+
+
+def needs_retranslation(key: str, val: str, ref_val: str, target_lang: str) -> bool:
+    if target_lang == "fr":
+        return False
+    return is_untranslated(key, val, ref_val, target_lang) or is_invalid_translation(val, ref_val)
+
+
 def translate_batch_with_ollama(
     items: dict[str, str], target_lang: str, model: str
 ) -> dict[str, str]:
@@ -167,7 +189,8 @@ def translate_batch_with_ollama(
         "1. Return ONLY a valid JSON dictionary mapping the exact same keys to their translations.\n"
         "2. Keep all placeholders like {title}, {count}, {name}, {path}, {version}, {format}, {time}, {seconds}, {bitrate} EXACTLY intact.\n"
         "3. Keep any emojis or leading symbols (e.g. 🔄, 🗑️, 💾, ⚡, ✓, •, 👍, 💖, 🌐, 🎵, 📁, 📜, ⚙️, 📊) exactly at their position.\n"
-        "4. Do not include markdown code blocks, prefixes or explanations.\n\n"
+        "4. French unit symbols (o, Ko, Mo, Go for bytes; h for hours; s for seconds) must be rewritten with the symbols or words that users of the target language actually use (for example B, KB, MB, GB for bytes).\n"
+        "5. Do not include markdown code blocks, prefixes or explanations.\n\n"
         + json.dumps(items, ensure_ascii=False)
     )
     payload = json.dumps(
@@ -197,6 +220,7 @@ def sync_locales(
     ollama_model: str | None = None,
     retranslate_untranslated: bool = False,
     target_languages: list[str] | None = None,
+    forced_keys: frozenset[str] = frozenset(),
 ) -> int:
     ref_file = locales_dir / "fr.json"
     if not ref_file.exists():
@@ -213,6 +237,10 @@ def sync_locales(
         all_languages = [c for c in SUPPORTED_LANGUAGES.keys() if c != "fr"]
     except Exception:
         all_languages = [c for c in LANG_NAMES.keys() if c != "fr"]
+
+    if ollama_model and not target_languages:
+        # L'anglais est traduit par l'assistant, jamais par Ollama (règle du projet) : il faut le demander avec --lang
+        all_languages = [c for c in all_languages if c != "en"]
 
     if target_languages:
         # Filtrer sur les langues demandées
@@ -255,7 +283,8 @@ def sync_locales(
         obsolete_keys = [k for k in target_data if k not in ref_data]
         untranslated_keys = [
             k for k in ref_keys
-            if k in target_data and is_untranslated(k, target_data[k], ref_data[k], target_lang)
+            if k in target_data
+            and (k in forced_keys or needs_retranslation(k, target_data[k], ref_data[k], target_lang))
         ]
 
         log(f"\n[{target_lang}] Analyse de {target_path.name} ({LANG_NAMES.get(target_lang, target_lang)}) :")
@@ -296,6 +325,14 @@ def sync_locales(
                         f"    -> Lot {batch_num}/{total_batches} ({len(chunk_keys)} clés en cours via {ollama_model})..."
                     )
                     batch_res = translate_batch_with_ollama(chunk_dict, target_lang, ollama_model)
+                    # Le modèle double parfois le texte français d'une transcription : un nouvel essai clé par clé suffit
+                    for k in [k for k, v in batch_res.items() if k in chunk_dict and is_invalid_translation(v, chunk_dict[k])]:
+                        retry = translate_batch_with_ollama({k: chunk_dict[k]}, target_lang, ollama_model)
+                        if k in retry and not is_invalid_translation(retry[k], chunk_dict[k]):
+                            batch_res[k] = retry[k]
+                        else:
+                            log(f"    [!] {k} : traduction rejetée (texte français repris ou marqueurs altérés), clé laissée en l'état.")
+                            del batch_res[k]
                     translated_results.update(batch_res)
 
             synced_data: dict[str, str] = {}
@@ -350,6 +387,12 @@ def main() -> int:
         default=None,
         help="Code(s) de langue(s) spécifique(s) à traiter (ex: --lang pt ja ru)",
     )
+    parser.add_argument(
+        "--keys",
+        nargs="+",
+        default=[],
+        help="Clés à retraduire même si leur valeur diffère déjà du français (ex: --keys stats.size_value)",
+    )
     args = parser.parse_args()
 
     locales_dir = get_locales_dir()
@@ -359,6 +402,7 @@ def main() -> int:
         ollama_model=args.ollama,
         retranslate_untranslated=args.retranslate_untranslated or (args.ollama is not None),
         target_languages=args.lang,
+        forced_keys=frozenset(args.keys),
     )
 
 

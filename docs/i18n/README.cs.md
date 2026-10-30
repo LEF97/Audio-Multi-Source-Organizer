@@ -24,6 +24,10 @@
 ---
 
 <p align="center">
+  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+</p>
+
+<p align="center">
   <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
 </p>
 
@@ -39,21 +43,22 @@
 
 ## 📌 Funkce a stav projektu
 
-| Funkcionalita | Popis | Stav |
-| :--- | :---: | :---: |
-| **Integrovaný přehrávač VLC** | Lehčí a samostatný audio přehrávač s automatickou instalací přenosného VLC a plynulou správou hlasitosti | 🟢 Implementováno |
-| **Lokální multithreadový skener** | Rekurzivní a rychlé objevování lokálních audio souborů (MP3, FLAC, AAC, OGG...) | 🟢 Implementováno |
+| Funkce | Popis | Stav |
+| :--- | :--- | :---: |
+| **Audio přehrávačový motor** | Lehčí, samostatný audio přehrávač (VLC portable automaticky nainstalován pod Windows). Dva motory na výběr: přímý výstup VLC, nebo neustálý vyrovnávací paměťový motor pro plynulý přechod mezi dvěma skladbami (Gapless 0 ms, vyrovnávací fade na rovnoměrnou sílu, bez přerušení audio výstupu) | 🟢 Implementováno |
+| **Správa knihovny** | Rekurzivní multithreadový sken lokálních složek (MP3, FLAC, AAC, OGG...), ruční, plánovaná nebo v reálném čase synchronizace, koše a statistiky knihovny | 🟢 Implementováno |
 | **Extrakce metadat** | Čtení/zápis ID3, Vorbis Comments a výpočet audio fingerprintu (`mutagen`) | 🟢 Implementováno |
-| **Podpora playlistů (M3U, PLS, XSPF, WPL) a CUE listů** | Stromové indexování (🎶), sekvenční pořadí poslechu, vizuální lokalizace chybějících skladeb; soubory `.cue` (💿) se otevírají jako složka virtuálních skladeb s jejich délkou a přehrávají se jako skutečné skladby | 🟢 Implementováno |
-| **Správce playlistů a přetahování (Drag & Drop)** | Virtualizovaná čekací fronta, plynulé přetahování, obrátné náhodné pořadí (shuffle) a smyčky | 🟢 Implementováno |
-| **Interaktivní režim „🎲 Blind Test“** | Imenzivní hudební hra s animovaným odpočítáním, zvukovým fadeoutem, jemným odhalováním a automatickým sekvenováním | 🟢 Implementováno |
-| **Aktualizace v aplikaci** | Automatická/ruční kontrola verzí přes GitHub Releases | 🟢 Implementováno |
-| **Správa umělců a diskografie** | Vykřížená zobrazení pro umělce s albumy, singly a kompletní diskografií | 🟡 Plánováno |
-| **Grafický ekvalizátor (EQ)** | Audio přednastavené hodnoty a parametryický multibándový ekvalizátor | 🟡 Plánováno |
+| **Podpora playlistů (M3U, PLS, XSPF, WPL) a CUE souborů** | Strojové indexování (🎶), sekvenční pořadí poslechu, vizuální lokalizace chybějících skladeb; soubory `.cue` (💿) se otevírají jako složka virtuálních skladeb se svou délkou a přehrávají se jako skutečné sklady | 🟢 Implementováno |
+| **Správce playlistů a přetahování (Drag & Drop)** | Virtualizovaná fronta, plynulý drag & drop, zvratné náhodné (shuffle) a smyčky | 🟢 Implementováno |
+| **Interaktivní režim „🎲 Blind Test“** | Imersivní hudební hra s animovaným počítáním, zvukovým fade, jemným odhalováním a automatickým přechodem | 🟢 Implementováno |
+| **Aktualizace v aplikaci** | Automatické/ruční ověření verzí přes GitHub Releases | 🟢 Implementováno |
+| **Verze pro Linux a macOS** | Balíčky .AppImage / .tar.gz (Linux) a neověřené .dmg (macOS), vyžaduje VLC | 🟡 Experimentální (netestováno) |
+| **Správa umělců a diskografie** | Vyklená sekce pro umělce s albumy, singly a kompletní diskografií | 🟡 Plánováno |
+| **Grafický ekvalizátor (EQ)** | Audio přednastavení a parametryický multibándový ekvalizátor | 🟡 Plánováno |
 | **Konektor Google Drive** | Skenování a synchronizace vzdálených audio kolekcí přes OAuth 2.0 | ⚪ Plánováno |
 | **Konektor Amazon Music** | Skenování a synchronizace vzdálených kolekcí přes OAuth 2.0 | ⚪ Plánováno |
 | **Konektor Spotify / Deezer** | Importování playlistů a shoda skladeb | ⚪ Plánováno |
-| **Inteligentní odstraňování duplicit** | Detekce duplicit (rozmazané název/umělec + akustické otisky) | ⚪ Plánováno |
+| **Inteligentní odstraňování duplicit** | Detekce duplicit (rozmazané titulky/umělství + akustické otisky) | ⚪ Plánováno |
 
 > 💡 *Pro zobrazení podrobností plánovaných milníků a verzí se podívejte na [Feuille de route (Roadmap)](../../ROADMAP.md).*
 
@@ -100,6 +105,20 @@ cp .env.example .env
 # 6. Lancer l'application
 python main.py
 ```
+
+---
+
+## 🐧🍎 Linux a macOS: experimentální verze (netestované)
+
+Linux balíčky (`.AppImage` / `.tar.gz`) a macOS (`.dmg`) jsou poskytovány **bez testování**: AMSO bylo ověřeno pouze na Windows. Audio motor s nepřetržitým bufferem (`buffer`) nebyl ověřen na těchto systémech. Vaše zpětná vazba je cenná.
+
+- **VLC je zapadá** (AMSO jej stahuje pouze pro Windows) :
+  - Linux : `sudo apt install vlc` (Debian / Ubuntu), `sudo dnf install vlc` (Fedora) nebo `sudo pacman -S vlc` (Arch).
+  - macOS : nainstalujte **VLC.app** z [videolan.org](https://www.videolan.org/vlc/) do složky Applications.
+- **Linux, systémové knihovny** : rozhraní Qt vyžaduje zejména `libpulse0` (zvuk), `libxcb-cursor0` a `libxkbcommon-x11-0` (např. `sudo apt install libpulse0 libxcb-cursor0 libxkbcommon-x11-0`).
+- **macOS, nesignovaný `.dmg`** : při prvním spuštění klikněte pravým tlačítkem na AMSO a poté **Otevřít**, nebo spusťte `xattr -dr com.apple.quarantine /Applications/AMSO.app`.
+- **Linux, AppImage** : staňte ho spustitelným pomocí `chmod +x AMSO*.AppImage`.
+- **V případě problémů**, prosím o zaslání souborů `startup.log` a `crash.log` (pokud existují) nacházejících se v adresáři s daty: `~/Library/Application Support/AMSO/` pod macOS, `~/.local/share/AMSO/` pod Linux. Uveďte svůj systém a verzi VLC.
 
 ---
 

@@ -1069,6 +1069,8 @@ def test_audio_spectrum_service() -> None:
 
     svc = get_audio_spectrum_service()
     assert svc is not None
+    if not svc.is_available:
+        pytest.skip("capture du spectre réservée à Windows (repli visuel ailleurs)")
 
     # Test calcul FFT et bandes de fréquences
     spec = svc.get_spectrum(32)
@@ -2081,6 +2083,28 @@ def test_player_previous_respects_paused_state(sample_tracks: list[TrackRecord])
         assert play_called == [0]
 
 
+def test_player_pause_vlc_direct_pauses_libvlc_not_buffer_engine(sample_tracks: list[TrackRecord]) -> None:
+    """Mode vlc_direct : pause() met LibVLC en pause même si le moteur buffer est instancié et disponible."""
+    import vlc
+
+    get_config_manager().set_audio_engine("vlc_direct")
+    player = PlayerService()
+    player._playlist = list(sample_tracks)
+    player._current_index = 0
+    player._media_player = MagicMock()
+    player._media_player.get_state.return_value = vlc.State.Playing
+    player._engine = MagicMock()
+    player._engine.is_available = True
+
+    with patch.object(PlayerService, "is_vlc_available", new_callable=PropertyMock) as mock_available:
+        mock_available.return_value = True
+        player.pause()
+
+    player._media_player.set_pause.assert_called_once_with(1)
+    player._engine.pause.assert_not_called()
+    assert player._is_paused_requested
+
+
 def test_player_seek_resets_standby_and_draining(sample_tracks: list[TrackRecord]) -> None:
     """Vérifie que seek_ms réinitialise le lecteur standby et annule le vidage standard."""
     player = PlayerService()
@@ -2105,7 +2129,7 @@ def test_player_seek_when_ended_reloads_or_resumes(sample_tracks: list[TrackReco
     player._media_player.get_state.return_value = vlc.State.Ended
 
     load_called: list[tuple[int, int]] = []
-    player.load_index = lambda idx, seek_ms=0: load_called.append((idx, seek_ms))  # type: ignore[assignment]
+    player.load_index = lambda idx, seek_ms=0, **_kw: load_called.append((idx, seek_ms))  # type: ignore[assignment]
 
     with patch.object(PlayerService, "is_playing", new_callable=PropertyMock) as mock_playing:
         mock_playing.return_value = False
@@ -2217,7 +2241,7 @@ def test_player_previous_while_paused_preserves_pause_state(
 
         load_calls: list[int] = []
         play_calls: list[int] = []
-        player.load_index = lambda idx, seek_ms=0: load_calls.append(idx)  # type: ignore[assignment]
+        player.load_index = lambda idx, seek_ms=0, **_kw: load_calls.append(idx)  # type: ignore[assignment]
         player.play_index = lambda idx, resume_pending=False: play_calls.append(idx)  # type: ignore[assignment]
 
         # Cas 1: position < 3s -> charge l'index précédent sans jouer
@@ -2234,52 +2258,6 @@ def test_player_previous_while_paused_preserves_pause_state(
             player.previous()
             assert play_calls == []
             assert load_calls == [1]
-
-
-def test_engine_append_with_crossfade_equal_power(qapp: QApplication) -> None:
-    """Vérifie que append_with_crossfade applique le mixage cos/sin en puissance égale."""
-    import array
-
-    from amso.services.audio_engine import ContinuousAudioEngine
-
-    engine = ContinuousAudioEngine(None)
-    # Piste A : 1 seconde de valeur constante 10000 (16-bit)
-    samples_per_sec = 44100 * 2  # stéréo
-    raw_a = array.array("h", [10000] * samples_per_sec).tobytes()
-    # Piste B : 1 seconde de valeur constante 20000 (16-bit)
-    raw_b = array.array("h", [20000] * samples_per_sec).tobytes()
-
-    engine._current_pcm = bytearray(raw_a)
-    engine._play_offset = 0
-
-    # Crossfade de 0.5s
-    fade_end = engine.append_with_crossfade(raw_b, fade_seconds=0.5, total_duration_ms=2000, file_path="track_b.flac")
-
-    fade_bytes = int(0.5 * 44100 * 4)
-    assert engine._crossfade_next_path == "track_b.flac"
-    assert fade_end == fade_bytes
-    assert engine._play_offset == 0
-    mixed_samples = array.array("h")
-    mixed_samples.frombytes(engine._current_pcm[:fade_bytes])
-
-    # Au tout début du fondu (t=0): gain_a=cos(0)=1, gain_b=sin(0)=0 -> ~10000
-    assert abs(mixed_samples[0] - 10000) < 50
-    # À la toute fin du fondu (t=1): gain_a=cos(pi/2)=0, gain_b=sin(pi/2)=1 -> ~20000
-    assert abs(mixed_samples[-1] - 20000) < 50
-    # Au milieu (t=0.5): gain_a=cos(pi/4)=~0.707, gain_b=sin(pi/4)=~0.707
-    mid_idx = (len(mixed_samples) // 4) * 2
-    expected_mid = int(10000 * 0.7071 + 20000 * 0.7071)
-    assert abs(mixed_samples[mid_idx] - expected_mid) < 200
-
-    # Simulation de la lecture du fondu jusqu'à son terme et finalisation
-    engine._play_offset = fade_end
-    engine.finish_crossfade("track_b.flac", total_duration_ms=2000, fade_duration_ms=500)
-    assert engine._current_file_path == "track_b.flac"
-    assert engine._crossfade_next_path == ""
-    assert engine._total_duration_ms == 2000
-    assert engine._base_offset_ms == 500
-    assert engine._play_offset == 0
-    assert engine.current_time_ms == 500
 
 
 def test_player_reset_playback_on_config_change(qapp):
@@ -2308,3 +2286,35 @@ def test_player_reset_playback_on_config_change(qapp):
         assert player._engine._play_offset == 0
         assert player._engine._base_offset_ms == 0
         assert len(player._engine._current_pcm) == 0
+
+
+def test_player_buffer_seek_while_paused_does_not_reannounce_track(qapp, sample_tracks: list[TrackRecord]) -> None:
+    """Un abonné à track_changed qui repositionne la piste (Blind Test) ne doit pas boucler à l'infini."""
+    get_config_manager().set_audio_engine("buffer")
+    player = PlayerService()
+    if not player._engine.is_available:
+        pytest.skip("aucune sortie audio disponible")
+    player.load_playlist(sample_tracks, 0)
+    announcements: list[int] = []
+
+    def on_track_changed(_track: object) -> None:
+        announcements.append(1)
+        assert len(announcements) < 5, "boucle track_changed <-> seek"
+        player.seek_ratio(0.0)
+
+    player.track_changed.connect(on_track_changed)
+    player.seek_ratio(0.0)
+    assert announcements == []
+
+
+def test_player_buffer_temporary_volume_reaches_engine_and_restores(qapp) -> None:
+    """Les fondus du Blind Test passent par le volume temporaire : le moteur à tampon doit les entendre."""
+    get_config_manager().set_audio_engine("buffer")
+    player = PlayerService()
+    if not player._engine.is_available:
+        pytest.skip("aucune sortie audio disponible")
+    player.set_volume(80)
+    player.audio_set_temporary_volume(25)
+    assert player._engine._volume == pytest.approx(0.25)
+    player.restore_volume()
+    assert player._engine._volume == pytest.approx(0.8)

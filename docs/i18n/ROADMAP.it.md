@@ -47,16 +47,31 @@ AMSO ha lo scopo di diventare l'hub musicale universale e decentralizzato di rif
 
 ---
 
-### 🟢 Versione 0.4.0 — Esperienza Audio Avanzata & Foglie CUE *(Attuale)*
-- [x] **Rifacimento modulare dell'architettura & Quality Gate:** Suddivisione dell'applicazione in moduli coesi (< 500 righe), modularizzazione di MainWindow in mixin dedicati (amso/ui/pages/), scomposizione del servizio audio in sottosistemi indipendenti (player_transport, player_queue, player_transitions) e implementazione di un sistema di validazione automatizzato (scripts/verify.py & .bat : ruff, mypy, pytest, controllo delle dimensioni).
-- [x] **Integrazione Windows Shell & barra delle applicazioni:** Pinning nativo diretto dall'icona attiva (AppUserModelID esplicito LEF97.AMSO.AudioPlayer) fin dal punto di ingresso main.py e persistenza del collegamento durante gli aggiornamenti.
-- [x] **Ascolto Gapless perfetto 0 tra due tracce:** Ora sono disponibili 2 motori, uno basato su VLC_direct, l'altro che funziona in modalità buffer (funzionamento privilegiato). Queste modalità consentono un ascolto fluido sugli album con tracce collegate (Alan Parsons, Pink Floyd, Mike Oldfield, ecc...)
-- [x] **Supporto per le foglie CUE (`.cue`) :** Un file `.cue` viene visualizzato come una cartella di tracce virtuali (💿) con la loro durata e viene riprodotto come vere tracce (motore a buffer continuo).
+### 🟢 Versione 0.4.0 — Esperienza Audio Avanzata & Foglie CUE
+- [x] **Rifacimento modulare dell'architettura & Quality Gate:** Suddivisione dell'applicazione in moduli coesi (< 500 righe), modularizzazione di MainWindow in mixins dedicati (amso/ui/pages/), decomposizione del servizio audio in sottosistemi indipendenti (player_transport, player_queue, player_transitions) e implementazione di un telaio di validazione automatizzato (scripts/verify.py & .bat : ruff, mypy, pytest, controllo delle dimensioni).
+- [x] **Integrazione Windows Shell & barra delle applicazioni:** Pinaggio nativo diretto dall'icona attiva (AppUserModelID esplicito LEF97.AMSO.AudioPlayer) fin dal punto di ingresso main.py e persistenza del collegamento durante gli aggiornamenti.
+- [x] **Ascolto Gapless 0 perfetto tra due tracce:** Ora sono disponibili 2 motori, uno basato su VLC_direct, l'altro che funziona in modalità buffer (funzionamento preferito). Queste modalità consentono un ascolto fluido sugli album con tracce collegate (Alan Parsons, Pink Floyd, Mike Oldfield, ecc...)
+- [x] **Supporto per le foglie CUE (`.cue`) :** Un file `.cue` viene visualizzato come una cartella di tracce virtuali (💿) con la loro durata e viene letto come tracce reali (motore a buffer continuo).
 
 ---
 
-### 🔵 Version 0.4.1 — Packaging Linux & macOS
-- [ ] **Deployment multi-piattaforma automatizzato (Linux & macOS):** Compilazione nativa e packaging automatizzato tramite GitHub Actions per Linux (.AppImage / .tar.gz) e macOS Apple Silicon ARM & Intel (.dmg), in complemento all'eseguibile Windows.
+### 🟢 Versione 0.4.1 — Affidabilità audio, log tradotto e versioni Linux / macOS sperimentali *(Attuale)*
+- [x] **Uscita audio indipendente dal thread dell'interfaccia:** il `QAudioSink` del motore `buffer` è alimentato da un thread audio dedicato (modalità pull); spostare o ridimensionare la finestra non altera più l'audio.
+- [x] **Test Cieco nel motore `buffer`:** Riproduzione, Avanti e Indietro avviano l'audio senza dover ripremere Riproduzione.
+- [x] **Traduzioni completate:** registro di attività salvato con chiave + parametri e tradotto visualmente, testi hardcoded convertiti, fallback al francese, controllo dei marcatori `{nom}` alla sincronizzazione.
+- [x] **Stato di libVLC:** versione e provenienza (copia AMSO o VLC del sistema) nelle impostazioni del lettore.
+- [x] **Distribuzione multi-piattaforma (Linux e macOS), versione sperimentale non testata:** packaging automatizzato tramite GitHub Actions per Linux (.AppImage / .tar.gz) e macOS Apple Silicon ARM e Intel (.dmg non firmato), VLC richiesto; i tester restituiscono `startup.log` e `crash.log`.
+
+---
+
+### 🔵 Version 0.4.2 — Compatibilità di rete Linux & macOS
+- [ ] **Rilevamento dei mount di rete (Linux & macOS):** `amso/core/network_paths.py` non riconosce oggi che i percorsi UNC e i drive mappati Windows; riconoscere i mount NFS / SMB / AFP (`/proc/self/mountinfo`, `statfs`) per evitare qualsiasi sondaggio disco bloccante all'avvio su questi sistemi.
+- [ ] **Validazione su Linux e macOS:** motore `buffer`, transizioni e packaging da confermare su sistemi reali in base ai feedback dei tester.
+
+---
+
+### 🔵 Versione 0.5.0 — Navigazione per album nelle playlist
+- [ ] **Playlist in modalità album:** opzione « Visualizza in modalità album » (attivata di default) che raggruppa i titoli di una playlist in cartelle virtuali per album nell'albero, con « (album sconosciuto) » per i titoli senza album e un'opzione aggiuntiva per playlist tramite clic destro.
 
 ---
 

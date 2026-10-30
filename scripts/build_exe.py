@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 def build(onefile: bool = False) -> int:
-    """Compile l'application AMSO en exécutable natif Windows."""
+    """Compile l'application AMSO en exécutable natif (Windows .exe, Linux dossier, macOS .app)."""
     project_root = Path(__file__).parent.parent.absolute()
     main_py = project_root / "main.py"
     dist_dir = project_root / "dist"
@@ -67,6 +67,8 @@ def build(onefile: bool = False) -> int:
 
     if icon_file.exists():
         cmd.append(f"--icon={icon_file}")
+    if sys.platform == "darwin":
+        cmd.append("--osx-bundle-identifier=com.lef97.amso")
 
     if onefile:
         cmd.append("--onefile")
@@ -78,8 +80,10 @@ def build(onefile: bool = False) -> int:
     print("\nExécution de la compilation PyInstaller...")
     res = subprocess.run(cmd, cwd=str(project_root))
     if res.returncode == 0:
-        # Copie de sécurité des fichiers de traduction dans les dossiers de l'exécutable
-        if not onefile:
+        # Copie de sécurité des fichiers de traduction dans les dossiers de l'exécutable. Ignorée sur macOS : le
+        # système de fichiers n'y distingue pas la casse, `dist/AMSO/amso` y désignerait l'exécutable `AMSO`, et les
+        # données sont déjà dans le bundle .app
+        if not onefile and sys.platform != "darwin":
             for sub_target in [
                 "amso/locales",
                 "locales",
@@ -103,10 +107,13 @@ def build(onefile: bool = False) -> int:
 
         print("\n" + "=" * 60)
         print("  SUCCÈS : Compilation terminée avec succès !")
-        if onefile:
-            print(f"  Exécutable généré : {dist_dir / 'AMSO.exe'}")
+        exe_name = "AMSO.exe" if sys.platform == "win32" else "AMSO"
+        if sys.platform == "darwin":
+            print(f"  Application générée : {dist_dir / 'AMSO.app'}")
+        elif onefile:
+            print(f"  Exécutable généré : {dist_dir / exe_name}")
         else:
-            print(f"  Exécutable généré : {dist_dir / 'AMSO' / 'AMSO.exe'}")
+            print(f"  Exécutable généré : {dist_dir / 'AMSO' / exe_name}")
         print("=" * 60)
     else:
         print("\n" + "!" * 60)

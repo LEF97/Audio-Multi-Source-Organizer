@@ -24,6 +24,10 @@
 ---
 
 <p align="center">
+  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+</p>
+
+<p align="center">
   <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
 </p>
 
@@ -39,21 +43,22 @@
 
 ## 📌 Funtzionalitateak & Estatusa proiektuaren
 
-| Funtzionalitatea | Deskribapioa | Estatusa |
-| :--- | :--- | :---: |
-| **VLC reproduktzaile integrazioa** | Reproduktzaile audio arrun eta autonomia, VLC portable auto-instalazioarekin eta gutxiak eragiltzenako volumen-eragozpenarekin | 🟢 Implémenté |
-| **Skaner lokal multithread** | Arrendatu eta azkar audio-fitxak lokalak aurkitzea (MP3, FLAC, AAC, OGG...) | 🟢 Implémenté |
-| **Metadatuak txukidatzea** | ID3, Vorbis Comments irakurri/izanji eta audio-hizkarrarako kalkulak (`mutagen`) | 🟢 Implémenté |
-| **Playlistak (M3U, PLS, XSPF, WPL) eta CUE lehenpizkakoak babestekoa** | Indeksazio arboreskoa (🎶), bidaia sekuentziariko, iraupenak falta diren parluak ikusko; .cue fitxak (💿) virtuale bideak osatutako dosierrak irekitzen dira eta parluak benetako bideak zituzte | 🟢 Implémenté |
-| **Playlist-er bestelaria eta Drag & Drop** | Cola virtualizatua, drag & drop gutxiak, aleatorra (shuffle) berratu eta zikloak | 🟢 Implémenté |
-| **Modu « 🎲 Blind Test » interaktibo** | Joko musikal immersibo batekin animazioko kontua, izkatu-soinuak, irekitzaldi zaintzailea eta lotura otomatikoa | 🟢 Implémenté |
-| **Günultzak in-app** | Zigitalko/manuelrako birrageak egiaztatzeko GitHub Releases-aren bidez | 🟢 Implémenté |
-| **Artisteak eta Diskografiaren Kudeaketa** | Artista bakoitzeko ikuspegi dedikatuak, albumak, singleak eta diskografia osoa | 🟡 Prévu |
-| **Grafikoeko Ekuilizatzailea (EQ)** | Audio presetak eta ekuilizatzaile parametriko multibanda | 🟡 Prévu |
-| **Google Drive Konektatzailea** | Kolekzio audio ururakak azkakarrenetik sinkronizatzea OAuth 2.0-aren bidez | ⚪ Planifié |
-| **Amazon Music Konektatzailea** | Kolekzio ururakak azkakarrenetik sinkronizatzea OAuth 2.0-aren bidez | ⚪ Planifié |
-| **Spotify / Deezer Konektatzailea** | Playlistak importatzea eta laburrak urromatzea | ⚪ Planifié |
-| **Deduklizazioak Inteligenteak** | Duplikazioak ezkutak detektatzea (titulu/artista ezkutak + empreintza akustikoak) | ⚪ Planifié |
+| Funtzionalitatea | Deskribapena | Egoera |
+| :--- | :---: | :---: |
+| **Audio reproduktzeko makina** | Reproduktore audio arrun eta independentea (VLC portable instalatuta Windows-ean). Makinak bi aukerak: VLC-ren diseinu direktua, edo makina tampon berriroko bat, bi labur luzeak arteko enplegatu kudeatzeko (Gapless 0 ms, fondu enplegatu potentza egalean, audio diseinuaren duzun bezala). | 🟢 Implemetatuta |
+| **Bibioteka kudeaketa** | Dosierrak rekursifiko multithread-ko (MP3, FLAC, AAC, OGG...), sinkronizazio arahandi, planifikatu edo tiempo real-ean, txakurra eta bibiotekako estatistika. | 🟢 Implemetatuta |
+| **Metadatuak txukotzea** | ID3, Vorbis Comments irakurri/izanji eta audio empreintza kalkulatu (`mutagen`). | 🟢 Implemetatuta |
+| **Playlistak (M3U, PLS, XSPF, WPL) eta CUE lehenelako babesarea** | Indeksazio arboreskiko (🎶), eskuratzea sekuentziako, labur nagusiak ikusiko; .cue kalanak (💿) dosierrak virtualak bezala irekitzen dira, beraien dureta eta labur nagusiak bezala irakurtzen dira. | 🟢 Implemetatuta |
+| **Playlist Kudeaketa eta Drag-Drop** | Cola virtualizatua, drag & drop zure, aleatorra (shuffle) berratu eta zikloak. | 🟢 Implemetatuta |
+| **Modu interaktibo « 🎲 Blind Test »** | Joko musikal immersibo, kontua animatikoarekin, fondu sonikoak, ireketa zaintzaile eta enplegatu otomatikoa. | 🟢 Implemetatuta |
+| **Actualizazioak aplikazioan** | Zigitalizazioak/manuelak biruzko erakundeak (GitHub Releases) bidez | 🟢 Implemendu |
+| **Zigitalizazioak Linux eta macOS** | Paquetak .AppImage / .tar.gz (Linux) eta .dmg ez-eginkako (macOS), VLC beharrezkoa | 🟡 Eksperimentalak (ez-testatu) |
+| **Artisteak eta Diskografiaren Kudeaketa** | Artista bakoitzeko ikuspegi dedikatuak albumak, singleak eta diskografia osoarekin | 🟡 Planifikatuta |
+| **Grafikoaren Ekuilizatzailea (EQ)** | Audio presetak eta ekuilizatzaile parametriko multibandeak | 🟡 Planifikatuta |
+| **Konektadore Google Drive** | Kolekzio audio ururak azkakarretik OAuth 2.0 bidez azkarazteak eta sinkronizazioa | ⚪ Planifikatuta |
+| **Konektadore Amazon Music** | Kolekzio ururak azkakarretik OAuth 2.0 bidez azkarazteak eta sinkronizazioa | ⚪ Planifikatuta |
+| **Konektadore Spotify / Deezer** | Playlistak importatzea eta laburrak lotzea | ⚪ Planifikatuta |
+| **Doblaketa Inteligentea** | Doblaketa detekzioa (titulu/artista blurrak + empreintza akustikoak) | ⚪ Planifikatuta |
 
 > 💡 *Planifikatako hitzegiak eta berseemakkoen ayrıntesia ikusteko, zuzenatu [Feuille de route (Roadmap)](../../ROADMAP.md).*
 
@@ -100,6 +105,20 @@ cp .env.example .env
 # 6. Lancer l'application
 python main.py
 ```
+
+---
+
+## 🐧🍎 Linux eta macOS: berberako zuretzako (ez testatu)
+
+
+
+- **VLC beharrezkoa da** (AMSO Windows-ean irekitzen du) :
+  - Linux: `sudo apt install vlc` (Debian / Ubuntu), `sudo dnf install vlc` (Fedora) edo `sudo pacman -S vlc` (Arch).
+  - macOS: **VLC.app** instalatu [videolan.org](https://www.videolan.org/vlc/) dosierako Applications-an.
+- **Linux, bibliotekak sistemikoak** : Qt antzarmukaak eskatzen du, adibidez, `libpulse0` (itxurala), `libxcb-cursor0` eta `libxkbcommon-x11-0` (adibidez `sudo apt install libpulse0 libxcb-cursor0 libxkbcommon-x11-0`).
+- **macOS, `.dmg` ez-egoikoa** : lehen lansakaltzean, AMSO-an eskarriki klik egin eta gero **Ireki**, edo `xattr -dr com.apple.quarantine /Applications/AMSO.app` erakusi.
+- **Linux, AppImage** : exekutagarri bihurtu `chmod +x AMSO*.AppImage` bidez.
+- **Problema algún kasuan**, meseduro, bidali `startup.log` eta `crash.log` (ego da gero) atalaren dosieroko: `~/Library/Application Support/AMSO/` macOS-an, `~/.local/share/AMSO/` Linux-an. Adierazi zure sistema eta VLC-aren berrsioa.
 
 ---
 

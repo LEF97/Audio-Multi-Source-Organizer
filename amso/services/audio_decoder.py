@@ -17,6 +17,7 @@ from typing import Any
 
 from PySide6.QtCore import QObject, QTimer, Signal
 
+from amso.core.i18n import tr
 from amso.services.vlc_binding import vlc
 
 logger = logging.getLogger(__name__)
@@ -35,6 +36,10 @@ class AsyncAudioDecoder(QObject):
     chunk_decoded = Signal(str, bytes)  # file_path, bloc pcm supplémentaire
     decoding_finished = Signal(str, bytes, int)  # file_path, pcm total, duration_ms
     error_occurred = Signal(str, str)  # file_path, message d'erreur
+    _vlc_end_signalled = Signal()  # relais du thread d'événements de VLC vers le thread Qt
+    # Relais du thread audio de VLC vers le thread Qt, estampillés de la génération du décodage qui les a produits
+    _ready_relay = Signal(str, bytes, int, int)
+    _chunk_relay = Signal(str, bytes, int)
 
     def __init__(self, vlc_instance: Any = None, parent: QObject | None = None) -> None:
         super().__init__(parent)
@@ -51,6 +56,19 @@ class AsyncAudioDecoder(QObject):
         self._monitor_timer = QTimer(self)
         self._monitor_timer.setInterval(80)
         self._monitor_timer.timeout.connect(self._check_player_state)
+        self._vlc_end_signalled.connect(self._on_vlc_end_signalled)
+        self._generation: int = 0
+        self._ready_relay.connect(self._deliver_ready)
+        self._chunk_relay.connect(self._deliver_chunk)
+
+    def _deliver_ready(self, file_path: str, pcm: bytes, duration_ms: int, generation: int) -> None:
+        """Publie le premier bloc, sauf s'il vient d'un décodage remplacé depuis (signal resté dans la file Qt)."""
+        if generation == self._generation:
+            self.ready_to_play.emit(file_path, pcm, duration_ms)
+
+    def _deliver_chunk(self, file_path: str, chunk: bytes, generation: int) -> None:
+        if generation == self._generation:
+            self.chunk_decoded.emit(file_path, chunk)
 
     @property
     def is_finished(self) -> bool:
@@ -81,7 +99,12 @@ class AsyncAudioDecoder(QObject):
             def _audio_play(opaque: Any, samples: int, count: int, pts: int) -> None:
                 num_bytes = count * BYTES_PER_FRAME
                 chunk = ctypes.string_at(samples, num_bytes)
-                self._handle_pcm_samples(chunk)
+                try:
+                    self._handle_pcm_samples(chunk)
+                except RuntimeError:
+                    # Le thread audio de VLC peut livrer un dernier bloc après la destruction des relais Qt :
+                    # une exception ici remonte dans un thread natif et abat le processus
+                    logger.debug("Bloc PCM ignoré : décodeur déjà détruit")
 
             self._on_play_cb = _audio_play
             self._player.audio_set_callbacks(self._on_play_cb, None, None, None, None, None)
@@ -90,7 +113,8 @@ class AsyncAudioDecoder(QObject):
             em = self._player.event_manager()
 
             def _on_vlc_end(event: Any) -> None:
-                self._on_vlc_end_reached()
+                # Thread d'événements de VLC : un QTimer ne peut être arrêté que depuis son thread (Qt), on relaie
+                self._vlc_end_signalled.emit()
 
             self._on_end_cb = _on_vlc_end
             em.event_attach(vlc.EventType.MediaPlayerEndReached, self._on_end_cb)
@@ -99,6 +123,11 @@ class AsyncAudioDecoder(QObject):
             logger.error("Erreur d'initialisation du décodeur VLC amem : %s", exc)
             self._player = None
             return False
+
+    def _on_vlc_end_signalled(self) -> None:
+        """Traite en thread Qt la fin de flux annoncée par VLC, sauf si un nouveau décodage a démarré entre-temps."""
+        if self._player and self._player.get_state() in (vlc.State.Ended, vlc.State.Stopped):
+            self._on_vlc_end_reached()
 
     def _on_vlc_end_reached(self) -> None:
         """Déclenché lorsque LibVLC a terminé de décoder l'intégralité du flux audio."""
@@ -129,9 +158,9 @@ class AsyncAudioDecoder(QObject):
             if dur <= 0 and self._player:
                 dur = max(0, self._player.get_length())
                 self._duration_ms = dur
-            self.ready_to_play.emit(self._current_path, bytes(self._accumulated_pcm), dur)
+            self._ready_relay.emit(self._current_path, bytes(self._accumulated_pcm), dur, self._generation)
         elif self._has_emitted_ready:
-            self.chunk_decoded.emit(self._current_path, chunk)
+            self._chunk_relay.emit(self._current_path, chunk, self._generation)
 
     def start_decode(
         self, file_path: str, start_offset_ms: int = 0, duration_ms: int = 0, stop_offset_ms: int = 0, key: str = ""
@@ -143,11 +172,11 @@ class AsyncAudioDecoder(QObject):
         """
         self.stop()
         if not file_path or not Path(file_path).exists():
-            self.error_occurred.emit(file_path, f"Fichier introuvable : {file_path}")
+            self.error_occurred.emit(file_path, tr("player.err_file_missing", path=file_path))
             return
 
         if not self._ensure_player():
-            self.error_occurred.emit(file_path, "Impossible d'initialiser le décodeur audio")
+            self.error_occurred.emit(file_path, tr("player.err_decoder_init"))
             return
 
         self._current_path = key or file_path
@@ -185,6 +214,7 @@ class AsyncAudioDecoder(QObject):
 
     def stop(self) -> None:
         """Arrête le décodage en cours."""
+        self._generation += 1
         self._is_finished = True
         self._monitor_timer.stop()
         if self._player:

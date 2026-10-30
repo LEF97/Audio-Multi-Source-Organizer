@@ -24,6 +24,10 @@
 ---
 
 <p align="center">
+  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+</p>
+
+<p align="center">
   <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
 </p>
 
@@ -41,19 +45,20 @@
 
 | Ciri | Penerangan | Status |
 | :--- | :---: | :---: |
-| **Enjin pemain VLC bersepadu** | Pemain audio ringan dan mandiri dengan pemasangan auto VLC portable dan pengurusan volume yang lancar | 🟢 Implémenté |
-| **Pengimbas tempatan multithread** | Penemuan rekursif dan pantas fail audio tempatan (MP3, FLAC, AAC, OGG...) | 🟢 Implémenté |
-| **Ekstraksi metadata** | Baca/tulis ID3, Vorbis Comments dan pengiraan cap jari audio (`mutagen`) | 🟢 Implémenté |
-| **Sokongan Senarai Main (M3U, PLS, XSPF, WPL) & lembaran CUE** | Pengindeksan pokok (🎶), susunan mendengar berurutan, pengenalpastian visual trek yang hilang; fail `.cue` (💿) dibuka seperti folder trek maya dengan tempohnya dan dimainkan seperti trek sebenar | 🟢 Implémenté |
-| **Pengurus Senarai Main & Seret-Lepas** | Barisan menunggu yang divirtualkan, seret & lepas yang lancar, rawak (shuffle) boleh diterbalikkan dan gelung | 🟢 Implémenté |
-| **Mod "🎲 Blind Test" interaktif** | Permainan muzik imersif dengan kira detik animasi, pudar bunyi, pendedahan lembut dan penyambungan automatik | 🟢 Implémenté |
+| **Enjin Pemain Audio** | Pemutar audio ringan dan mandiri (VLC portable dipasang secara automatik di bawah Windows). Dua enjin pilihan: output langsung VLC, atau enjin buffer berterusan untuk sambungan lancar antara dua trek (Gapless 0 ms, fade-out berterusan dengan kuasa yang sama, tanpa gangguan output audio) | 🟢 Implémenté |
+| **Pengurusan Perpustakaan** | Imbasan rekursif multi-threaded folder tempatan (MP3, FLAC, AAC, OGG...), penyegerakan manual, terjadual atau masa nyata, tong sampah dan statistik perpustakaan | 🟢 Implémenté |
+| **Ekstraksi Metadata** | Baca/tulis ID3, Vorbis Comments dan pengiraan cap jari audio (`mutagen`) | 🟢 Implémenté |
+| **Sokongan Senarai Main (M3U, PLS, XSPF, WPL) & helaian CUE** | Pengindeksan pokok (🎶), susunan pendengaran berurutan, pengenalpastian visual klip yang hilang; fail `.cue` (💿) dibuka seperti folder trek maya dengan tempohnya dan dimainkan seperti trek sebenar | 🟢 Implémenté |
+| **Pengurus Senarai Main & Seret-Lepas** | Barisan tunggu tervirtualisasi, seret & lepas yang lancar, rawak (shuffle) boleh balik dan gelung | 🟢 Implémenté |
+| **Mod « 🎲 Blind Test » interaktif** | Permainan muzik imersif dengan kiraan animasi, fade bunyi, pendedahan lembut dan sambungan automatik | 🟢 Implémenté |
 | **Kemas kini dalam aplikasi** | Pengesahan versi automatik/manual melalui GitHub Releases | 🟢 Dilaksanakan |
-| **Pengurusan artis & Diskografi** | Paparan khusus mengikut artis dengan album, single, dan diskografi lengkap | 🟡 Dirancang |
+| **Versi Linux & macOS** | Paquets `.AppImage` / `.tar.gz` (Linux) et `.dmg` non signé (macOS), VLC requis | 🟡 Eksperimental (belum diuji) |
+| **Pengurusan artis & Diskografi** | Paparan khusus mengikut artis dengan album, single dan diskografi lengkap | 🟡 Dirancang |
 | **Equalizer grafik (EQ)** | Preset audio dan equalizer multiband parametrik | 🟡 Dirancang |
-| **Penyambung Google Drive** | Imbasan dan penyegerakan koleksi audio jarak jauh melalui OAuth 2.0 | ⚪ Dirancang |
-| **Penyambung Amazon Music** | Imbasan dan penyegerakan koleksi jarak jauh melalui OAuth 2.0 | ⚪ Dirancang |
-| **Penyambung Spotify / Deezer** | Import senarai main dan padanan trek | ⚪ Dirancang |
-| **Penghapusan duplikat pintar** | Pengesanan duplikat (tajuk/artis kabur + cap jari akustik) | ⚪ Dirancang |
+| **Penyambung Google Drive** | Imbasan dan penyegerakan koleksi audio jarak jauh melalui OAuth 2.0 | ⚪ Dijadualkan |
+| **Penyambung Amazon Music** | Imbasan dan penyegerakan koleksi jarak jauh melalui OAuth 2.0 | ⚪ Dijadualkan |
+| **Penyambung Spotify / Deezer** | Import senarai main dan padanan trek | ⚪ Dijadualkan |
+| **Penghapusan duplikasi pintar** | Pengesanan duplikat (tajuk/artis kabur + cap jari akustik) | ⚪ Dijadualkan |
 
 > 💡 *Untuk melihat perincian pencapaian dan versi yang dirancang, sila rujuk kepada [Feuille de route (Roadmap)](../../ROADMAP.md).*
 
@@ -100,6 +105,20 @@ cp .env.example .env
 # 6. Lancer l'application
 python main.py
 ```
+
+---
+
+## 🐧🍎 Linux dan macOS : versi eksperimen (tidak diuji)
+
+Pakej Linux (`.AppImage` / `.tar.gz`) dan macOS (`.dmg`) disediakan **tanpa diuji** : AMSO hanya disahkan di Windows. Enjin audio buffer berterusan (`buffer`) khususnya tidak disemak pada sistem ini. Maklum balas anda sangat berharga.
+
+- **VLC diperlukan** (AMSO hanya memuat turunnya di bawah Windows) :
+  - Linux : `sudo apt install vlc` (Debian / Ubuntu), `sudo dnf install vlc` (Fedora) atau `sudo pacman -S vlc` (Arch).
+  - macOS : pasang **VLC.app** dari [videolan.org](https://www.videolan.org/vlc/) dalam folder Applications.
+- **Linux, perpustakaan sistem** : antara lain antara muka Qt memerlukan `libpulse0` (bunyi), `libxcb-cursor0` dan `libxkbcommon-x11-0` (contohnya `sudo apt install libpulse0 libxcb-cursor0 libxkbcommon-x11-0`).
+- **macOS, `.dmg` tidak ditandatangani** : semasa pelancaran pertama, klik kanan pada AMSO kemudian **Buka**, atau jalankan `xattr -dr com.apple.quarantine /Applications/AMSO.app`.
+- **Linux, AppImage** : menjadikannya boleh dilaksanakan dengan `chmod +x AMSO*.AppImage`.
+- **Sekiranya ada masalah**, sila hantar fail `startup.log` dan `crash.log` (jika ada) yang terletak dalam folder data: `~/Library/Application Support/AMSO/` di macOS, `~/.local/share/AMSO/` di Linux. Nyatakan sistem dan versi VLC anda.
 
 ---
 
