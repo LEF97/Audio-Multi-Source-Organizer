@@ -56,7 +56,8 @@ amso/
 │   ├── player_transitions.py transitions (standard, gapless, crossfade)
 │   ├── player_vlc_transitions.py transitions matérielles VLC direct
 │   ├── player_volume.py, player_types.py
-│   ├── player_cue.py         lecture des pistes CUE (moteur tampon) : décalage/arrêt de décodage, clé de flux
+│   ├── player_cue.py         lecture des pistes CUE (moteur tampon) : décalage/arrêt de décodage, clé de flux, `start_track_run`
+│   ├── cue_continuation.py   pistes CUE contiguës d'un même fichier décodées en un seul flux ; frontières en octets dans le tampon (franchies par `poll_progress`)
 │   ├── audio_engine.py       ContinuousAudioEngine (ring buffer PCM, `read_pcm` appelé par le thread audio)
 │   ├── audio_output.py       SinkOutput : QAudioSink en mode pull dans son propre QThread (indépendant du thread UI)
 │   ├── audio_decoder.py      décodeur PCM (amem)

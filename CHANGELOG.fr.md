@@ -26,6 +26,7 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 
 ### Changed
 
+- **Feuilles CUE : enchaînement continu des pistes d'un même fichier (moteur `buffer`) :** le fichier est décodé une seule fois pour toute une suite de pistes contiguës, et les frontières sont des positions exactes dans le tampon PCM calculées depuis le CUE. Corrige la fin de la piste précédente rejouée au début de la suivante (seek imprécis sur un MP3 à débit variable). Le crossfade n'est pas appliqué entre deux pistes d'un même fichier CUE (flux déjà continu).
 - **Scan en 3 phases :** séparation claire de l'inventaire, de l'extraction des métadonnées et de l'analyse des playlists avec journalisation et progression détaillées.
 - **Identité visuelle :** nouvelle icône AMSO (PNG haute résolution, ICO 7 tailles, ICNS 4 tailles).
 
