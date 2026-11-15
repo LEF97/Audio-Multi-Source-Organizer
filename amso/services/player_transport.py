@@ -193,10 +193,15 @@ class PlayerTransportMixin(_MixinBase):
                         self._media_player.stop()
                     except Exception:
                         pass
-                self._engine.stop(keep_output=getattr(self, "_advancing_after_track_end", False))
+                advancing = getattr(self, "_advancing_after_track_end", False)
+                # Changement manuel en pleine lecture : micro-fondu et sortie ouverte, pour ne pas couper en pleine onde.
+                # En pause le sink est suspendu : le fondu n'y serait jamais joué, l'arrêt franc reste donc de mise.
+                cut_with_fade = not advancing and self._engine.is_playing
+                self._engine.stop(keep_output=advancing or cut_with_fade, fade_out=cut_with_fade)
                 self._pending_seek_ms = seek_ms
                 self._current_time_ms = seek_ms
                 start_track_decode(self._decoder, track, seek_ms)
+                self._engine.prepare_output()
                 self._timer.start()
                 self.track_changed.emit(track)
                 self.state_changed.emit("playing")

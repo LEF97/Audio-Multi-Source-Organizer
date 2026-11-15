@@ -34,6 +34,24 @@ def prewarm_numpy() -> None:
     import numpy  # noqa: F401
 
 
+def linear_fade(pcm: bytes, rising: bool) -> bytes:
+    """Applique une rampe linéaire (croissante ou décroissante) sur tout le bloc.
+
+    Gains évalués au centre de chaque frame : ni 0 ni 1 exacts, le raccord avec le signal avant ou après la rampe
+    ne produit pas de saut. Sert aux micro-fondus qui évitent un pop quand un son est coupé ou repris en pleine onde.
+    """
+    import numpy as np
+
+    frames = len(pcm) // BYTES_PER_FRAME
+    if frames == 0:
+        return b""
+    data = np.frombuffer(pcm, dtype="<i2", count=frames * CHANNELS).reshape(frames, CHANNELS)
+    gain = (np.arange(frames, dtype=np.float64) + 0.5) / frames
+    if not rising:
+        gain = 1.0 - gain
+    return np.clip(np.rint(data * gain[:, None]), -32768, 32767).astype("<i2").tobytes()
+
+
 def equal_power_mix(outgoing: bytes, incoming: bytes, start_frame: int, total_frames: int) -> bytes:
     """Mixe deux blocs de même longueur appartenant à un fondu de `total_frames` frames, à partir de `start_frame`.
 

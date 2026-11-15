@@ -17,7 +17,7 @@ import threading
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtMultimedia import QAudioFormat
 
-from amso.core.pcm_mixer import StreamingCrossfade, bytes_to_ms, ms_to_bytes
+from amso.core.pcm_mixer import StreamingCrossfade, bytes_to_ms, linear_fade, ms_to_bytes
 from amso.services.audio_output import SinkOutput
 
 logger = logging.getLogger(__name__)
@@ -27,6 +27,7 @@ CHANNELS = 2
 BYTES_PER_SAMPLE = 2  # Int16
 BYTES_PER_FRAME = CHANNELS * BYTES_PER_SAMPLE  # 4 octets par frame stéréo
 BUFFER_SIZE_SINK = 32768  # ~185ms de tampon réactif
+CUT_FADE_MS = 10  # micro-fondu à la coupure d'un titre (changement manuel) et à l'entrée du suivant
 
 
 class ContinuousAudioEngine(QObject):
@@ -58,6 +59,8 @@ class ContinuousAudioEngine(QObject):
 
         # État du streaming
         self._current_pcm: bytearray = bytearray()
+        self._cut_tail = bytearray()  # fin fondue du titre coupé, servie avant le tampon du suivant
+        self._fade_in_next: bool = False
         self._play_offset: int = 0
         self._base_offset_ms: int = 0
         self._total_duration_ms: int = 0
@@ -101,12 +104,14 @@ class ContinuousAudioEngine(QObject):
         """
         wanted = max_bytes // BYTES_PER_FRAME * BYTES_PER_FRAME
         with self._lock:
+            tail = bytes(self._cut_tail[:wanted])
+            del self._cut_tail[: len(tail)]
             available = len(self._current_pcm) - self._play_offset
-            take = min(wanted, available) // BYTES_PER_FRAME * BYTES_PER_FRAME
-            chunk = bytes(self._current_pcm[self._play_offset : self._play_offset + take])
+            take = min(wanted - len(tail), available) // BYTES_PER_FRAME * BYTES_PER_FRAME
+            chunk = tail + bytes(self._current_pcm[self._play_offset : self._play_offset + take])
             self._play_offset += take
-        padded = wanted - take
-        if take:
+        padded = wanted - len(chunk)
+        if chunk:
             self._has_served_data = True
         elif padded and self._has_served_data:
             self._starved_bytes += padded
@@ -145,11 +150,13 @@ class ContinuousAudioEngine(QObject):
         if self._output:
             self._output.set_volume(0.0 if muted else self._volume)
 
-    def stop(self, keep_output: bool = False) -> None:
+    def stop(self, keep_output: bool = False, fade_out: bool = False) -> None:
         """Stoppe la lecture et réinitialise les tampons.
 
         `keep_output=True` laisse la sortie matérielle ouverte : enchaînement automatique de deux titres, où la fin
         du précédent finit de se jouer et où la session audio ne doit être ni fermée ni recréée.
+        `fade_out=True` (changement manuel de titre en pleine lecture, avec `keep_output=True`) termine le titre par un
+        micro-fondu au lieu d'une coupure en pleine onde (pop) et fond aussi l'entrée du titre suivant.
         """
         self._is_playing = False
         self._is_paused = False
@@ -158,6 +165,8 @@ class ContinuousAudioEngine(QObject):
             self._output_started = False
             self._has_served_data = False
         with self._lock:
+            self._cut_tail = bytearray(self._faded_tail_locked()) if fade_out else bytearray()
+            self._fade_in_next = fade_out
             self._current_pcm.clear()
             self._play_offset = 0
             self._base_offset_ms = 0
@@ -165,6 +174,22 @@ class ContinuousAudioEngine(QObject):
             self._current_file_path = ""
             self._reset_crossfade_locked()
         self.state_changed.emit("stopped")
+
+    def _faded_tail_locked(self) -> bytes:
+        """Les `CUT_FADE_MS` de PCM suivant la position lue, ramenés à zéro (moins si le tampon est plus court)."""
+        start = self._play_offset
+        end = min(len(self._current_pcm), start + ms_to_bytes(CUT_FADE_MS))
+        return linear_fade(bytes(self._current_pcm[start:end]), rising=False)
+
+    def prepare_output(self) -> None:
+        """Ouvre la sortie avant l'arrivée du premier bloc décodé : elle joue du silence pendant le décodage.
+
+        Une session WASAPI ouverte à froid sur de l'audio réel accroche le début d'un son tenu ; ouverte pendant la
+        latence de décodage (~200 ms), elle est stabilisée quand `play_track` livre le PCM.
+        """
+        if self._output and not self._output_started:
+            self._output.start(False)
+            self._output_started = True
 
     def reset_output(self) -> bool:
         """Ferme puis recrée la session audio (changement de configuration à chaud, jamais entre deux titres).
@@ -194,6 +219,10 @@ class ContinuousAudioEngine(QObject):
 
         with self._lock:
             self._current_file_path = file_path
+            if self._fade_in_next:
+                self._fade_in_next = False
+                fade_bytes = ms_to_bytes(CUT_FADE_MS)
+                pcm_data = linear_fade(pcm_data[:fade_bytes], rising=True) + pcm_data[fade_bytes:]
             self._current_pcm = bytearray(pcm_data)
             self._total_duration_ms = duration_ms
             self._base_offset_ms = start_offset_ms

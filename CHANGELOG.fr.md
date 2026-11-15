@@ -13,14 +13,35 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 
 ---
 
-## [0.5.0-dev] - 2026-10-30
+## [0.5.0] - 2026-11-15
 
 ### Added
-- *(à compléter)*
+
+- **Vue « Sources & Bibliothèque » :** nouvelle page dédiée remplaçant l'ancien écran de statistiques, avec vue globale ou par source, indicateurs de santé (sources hors ligne, erreurs de scan, fichiers ou entrées de playlists manquants) et actions rapides (éditer, rescanner, supprimer, ouvrir dans la bibliothèque).
+- **Éditeur et réparation de playlists :** fenêtre dédiée pour réorganiser les pistes (monter/descendre), supprimer des entrées, recharger depuis le disque, relocaliser un fichier manquant ou lancer une réparation automatique (recherche locale puis base de données avec score de confiance et aperçu des propositions).
+- **Export / sauvegarde de playlists :** sauvegarde de la file d'attente courante en `.m3u`, `.m3u8`, `.pls`, `.xspf` ou `.wpl` avec indexation immédiate en base.
+- **Playlists regroupées par album :** affichage en dossiers virtuels par album dans l'arborescence des playlists (avec dossier « album inconnu » pour les titres sans album).
+- **Transitions visuelles des pochettes :** 5 styles configurables dans les paramètres du lecteur (Aucune, Fondu, Glissement, Zoom, Retournement).
+- **Mémorisation de la géométrie de fenêtre :** sauvegarde et restauration de la taille, de la position et de l'état maximisé au redémarrage.
+
+### Changed
+
+- **Scan en 3 phases :** séparation claire de l'inventaire, de l'extraction des métadonnées et de l'analyse des playlists avec journalisation et progression détaillées.
+- **Identité visuelle :** nouvelle icône AMSO (PNG haute résolution, ICO 7 tailles, ICNS 4 tailles).
+
+### Fixed
+
+- **Moteur `buffer` — accroche au démarrage d'un titre :** après un arrêt, la sortie audio était rouverte à froid directement sur le premier bloc décodé, ce qui accrochait le début d'un son tenu (« TU-TUUU »). La sortie est désormais ouverte dès la demande de lecture et joue du silence pendant le décodage du premier bloc : aucune latence ajoutée, session audio toujours unique.
+- **Moteur `buffer` — pop au changement manuel de titre :** changer de titre en pleine lecture coupait l'ancien son en pleine onde. Il se termine maintenant par un micro-fondu de 10 ms (sortie laissée ouverte) et le titre suivant entre par un fondu de même durée. L'enchaînement automatique et le moteur `vlc_direct` ne sont pas modifiés.
+
+### Tests
+
+- **Détection des pops dans la TNR :** `tests/tnr/clicks.py` repère les bords de silence brutaux et mesure le saut d'amplitude à un point de coupure connu, validé sur signaux synthétiques (`tests/test_tnr_clicks.py`).
 
 ## [0.4.1] - 2026-10-29
 
 ### Added
+
 - **Non-régression des transitions audio (TNR) :** `scripts/tnr_transitions.bat` rejoue la fin d'un titre puis le début du suivant (Sirius → Eye in the Sky par défaut) dans le vrai lecteur, avec une sortie audio factice, et compare l'enregistrement à une construction idéale (identique à l'échantillon près en gapless, fondu à puissance égale en crossfade, absence de coupure, session audio unique).
 - **Journal de la TNR :** chaque exécution écrit `tests/tnr/log/tnr_AAAA-MM-JJ_HH-MM-SS.log` (version, commit, pistes, résultats détaillés, messages Qt et journaux du lecteur) ; le dossier est ignoré par git.
 - **Journal de démarrage :** `startup.log` dans le dossier de données chronomètre chaque étape du lancement, la restauration de la session et les threads encore actifs à la fermeture.
@@ -30,10 +51,12 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 - **Versions Linux et macOS expérimentales (non testées) :** `release.yml` produit une archive `.tar.gz` et une `.AppImage` (Linux x86_64), ainsi qu'un `.dmg` non signé pour macOS Apple Silicon et Intel, via `scripts/package_unix.py`. VLC doit être installé (gestionnaire de paquets ou VLC.app) et, sous Linux, les bibliothèques `libpulse0`, `libxcb-cursor0` et `libxkbcommon-x11-0`. Le moteur audio `buffer` et la non-régression des transitions n'ont été validés que sous Windows : les retours (`startup.log`, `crash.log`) sont bienvenus. Le CI Linux installe désormais `libpulse0` (QtMultimedia échouait à l'import) et le déploiement itch.io du workflow n'a plus lieu que sur un tag.
 
 ### Changed
+
 - **Démarrage :** la table « Tous les morceaux » n'est plus chargée (jusqu'à 3 fois ~50 000 pistes) avant l'ouverture de sa page ; le compteur du bandeau reste exact via une requête `COUNT`.
 - **Démarrage :** l'écran de chargement s'affiche avant l'import de la fenêtre principale et de la base, numpy n'est plus chargé qu'en arrière-plan une fois la fenêtre visible, l'icône et le logo sont mis en cache.
 
 ### Fixed
+
 - **Démarrage sans réseau :** aucun sondage disque (`exists`, `isdir`) n'est plus fait sur un chemin réseau (UNC ou lecteur mappé) depuis le thread d'interface au démarrage (pochette, surveillance de dossier, restauration de la session) ; un partage injoignable ne fige plus la fenêtre. La pochette d'une piste réseau est revérifiée toutes les 30 s en arrière-plan.
 - **Fermeture :** correction de « QThread: Destroyed while thread is still running » (signal `finished` du worker de pochettes qui masquait celui de `QThread`, threads de pochettes non attendus).
 - **Moteur `buffer` — changement de mode de transition :** après un changement de mode dans les paramètres du lecteur, un seek puis Lecture ne démarrait plus rien (la réinitialisation laissait le moteur sans sortie audio, et le lecteur basculait à tort sur le chemin VLC). La session audio est désormais recréée immédiatement. La piste en cours repart du début après un changement de moteur ou de mode. Enfin, la reprise d'un titre chargé en pause (après un reset ou un seek à l'arrêt) relance le timer de transfert du moteur `buffer` : sans lui, Lecture ne produisait aucun son. Le décodeur n'émet plus les blocs d'un décodage remplacé entre-temps (reset suivi de Lecture, seeks rapprochés) : ils pouvaient fausser la position ou empêcher le démarrage du moteur `buffer`.
@@ -56,6 +79,7 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 ## [0.4.0] - 2026-10-25
 
 ### Added
+
 - **Prise en charge des feuilles CUE (`.cue`) :**
   - Un fichier `.cue` apparaît dans l'arborescence comme un dossier virtuel (icône 💿) contenant ses pistes avec leur titre, leur artiste et leur durée ; le fichier audio d'origine reste lisible normalement.
   - Lecture d'une piste CUE en tant que portion du fichier (début `INDEX 01`, fin au début de la piste suivante, dernière piste jusqu'à la fin du fichier) avec position et durée propres à la piste, déplacement dans la piste et enchaînement gapless / crossfade entre portions (moteur à tampon continu uniquement ; le moteur `vlc_direct` affiche un message explicatif).
@@ -75,6 +99,7 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 - **Harnais de validation qualité unifié (Quality Gate) :** Création du script `scripts/verify.py` et de son wrapper racine `verify.bat` exécutant consécutivement le formatage (Ruff), le linter (Ruff check), le typage strict (Mypy sans masquage), le contrôle des plafonds de taille de fichiers et les tests automatisés (Pytest).
 
 ### Fixed
+
 - **Playlists et feuilles CUE découvertes : journal d'activité et rafraîchissement de l'arborescence :** un scan qui n'ajoutait que des playlists (M3U, PLS, XSPF, WPL, CUE) n'était mentionné nulle part et ne rafraîchissait pas l'arborescence des dossiers (le nouveau nœud n'apparaissait qu'après un redémarrage). Le journal indique désormais le nombre de playlists / feuilles CUE ajoutées, mises à jour ou supprimées (avec les premiers noms), et l'arborescence se met à jour à la fin du scan.
 - **Moteur audio natif WASAPI & Résolution de la coupure prématurée de fin de piste :**
   - *Sortie audio native Windows WASAPI (`mmdevice`)* : suppression du forçage de `--aout=directsound` sous Windows. Le module DirectSound de VLC tronquait de manière anormale les 1,3 à 1,4 dernières secondes des fichiers audio (coupant la fin de *Sirius*). L'alignement sur `mmdevice` permet à LibVLC de diffuser l'intégralité du flux audio jusqu'à la dernière milliseconde en 32-bit float.
@@ -103,8 +128,8 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
     - Toute modification dans les Paramètres du moteur audio (*VLC direct* vs *Tampon continu*) ou du mode de transition (*Pas de fondu*, *Gapless 0*, *Crossfade*) coupe immédiatement la lecture en cours et réinitialise de fond en comble les flux (destruction propre du `QAudioSink`, vidage des tampons PCM mémoire, arrêt des décodeurs, détachement des médias LibVLC, annulation de tous les timers de transition/fondu).
     - La piste active reste sélectionnée en pause à 00:00 prête à être lancée sous la nouvelle configuration sans nécessiter de redémarrer l'application.
 
-
 ### Changed
+
 - **Découpage modulaire complet de l'architecture (< 500 lignes par fichier) :**
   - Objectif atteint à 100 % : **0 fichier > 500 lignes** sur l'ensemble de la base de code AMSO (contre 8 fichiers au-dessus du seuil initialement).
   - Allègement de `main_window.py` (~1 500 -> 357 lignes) via des mixins spécialisés dans `amso/ui/pages/`.
@@ -124,6 +149,7 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
   - Normalisation obligatoire des fins de ligne Windows CRLF (`\r\n`) sur l'ensemble des fichiers `.bat`.
 
 ### Fixed
+
 - **Harmonisation et élimination des résidus de traduction dans les 41 langues :**
   - Éradication de plus de 1 400 clés restées en français ou en anglais par défaut via le nouvel outil `scripts/fix_residual_translations.py` (`scripts/fix_residual_translations.bat`).
   - Correction des libellés d'ambiance visuelle et des effets graphiques (`player.visual_effect`, `effects.*`), traduits désormais nativement dans toutes les langues.
@@ -137,6 +163,7 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 ## [0.3.0] - 2026-10-18
 
 ### Added
+
 - **Prise en charge complète des fichiers de playlist** :
   - Indexation automatique des formats de listes de lecture : `.m3u`, `.m3u8`, `.pls`, `.xspf` et `.wpl`.
   - Intégration dans l'arborescence « Par dossier » sous forme de nœuds dédiés arborant l'icône **`🎶`**.
@@ -158,32 +185,38 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 ### Added
 
 ### Mode Blind Test & Section Jeux
+
 - **Nouveau tiroir « 🎲 Jeux »** : Catégorie dédiée repliable dans la barre latérale accueillant la vue Blind Test (localisée en 5 langues).
 - **Expérience de jeu immersive** : Décompte visuel dynamique au centre de la pochette masquée, révélation progressive en fondu doux et enchaînement automatique des manches.
 - **Gestion acoustique avancée** : Réglage précis des temps de recherche, de découverte et du fondu sonore sortant (*fade-out*).
 - **Configuration dédiée** : Délocalisation des réglages du Blind Test dans `Paramètres > Lecteur`.
 
 ### Ergonomie & Gestion de Playlist
+
 - **Refonte du mode Aléatoire (Shuffle)** : Mélange visuel intégral de la file d'attente préservant la piste active, bouton d'action directe « 🎲 Mélanger les titres » et restauration fidèle de l'ordre d'origine dès désactivation.
 - **Réorganisation par Glisser-Déposer** : Réordonnancement fluide des morceaux à la souris dans le tableau sans interrompre la lecture.
 - **Sauvegarde asynchrone v2** : Format compact par identifiants SQLite réduisant l'empreinte disque de 99 % (accès non-bloquants, 60 FPS constants).
 - **Comportement « No Autoplay »** : L'ajout de morceaux en file d'attente ne force plus le démarrage intempestif de la lecture.
 
 ### Gestion de bibliothèque & Corbeille intelligente
+
 - **Suppression à double niveau** : Choix entre le simple retrait de la bibliothèque (avec exclusion mémorisée pour les futurs scans) et la suppression physique vers la Corbeille Windows.
 - **Vue dédiée « 🗑️ Corbeille »** : Consultation des pistes exclues et restauration en un clic avec réintégration automatique dans la base de données.
 - **Arborescence clarifiée** : Distinction visuelle entre sources locales et cloud, arborescence repliée par défaut au démarrage et menus contextuels uniformisés.
 
 ### Stabilité du moteur audio (LibVLC) & Performances
+
 - **Éradication des blocages critiques** : Suppression du deadlock entre le thread C interne de LibVLC et la boucle d'événements Qt (fin des gels d'interface et écrans blancs).
 - **Robustesse des transitions** : Verrou anti-réentrance sur les changements rapides de pistes et résolution des blocages lors des retours arrière successifs (« Morceau précédent »).
 - **Contrôles de volume fiabilisés** : Intégration du curseur de volume dans la barre supérieure du lecteur et suppression des conflits d'atténuation sonore DirectSound.
 
 ### Interface & Liens officiels
+
 - **Modernisation de la page « À propos »** : En-tête réaligné, analyseur de spectre rétro interactif intégré sous le texte et ajout des boutons officiels (Ko-fi, GitHub Sponsors, GitHub, Itch.io).
 - **Internationalisation intégrale** : Synchronisation complète de l'ensemble des libellés et options en 5 langues (FR, EN, ES, DE, IT).
 
 ### Fixed
+
 - **Résolution des erreurs `disk I/O error` (SQLite sous Windows)** : configuration du mode WAL une seule fois à l'initialisation du fichier de base de données, ajout de `PRAGMA busy_timeout = 30000`, stockage temporaire en mémoire RAM (`PRAGMA temp_store = MEMORY`) et mécanisme de réessais automatiques avec backoff exponentiel pour éliminer les conflits de verrouillage de fichiers lors des scans multithreadés.
 - **Suppression des alertes modales bloquantes en arrière-plan** : les synchronisations automatiques en tâche de fond n'affichent plus de boîte de dialogue modale intrusive en cas d'erreur transitoire, mais consignent proprement l'alerte dans le journal d'activité et la barre d'état cliquable.
 - **Volume audio trop faible au démarrage** : élimination d'une condition de course lors de l'initialisation du moteur de lecture VLC et neutralisation de l'atténuation automatique (*ducking*) du mixeur audio de Windows.
@@ -199,6 +232,7 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
 ## [0.1.0] - 2026-10-17
 
 ### Added
+
 - **Moteur de lecture audio intégré (python-vlc) :**
   - Prise en charge native des formats audio populaires : MP3, FLAC, WAV, AAC, OGG, M4A, WMA.
   - Détection et téléchargement automatique transparent d'un binaire VLC portable en cas d'absence de VLC sur le système utilisateur.
@@ -227,11 +261,13 @@ et ce projet adhère à la spécification [Semantic Versioning (SemVer)](https:/
   - Raccourci clavier <kbd>F1</kbd> et clic direct sur le logo AMSO pour ouvrir la page « À propos ».
 
 ### Changed
+
 - Remplacement du dialogue modal « À propos » par une sous-page intégrée et fluide dans les Paramètres.
 - Réorganisation de la navigation des Paramètres en 5 sections : Général, Lecteur, Sources, Logs, À propos.
 - Masquage de la barre de menus standard résiduelle au profit d'une interface épurée sans bouton « Aide » orphelin.
 
 ### Fixed
+
 - **Démarrage à 00:00 :** Réinitialisation systématique de la position temporelle (`_pending_seek_ms = 0`) lors de la sélection d'une nouvelle musique depuis la bibliothèque ou la playlist, réservant la reprise de position uniquement au bouton « Play » de la session précédente restaurée.
 - **Persistance immédiate du volume :** Sauvegarde instantanée dans `config.ini` dès la manipulation du slider de volume ou du bouton muet.
 - **Verrouillage du volume VLC :** Resynchronisation automatique du volume audio lors du passage à l'état `Playing` dans la boucle d'horloge pour éviter toute perte de réglage lors du démarrage à froid du décodeur VLC.
