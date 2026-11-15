@@ -13,7 +13,7 @@ import threading
 import weakref
 from collections.abc import Callable
 
-from PySide6.QtCore import QIODevice, QMetaObject, QObject, Qt, QThread, Signal, Slot
+from PySide6.QtCore import QIODevice, QMetaObject, QObject, Qt, QThread, QTimer, Signal, Slot
 from PySide6.QtMultimedia import QAudioFormat, QAudioSink, QMediaDevices
 
 logger = logging.getLogger(__name__)
@@ -59,6 +59,8 @@ class _SinkWorker(QObject):
         self._read_pcm = read_pcm
         self._sink: QAudioSink | None = None
         self._device: PcmPullDevice | None = None
+        self._silenced = False
+        self._generation = 0
         self.ready = threading.Event()
         self.created = False
 
@@ -77,32 +79,71 @@ class _SinkWorker(QObject):
         finally:
             self.ready.set()
 
-    @Slot(bool)
-    def start(self, paused: bool) -> None:
+    def _state(self) -> str:
+        return self._sink.state().name if self._sink else "aucun"
+
+    def _set_silenced(self, silenced: bool) -> None:
+        # Volume de session à 0 tant que rien ne joue : test d'écoute des claquements aux démarrages/coupures du sink.
+        self._silenced = silenced
+        if self._sink:
+            self._sink.setVolume(0.0 if silenced else self._volume)
+
+    @Slot(bool, int)
+    def start(self, paused: bool, drain_ms: int) -> None:
         if self._sink and self._device:
+            self._generation += 1
+            # Le tampon de la session précédente survit au stop() et se joue à la réouverture : muet le temps qu'il
+            # se vide, pendant que le moteur ne sert encore que du silence (latence de décodage).
+            self._set_silenced(paused or drain_ms > 0)
             self._sink.start(self._device)
             if paused:
                 self._sink.suspend()
+            elif drain_ms > 0:
+                generation = self._generation
+                QTimer.singleShot(drain_ms, lambda: self._end_drain(generation))
+
+    def _end_drain(self, generation: int) -> None:
+        if generation == self._generation:
+            self._set_silenced(False)
 
     @Slot()
     def suspend(self) -> None:
+        self._generation += 1
         if self._sink:
+            self._set_silenced(True)
             self._sink.suspend()
 
     @Slot()
     def resume(self) -> None:
+        self._generation += 1
         if self._sink:
+            self._set_silenced(False)
             self._sink.resume()
 
     @Slot()
     def stop(self) -> None:
+        self._generation += 1
         if self._sink:
+            # Un stop() depuis l'état suspendu laisse le tampon interne : reset() le vide avant, sinon la reprise
+            # suivante rejoue la fin de l'ancien titre.
+            self._set_silenced(True)
+            self._sink.reset()
             self._sink.stop()
+
+    @Slot()
+    def flush_suspended(self) -> None:
+        # Le tampon interne du sink survit à suspend() : le vider impose un stop/start, relancé aussitôt en pause.
+        if self._sink and self._device:
+            self._set_silenced(True)
+            self._sink.reset()
+            self._sink.stop()
+            self._sink.start(self._device)
+            self._sink.suspend()
 
     @Slot(float)
     def set_volume(self, volume: float) -> None:
         self._volume = volume
-        if self._sink:
+        if self._sink and not self._silenced:
             self._sink.setVolume(volume)
 
     @Slot()
@@ -130,10 +171,11 @@ class SinkOutput(QObject):
     """Façade utilisable depuis le thread d'interface : les commandes sont postées au thread audio, dans l'ordre."""
 
     _create = Signal()
-    _start = Signal(bool)
+    _start = Signal(bool, int)
     _suspend = Signal()
     _resume = Signal()
     _stop = Signal()
+    _flush_suspended = Signal()
     _set_volume = Signal(float)
 
     def __init__(
@@ -154,6 +196,7 @@ class SinkOutput(QObject):
             (self._suspend, self._worker.suspend),
             (self._resume, self._worker.resume),
             (self._stop, self._worker.stop),
+            (self._flush_suspended, self._worker.flush_suspended),
             (self._set_volume, self._worker.set_volume),
         ):
             signal.connect(slot)
@@ -166,8 +209,8 @@ class SinkOutput(QObject):
     def available(self) -> bool:
         return self._worker.created
 
-    def start(self, paused: bool = False) -> None:
-        self._start.emit(paused)
+    def start(self, paused: bool = False, drain_ms: int = 0) -> None:
+        self._start.emit(paused, drain_ms)
 
     def suspend(self) -> None:
         self._suspend.emit()
@@ -177,6 +220,9 @@ class SinkOutput(QObject):
 
     def stop(self) -> None:
         self._stop.emit()
+
+    def flush_suspended(self) -> None:
+        self._flush_suspended.emit()
 
     def set_volume(self, volume: float) -> None:
         self._set_volume.emit(volume)

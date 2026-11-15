@@ -114,7 +114,11 @@ class PlayerTransportMixin(_MixinBase):
                     self._media_player.stop()
                 except Exception:
                     pass
-            self._engine.stop()
+            # Sortie conservée : la fermer puis la rouvrir à froid à la reprise accroche le début du son (tick),
+            # comme pour le double clic (cf. play_index). Le sink reste suspendu tant que le titre est en pause.
+            self._engine.stop(keep_output=True)
+            self._engine.discard_output_buffer()
+            self._engine.prepare_output(paused=True)
             dur_ms = int((track.duration_seconds or 0) * 1000)
             self._pending_seek_ms = seek_ms
             self._current_time_ms = seek_ms
@@ -354,6 +358,7 @@ class PlayerTransportMixin(_MixinBase):
         # l'arrêterait seul et LibVLC continuerait à jouer (Blind Test ouvert pendant une lecture du Lecteur).
         use_buffer = get_config_manager().get_audio_engine() == "buffer" and self._engine and self._engine.is_available
         if use_buffer:
+            self._is_paused_requested = True
             self._engine.pause()
             self.state_changed.emit("paused")
             return
@@ -396,6 +401,9 @@ class PlayerTransportMixin(_MixinBase):
             return
 
         next_idx = self.get_next_index()
+        if self._repeat_mode == RepeatMode.ONE and not getattr(self, "_advancing_after_track_end", False):
+            # Pas de préchargement « même piste » pour un « Suivant » manuel : on vise la piste d'après.
+            next_idx = self._current_index + 1 if self._current_index + 1 < len(self._playlist) else 0
         if next_idx is None:
             self.stop()
             return
@@ -418,16 +426,32 @@ class PlayerTransportMixin(_MixinBase):
 
         self._reset_standby_player()
 
-        if self._repeat_mode == RepeatMode.ONE and self._current_index >= 0:
-            self.play_index(self._current_index)
+        # « Suivant » manuel en pause : charger sans lire (même invariant que previous()).
+        # Le moteur buffer peut être en pause sans que le drapeau le soit (pause() n'y touchait pas, reprise de session).
+        paused = bool(getattr(self, "_is_paused_requested", False)) or bool(use_buffer and self._engine.is_paused)
+        # Rien ne joue (démarrage de l'application, après un stop) : « Suivant » charge sans lire. Le timer de
+        # lecture est actif dès play_index, avant même l'arrivée du premier bloc décodé (is_playing serait faux).
+        idle = not self.is_playing and not self._timer.isActive()
+        stay_paused = (paused or idle) and not getattr(self, "_advancing_after_track_end", False)
+
+        def go(idx: int) -> None:
+            self.load_index(idx) if stay_paused else self.play_index(idx)
+
+        # La répétition d'une piste ne vaut que pour la fin naturelle : « Suivant » manuel avance quand même.
+        if (
+            self._repeat_mode == RepeatMode.ONE
+            and self._current_index >= 0
+            and getattr(self, "_advancing_after_track_end", False)
+        ):
+            go(self._current_index)
             return
 
         if self._current_index + 1 < len(self._playlist):
-            self.play_index(self._current_index + 1)
-        elif self._repeat_mode == RepeatMode.ALL:
+            go(self._current_index + 1)
+        elif self._repeat_mode in (RepeatMode.ALL, RepeatMode.ONE):
             if self._shuffle:
                 self.shuffle_playlist(below_current=False)
-            self.play_index(0)
+            go(0)
         else:
             self.stop()
 

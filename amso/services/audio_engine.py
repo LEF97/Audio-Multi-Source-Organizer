@@ -28,6 +28,7 @@ CHANNELS = 2
 BYTES_PER_SAMPLE = 2  # Int16
 BYTES_PER_FRAME = CHANNELS * BYTES_PER_SAMPLE  # 4 octets par frame stéréo
 BUFFER_SIZE_SINK = 32768  # ~185ms de tampon réactif
+STALE_OUTPUT_DRAIN_MS = 190  # un peu plus que BUFFER_SIZE_SINK (~185 ms)
 CUT_FADE_MS = 10  # micro-fondu à la coupure d'un titre (changement manuel) et à l'entrée du suivant
 
 
@@ -179,20 +180,31 @@ class ContinuousAudioEngine(QObject):
             self._cue.clear()
         self.state_changed.emit("stopped")
 
+    def discard_output_buffer(self) -> None:
+        """Vide le tampon interne de la sortie (titre rechargé en pause) sans la fermer à froid pour de bon.
+
+        Suspendu, le sink garde quelques centaines de ms de l'ancien titre, rejouées à la reprise.
+        """
+        if self._output and self._output_started:
+            self._output.flush_suspended()
+            self._has_served_data = False
+
     def _faded_tail_locked(self) -> bytes:
         """Les `CUT_FADE_MS` de PCM suivant la position lue, ramenés à zéro (moins si le tampon est plus court)."""
         start = self._play_offset
         end = min(len(self._current_pcm), start + ms_to_bytes(CUT_FADE_MS))
         return linear_fade(bytes(self._current_pcm[start:end]), rising=False)
 
-    def prepare_output(self) -> None:
+    def prepare_output(self, paused: bool = False) -> None:
         """Ouvre la sortie avant l'arrivée du premier bloc décodé : elle joue du silence pendant le décodage.
 
         Une session WASAPI ouverte à froid sur de l'audio réel accroche le début d'un son tenu ; ouverte pendant la
         latence de décodage (~200 ms), elle est stabilisée quand `play_track` livre le PCM.
+        `paused=True` (titre chargé en pause) : ouverte puis suspendue sur du silence, sinon `start` suivi de
+        `suspend` laisse passer quelques ms du début du titre.
         """
         if self._output and not self._output_started:
-            self._output.start(False)
+            self._output.start(paused, 0 if paused else STALE_OUTPUT_DRAIN_MS)
             self._output_started = True
 
     def reset_output(self) -> bool:
