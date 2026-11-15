@@ -8,7 +8,7 @@ import time
 from typing import TYPE_CHECKING, Any
 
 from amso.core.config import get_config_manager
-from amso.services.player_cue import start_track_decode, stream_key
+from amso.services.player_cue import limit_decode_lead, start_track_decode, stream_key
 from amso.services.vlc_binding import vlc
 
 logger = logging.getLogger(__name__)
@@ -228,6 +228,8 @@ class PlayerTransitionsMixin(_MixinBase):
 
         use_buffer = cfg.get_audio_engine() == "buffer" and self._engine and self._engine.is_available
         if use_buffer:
+            if self._engine.cue_continues:
+                return  # la piste suivante est la suite du même flux décodé : rien à précharger ni à raccorder
             buffer_avail_bytes = max(0, len(self._engine._current_pcm) - self._engine._play_offset)
             buffer_remaining_ms = int((buffer_avail_bytes / 4) / 44.1)
 
@@ -325,6 +327,7 @@ class PlayerTransitionsMixin(_MixinBase):
             and (self._engine.is_playing or getattr(self._decoder, "is_decoding", False))
         )
         if use_buffer:
+            limit_decode_lead(self._engine, self._decoder)
             self._engine.poll_progress()
             current_ms = self._engine.current_time_ms
             total_ms = self._engine.total_duration_ms

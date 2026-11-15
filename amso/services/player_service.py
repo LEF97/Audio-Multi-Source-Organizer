@@ -118,6 +118,7 @@ class PlayerService(
         self._engine.set_muted(self._is_muted)
         self._engine.track_finished.connect(self._on_engine_track_finished)
         self._engine.crossfade_mixed.connect(self._promote_standby_decoder)
+        self._engine.cue_track_advanced.connect(self._on_cue_track_advanced)
         self._decoder.ready_to_play.connect(self._on_decoder_ready_to_play)
         self._decoder.chunk_decoded.connect(self._on_decoder_chunk_decoded)
         self._decoder.decoding_finished.connect(self._on_decoder_finished)
@@ -209,6 +210,19 @@ class PlayerService(
     def _on_decoder_finished(self, file_path: str, total_pcm: bytes, duration_ms: int) -> None:
         """Notifie la fin du décodage de la piste courante."""
         self._engine.mark_feed_complete(file_path)
+
+    def _on_cue_track_advanced(self, steps: int) -> None:
+        """La lecture a franchi la frontière de pistes CUE contiguës : l'interface suit, le flux audio n'a pas été touché."""
+        index = self._current_index + steps
+        if not (0 <= index < len(self._playlist)):
+            return
+        track = self._playlist[index]
+        self._current_index = index
+        self._preloaded_index = None
+        self._current_time_ms = self._engine.current_time_ms
+        self._total_time_ms = int((track.duration_seconds or 0) * 1000)
+        self.track_changed.emit(track)
+        self.playlist_updated.emit()
 
     def _on_engine_track_finished(self) -> None:
         """Appelé lorsque le flux audio de la piste courante est entièrement diffusé."""

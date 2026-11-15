@@ -19,6 +19,7 @@ from PySide6.QtMultimedia import QAudioFormat
 
 from amso.core.pcm_mixer import StreamingCrossfade, bytes_to_ms, linear_fade, ms_to_bytes
 from amso.services.audio_output import SinkOutput
+from amso.services.cue_continuation import CueContinuation
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +39,7 @@ class ContinuousAudioEngine(QObject):
     state_changed = Signal(str)  # "playing", "paused", "stopped"
     track_finished = Signal()  # émis quand la piste active atteint son terme
     crossfade_mixed = Signal()  # émis quand la zone de fondu est entièrement mixée dans le tampon
+    cue_track_advanced = Signal(int)  # nombre de pistes CUE franchies dans le flux continu
     error_occurred = Signal(str)
 
     def __init__(self, parent: QObject | None = None) -> None:
@@ -73,6 +75,7 @@ class ContinuousAudioEngine(QObject):
         self._xfade_mixing: bool = False
         self._xfade_end_offset: int | None = None  # fin de la zone mixée dans le tampon, une fois le mixage terminé
         self._xfade_mixed_ms: float = 0.0
+        self._cue = CueContinuation()
 
         self._lock = threading.Lock()
         self._init_sink()
@@ -173,6 +176,7 @@ class ContinuousAudioEngine(QObject):
             self._total_duration_ms = 0
             self._current_file_path = ""
             self._reset_crossfade_locked()
+            self._cue.clear()
         self.state_changed.emit("stopped")
 
     def _faded_tail_locked(self) -> bytes:
@@ -291,6 +295,36 @@ class ContinuousAudioEngine(QObject):
             self._is_feed_complete = False
             self._track_finished_emitted = False
             self._reset_crossfade_locked()
+            self._cue.clear()  # le décodage est relancé : le lecteur réarme les pistes à enchaîner
+
+    def arm_cue_continuation(self, durations_ms: list[int]) -> None:
+        """Déclare les pistes CUE que le décodage en cours enchaîne après la piste courante (durées en ms)."""
+        with self._lock:
+            self._cue.arm(durations_ms)
+
+    @property
+    def buffered_ahead_ms(self) -> float:
+        """PCM décodé pas encore lu."""
+        return bytes_to_ms(len(self._current_pcm) - self._play_offset)
+
+    @property
+    def cue_continues(self) -> bool:
+        """Vrai si la piste suivante est déjà dans le flux décodé : aucun préchargement ni raccord à faire."""
+        return self._cue.active
+
+    def _advance_cue_boundaries(self) -> int:
+        """Franchit les frontières de pistes CUE déjà lues ; purge le tampon de la piste terminée (mémoire bornée)."""
+        steps = 0
+        with self._lock:
+            while crossing := self._cue.crossing(self._play_offset, self._total_duration_ms, self._base_offset_ms):
+                boundary, next_duration_ms = crossing
+                del self._current_pcm[:boundary]
+                self._play_offset -= boundary
+                self._base_offset_ms = 0
+                self._total_duration_ms = next_duration_ms
+                self._track_finished_emitted = False
+                steps += 1
+        return steps
 
     def seek_ms(self, target_ms: int) -> None:
         """Déplace la position de lecture dans le flux audio courant."""
@@ -321,7 +355,9 @@ class ContinuousAudioEngine(QObject):
         if not self._is_playing or self._is_paused or not self._output_started:
             return
 
-        # Calcul de la position courante en ms
+        if steps := self._advance_cue_boundaries():
+            self.cue_track_advanced.emit(steps)
+
         current_ms = self.current_time_ms
         ratio = (current_ms / self._total_duration_ms) if self._total_duration_ms > 0 else 0.0
         self.position_updated.emit(current_ms, self._total_duration_ms, min(1.0, ratio))

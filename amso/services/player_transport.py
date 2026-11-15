@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 
 from amso.core.config import get_config_manager
 from amso.core.i18n import tr
-from amso.services.player_cue import start_track_decode
+from amso.services.player_cue import start_track_run
 from amso.services.player_types import RepeatMode
 from amso.services.vlc_binding import vlc
 from amso.services.windows_audio import ensure_windows_audio_session_active
@@ -119,7 +119,9 @@ class PlayerTransportMixin(_MixinBase):
             self._pending_seek_ms = seek_ms
             self._current_time_ms = seek_ms
             if file_path and os.path.exists(file_path):
-                start_track_decode(self._decoder, track, seek_ms)
+                start_track_run(
+                    self._engine, self._decoder, self._playlist, index, seek_ms, self._repeat_mode != RepeatMode.ONE
+                )
             if announce_track:
                 self.track_changed.emit(track)
             self.state_changed.emit("paused")
@@ -200,7 +202,9 @@ class PlayerTransportMixin(_MixinBase):
                 self._engine.stop(keep_output=advancing or cut_with_fade, fade_out=cut_with_fade)
                 self._pending_seek_ms = seek_ms
                 self._current_time_ms = seek_ms
-                start_track_decode(self._decoder, track, seek_ms)
+                start_track_run(
+                    self._engine, self._decoder, self._playlist, index, seek_ms, self._repeat_mode != RepeatMode.ONE
+                )
                 self._engine.prepare_output()
                 self._timer.start()
                 self.track_changed.emit(track)
@@ -502,7 +506,14 @@ class PlayerTransportMixin(_MixinBase):
                 self._engine.reset_buffer_for_seek(ms)
                 if self.current_track and self.current_track.source_path and self._decoder:
                     self._pending_seek_ms = ms
-                    start_track_decode(self._decoder, self.current_track, ms)
+                    start_track_run(
+                        self._engine,
+                        self._decoder,
+                        self._playlist,
+                        self._current_index,
+                        ms,
+                        self._repeat_mode != RepeatMode.ONE,
+                    )
 
             self.position_changed.emit(ms, int(dur), ratio)
             return

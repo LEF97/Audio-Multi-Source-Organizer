@@ -34,7 +34,7 @@ class AsyncAudioDecoder(QObject):
     # Signaux
     ready_to_play = Signal(str, bytes, int)  # file_path, premier bloc pcm, duration_ms
     chunk_decoded = Signal(str, bytes)  # file_path, bloc pcm supplémentaire
-    decoding_finished = Signal(str, bytes, int)  # file_path, pcm total, duration_ms
+    decoding_finished = Signal(str, bytes, int)  # file_path, bytes vides (le PCM est livré par blocs), duration_ms
     error_occurred = Signal(str, str)  # file_path, message d'erreur
     _vlc_end_signalled = Signal()  # relais du thread d'événements de VLC vers le thread Qt
     # Relais du thread audio de VLC vers le thread Qt, estampillés de la génération du décodage qui les a produits
@@ -49,6 +49,7 @@ class AsyncAudioDecoder(QObject):
         self._accumulated_pcm = bytearray()
         self._has_emitted_ready: bool = False
         self._is_finished: bool = False
+        self._throttled: bool = False
         self._duration_ms: int = 0
         self._min_initial_bytes: int = int(0.2 * SAMPLE_RATE * BYTES_PER_FRAME)  # 200ms
         self._on_play_cb: Any = None
@@ -76,9 +77,18 @@ class AsyncAudioDecoder(QObject):
 
     @property
     def is_decoding(self) -> bool:
+        if self._throttled:
+            return True  # suspendu volontairement : le décodage reprendra, la boucle de suivi doit rester active
         return bool(
             self._player and self._player.get_state() in (vlc.State.Playing, vlc.State.Buffering, vlc.State.Opening)
         )
+
+    def set_throttled(self, throttled: bool) -> None:
+        """Suspend ou reprend le décodage : borne l'avance du PCM décodé sur la lecture (pause prolongée)."""
+        if not self._player or throttled == self._throttled:
+            return
+        self._throttled = throttled
+        self._player.set_pause(1 if throttled else 0)
 
     def _ensure_player(self) -> bool:
         """Initialise le lecteur VLC configuré en mode décodeur mémoire (amem)."""
@@ -135,8 +145,8 @@ class AsyncAudioDecoder(QObject):
             return
         self._is_finished = True
         self._monitor_timer.stop()
-        logger.debug("Décodage amem complet pour %s (%d octets)", self._current_path, len(self._accumulated_pcm))
-        self.decoding_finished.emit(self._current_path, bytes(self._accumulated_pcm), self._duration_ms)
+        logger.debug("Décodage amem complet pour %s", self._current_path)
+        self.decoding_finished.emit(self._current_path, b"", self._duration_ms)
 
     def _check_player_state(self) -> None:
         """Vérifie périodiquement l'état du lecteur VLC pour garantir la détection de fin."""
@@ -150,17 +160,19 @@ class AsyncAudioDecoder(QObject):
         """Réceptionne les échantillons PCM décodés depuis le thread audio de VLC."""
         if not chunk or self._is_finished or not self._current_path:
             return
+        if self._has_emitted_ready:
+            # Le moteur reçoit le PCM par blocs : en garder une copie ici doublerait la mémoire d'un flux CUE de plusieurs heures
+            self._chunk_relay.emit(self._current_path, chunk, self._generation)
+            return
         self._accumulated_pcm.extend(chunk)
-
-        if not self._has_emitted_ready and len(self._accumulated_pcm) >= self._min_initial_bytes:
+        if len(self._accumulated_pcm) >= self._min_initial_bytes:
             self._has_emitted_ready = True
             dur = self._duration_ms
             if dur <= 0 and self._player:
                 dur = max(0, self._player.get_length())
                 self._duration_ms = dur
             self._ready_relay.emit(self._current_path, bytes(self._accumulated_pcm), dur, self._generation)
-        elif self._has_emitted_ready:
-            self._chunk_relay.emit(self._current_path, chunk, self._generation)
+            self._accumulated_pcm.clear()
 
     def start_decode(
         self, file_path: str, start_offset_ms: int = 0, duration_ms: int = 0, stop_offset_ms: int = 0, key: str = ""
@@ -216,6 +228,7 @@ class AsyncAudioDecoder(QObject):
         """Arrête le décodage en cours."""
         self._generation += 1
         self._is_finished = True
+        self._throttled = False
         self._monitor_timer.stop()
         if self._player:
             try:
