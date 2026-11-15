@@ -224,9 +224,10 @@ class LogsView(QWidget):
         layout.addLayout(footer_layout)
 
     def mark_dirty(self) -> None:
-        """Marque les logs comme périmés et actualise la table."""
+        """Marque les logs comme périmés et actualise uniquement si la vue est visible."""
         self._dirty = True
-        self.refresh_logs()
+        if self.isVisible():
+            self.refresh_logs()
 
     def refresh_if_dirty(self) -> None:
         """Rafraîchit les logs uniquement si les données sont périmées."""

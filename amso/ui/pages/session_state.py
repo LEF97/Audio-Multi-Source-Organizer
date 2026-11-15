@@ -9,11 +9,13 @@ import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from PySide6.QtCore import QRect, Qt
+from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import (
     QMainWindow,
 )
 
-from amso.core.config import get_config_manager
+from amso.core.config import MIN_WINDOW_HEIGHT, MIN_WINDOW_WIDTH, get_config_manager
 from amso.core.database import (
     SourceType,
     TrackRecord,
@@ -56,18 +58,13 @@ class SessionStateMixin(_MixinBase):
             ),
             "folders": (
                 getattr(self, "btn_by_folder", None),
-                getattr(self, "drawer_library", None),
+                getattr(self, "drawer_player", None),
                 self._on_by_folder_clicked,
             ),
             "duplicates": (
                 getattr(self, "btn_duplicates", None),
                 getattr(self, "drawer_tools", None),
                 self._on_duplicates_clicked,
-            ),
-            "stats": (
-                getattr(self, "btn_stats_page", None),
-                getattr(self, "drawer_stats", None),
-                self._on_stats_page_clicked,
             ),
             "player": (
                 getattr(self, "btn_player", None),
@@ -94,6 +91,11 @@ class SessionStateMixin(_MixinBase):
                 getattr(self, "drawer_settings", None),
                 self._on_settings_sources_clicked,
             ),
+            "library_sources": (
+                getattr(self, "btn_library_sources", None),
+                getattr(self, "drawer_library_mgmt", None),
+                self._on_library_sources_clicked,
+            ),
             "settings_player": (
                 getattr(self, "btn_settings_player", None),
                 getattr(self, "drawer_settings", None),
@@ -119,6 +121,88 @@ class SessionStateMixin(_MixinBase):
                 btn.setChecked(True)
             if handler is not None:
                 handler()
+
+    @staticmethod
+    def _find_target_screen_geometry(x: int, y: int, w: int, h: int) -> QRect | None:
+        """Retourne l'availableGeometry de l'écran contenant la barre de titre, ou None si hors écran."""
+        title_bar = QRect(x, y, max(w, 100), 40)
+        for screen in QGuiApplication.screens():
+            avail = screen.availableGeometry()
+            inter = avail.intersected(title_bar)
+            if inter.width() >= 100 and inter.height() >= 30:
+                return avail
+        return None
+
+    @staticmethod
+    def _clamp_size_to_geometry(w: int, h: int, avail: QRect) -> tuple[int, int]:
+        if avail.width() >= MIN_WINDOW_WIDTH:
+            w = min(w, avail.width())
+        if avail.height() >= MIN_WINDOW_HEIGHT:
+            h = min(h, avail.height())
+        return (max(MIN_WINDOW_WIDTH, w), max(MIN_WINDOW_HEIGHT, h))
+
+    def _restore_window_state(self) -> None:
+        """Restaure la taille, la position en mode fenêtré et prépare l'état agrandi pour l'affichage."""
+        cfg = get_config_manager()
+        win_w, win_h = cfg.get_window_size()
+        pos = cfg.get_window_position()
+        self._start_maximized: bool = cfg.get_window_maximized()
+        self.setMinimumSize(MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT)
+
+        if pos is not None:
+            x, y = pos
+            target_avail = self._find_target_screen_geometry(x, y, win_w, win_h)
+            if target_avail is not None:
+                win_w, win_h = self._clamp_size_to_geometry(win_w, win_h, target_avail)
+                y = max(target_avail.top(), min(y, target_avail.bottom() - 30))
+                self._windowed_size: tuple[int, int] = (win_w, win_h)
+                self._windowed_pos: tuple[int, int] | None = (x, y)
+                self.resize(win_w, win_h)
+                self.move(x, y)
+                return
+
+        primary = QGuiApplication.primaryScreen()
+        if primary is not None:
+            avail = primary.availableGeometry()
+            win_w, win_h = self._clamp_size_to_geometry(win_w, win_h, avail)
+            cx = avail.x() + max(0, (avail.width() - win_w) // 2)
+            cy = avail.y() + max(0, (avail.height() - win_h) // 2)
+            self._windowed_size = (win_w, win_h)
+            self._windowed_pos = (cx, cy)
+            self.resize(win_w, win_h)
+            self.move(cx, cy)
+        else:
+            self._windowed_size = (max(MIN_WINDOW_WIDTH, win_w), max(MIN_WINDOW_HEIGHT, win_h))
+            self._windowed_pos = None
+            self.resize(*self._windowed_size)
+
+    def show_restored(self) -> None:
+        """Affiche la fenêtre en restaurant son état agrandi ou fenêtré."""
+        if getattr(self, "_start_maximized", False):
+            self.showMaximized()
+        else:
+            self.show()
+
+    def _capture_window_state(self) -> tuple[int, int, bool, int | None, int | None]:
+        """Capture en mémoire la taille, la position fenêtrée et l'état agrandi avant masquage."""
+        is_maximized = bool(self.windowState() & Qt.WindowState.WindowMaximized)
+        if not is_maximized and not self.isMinimized() and not self.isFullScreen():
+            w, h = self.width(), self.height()
+            x: int | None = self.x()
+            y: int | None = self.y()
+        else:
+            w, h = getattr(self, "_windowed_size", (self.width(), self.height()))
+            pos = getattr(self, "_windowed_pos", None)
+            x, y = pos if pos is not None else (None, None)
+        return (w, h, is_maximized, x, y)
+
+    def _save_window_state(
+        self,
+        snapshot: tuple[int, int, bool, int | None, int | None] | None = None,
+    ) -> None:
+        """Sauvegarde la taille, la position en mode fenêtré et l'état agrandi de la fenêtre."""
+        w, h, is_maximized, x, y = snapshot if snapshot is not None else self._capture_window_state()
+        get_config_manager().set_window_state(w, h, is_maximized, x=x, y=y)
 
     def _save_all_tables_state(self) -> None:
         """Sauvegarde l'état des tableaux de l'application (taille, visibilité, ordre des colonnes, tri)."""
@@ -154,6 +238,8 @@ class SessionStateMixin(_MixinBase):
         """Déclenché lors d'une modification de la file d'attente (ajout, suppression, réordonnancement)."""
         if hasattr(self, "_playlist_save_timer"):
             self._playlist_save_timer.start()
+        if getattr(self, "_current_active_page", None) == "duplicates" and hasattr(self, "_on_duplicates_clicked"):
+            self._on_duplicates_clicked()
 
     def _save_current_playlist(self, immediate: bool = False) -> None:
         """Sauvegarde la file d'attente (playlist), l'index de lecture et la position en cours dans un fichier JSON.
@@ -169,12 +255,17 @@ class SessionStateMixin(_MixinBase):
         curr_pos_ms = self.player_service.current_time_ms
         playlist_path = get_saved_playlist_path()
 
+        active_pl_id = getattr(self, "_active_playback_playlist_id", None)
+        from_folder = bool(getattr(self, "_active_playback_from_folder", False))
+
         if not playlist:
             data: dict[str, Any] = {
                 "version": 2,
                 "current_index": 0,
                 "position_ms": 0,
                 "track_ids": [],
+                "playlist_id": None,
+                "from_folder": False,
             }
         elif all(t.id is not None for t in playlist) and not any(t.is_cue_segment for t in playlist):
             data = {
@@ -182,6 +273,8 @@ class SessionStateMixin(_MixinBase):
                 "current_index": curr_idx,
                 "position_ms": curr_pos_ms,
                 "track_ids": [t.id for t in playlist],
+                "playlist_id": active_pl_id,
+                "from_folder": from_folder,
             }
         else:
             data = {
@@ -189,6 +282,8 @@ class SessionStateMixin(_MixinBase):
                 "current_index": curr_idx,
                 "position_ms": curr_pos_ms,
                 "tracks": [t.to_dict() for t in playlist],
+                "playlist_id": active_pl_id,
+                "from_folder": from_folder,
             }
 
         def _do_write() -> None:
@@ -317,8 +412,45 @@ class SessionStateMixin(_MixinBase):
             )
             if hasattr(self, "page_playlist") and self.page_playlist:
                 self.page_playlist._update_stats_label()
+            if hasattr(self, "folders_player_header") and self.folders_player_header:
+                self.folders_player_header._update_stats_label()
+            self._restore_folder_or_playlist_selection(data, current_track, valid_tracks)
         except Exception as exc:
             logger.warning("Erreur lors de la restauration de la playlist : %s", exc)
+
+    def _restore_folder_or_playlist_selection(
+        self,
+        data: dict[str, Any],
+        current_track: TrackRecord,
+        valid_tracks: list[TrackRecord],
+    ) -> None:
+        """Positionne l'arborescence Par dossiers sur la feuille CUE, la playlist ou le dossier en cours."""
+        from_folder = bool(data.get("from_folder", False))
+        matched_pl_id: int | None = None
+        if self.db and (current_track.is_cue_segment or not from_folder):
+            try:
+                matched_pl_id = self.db.find_matching_playlist_id(current_track, valid_tracks)
+            except Exception as exc:
+                logger.debug("Recherche de playlist correspondante ignorée : %s", exc)
+
+        self._active_playback_playlist_id = matched_pl_id
+        self._active_playback_from_folder = from_folder and matched_pl_id is None
+        self._pending_restore_scroll = True
+
+        if matched_pl_id is not None and hasattr(self, "select_playlist_in_tree"):
+            if self.select_playlist_in_tree(int(matched_pl_id)):
+                if hasattr(self, "scroll_folder_table_to_current_track"):
+                    self.scroll_folder_table_to_current_track()
+                return
+
+        if hasattr(self, "select_folder_in_tree"):
+            folder_path = current_track.folder_path
+            if not folder_path and current_track.source_path:
+                folder_path = str(Path(current_track.source_path).parent)
+            if folder_path:
+                self.select_folder_in_tree(folder_path, source_id=current_track.source_id)
+                if hasattr(self, "scroll_folder_table_to_current_track"):
+                    self.scroll_folder_table_to_current_track()
 
     # -------------------------------------------------------------------------
     # Construction de l'interface graphique

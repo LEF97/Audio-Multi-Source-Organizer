@@ -228,11 +228,11 @@ def test_settings_page_sources_table_and_actions(qapp: QApplication, db: Databas
 
     # Ouvrir la page des Paramètres > Général
     window.btn_settings_general.click()
-    assert window.stacked_widget.currentIndex() == 2
+    assert window.stacked_widget.currentWidget() == window.page_settings
 
     # Ouvrir la page des Paramètres > Sources (onglet dédié)
     window.btn_settings_sources.click()
-    assert window.stacked_widget.currentIndex() == 4
+    assert window.stacked_widget.currentWidget() == window.page_settings_sources
 
     # Vérifier que le tableau contient bien la source
     assert hasattr(window, "table_settings_sources")

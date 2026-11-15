@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
 
 from amso.core.config import get_config_manager
 from amso.core.i18n import tr
+from amso.ui.pages.settings_player_cover import SettingsPlayerCoverMixin
 from amso.ui.pages.settings_player_effects import SettingsPlayerEffectsMixin
 from amso.ui.styles import settings_radio_qss
 
@@ -30,7 +31,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class SettingsPlayerPageMixin(SettingsPlayerEffectsMixin):
+class SettingsPlayerPageMixin(SettingsPlayerEffectsMixin, SettingsPlayerCoverMixin):
     """Page Paramètres > Lecteur (mixin de MainWindow)."""
 
     if TYPE_CHECKING:
@@ -161,6 +162,9 @@ class SettingsPlayerPageMixin(SettingsPlayerEffectsMixin):
 
         # Carte 4 : Effets visuels d'ambiance
         content_layout.addWidget(self._build_card_effects())
+
+        # Carte 5 : Transitions des pochettes
+        content_layout.addWidget(self._build_card_cover_transitions())
 
         # Carte 4 : Paramètres du Blind Test
         card_bt = QFrame()

@@ -58,6 +58,7 @@ class TrackTableModel(BaseTrackTableModel):
     def set_tracks(self, tracks: Sequence[TrackRecord]) -> None:
         """Remplace directement la collection de pistes du modèle (ex: doublons)."""
         self.beginResetModel()
+        self._loading_deferred = False
         self._tracks = list(tracks)
         self.endResetModel()
 
@@ -76,7 +77,7 @@ class TrackTableModel(BaseTrackTableModel):
 
     def sort(self, column: int, order: Qt.SortOrder = Qt.SortOrder.AscendingOrder) -> None:
         """Effectue le tri des données selon la colonne sélectionnée."""
-        if not (0 <= column < len(self.COLUMNS)):
+        if not (0 <= column < len(self.COLUMNS)) or self.COLUMNS[column][1] == "is_playing":
             return
 
         self._current_sort_col = column
@@ -96,6 +97,8 @@ class TrackTableModel(BaseTrackTableModel):
             return
         self._refresh_sources_cache()
         col = sort_by or self.COLUMNS[self._current_sort_col][1]
+        if col == "is_playing":
+            col = "file_name"
         direction = sort_order or ("DESC" if self._current_sort_order == Qt.SortOrder.DescendingOrder else "ASC")
 
         if self._search_query:

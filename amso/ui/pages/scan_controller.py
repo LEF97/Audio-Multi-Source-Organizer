@@ -71,6 +71,8 @@ class ScanControllerMixin(_MixinBase):
         self.refresh_sources_list()
         self._refresh_folders_tree()
         self._refresh_settings_sources_table()
+        if hasattr(self, "_refresh_library_sources_tree"):
+            self._refresh_library_sources_tree()
         if hasattr(self, "scheduler") and self.scheduler:
             self.scheduler.refresh_watched_directories()
 
@@ -119,8 +121,19 @@ class ScanControllerMixin(_MixinBase):
                 # Si le scan ne peut démarrer (ex. worker actif), libérer la file
                 self.scheduler.notify_scan_finished(source.id)
 
-    def _start_scan(self, source: SourceRecord, user_initiated: bool = False) -> bool:
-        """Démarre le worker asynchrone de scan (Étape 1 inventaire rapide + Étape 2 analyse audio)."""
+    def _start_playlist_rescan(self, source: SourceRecord) -> bool:
+        """Relance uniquement la Phase 3 (analyse forcée des playlists et feuilles CUE)."""
+        return self._start_scan(source, user_initiated=True, playlists_only=True, force_playlists=True)
+
+    def _start_scan(
+        self,
+        source: SourceRecord,
+        user_initiated: bool = False,
+        *,
+        playlists_only: bool = False,
+        force_playlists: bool = False,
+    ) -> bool:
+        """Démarre le worker asynchrone de scan (Étapes 1 inventaire, 2 audio, 3 playlists/CUE)."""
         if self.scan_worker and self.scan_worker.isRunning():
             if hasattr(self, "scheduler") and self.scheduler and source.id:
                 self.scheduler.enqueue_source(source.id)
@@ -128,6 +141,7 @@ class ScanControllerMixin(_MixinBase):
 
         self._current_scan_user_initiated = user_initiated
         self._current_scanning_source_id = source.id
+        self._current_scan_phase = 3 if playlists_only else 1
         if hasattr(self, "scheduler") and self.scheduler and source.id:
             self.scheduler.notify_scan_started(source.id)
 
@@ -137,7 +151,8 @@ class ScanControllerMixin(_MixinBase):
         self.progress_bar.setVisible(True)
         self.progress_bar.setValue(0)
         self.btn_cancel_scan.setVisible(True)
-        self.status_label.setText(tr("status.scanning", source=source.name))
+        status_key = "status.scanning_playlists" if playlists_only else "status.scanning"
+        self.status_label.setText(tr(status_key, source=source.name))
 
         if hasattr(self, "btn_activity_feed") and self.btn_activity_feed:
             self.btn_activity_feed.setText(f"🔄 {source.name}")
@@ -159,12 +174,21 @@ class ScanControllerMixin(_MixinBase):
                 """
             )
         if hasattr(self, "activity_popover") and self.activity_popover:
-            self.activity_popover.update_progress(tr("status.scanning", source=source.name), pct=0)
+            self.activity_popover.update_progress(tr(status_key, source=source.name), pct=0)
 
-        self.scan_worker = ScanWorker(db=self.db, source=source, compute_hash=True, parent=self)
+        self.scan_worker = ScanWorker(
+            db=self.db,
+            source=source,
+            compute_hash=True,
+            playlists_only=playlists_only,
+            force_playlists=force_playlists,
+            parent=self,
+        )
         self.scan_worker.progress.connect(self._on_scan_progress)
         self.scan_worker.status_message.connect(self.status_label.setText)
         self.scan_worker.phase1_finished.connect(self._on_phase1_scan_finished)
+        self.scan_worker.phase2_finished.connect(self._on_phase2_scan_finished)
+        self.scan_worker.phase3_finished.connect(self._on_phase3_scan_finished)
         self.scan_worker.scan_finished.connect(self._on_scan_finished)
         self.scan_worker.scan_error.connect(self._on_scan_error)
         self.scan_worker.start(QThread.Priority.LowPriority)
@@ -189,14 +213,25 @@ class ScanControllerMixin(_MixinBase):
             pct = int((current / total) * 100)
             self.progress_bar.setValue(pct)
             fn = Path(current_file).name
-            status_txt = tr("status.indexing", current=current, total=total, file=fn)
+            phase = getattr(self, "_current_scan_phase", 2)
+            key = "status.phase3_progress" if phase == 3 else "status.indexing"
+            status_txt = tr(key, current=current, total=total, file=fn)
             self.status_label.setText(status_txt)
             if hasattr(self, "activity_popover") and self.activity_popover:
                 self.activity_popover.update_progress(status_txt, pct=pct)
 
+    def _current_source_name(self) -> str:
+        """Retourne le nom de la source actuellement scannée."""
+        if self._current_scanning_source_id is not None:
+            s_rec = self.db.get_source(self._current_scanning_source_id)
+            if s_rec:
+                return s_rec.name
+        return "Source"
+
     def _on_phase1_scan_finished(self, summary: ScanSummary) -> None:
-        """Appelé dès que l'étape 1 (inventaire rapide des fichiers) est achevée."""
-        has_structural_changes = summary.added > 0 or summary.deleted > 0 or summary.playlists_changed
+        """Étape 1/3 terminée : log distinct + rafraîchissement si changements."""
+        self._current_scan_phase = 2
+        has_structural_changes = summary.added > 0 or summary.deleted > 0
         has_any_changes = has_structural_changes or summary.updated > 0
 
         if has_any_changes:
@@ -208,7 +243,28 @@ class ScanControllerMixin(_MixinBase):
         total_indexed = summary.added + summary.updated + summary.unchanged
         self.status_label.setText(tr("status.phase1_done", count=total_indexed))
         if hasattr(self, "activity_popover") and self.activity_popover:
-            self.activity_popover.update_progress(tr("status.phase1_done", count=total_indexed), pct=50)
+            self.activity_popover.update_progress(tr("status.phase1_done", count=total_indexed), pct=33)
+
+        source_name = self._current_source_name()
+        self.db.add_activity_log(
+            action=LogMessage("log.sync_phase1_done", {"source": source_name}),
+            level="WARNING" if summary.errors else "SUCCESS",
+            category="SYNC",
+            source_name=source_name,
+            details=[
+                LogMessage("log.detail_duration", {"seconds": f"{summary.elapsed_seconds:.1f}"}),
+                LogMessage("log.detail_added", {"count": summary.added}),
+                LogMessage("log.detail_updated", {"count": summary.updated}),
+                LogMessage("log.detail_unchanged", {"count": summary.unchanged}),
+                LogMessage("log.detail_deleted", {"count": summary.deleted}),
+            ],
+            items_added=summary.added,
+            items_updated=summary.updated,
+            items_deleted=summary.deleted,
+            items_errors=len(summary.errors),
+        )
+        if hasattr(self, "page_logs") and self.page_logs:
+            self.page_logs.mark_dirty()
 
         # Si l'utilisateur consulte activement la vue Morceaux (0) ou Dossiers (3), rafraîchir intelligemment
         curr_page = self.stacked_widget.currentIndex()
@@ -223,6 +279,78 @@ class ScanControllerMixin(_MixinBase):
             if has_any_changes:
                 self.folder_table_model.reload_data()
             self._folders_dirty = False
+
+    def _on_phase2_scan_finished(self, summary: ScanSummary) -> None:
+        """Étape 2/3 terminée : log distinct de l'analyse des fichiers audio."""
+        self._current_scan_phase = 3
+        if summary.analyzed > 0:
+            self._tracks_dirty = True
+            self._folders_dirty = True
+            self._stats_dirty = True
+
+        self.status_label.setText(tr("status.phase2_done", count=summary.analyzed))
+        if hasattr(self, "activity_popover") and self.activity_popover:
+            self.activity_popover.update_progress(tr("status.phase2_done", count=summary.analyzed), pct=66)
+
+        source_name = self._current_source_name()
+        details: list[Any] = [
+            LogMessage("log.detail_duration", {"seconds": f"{summary.elapsed_seconds:.1f}"}),
+            LogMessage("log.detail_analyzed", {"count": summary.analyzed}),
+        ]
+        if summary.errors:
+            details.append(LogMessage("log.detail_errors", {"count": len(summary.errors)}))
+            details.extend(raw_line(e) for e in summary.errors[:10])
+        self.db.add_activity_log(
+            action=LogMessage("log.sync_phase2_done", {"source": source_name}),
+            level="WARNING" if summary.errors else "SUCCESS",
+            category="SYNC",
+            source_name=source_name,
+            details=details,
+            items_updated=summary.analyzed,
+            items_errors=len(summary.errors),
+        )
+        if hasattr(self, "page_logs") and self.page_logs:
+            self.page_logs.mark_dirty()
+
+    def _on_phase3_scan_finished(self, summary: ScanSummary) -> None:
+        """Étape 3/3 terminée : log distinct de l'analyse des playlists et feuilles CUE."""
+        if summary.playlists_changed:
+            self._sources_dirty = True
+            self._stats_dirty = True
+
+        source_name = self._current_source_name()
+        details: list[Any] = [
+            LogMessage("log.detail_duration", {"seconds": f"{summary.elapsed_seconds:.1f}"}),
+            LogMessage(
+                "log.detail_playlists",
+                {
+                    "added": summary.playlists_added,
+                    "updated": summary.playlists_updated,
+                    "deleted": summary.playlists_deleted,
+                },
+            ),
+        ]
+        if summary.playlist_names:
+            details.extend(LogMessage("log.detail_playlist_name", {"name": n}) for n in summary.playlist_names[:10])
+            if len(summary.playlist_names) > 10:
+                details.append(LogMessage("log.detail_more", {"count": len(summary.playlist_names) - 10}))
+        if summary.errors:
+            details.append(LogMessage("log.detail_errors", {"count": len(summary.errors)}))
+            details.extend(raw_line(e) for e in summary.errors[:10])
+
+        self.db.add_activity_log(
+            action=LogMessage("log.sync_phase3_done", {"source": source_name}),
+            level="WARNING" if summary.errors else "SUCCESS",
+            category="SYNC",
+            source_name=source_name,
+            details=details,
+            items_added=summary.playlists_added,
+            items_updated=summary.playlists_updated,
+            items_deleted=summary.playlists_deleted,
+            items_errors=len(summary.errors),
+        )
+        if hasattr(self, "page_logs") and self.page_logs:
+            self.page_logs.mark_dirty()
 
     def _on_scan_finished(self, summary: ScanSummary) -> None:
         self.progress_bar.setVisible(False)
@@ -255,6 +383,10 @@ class ScanControllerMixin(_MixinBase):
         elif curr_page == 4:
             if has_any_changes:
                 self._refresh_settings_sources_table()
+            self._sources_dirty = False
+        elif self.stacked_widget.currentWidget() == getattr(self, "page_library_sources", None):
+            if has_any_changes and hasattr(self, "_refresh_library_sources_tree"):
+                self._refresh_library_sources_tree()
             self._sources_dirty = False
 
         if has_any_changes:
@@ -327,45 +459,6 @@ class ScanControllerMixin(_MixinBase):
                     updated=summary.updated,
                     unchanged=summary.unchanged,
                 )
-            )
-            lvl = "WARNING" if summary.errors else "SUCCESS"
-            detail_lines = [
-                LogMessage("log.detail_duration", {"seconds": f"{summary.elapsed_seconds:.1f}"}),
-                LogMessage("log.detail_added", {"count": summary.added}),
-                LogMessage("log.detail_updated", {"count": summary.updated}),
-                LogMessage("log.detail_unchanged", {"count": summary.unchanged}),
-                LogMessage("log.detail_deleted", {"count": summary.deleted}),
-            ]
-            if summary.playlists_changed:
-                detail_lines.append(
-                    LogMessage(
-                        "log.detail_playlists",
-                        {
-                            "added": summary.playlists_added,
-                            "updated": summary.playlists_updated,
-                            "deleted": summary.playlists_deleted,
-                        },
-                    )
-                )
-                detail_lines.extend(
-                    LogMessage("log.detail_playlist_name", {"name": n}) for n in summary.playlist_names[:10]
-                )
-                if len(summary.playlist_names) > 10:
-                    detail_lines.append(LogMessage("log.detail_more", {"count": len(summary.playlist_names) - 10}))
-            if summary.errors:
-                detail_lines.append(LogMessage("log.detail_errors", {"count": len(summary.errors)}))
-                detail_lines.extend(raw_line(e) for e in summary.errors[:10])
-
-            self.db.add_activity_log(
-                action=LogMessage("log.sync_success", {"source": source_name}),
-                level=lvl,
-                category="SYNC",
-                source_name=source_name,
-                details=detail_lines,
-                items_added=summary.added,
-                items_updated=summary.updated,
-                items_deleted=summary.deleted,
-                items_errors=len(summary.errors),
             )
 
         if hasattr(self, "activity_popover") and self.activity_popover:

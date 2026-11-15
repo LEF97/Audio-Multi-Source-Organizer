@@ -7,7 +7,8 @@ import subprocess
 import sys
 from typing import Any
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import QCoreApplication, QEventLoop, Qt, QTimer
+from PySide6.QtGui import QMoveEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QDialog,
     QFrame,
@@ -17,11 +18,13 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QMessageBox,
     QSplitter,
+    QStackedWidget,
     QTableView,
     QVBoxLayout,
     QWidget,
 )
 
+from amso.core.config import get_config_manager
 from amso.core.database import (
     DatabaseManager,
     get_default_data_dir,
@@ -38,6 +41,7 @@ from amso.ui.models import FolderTrackTableModel, TrackTableModel
 from amso.ui.pages.folders_page import FoldersPageMixin
 from amso.ui.pages.folders_trash import FoldersTrashMixin
 from amso.ui.pages.folders_tree import FoldersTreeMixin
+from amso.ui.pages.library_sources import LibrarySourcesPageMixin
 from amso.ui.pages.navigation import NavigationMixin
 from amso.ui.pages.playback_settings import PlaybackSettingsMixin
 from amso.ui.pages.retranslate import RetranslateMixin
@@ -49,7 +53,6 @@ from amso.ui.pages.settings_player import SettingsPlayerPageMixin
 from amso.ui.pages.settings_sources import SettingsSourcesPageMixin
 from amso.ui.pages.sidebar_layout import SidebarLayoutMixin
 from amso.ui.pages.sources_list import SourcesListMixin
-from amso.ui.pages.stats_page import StatsPageMixin
 from amso.ui.pages.table_columns import TableColumnsMixin
 from amso.ui.pages.track_actions import TrackActionsMixin
 from amso.ui.pages.update_controller import UpdateControllerMixin
@@ -64,9 +67,9 @@ logger = logging.getLogger(__name__)
 class MainWindow(
     SettingsPlayerPageMixin,
     SettingsAboutPageMixin,
-    StatsPageMixin,
     SettingsGeneralPageMixin,
     SettingsSourcesPageMixin,
+    LibrarySourcesPageMixin,
     ScanControllerMixin,
     FoldersPageMixin,
     FoldersTreeMixin,
@@ -95,8 +98,7 @@ class MainWindow(
         self._current_scanning_source_id: int | None = None
         self.i18n = get_i18n()
 
-        self.resize(1200, 780)
-        self.setMinimumSize(950, 620)
+        self._restore_window_state()
 
         # Application du style sombre et de l'icône officielle
         self.setStyleSheet(DARK_THEME_QSS)
@@ -115,6 +117,8 @@ class MainWindow(
         clock.mark("MainWindow: modèles")
         self.player_service = PlayerService(parent=self)
         clock.mark("PlayerService (VLC, audio)")
+        self.table_model.set_player_service(self.player_service)
+        self.folder_table_model.set_player_service(self.player_service)
         self._player_state: str = "stopped"
         self.player_service.error_occurred.connect(self._on_player_error)
         self.player_service.state_changed.connect(self._on_player_state_changed)
@@ -201,12 +205,30 @@ class MainWindow(
         self._update_timer.timeout.connect(lambda: self._check_for_updates(manual=False))
         self._update_timer.start()
 
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+        if not self.isMaximized() and not self.isMinimized() and not self.isFullScreen():
+            self._windowed_size = (self.width(), self.height())
+
+    def moveEvent(self, event: QMoveEvent) -> None:
+        super().moveEvent(event)
+        if not self.isMaximized() and not self.isMinimized() and not self.isFullScreen():
+            self._windowed_pos = (self.x(), self.y())
+
     def closeEvent(self, event) -> None:
         SleepInhibitor.release()
         if hasattr(self, "_playlist_save_timer") and self._playlist_save_timer.isActive():
             self._playlist_save_timer.stop()
+        window_snapshot = self._capture_window_state()
         self._save_all_tables_state()
-        self._save_player_state()
+
+        # Masquer immédiatement la fenêtre avant les E/S disque et l'arrêt des threads
+        self.hide()
+        QCoreApplication.processEvents(QEventLoop.ProcessEventsFlag.ExcludeUserInputEvents)
+
+        with get_config_manager().batch():
+            self._save_window_state(snapshot=window_snapshot)
+            self._save_player_state()
         self._save_current_playlist(immediate=True)
         if hasattr(self, "scheduler") and self.scheduler:
             self.scheduler.stop()
@@ -277,9 +299,9 @@ class MainWindow(
         layout.setSpacing(0)
 
         # Barre supérieure (Recherche & Actions)
-        top_bar = QFrame()
-        top_bar.setObjectName("topBarFrame")
-        top_layout = QHBoxLayout(top_bar)
+        self.tracks_top_bar = QFrame()
+        self.tracks_top_bar.setObjectName("topBarFrame")
+        top_layout = QHBoxLayout(self.tracks_top_bar)
         top_layout.setContentsMargins(16, 10, 16, 10)
         top_layout.setSpacing(12)
 
@@ -295,17 +317,39 @@ class MainWindow(
         self.track_count_label.setStyleSheet("color: #94A3B8; font-size: 12px; font-weight: 500;")
         top_layout.addWidget(self.track_count_label)
 
-        top_bar.setFixedHeight(50)
-        layout.addWidget(top_bar, 0)
+        self.tracks_top_bar.setFixedHeight(50)
+        layout.addWidget(self.tracks_top_bar, 0)
 
-        # Table View virtualisée harmonisée
+        # Pile de contenu (Tableau des pistes OU message liste de lecture vide pour les doublons)
+        self.tracks_stack = QStackedWidget()
+
         self.table_view = QTableView()
         self._setup_track_table_view(self.table_view, self.table_model, "all_tracks")
         self.table_view.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.table_view.customContextMenuRequested.connect(self._on_table_context_menu)
         self.table_view.doubleClicked.connect(self._on_table_view_double_clicked)
+        self.tracks_stack.addWidget(self.table_view)
 
-        layout.addWidget(self.table_view, 1)
+        self.tracks_empty_widget = QWidget()
+        empty_layout = QVBoxLayout(self.tracks_empty_widget)
+        empty_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        empty_layout.setSpacing(14)
+
+        empty_icon = QLabel("👥")
+        empty_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        empty_icon.setStyleSheet("font-size: 52px; color: #475569;")
+        empty_layout.addWidget(empty_icon)
+
+        self.lbl_tracks_empty_message = QLabel(tr("duplicates.empty_playlist_message"))
+        self.lbl_tracks_empty_message.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.lbl_tracks_empty_message.setWordWrap(True)
+        self.lbl_tracks_empty_message.setStyleSheet(
+            "color: #F8FAFC; font-size: 16px; font-weight: 700; max-width: 520px;"
+        )
+        empty_layout.addWidget(self.lbl_tracks_empty_message)
+
+        self.tracks_stack.addWidget(self.tracks_empty_widget)
+        layout.addWidget(self.tracks_stack, 1)
         return container
 
     def _show_about_dialog(self) -> None:

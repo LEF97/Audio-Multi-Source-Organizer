@@ -8,6 +8,7 @@ from PySide6.QtCore import QFileSystemWatcher, Qt, QTimer, Signal
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QWidget
 
+from amso.core.config import get_config_manager
 from amso.core.database import TrackRecord
 from amso.core.i18n import tr
 from amso.core.network_paths import is_network_path
@@ -15,10 +16,13 @@ from amso.services.player_service import PlayerService
 from amso.ui.models import format_duration
 from amso.ui.views.cover_helper import (
     get_default_cover_pixmap,
+    get_track_cover_hash,
+    has_cached_cover,
     invalidate_cover_cache,
     load_cover_async,
 )
 from amso.ui.views.player_ui_builder import PlayerUiMixin
+from amso.ui.widgets.cover_transition_label import CoverTransitionLabel
 from amso.ui.widgets.transport_mixin import TransportViewMixin
 
 # Les dossiers réseau ne sont pas surveillés (QFileSystemWatcher, isdir() bloquants) : leur pochette est revérifiée
@@ -70,7 +74,8 @@ class PlayerView(PlayerUiMixin, TransportViewMixin, QWidget):
         """Appelé dès que la pochette asynchrone a fini de charger."""
         if getattr(self, "_displayed_track_path", None) == path:
             self._current_pixmap = pixmap
-            self._update_scaled_cover()
+            self._current_cover_hash = get_track_cover_hash(self.player.current_track)
+            self._update_scaled_cover(animate=True)
 
     def _on_current_folder_changed(self, path: str) -> None:
         """Appelé dès qu'un fichier (ex: folder.png) est ajouté ou modifié dans le dossier courant."""
@@ -95,15 +100,16 @@ class PlayerView(PlayerUiMixin, TransportViewMixin, QWidget):
         if track and self.isVisible():
             load_cover_async(track, size=320, radius=12, callback=self._on_cover_loaded, force_check=True)
 
-    def _update_scaled_cover(self) -> None:
+    def _update_scaled_cover(self, *, animate: bool = False) -> None:
         """Applique l'image actuelle à la taille exacte du lbl_cover avec anticrénelage fluide."""
         pixmap = getattr(self, "_current_pixmap", None)
         size = self.lbl_cover.width()
+        cover_hash = getattr(self, "_current_cover_hash", None)
         if not pixmap or pixmap.isNull():
             pixmap = get_default_cover_pixmap(size, radius=12)
             self._current_pixmap = pixmap
-            self.lbl_cover.setPixmap(pixmap)
-            return
+            cover_hash = 0
+            self._current_cover_hash = 0
 
         if pixmap.width() != size or pixmap.height() != size:
             scaled = pixmap.scaled(
@@ -112,9 +118,14 @@ class PlayerView(PlayerUiMixin, TransportViewMixin, QWidget):
                 Qt.AspectRatioMode.KeepAspectRatio,
                 Qt.TransformationMode.SmoothTransformation,
             )
-            self.lbl_cover.setPixmap(scaled)
         else:
-            self.lbl_cover.setPixmap(pixmap)
+            scaled = pixmap
+
+        if isinstance(self.lbl_cover, CoverTransitionLabel):
+            transition = get_config_manager().get_cover_transition()
+            self.lbl_cover.set_cover_pixmap(scaled, cover_hash=cover_hash, transition=transition, animate=animate)
+        else:
+            self.lbl_cover.setPixmap(scaled)
 
     def _adjust_layout(self) -> None:
         """Ajuste dynamiquement la hauteur de la pochette et décale les blocs verticaux
@@ -180,9 +191,23 @@ class PlayerView(PlayerUiMixin, TransportViewMixin, QWidget):
         if hasattr(self, "effect_canvas") and self.effect_canvas:
             self.effect_canvas.set_track(track)
 
-        # Chargement immédiat (en cache) ou asynchrone (défaut puis cover) sans bloquer
-        pixmap = load_cover_async(track, size=320, radius=12, callback=self._on_cover_loaded, force_check=True)
-        self._current_pixmap = pixmap
+        # Conserver la pochette affichée tant que la nouvelle n'est pas prête (évite le flash vers l'icône par défaut)
+        animate_cover = False
+        if not track:
+            self._current_pixmap = get_default_cover_pixmap(320, radius=12)
+            self._current_cover_hash = 0
+            animate_cover = True
+        elif has_cached_cover(track, size=320):
+            self._current_pixmap = load_cover_async(
+                track, size=320, radius=12, callback=self._on_cover_loaded, force_check=True
+            )
+            self._current_cover_hash = get_track_cover_hash(track)
+            animate_cover = True
+        else:
+            pixmap = load_cover_async(track, size=320, radius=12, callback=self._on_cover_loaded, force_check=True)
+            if not getattr(self, "_current_pixmap", None):
+                self._current_pixmap = pixmap
+                self._current_cover_hash = None
 
         if not track:
             self.lbl_title.setText(tr("player.no_track"))
@@ -197,7 +222,7 @@ class PlayerView(PlayerUiMixin, TransportViewMixin, QWidget):
             self.lbl_time_total.setText("00:00")
             self.slider_seek.setValue(0)
             self._adjust_layout()
-            self._update_scaled_cover()
+            self._update_scaled_cover(animate=animate_cover)
             return
 
         title_text = track.title or track.file_name or tr("track.untitled")
@@ -243,7 +268,7 @@ class PlayerView(PlayerUiMixin, TransportViewMixin, QWidget):
 
         # Recalcul de l'ajustement vertical pour s'adapter aux textes (titre/auteur sur plusieurs lignes)
         self._adjust_layout()
-        self._update_scaled_cover()
+        self._update_scaled_cover(animate=animate_cover)
 
     def showEvent(self, event) -> None:
         super().showEvent(event)

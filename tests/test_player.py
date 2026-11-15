@@ -349,7 +349,7 @@ def test_main_window_player_drawer_and_views(qapp: QApplication):
     assert window.stacked_widget.currentWidget() == window.page_playlist
 
     # 4. Simulation du double-clic sur un morceau dans la table
-    window.btn_all_tracks.click()
+    window._on_all_tracks_clicked()
     assert window.stacked_widget.currentWidget() == window.page_tracks
     window.table_model.reload_data()
     assert window.table_model.rowCount() == 3

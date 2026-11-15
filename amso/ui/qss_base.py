@@ -18,6 +18,16 @@ QDialog QLabel {
     color: #E2E8F0;
 }
 
+QToolTip {
+    background-color: #1E293B;
+    color: #F8FAFC;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Roboto", sans-serif;
+    font-size: 12px;
+}
+
 /* --- Barre latérale (Sidebar) --- */
 QFrame#sidebarFrame {
     background-color: #1A1D24;
@@ -130,6 +140,11 @@ QPushButton.primary-btn:pressed {
     background-color: #075985;
 }
 
+QPushButton.primary-btn:disabled {
+    background-color: #1E293B;
+    color: #64748B;
+}
+
 QPushButton.secondary-btn {
     background-color: #242833;
     color: #E2E8F0;
@@ -142,6 +157,12 @@ QPushButton.secondary-btn {
 QPushButton.secondary-btn:hover {
     background-color: #2E3341;
     border-color: #475569;
+}
+
+QPushButton.secondary-btn:disabled {
+    background-color: #181B22;
+    color: #64748B;
+    border-color: #262A35;
 }
 
 /* --- Tableau des pistes (QTableView Virtualisé) --- */

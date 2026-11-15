@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from amso.core.playlist_parser import (
     SUPPORTED_PLAYLIST_EXTENSIONS,
     parse_playlist_file,
@@ -146,3 +148,45 @@ def test_parse_wpl_format(tmp_path: Path) -> None:
 
     assert entries[1].title == "Lost"
     assert entries[1].is_missing is True
+
+
+@pytest.mark.parametrize("ext", [".m3u8", ".m3u", ".pls", ".xspf", ".wpl"])
+def test_export_playlist_roundtrip_all_formats(tmp_path: Path, ext: str) -> None:
+    """Vérifie l'export et la relecture (round-trip) pour les 5 formats de playlists supportés."""
+    from amso.core.database import TrackRecord
+    from amso.core.playlist_exporter import export_playlist
+
+    f1 = tmp_path / "Music" / "01 - Track One.mp3"
+    f2 = tmp_path / "Music" / "02 - Été.flac"
+    f1.parent.mkdir(parents=True, exist_ok=True)
+    f1.write_bytes(b"a")
+    f2.write_bytes(b"b")
+
+    tracks = [
+        TrackRecord(
+            source_ref=str(f1),
+            source_path=str(f1),
+            title="Track One",
+            artist="Artist A",
+            album="Album 1",
+            duration_seconds=185.0,
+        ),
+        TrackRecord(
+            source_ref=str(f2),
+            source_path=str(f2),
+            title="Été",
+            artist="Artiste B",
+            album="Album 2",
+            duration_seconds=240.0,
+        ),
+    ]
+
+    dest = tmp_path / f"exported{ext}"
+    out = export_playlist(tracks, dest, relative_paths=True)
+    assert out.exists()
+
+    parsed = parse_playlist_file(out)
+    assert len(parsed) == 2
+    assert all(not entry.is_missing for entry in parsed)
+    assert Path(parsed[0].resolved_path).name == "01 - Track One.mp3"
+    assert Path(parsed[1].resolved_path).name == "02 - Été.flac"

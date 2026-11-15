@@ -39,10 +39,9 @@ class RetranslateMixin(_MixinBase):
             self.drawer_player.set_title(tr("sidebar.drawer_player"))
         if hasattr(self, "drawer_games"):
             self.drawer_games.set_title(tr("sidebar.drawer_games"))
-        self.drawer_library.set_title(tr("sidebar.drawer_library"))
+        if hasattr(self, "drawer_library"):
+            self.drawer_library.set_title(tr("sidebar.drawer_library"))
         self.drawer_tools.set_title(tr("sidebar.drawer_tools"))
-        self.drawer_stats.set_title(tr("sidebar.drawer_stats"))
-        self.drawer_sources.set_title(tr("sidebar.drawer_sources"))
         self.drawer_settings.set_title(tr("sidebar.drawer_settings"))
 
         # Boutons de tiroir
@@ -52,13 +51,17 @@ class RetranslateMixin(_MixinBase):
             self.btn_blind_test.setText(tr("sidebar.nav_blind_test"))
         if hasattr(self, "btn_playlist"):
             self.btn_playlist.setText(tr("sidebar.nav_playlist"))
-        self.btn_all_tracks.setText(tr("sidebar.nav_all_tracks"))
+        if hasattr(self, "btn_all_tracks"):
+            self.btn_all_tracks.setText(tr("sidebar.nav_all_tracks"))
         self.btn_by_folder.setText(tr("sidebar.nav_by_folder"))
         self.btn_duplicates.setText(tr("sidebar.nav_duplicates"))
-        self.btn_stats_page.setText(tr("sidebar.nav_stats_page"))
         self.btn_settings_general.setText(tr("sidebar.nav_settings_general"))
         if hasattr(self, "btn_settings_sources"):
             self.btn_settings_sources.setText(tr("sidebar.nav_settings_sources"))
+        if hasattr(self, "drawer_library_mgmt"):
+            self.drawer_library_mgmt.set_title(tr("sidebar.drawer_library_mgmt"))
+        if hasattr(self, "btn_library_sources"):
+            self.btn_library_sources.setText(tr("sidebar.nav_library_sources"))
         if hasattr(self, "btn_settings_player"):
             self.btn_settings_player.setText(tr("sidebar.nav_settings_player"))
         if hasattr(self, "btn_settings_logs"):
@@ -67,11 +70,12 @@ class RetranslateMixin(_MixinBase):
             self.btn_settings_about.setText(tr("sidebar.nav_settings_about"))
         if hasattr(self, "btn_activity_feed") and not (self.scan_worker and self.scan_worker.isRunning()):
             self.btn_activity_feed.setText("⚡ " + tr("status.activity_feed"))
-        self.btn_add_source.setText(tr("sidebar.btn_add_source"))
 
         # Page Morceaux
         self.search_edit.setPlaceholderText(tr("topbar.search_placeholder"))
         self.btn_cancel_scan.setText(tr("common.cancel"))
+        if hasattr(self, "lbl_tracks_empty_message"):
+            self.lbl_tracks_empty_message.setText(tr("duplicates.empty_playlist_message"))
 
         if not (self.scan_worker and self.scan_worker.isRunning()):
             if not getattr(self, "_status_is_alert", False):
@@ -81,17 +85,6 @@ class RetranslateMixin(_MixinBase):
 
         self._update_track_count()
         self.table_model.notify_language_changed()
-
-        # Page Statistiques
-        self.lbl_stats_page_title.setText(tr("stats.page_title"))
-        self.btn_refresh_stats.setText(tr("common.refresh"))
-        self.lbl_kpi_tracks_title.setText(tr("stats.card_tracks"))
-        self.lbl_kpi_size_title.setText(tr("stats.card_size"))
-        self.lbl_kpi_duration_title.setText(tr("stats.card_duration"))
-        self.lbl_kpi_sources_title.setText(tr("stats.card_sources"))
-        self.lbl_section_formats.setText(tr("stats.section_formats"))
-        self.lbl_section_sources.setText(tr("stats.section_sources"))
-        self._refresh_stats_view()
 
         # Page Par dossiers
         self.lbl_folders_page_title.setText(tr("folders.page_title"))
@@ -105,9 +98,10 @@ class RetranslateMixin(_MixinBase):
         self.lbl_placeholder_desc.setText(tr("folders.empty_selection_desc"))
         self.folder_tree.setHeaderLabels([tr("table.col_folder_name"), tr("folders.tree_col_count")])
         self.folder_table_model.notify_language_changed()
-        cnt = self.folder_table_model.rowCount()
-        count_key = "folders.track_count_singular" if cnt == 1 else "folders.track_count"
-        self.lbl_folder_count_badge.setText(tr(count_key, count=f"{cnt:,}"))
+        if self.right_stack.currentIndex() == 2:
+            self._update_folder_count_badge(count=self.trash_table.rowCount(), total_duration_sec=0.0)
+        else:
+            self._update_folder_count_badge()
 
         cur_item = self.folder_tree.currentItem()
         if cur_item:
@@ -135,6 +129,17 @@ class RetranslateMixin(_MixinBase):
             self.lbl_card_sources_desc.setText(tr("settings.section_sources_desc"))
             self.btn_add_source_settings.setText(tr("sidebar.btn_add_source"))
             self._refresh_settings_sources_table()
+        if hasattr(self, "lbl_library_sources_page_title"):
+            self.lbl_library_sources_page_title.setText(tr("settings.page_sources_title"))
+        if hasattr(self, "lbl_lib_sources_card_title"):
+            self.lbl_lib_sources_card_title.setText(tr("settings.section_sources_title"))
+            self.lbl_lib_sources_card_desc.setText(tr("settings.section_sources_desc"))
+            self.btn_lib_tab_sources.setText(tr("library_sources.tab_by_source"))
+            self.btn_lib_tab_library.setText(tr("library_sources.tab_library"))
+            self.btn_expand_lib_sources.setToolTip(tr("folders.btn_expand_all"))
+            self.btn_collapse_lib_sources.setToolTip(tr("folders.btn_collapse_all"))
+            self.btn_add_source_library.setText(tr("sidebar.btn_add_source"))
+            self._refresh_library_sources_tree()
         self.lbl_card_lang_title.setText(tr("settings.section_language"))
         self.lbl_card_lang_desc.setText(tr("settings.language_desc"))
         self.lbl_card_storage_title.setText(tr("settings.section_storage"))
@@ -253,6 +258,9 @@ class RetranslateMixin(_MixinBase):
                 self.radio_eff_none.setText(f"🚫 {tr('effects.none')}")
                 self.lbl_eff_none_hint.setText(tr("effects.none_hint"))
 
+            if hasattr(self, "_retranslate_cover_transition_card"):
+                self._retranslate_cover_transition_card()
+
             if hasattr(self, "lbl_vlc_status_val"):
                 status_html, status_tip = build_vlc_status(self.player_service)
                 self.lbl_vlc_status_val.setText(status_html)
@@ -275,6 +283,8 @@ class RetranslateMixin(_MixinBase):
             self.page_blind_test.retranslate_ui()
         if hasattr(self, "page_playlist") and self.page_playlist:
             self.page_playlist.retranslate_ui()
+        if hasattr(self, "folders_player_header") and self.folders_player_header:
+            self.folders_player_header.retranslate_ui()
         if hasattr(self, "page_logs") and self.page_logs:
             self.page_logs.retranslate_ui()
         if hasattr(self, "activity_popover") and self.activity_popover:

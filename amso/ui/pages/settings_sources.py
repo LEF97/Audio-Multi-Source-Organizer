@@ -25,6 +25,7 @@ from amso.core.database import (
     SourceType,
 )
 from amso.core.i18n import tr
+from amso.ui.pages.sources_list import format_sync_mode_label
 
 logger = logging.getLogger(__name__)
 
@@ -143,13 +144,6 @@ class SettingsSourcesPageMixin:
         sources = self.db.get_sources()
         self.table_settings_sources.setRowCount(len(sources))
 
-        mode_labels = {
-            "manual": tr("sync_mode.manual"),
-            "startup": tr("sync_mode.startup"),
-            "interval": tr("sync_mode.interval"),
-            "realtime": tr("sync_mode.realtime"),
-        }
-
         for row, src in enumerate(sources):
             # Nom
             icon_str = "📁" if src.source_type == SourceType.LOCAL else "☁️"
@@ -166,19 +160,7 @@ class SettingsSourcesPageMixin:
             path_item.setTextAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
             self.table_settings_sources.setItem(row, 1, path_item)
 
-            raw_mode = getattr(src, "sync_mode", "manual") or "manual"
-            interval_m = getattr(src, "sync_interval_minutes", 60) or 60
-            interval_s = getattr(src, "sync_interval_seconds", 60) or 60
-            if raw_mode == "interval":
-                mode_text = f"⏱️  {interval_m} min"
-            elif raw_mode == "realtime":
-                mode_text = f"⚡  {mode_labels.get('realtime', 'En continu')} ({interval_s}s)"
-            elif raw_mode == "startup":
-                mode_text = "🚀  " + mode_labels.get("startup", "Au démarrage")
-            else:
-                mode_text = "✋  " + mode_labels.get("manual", "Manuel")
-
-            mode_item = QTableWidgetItem(mode_text)
+            mode_item = QTableWidgetItem(format_sync_mode_label(src))
             mode_item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
             mode_item.setTextAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
             self.table_settings_sources.setItem(row, 2, mode_item)

@@ -33,6 +33,7 @@ class AboutDialog(QDialog):
 
         self.setWindowTitle(tr("dialog.about_title"))
         self.setMinimumWidth(560)
+        self.setSizeGripEnabled(True)
         self.setModal(True)
         self.setStyleSheet(DARK_THEME_QSS)
 

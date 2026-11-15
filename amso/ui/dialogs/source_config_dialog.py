@@ -51,6 +51,7 @@ class SourceConfigDialog(QDialog):
         title_key = "dialog.source_config_edit_title" if self.is_edit_mode else "dialog.source_config_add_title"
         self.setWindowTitle(tr(title_key))
         self.setMinimumWidth(500)
+        self.setSizeGripEnabled(True)
         self.setModal(True)
         self.setStyleSheet(DARK_THEME_QSS)
 

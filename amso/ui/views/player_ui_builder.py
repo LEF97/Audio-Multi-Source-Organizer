@@ -23,6 +23,7 @@ from amso.ui.styles import (
     volume_slider_qss,
 )
 from amso.ui.widgets.common import ClickableSlider
+from amso.ui.widgets.cover_transition_label import CoverTransitionLabel
 from amso.ui.widgets.effects_view_mixin import EffectsViewMixin
 
 if TYPE_CHECKING:
@@ -120,7 +121,7 @@ class PlayerUiMixin(EffectsViewMixin, _MixinBase):
         self.card_layout = card_layout
 
         # 1. Grande Jaquette (taille adaptative calculée dynamiquement)
-        self.lbl_cover = QLabel()
+        self.lbl_cover = CoverTransitionLabel()
         self.lbl_cover.setFixedSize(280, 280)
         self.lbl_cover.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_cover.setStyleSheet("border-radius: 12px;")
@@ -215,7 +216,7 @@ class PlayerUiMixin(EffectsViewMixin, _MixinBase):
         self.btn_prev.setFixedSize(40, 40)
         self.btn_prev.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_prev.setToolTip(tr("player.btn_previous"))
-        self._style_transport_button(self.btn_prev, font_size=14)
+        self._style_transport_button(self.btn_prev, font_size=24)
         ctrl_layout.addWidget(self.btn_prev)
 
         self.btn_play_pause = QPushButton("▶")
@@ -227,7 +228,8 @@ class PlayerUiMixin(EffectsViewMixin, _MixinBase):
                 background-color: #0284C7;
                 color: #FFFFFF;
                 border-radius: 25px;
-                font-size: 20px;
+                font-size: 28px;
+                padding: 0px;
                 border: none;
             }
             QPushButton:hover {
@@ -244,14 +246,14 @@ class PlayerUiMixin(EffectsViewMixin, _MixinBase):
         self.btn_stop.setFixedSize(36, 36)
         self.btn_stop.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_stop.setToolTip(tr("player.btn_stop"))
-        self._style_transport_button(self.btn_stop, font_size=12)
+        self._style_transport_button(self.btn_stop, font_size=22)
         ctrl_layout.addWidget(self.btn_stop)
 
         self.btn_next = QPushButton("⏭")
         self.btn_next.setFixedSize(40, 40)
         self.btn_next.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_next.setToolTip(tr("player.btn_next"))
-        self._style_transport_button(self.btn_next, font_size=14)
+        self._style_transport_button(self.btn_next, font_size=24)
         ctrl_layout.addWidget(self.btn_next)
 
         self.btn_repeat = QPushButton("🔁")

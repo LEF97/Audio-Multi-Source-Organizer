@@ -24,6 +24,7 @@ class LogDetailDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle(tr("logs.detail_dialog_title"))
         self.setMinimumSize(560, 420)
+        self.setSizeGripEnabled(True)
         self.setStyleSheet(
             """
             QDialog {

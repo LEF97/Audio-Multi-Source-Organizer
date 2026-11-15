@@ -60,7 +60,7 @@ class TableColumnsMixin(_MixinBase):
         header = table_view.horizontalHeader()
         header.setSectionsMovable(True)
         header.setStretchLastSection(False)
-        header.setMinimumSectionSize(35)
+        header.setMinimumSectionSize(28)
         header.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         header.customContextMenuRequested.connect(
             lambda pos, tv=table_view, m=model, key=storage_key: self._on_table_header_context_menu(pos, tv, m, key)
@@ -130,7 +130,7 @@ class TableColumnsMixin(_MixinBase):
 
         for col_idx in range(model.columnCount()):
             col_name = model.headerData(col_idx, Qt.Orientation.Horizontal, Qt.ItemDataRole.DisplayRole)
-            if not col_name:
+            if not col_name or not str(col_name).strip():
                 continue
             act = QAction(col_name, menu)
             act.setCheckable(True)
@@ -193,7 +193,9 @@ class TableColumnsMixin(_MixinBase):
                 try:
                     col = int(saved_sort_col)
                     order = Qt.SortOrder(int(saved_sort_order))
-                    if 0 <= col < model.columnCount():
+                    columns = getattr(model, "COLUMNS", [])
+                    is_playing_col = 0 <= col < len(columns) and columns[col][1] == "is_playing"
+                    if 0 <= col < model.columnCount() and not is_playing_col:
                         model._current_sort_col = col
                         model._current_sort_order = order
                         table_view.horizontalHeader().setSortIndicator(col, order)

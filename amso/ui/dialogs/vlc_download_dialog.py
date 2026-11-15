@@ -30,6 +30,7 @@ class VlcDownloadDialog(QDialog):
 
         self.setWindowTitle(tr("dialog.vlc_title"))
         self.setMinimumWidth(520)
+        self.setSizeGripEnabled(True)
         self.setModal(True)
         self.setStyleSheet(DARK_THEME_QSS)
 

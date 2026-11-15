@@ -58,9 +58,9 @@ ghost_track.mp3
     db = DatabaseManager(str(db_path))
     src = db.add_source(SourceType.LOCAL, "Ma Musique", str(music_dir))
 
-    # Scan complet
+    # Scan complet (3 phases : inventaire, audio, playlists)
     scanner = LocalScanner(db=db)
-    summary, _ = scanner.scan_inventory(source=src)
+    summary = scanner.scan_source(source=src)
     assert summary.total_found == 3  # 3 fichiers audio
     assert summary.added == 3
 
@@ -164,7 +164,7 @@ ghost_track.mp3
 
     # Test suppression du fichier playlist sur le disque + re-scan -> la playlist doit être retirée
     m3u_file.unlink()
-    summary2, _ = scanner.scan_inventory(source=src)
+    scanner.scan_source(source=src)
     assert len(db.get_playlists(source_id=src.id)) == 0
 
     # L'arbre ne doit plus contenir le nœud

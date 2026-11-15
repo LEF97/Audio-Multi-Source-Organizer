@@ -18,8 +18,11 @@ from amso.core.db.curation_repo import TrackCurationMixin
 from amso.core.db.library_queries import LibraryQueriesMixin
 from amso.core.db.models import (
     ActivityLogRecord,
+    FormatBreakdown,
     PlaylistEntryRecord,
     PlaylistRecord,
+    PlaylistSummaryRecord,
+    SourceLibrarySummary,
     SourceRecord,
     SourceType,
     TrackRecord,
@@ -37,7 +40,10 @@ from amso.core.db.tracks_repo import TracksRepoMixin
 __all__ = [
     "ActivityLogRecord",
     "PlaylistEntryRecord",
+    "FormatBreakdown",
     "PlaylistRecord",
+    "PlaylistSummaryRecord",
+    "SourceLibrarySummary",
     "SourceRecord",
     "SourceType",
     "TrackRecord",
@@ -278,6 +284,7 @@ class DatabaseManager(
 
             # 3. Index de performance
             conn.execute("CREATE INDEX IF NOT EXISTS idx_tracks_source ON tracks(source_id, source_type);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_tracks_source_path ON tracks(source_path);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_tracks_folder ON tracks(source_id, folder_path);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_tracks_file_name ON tracks(file_name);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_tracks_folder_name ON tracks(folder_name);")

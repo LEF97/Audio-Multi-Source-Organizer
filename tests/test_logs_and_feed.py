@@ -256,13 +256,14 @@ def test_player_error_logs_and_clickable_status(temp_db: DatabaseManager, qapp):
     assert err_text in logs[0].details
     assert logs[0].items_errors == 1
 
-    # 3. Rafraîchissement automatique de la vue Logs
-    assert window.page_logs.table.rowCount() == 1
+    # 3. Vue Logs marquée à rafraîchir (lazy refresh tant qu'elle est masquée)
+    assert window.page_logs._dirty is True
 
-    # 4. Clic sur la barre d'état ouvre directement la vue Logs
+    # 4. Clic sur la barre d'état ouvre directement la vue Logs et rafraîchit le tableau
     window.stacked_widget.setCurrentWidget(window.page_tracks)
     window.status_label.clicked.emit()
     assert window.stacked_widget.currentWidget() == window.page_logs
+    assert window.page_logs.table.rowCount() == 1
 
     window.close()
 

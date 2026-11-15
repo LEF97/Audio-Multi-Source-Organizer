@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import contextlib
 import logging
-import os
 import sqlite3
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from amso.core.db.models import (
+    PlaylistEntryRecord,
     PlaylistRecord,
     TrackRecord,
 )
@@ -158,6 +158,35 @@ class PlaylistsRepoMixin:
             r = conn.execute("SELECT * FROM playlists WHERE file_path = ?;", (clean_fp,)).fetchone()
             return PlaylistRecord.from_row(r) if r else None
 
+    def get_playlist_entries(self, playlist_id: int) -> list[PlaylistEntryRecord]:
+        """Retourne toutes les entrées brutes d'une playlist (y compris les pistes introuvables)."""
+        with self.get_connection() as conn:
+            rows = conn.execute(
+                """
+                SELECT
+                    pe.*,
+                    COALESCE(pe.duration_seconds, t.duration_seconds) AS eff_duration,
+                    COALESCE(pe.title, t.title) AS eff_title,
+                    COALESCE(pe.artist, t.artist) AS eff_artist
+                FROM playlist_entries pe
+                LEFT JOIN tracks t ON t.id = pe.track_id
+                WHERE pe.playlist_id = ?
+                ORDER BY pe.position ASC;
+                """,
+                (playlist_id,),
+            ).fetchall()
+            entries: list[PlaylistEntryRecord] = []
+            for r in rows:
+                rec = PlaylistEntryRecord.from_row(r)
+                if rec.duration_seconds is None and r["eff_duration"] is not None:
+                    rec.duration_seconds = float(r["eff_duration"])
+                if not rec.title and r["eff_title"]:
+                    rec.title = str(r["eff_title"])
+                if not rec.artist and r["eff_artist"]:
+                    rec.artist = str(r["eff_artist"])
+                entries.append(rec)
+            return entries
+
     def delete_playlist(self, playlist_id: int) -> None:
         """Supprime une playlist et toutes ses entrées."""
         with self.get_connection() as conn:
@@ -182,10 +211,37 @@ class PlaylistsRepoMixin:
                 conn.execute(f"DELETE FROM playlists WHERE id IN ({placeholders});", to_delete)
             return len(to_delete)
 
-    def get_playlist_tracks(self, playlist_id: int) -> list[TrackRecord]:
-        """Retourne la liste ordonnée des pistes composant une playlist."""
+    def get_playlist_album_groups(self, playlist_id: int) -> list[tuple[str, int]]:
+        """Retourne les albums (nom brut ou '' si inconnu) et le nombre de titres dans une playlist."""
         with self.get_connection() as conn:
-            query = """
+            rows = conn.execute(
+                """
+                SELECT
+                    COALESCE(NULLIF(TRIM(t.album), ''), '') AS album_name,
+                    COUNT(*) AS cnt
+                FROM playlist_entries pe
+                LEFT JOIN tracks t ON pe.track_id = t.id
+                WHERE pe.playlist_id = ?
+                GROUP BY album_name
+                ORDER BY MIN(pe.position) ASC;
+                """,
+                (playlist_id,),
+            ).fetchall()
+            return [(str(r["album_name"]), int(r["cnt"])) for r in rows]
+
+    def get_playlist_tracks(self, playlist_id: int, album: str | None = None) -> list[TrackRecord]:
+        """Retourne la liste ordonnée des pistes composant une playlist (filtrée par album si fourni)."""
+        with self.get_connection() as conn:
+            album_clause = ""
+            params: list[Any] = [playlist_id]
+            if album is not None:
+                if album == "":
+                    album_clause = " AND (t.album IS NULL OR TRIM(t.album) = '')"
+                else:
+                    album_clause = " AND t.album = ?"
+                    params.append(album)
+
+            query = f"""
                 SELECT
                     pe.position as pe_position,
                     pe.raw_path as pe_raw_path,
@@ -199,16 +255,14 @@ class PlaylistsRepoMixin:
                     t.*
                 FROM playlist_entries pe
                 LEFT JOIN tracks t ON pe.track_id = t.id
-                WHERE pe.playlist_id = ?
+                WHERE pe.playlist_id = ?{album_clause}
                 ORDER BY pe.position ASC;
             """
-            rows = conn.execute(query, (playlist_id,)).fetchall()
+            rows = conn.execute(query, params).fetchall()
             tracks: list[TrackRecord] = []
             for r in rows:
                 is_missing = bool(r["pe_is_missing"])
                 resolved = r["pe_resolved_path"]
-                if not is_missing and resolved and not os.path.exists(resolved):
-                    is_missing = True
 
                 pos = int(r["pe_position"])
 
@@ -242,16 +296,125 @@ class PlaylistsRepoMixin:
     def link_playlist_entries_to_tracks(self, source_id: int | None = None) -> int:
         """Associe les entrées de playlist orphelines aux pistes nouvellement indexées."""
         with self.get_connection() as conn:
+            # Deux sous-requêtes indexées (source_ref UNIQUE, idx_tracks_source_path) plutôt qu'un OR
+            # qui force un scan complet de `tracks` pour chaque entrée orpheline.
             cur = conn.execute(
                 """
                 UPDATE playlist_entries
-                SET track_id = (
-                    SELECT t.id FROM tracks t
-                    WHERE t.source_path = playlist_entries.resolved_path
-                       OR t.source_ref = playlist_entries.resolved_path
-                    LIMIT 1
+                SET track_id = COALESCE(
+                    (
+                        SELECT t.id FROM tracks t
+                        WHERE t.source_ref = playlist_entries.resolved_path
+                        LIMIT 1
+                    ),
+                    (
+                        SELECT t.id FROM tracks t
+                        WHERE t.source_path = playlist_entries.resolved_path
+                        LIMIT 1
+                    )
                 )
                 WHERE track_id IS NULL;
                 """
             )
             return cur.rowcount
+
+    def find_matching_playlist_id(
+        self,
+        current_track: TrackRecord,
+        playlist_tracks: list[TrackRecord],
+    ) -> int | None:
+        """Identifie la playlist indexée (CUE, M3U, PLS, XSPF, WPL) correspondant à la lecture en cours."""
+        with self.get_connection() as conn:
+            if current_track.is_cue_segment or any(t.is_cue_segment for t in playlist_tracks):
+                return self._find_cue_playlist_id(conn, current_track)
+            return self._find_standard_playlist_id(conn, current_track, playlist_tracks)
+
+    def _find_cue_playlist_id(self, conn: sqlite3.Connection, track: TrackRecord) -> int | None:
+        norm_path = (track.source_path or track.source_ref or "").replace("\\", "/").lower()
+        rows = conn.execute(
+            """
+            SELECT p.id, pe.start_ms
+            FROM playlists p
+            JOIN playlist_entries pe ON pe.playlist_id = p.id
+            WHERE LOWER(p.format) = 'cue'
+              AND (
+                (pe.track_id IS NOT NULL AND pe.track_id = :track_id)
+                OR LOWER(REPLACE(pe.resolved_path, '\\', '/')) = :norm_path
+              );
+            """,
+            {"track_id": track.id, "norm_path": norm_path},
+        ).fetchall()
+        if rows:
+            for r in rows:
+                if track.cue_start_ms is not None and r["start_ms"] == track.cue_start_ms:
+                    return int(r["id"])
+            return int(rows[0]["id"])
+
+        norm_folder = (track.folder_path or "").replace("\\", "/").rstrip("/").lower()
+        if norm_folder:
+            row = conn.execute(
+                """
+                SELECT id FROM playlists
+                WHERE LOWER(format) = 'cue'
+                  AND LOWER(RTRIM(REPLACE(folder_path, '\\', '/'), '/')) = :norm_folder
+                LIMIT 1;
+                """,
+                {"norm_folder": norm_folder},
+            ).fetchone()
+            if row:
+                return int(row["id"])
+        return None
+
+    def _find_standard_playlist_id(
+        self,
+        conn: sqlite3.Connection,
+        current_track: TrackRecord,
+        playlist_tracks: list[TrackRecord],
+    ) -> int | None:
+        if not playlist_tracks:
+            return None
+        norm_cur = (current_track.source_path or current_track.source_ref or "").replace("\\", "/").lower()
+        cand_rows = conn.execute(
+            """
+            SELECT DISTINCT p.id
+            FROM playlists p
+            JOIN playlist_entries pe ON pe.playlist_id = p.id
+            WHERE LOWER(p.format) != 'cue'
+              AND (
+                (pe.track_id IS NOT NULL AND pe.track_id = :track_id)
+                OR LOWER(REPLACE(pe.resolved_path, '\\', '/')) = :norm_path
+              );
+            """,
+            {"track_id": current_track.id, "norm_path": norm_cur},
+        ).fetchall()
+        if not cand_rows:
+            return None
+
+        target_paths = [(t.source_path or t.source_ref or "").replace("\\", "/").lower() for t in playlist_tracks]
+        target_counter: dict[str, int] = {}
+        for p in target_paths:
+            target_counter[p] = target_counter.get(p, 0) + 1
+
+        for cand in cand_rows:
+            pl_id = int(cand["id"])
+            entries = conn.execute(
+                """
+                SELECT pe.resolved_path, t.source_path
+                FROM playlist_entries pe
+                LEFT JOIN tracks t ON pe.track_id = t.id
+                WHERE pe.playlist_id = ?
+                ORDER BY pe.position ASC;
+                """,
+                (pl_id,),
+            ).fetchall()
+            if len(entries) != len(playlist_tracks):
+                continue
+            entry_paths = [(r["source_path"] or r["resolved_path"] or "").replace("\\", "/").lower() for r in entries]
+            if entry_paths == target_paths:
+                return pl_id
+            entry_counter: dict[str, int] = {}
+            for p in entry_paths:
+                entry_counter[p] = entry_counter.get(p, 0) + 1
+            if entry_counter == target_counter:
+                return pl_id
+        return None

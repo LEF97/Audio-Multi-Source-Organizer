@@ -146,3 +146,25 @@ def test_find_cover_image_in_folder_rejection_of_unrelated_images(tmp_path: Path
     song_png.write_bytes(b"legit_song_stem_cover" * 50)
     res_stem = find_cover_image_in_folder(folder, audio_stem="Song Title")
     assert res_stem == song_png.read_bytes()
+
+
+def test_find_cover_image_in_folder_recursive_stops_at_first_match(tmp_path: Path):
+    """Vérifie que la recherche récursive s'étend aux sous-dossiers et s'arrête à la première image valide."""
+    from amso.core.metadata import find_cover_image_in_folder
+
+    artist = tmp_path / "Artist"
+    album_empty = artist / "01_Empty"
+    album_first = artist / "02_First"
+    album_second = artist / "03_Second"
+    album_empty.mkdir(parents=True)
+    album_first.mkdir(parents=True)
+    album_second.mkdir(parents=True)
+
+    (album_empty / "vacation_photo.jpg").write_bytes(b"unrelated" * 50)
+    first_cover = album_first / "cover.jpg"
+    first_cover.write_bytes(b"first_album_cover" * 50)
+    second_cover = album_second / "folder.png"
+    second_cover.write_bytes(b"second_album_cover" * 50)
+
+    assert find_cover_image_in_folder(artist, recursive=False) is None
+    assert find_cover_image_in_folder(artist, recursive=True) == first_cover.read_bytes()

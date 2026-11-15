@@ -5,14 +5,12 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
+from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import (
+    QAbstractItemView,
     QMainWindow,
 )
 
-from amso.core.database import (
-    SourceRecord,
-    TrackRecord,
-)
 from amso.core.i18n import tr
 
 logger = logging.getLogger(__name__)
@@ -63,38 +61,60 @@ class NavigationMixin(_MixinBase):
 
     def _on_all_tracks_clicked(self) -> None:
         self._switch_to_page("tracks", 0)
+        if hasattr(self, "tracks_top_bar"):
+            self.tracks_top_bar.setVisible(True)
+        if hasattr(self, "tracks_stack"):
+            self.tracks_stack.setCurrentWidget(self.table_view)
         self.table_model.set_filter(source_id=None, source_type=None, search_query=self.search_edit.text())
         self._tracks_dirty = False
         self._update_track_count()
 
     def _on_by_folder_clicked(self) -> None:
         """Active la page d'exploration par dossiers."""
-        self._switch_to_page("folders", 3)
+        self._switch_to_page("folders", self.page_folders)
         if self.folder_tree.topLevelItemCount() == 0 or getattr(self, "_folders_dirty", False):
             self._refresh_folders_tree()
             self.folder_table_model.reload_data()
             self._folders_dirty = False
-
-    def _on_source_selected(self, source: SourceRecord) -> None:
-        self._switch_to_page("tracks", 0)
-        self.table_model.set_filter(source_id=source.id, search_query=self.search_edit.text())
-        self._update_track_count()
+        if getattr(self, "_pending_restore_scroll", False):
+            self._pending_restore_scroll = False
+            cur_item = self.folder_tree.currentItem()
+            if cur_item is not None:
+                self.folder_tree.scrollToItem(cur_item, QAbstractItemView.ScrollHint.PositionAtCenter)
+                QTimer.singleShot(
+                    0,
+                    lambda: (
+                        self.folder_tree.currentItem() is not None
+                        and self.folder_tree.scrollToItem(
+                            self.folder_tree.currentItem(),
+                            QAbstractItemView.ScrollHint.PositionAtCenter,
+                        )
+                    ),
+                )
+            if hasattr(self, "scroll_folder_table_to_current_track"):
+                self.scroll_folder_table_to_current_track()
+                QTimer.singleShot(60, self.scroll_folder_table_to_current_track)
 
     def _on_duplicates_clicked(self) -> None:
-        """Affiche les morceaux identifiés comme doublons stricts ou similaires."""
+        """Affiche les morceaux en doublon détectés dans la liste de lecture active."""
         self._switch_to_page("duplicates", 0)
-        dup_hash = self.db.find_duplicates_by_hash()
-        dup_meta = self.db.find_duplicates_by_metadata()
+        playlist = list(self.player_service.playlist) if hasattr(self, "player_service") and self.player_service else []
+        if not playlist:
+            self.table_model.set_tracks([])
+            if hasattr(self, "tracks_top_bar"):
+                self.tracks_top_bar.setVisible(False)
+            self._update_track_count()
+            if hasattr(self, "tracks_stack") and hasattr(self, "tracks_empty_widget"):
+                self.tracks_stack.setCurrentWidget(self.tracks_empty_widget)
+            self.status_label.setText(tr("duplicates.empty_playlist_message"))
+            return
 
-        all_dup_tracks: list[TrackRecord] = []
-        seen_ids: set[int] = set()
+        if hasattr(self, "tracks_top_bar"):
+            self.tracks_top_bar.setVisible(True)
+        if hasattr(self, "tracks_stack"):
+            self.tracks_stack.setCurrentWidget(self.table_view)
 
-        for group in dup_hash + dup_meta:
-            for t in group:
-                if t.id is not None and t.id not in seen_ids:
-                    seen_ids.add(t.id)
-                    all_dup_tracks.append(t)
-
+        dup_hash, dup_meta, all_dup_tracks = self.db.find_duplicates_in_tracks(playlist)
         self.table_model.set_tracks(all_dup_tracks)
         self._update_track_count()
         self.status_label.setText(
@@ -105,17 +125,9 @@ class NavigationMixin(_MixinBase):
             )
         )
 
-    def _on_stats_page_clicked(self) -> None:
-        """Bascule sur la page dédiée aux statistiques et actualise les chiffres."""
-        self._switch_to_page("stats", 1)
-        self._refresh_stats_view()
-
     def _on_settings_general_clicked(self) -> None:
         """Bascule sur la page des Paramètres Généraux."""
         self._switch_to_page("settings_general", self.page_settings)
-        if getattr(self, "_stats_dirty", False):
-            self._refresh_stats_view()
-            self._stats_dirty = False
 
     def _on_settings_sources_clicked(self) -> None:
         """Bascule sur la page Paramètres > Sources."""
@@ -127,6 +139,15 @@ class NavigationMixin(_MixinBase):
         ):
             self._refresh_settings_sources_table()
             self._sources_dirty = False
+
+    def _on_library_sources_clicked(self) -> None:
+        """Bascule sur la page Gestion de la bibliothèque > Sources."""
+        self._switch_to_page("library_sources", self.page_library_sources)
+        if getattr(self, "_sources_dirty", False) or not hasattr(self, "tree_library_sources"):
+            self._refresh_library_sources_tree()
+            self._sources_dirty = False
+        elif self.tree_library_sources.topLevelItemCount() == 0:
+            self._refresh_library_sources_tree()
 
     def _on_settings_player_clicked(self) -> None:
         """Bascule sur la page Paramètres > Lecteur."""
@@ -151,12 +172,12 @@ class NavigationMixin(_MixinBase):
                 self._current_active_page = "playlist"
             elif curr_widget == getattr(self, "page_folders", None):
                 self._current_active_page = "folders"
-            elif curr_widget == getattr(self, "page_stats", None):
-                self._current_active_page = "stats"
             elif curr_widget == getattr(self, "page_settings", None):
                 self._current_active_page = "settings_general"
             elif curr_widget == getattr(self, "page_settings_sources", None):
                 self._current_active_page = "settings_sources"
+            elif curr_widget == getattr(self, "page_library_sources", None):
+                self._current_active_page = "library_sources"
             elif curr_widget == getattr(self, "page_settings_player", None):
                 self._current_active_page = "settings_player"
             elif curr_widget == getattr(self, "page_logs", None):

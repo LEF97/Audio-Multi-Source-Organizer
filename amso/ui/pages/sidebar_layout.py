@@ -115,6 +115,13 @@ class SidebarLayoutMixin(_MixinBase):
         self.btn_playlist.clicked.connect(self._on_playlist_nav_clicked)
         self.nav_button_group.addButton(self.btn_playlist)
         self.drawer_player.add_widget(self.btn_playlist)
+
+        self.btn_by_folder = QPushButton(tr("sidebar.nav_by_folder"))
+        self.btn_by_folder.setProperty("class", "nav-btn")
+        self.btn_by_folder.setCheckable(True)
+        self.btn_by_folder.clicked.connect(self._on_by_folder_clicked)
+        self.nav_button_group.addButton(self.btn_by_folder)
+        self.drawer_player.add_widget(self.btn_by_folder)
         drawers_layout.addWidget(self.drawer_player)
 
         # 0b. Tiroir JEUX (Dédié au Blind Test, sous le tiroir Lecteur, fermé par défaut)
@@ -127,23 +134,15 @@ class SidebarLayoutMixin(_MixinBase):
         self.drawer_games.add_widget(self.btn_blind_test)
         drawers_layout.addWidget(self.drawer_games)
 
-        # 1. Tiroir BIBLIOTHÈQUE (fermé par défaut)
-        self.drawer_library = CollapsibleDrawer(tr("sidebar.drawer_library"), initially_expanded=False)
-        self.btn_all_tracks = QPushButton(tr("sidebar.nav_all_tracks"))
-        self.btn_all_tracks.setProperty("class", "nav-btn")
-        self.btn_all_tracks.setCheckable(True)
-        self.btn_all_tracks.setChecked(True)
-        self.btn_all_tracks.clicked.connect(self._on_all_tracks_clicked)
-        self.nav_button_group.addButton(self.btn_all_tracks)
-        self.drawer_library.add_widget(self.btn_all_tracks)
-
-        self.btn_by_folder = QPushButton(tr("sidebar.nav_by_folder"))
-        self.btn_by_folder.setProperty("class", "nav-btn")
-        self.btn_by_folder.setCheckable(True)
-        self.btn_by_folder.clicked.connect(self._on_by_folder_clicked)
-        self.nav_button_group.addButton(self.btn_by_folder)
-        self.drawer_library.add_widget(self.btn_by_folder)
-        drawers_layout.addWidget(self.drawer_library)
+        # 0c. Tiroir GESTION DE LA BIBLIOTHÈQUE (sous Jeux, fermé par défaut)
+        self.drawer_library_mgmt = CollapsibleDrawer(tr("sidebar.drawer_library_mgmt"), initially_expanded=False)
+        self.btn_library_sources = QPushButton(tr("sidebar.nav_library_sources"))
+        self.btn_library_sources.setProperty("class", "nav-btn")
+        self.btn_library_sources.setCheckable(True)
+        self.btn_library_sources.clicked.connect(self._on_library_sources_clicked)
+        self.nav_button_group.addButton(self.btn_library_sources)
+        self.drawer_library_mgmt.add_widget(self.btn_library_sources)
+        drawers_layout.addWidget(self.drawer_library_mgmt)
 
         # 2. Tiroir OUTILS (fermé par défaut)
         self.drawer_tools = CollapsibleDrawer(tr("sidebar.drawer_tools"), initially_expanded=False)
@@ -154,33 +153,6 @@ class SidebarLayoutMixin(_MixinBase):
         self.nav_button_group.addButton(self.btn_duplicates)
         self.drawer_tools.add_widget(self.btn_duplicates)
         drawers_layout.addWidget(self.drawer_tools)
-
-        # 3. Tiroir STATISTIQUES (fermé par défaut)
-        self.drawer_stats = CollapsibleDrawer(tr("sidebar.drawer_stats"), initially_expanded=False)
-        self.btn_stats_page = QPushButton(tr("sidebar.nav_stats_page"))
-        self.btn_stats_page.setProperty("class", "nav-btn")
-        self.btn_stats_page.setCheckable(True)
-        self.btn_stats_page.clicked.connect(self._on_stats_page_clicked)
-        self.nav_button_group.addButton(self.btn_stats_page)
-        self.drawer_stats.add_widget(self.btn_stats_page)
-        drawers_layout.addWidget(self.drawer_stats)
-
-        # Alias pour compatibilité tests existants
-        self.btn_stats = self.btn_stats_page
-
-        # 4. Tiroir SOURCES (fermé par défaut)
-        self.drawer_sources = CollapsibleDrawer(tr("sidebar.drawer_sources"), initially_expanded=False)
-        self.sources_container = QWidget()
-        self.sources_layout = QVBoxLayout(self.sources_container)
-        self.sources_layout.setContentsMargins(0, 0, 0, 0)
-        self.sources_layout.setSpacing(2)
-        self.drawer_sources.add_widget(self.sources_container)
-
-        self.btn_add_source = QPushButton(tr("sidebar.btn_add_source"))
-        self.btn_add_source.setProperty("class", "secondary-btn")
-        self.btn_add_source.clicked.connect(self._on_add_local_folder)
-        self.drawer_sources.add_widget(self.btn_add_source)
-        drawers_layout.addWidget(self.drawer_sources)
 
         # Espace élastique avant les paramètres
         drawers_layout.addStretch()
@@ -243,11 +215,7 @@ class SidebarLayoutMixin(_MixinBase):
         self.page_tracks = self._create_tracks_page()
         self.stacked_widget.addWidget(self.page_tracks)
 
-        # Page 1 : Vue Statistiques dédiée
-        self.page_stats = self._create_stats_page()
-        self.stacked_widget.addWidget(self.page_stats)
-
-        # Page 2 : Paramètres > Général (contenant le sélecteur de langue, stockage, à propos)
+        # Page 1 : Paramètres > Général (contenant le sélecteur de langue, stockage, à propos)
         self.page_settings = self._create_settings_page()
         self.stacked_widget.addWidget(self.page_settings)
 
@@ -258,6 +226,10 @@ class SidebarLayoutMixin(_MixinBase):
         # Page 4 : Paramètres > Sources (Configuration des sources et synchronisation)
         self.page_settings_sources = self._create_settings_sources_page()
         self.stacked_widget.addWidget(self.page_settings_sources)
+
+        # Page 4b : Gestion de la bibliothèque > Sources
+        self.page_library_sources = self._create_library_sources_page()
+        self.stacked_widget.addWidget(self.page_library_sources)
 
         # Page 5 : Vue Lecteur audio grand format
         self.page_player = PlayerView(self.player_service, parent=self)

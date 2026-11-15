@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QPushButton
 
 # Couleurs partagées du thème sombre
@@ -24,6 +25,7 @@ def icon_button_qss(radius: int = 6, font_size: int = 14) -> str:
             border: 1px solid {COLOR_BORDER};
             border-radius: {radius}px;
             font-size: {font_size}px;
+            padding: 0px;
         }}
         QPushButton:hover {{
             background-color: {COLOR_BG_HOVER};
@@ -45,6 +47,7 @@ def active_button_qss(radius: int = 6, font_size: int = 14) -> str:
         border: 1px solid {COLOR_PRIMARY_HOVER};
         border-radius: {radius}px;
         font-size: {font_size}px;
+        padding: 0px;
     """
 
 
@@ -166,3 +169,23 @@ def settings_radio_qss() -> str:
             border-color: {COLOR_PRIMARY_HOVER};
         }}
     """
+
+
+def tree_action_button_qss() -> str:
+    """QSS des petits boutons d'action d'en-tête d'arborescence (déplier, replier, rafraîchir)."""
+    return (
+        f"QPushButton {{ font-size: 11px; padding: 2px 6px; background: transparent; "
+        f"border: 1px solid #333846; border-radius: 4px; color: {COLOR_TEXT_MUTED}; }}"
+        f"QPushButton:hover {{ background-color: {COLOR_BG_HOVER}; color: {COLOR_TEXT_BRIGHT}; "
+        f"border-color: {COLOR_PRIMARY_HOVER}; }}"
+        f"QPushButton:pressed {{ background-color: {COLOR_PRIMARY}; color: #FFFFFF; }}"
+    )
+
+
+def make_tree_action_button(text: str, tooltip: str) -> QPushButton:
+    """Crée un petit bouton d'en-tête d'arborescence (déplier, replier, rafraîchir)."""
+    btn = QPushButton(text)
+    btn.setToolTip(tooltip)
+    btn.setCursor(Qt.CursorShape.PointingHandCursor)
+    btn.setStyleSheet(tree_action_button_qss())
+    return btn

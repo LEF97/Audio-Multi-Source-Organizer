@@ -51,6 +51,25 @@ class TrackActionsMixin(_MixinBase):
         self._update_track_count()
 
     def _update_track_count(self) -> None:
+        if getattr(self, "_current_active_page", None) == "duplicates":
+            playlist = (
+                list(self.player_service.playlist) if hasattr(self, "player_service") and self.player_service else []
+            )
+            if not playlist:
+                self.track_count_label.setText("")
+                return
+            dup_count = self.table_model.rowCount()
+            total_count = len(playlist)
+            dups_txt = tr(
+                "duplicates.dup_singular" if dup_count <= 1 else "duplicates.dup_plural", count=f"{dup_count:,}"
+            )
+            total_txt = tr(
+                "duplicates.track_singular" if total_count <= 1 else "duplicates.track_plural",
+                count=f"{total_count:,}",
+            )
+            self.track_count_label.setText(tr("duplicates.count_summary", dups=dups_txt, total=total_txt))
+            return
+
         count = self.table_model.display_count()
         if count <= 1:
             self.track_count_label.setText(tr("topbar.track_count_singular", count=f"{count:,}"))
@@ -132,7 +151,6 @@ class TrackActionsMixin(_MixinBase):
         self.table_model.reload_data()
         self.folder_table_model.reload_data()
         self._update_track_count()
-        self._refresh_stats_view()
         self._refresh_folders_tree()
 
     def _remove_track_from_player(self, track: TrackRecord) -> None:
@@ -195,6 +213,10 @@ class TrackActionsMixin(_MixinBase):
         if clicked_track is None:
             return
 
+        active_pl_id = getattr(model, "_current_playlist_id", None)
+        self._active_playback_playlist_id = active_pl_id
+        self._active_playback_from_folder = active_pl_id is None
+
         total_rows = model.rowCount()
 
         # Si la sélection dépasse 1 000 titres, afficher le dialogue de décision
@@ -221,6 +243,8 @@ class TrackActionsMixin(_MixinBase):
 
             choice = dialog.get_choice()
             if choice == "folder":
+                self._active_playback_playlist_id = None
+                self._active_playback_from_folder = True
                 tracks_to_play = self.db.get_tracks_by_folder(
                     folder_path=clicked_track.folder_path,
                     source_id=clicked_track.source_id,

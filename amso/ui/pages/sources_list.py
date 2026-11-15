@@ -8,14 +8,12 @@ import subprocess
 import sys
 from typing import TYPE_CHECKING, Any
 
-from PySide6.QtCore import QPoint, Qt
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QDialog,
     QMainWindow,
     QMenu,
     QMessageBox,
-    QPushButton,
 )
 
 from amso.core.activity_messages import LogMessage
@@ -34,6 +32,20 @@ else:
     _MixinBase = object
 
 
+def format_sync_mode_label(source: SourceRecord) -> str:
+    """Formate le libellé lisible du mode et de l'intervalle de synchronisation d'une source."""
+    raw_mode = getattr(source, "sync_mode", "manual") or "manual"
+    interval_m = getattr(source, "sync_interval_minutes", 60) or 60
+    interval_s = getattr(source, "sync_interval_seconds", 60) or 60
+    if raw_mode == "interval":
+        return f"⏱️  {interval_m} min"
+    if raw_mode == "realtime":
+        return f"⚡  {tr('sync_mode.realtime')} ({interval_s}s)"
+    if raw_mode == "startup":
+        return f"🚀  {tr('sync_mode.startup')}"
+    return f"✋  {tr('sync_mode.manual')}"
+
+
 class SourcesListMixin(_MixinBase):
     """Liste des sources, menu contextuel et suppression (mixin de MainWindow)."""
 
@@ -42,39 +54,25 @@ class SourcesListMixin(_MixinBase):
         def __getattr__(self, name: str) -> Any: ...
 
     def refresh_sources_list(self) -> None:
-        """Met à jour les boutons de sources dans le tiroir Sources."""
-        while self.sources_layout.count():
-            item = self.sources_layout.takeAt(0)
-            if item is not None:
-                w = item.widget()
-                if w is not None:
-                    w.deleteLater()
-
-        sources = self.db.get_sources()
+        """Synchronise l'indicateur de présence de sources dans le lecteur."""
         if hasattr(self, "page_player") and self.page_player:
+            sources = self.db.get_sources()
             self.page_player.set_has_sources(len(sources) > 0)
 
-        for src in sources:
-            icon_str = "💾" if src.source_type == SourceType.LOCAL else "☁️"
-            btn = QPushButton(f"{icon_str}  {src.name}")
-            btn.setProperty("class", "nav-btn")
-            btn.setCheckable(True)
-            btn.setToolTip(src.path_or_uri)
-            btn.clicked.connect(lambda checked=False, s=src: self._on_source_selected(s))
-            btn.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-            btn.customContextMenuRequested.connect(lambda pos, s=src, b=btn: self._on_source_context_menu(pos, s, b))
-            self.nav_button_group.addButton(btn)
-            self.sources_layout.addWidget(btn)
-
     def _create_source_context_menu(self, source: SourceRecord) -> QMenu:
-        """Crée le menu contextuel pour une source (synchroniser, ouvrir explorer, propriétés, supprimer)."""
+        """Crée le menu contextuel pour une source (bibliothèque, synchro, explorer, propriétés, supprimer)."""
         menu = QMenu(self)
+
+        if hasattr(self, "_open_source_in_library"):
+            action_lib = QAction("📁  " + tr("library_sources.menu_open_in_library"), self)
+            action_lib.triggered.connect(lambda: self._open_source_in_library(source))
+            menu.addAction(action_lib)
 
         action_sync = QAction("🔄  " + tr("sources.menu_sync"), self)
         action_sync.triggered.connect(lambda: self._start_scan(source, user_initiated=True))
         menu.addAction(action_sync)
 
-        if source.path_or_uri:
+        if source.source_type == SourceType.LOCAL and source.path_or_uri:
             action_open = QAction("📂  " + tr("common.open_explorer"), self)
             action_open.triggered.connect(lambda: self._open_source_in_explorer(source.path_or_uri))
             menu.addAction(action_open)
@@ -112,14 +110,12 @@ class SourcesListMixin(_MixinBase):
         self.refresh_sources_list()
         self._refresh_folders_tree()
         self._refresh_settings_sources_table()
+        if hasattr(self, "_refresh_library_sources_tree"):
+            self._refresh_library_sources_tree()
         if hasattr(self, "scheduler") and self.scheduler:
             self.scheduler.refresh_watched_directories()
             if data["sync_mode"] == "realtime" and source.id and not source.last_scanned_at:
                 self.scheduler.enqueue_source(source.id)
-
-    def _on_source_context_menu(self, pos: QPoint, source: SourceRecord, button: QPushButton) -> None:
-        menu = self._create_source_context_menu(source)
-        menu.exec(button.mapToGlobal(pos))
 
     def _open_source_in_explorer(self, path: str) -> None:
         """Ouvre un dossier de source dans le gestionnaire de fichiers OS."""
@@ -169,7 +165,6 @@ class SourcesListMixin(_MixinBase):
             self.table_model.reload_data()
             self.folder_table_model.reload_data()
             self._update_track_count()
-            self._refresh_stats_view()
 
     def _on_settings_source_double_clicked(self, row: int, column: int) -> None:
         """Ouvre les propriétés d'une source au double-clic sur une ligne du tableau."""

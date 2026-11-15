@@ -63,6 +63,7 @@ class _TrackDraft:
     is_audio: bool
     title: str = ""
     artist: str = ""
+    has_index01: bool = False
 
 
 def parse_cue_content(content: str, cue_dir: Path) -> list[ParsedPlaylistEntry]:
@@ -79,13 +80,17 @@ def parse_cue_content(content: str, cue_dir: Path) -> list[ParsedPlaylistEntry]:
         if m := _FILE_RE.match(line):
             raw = m.group(1) if m.group(1) is not None else m.group(2)
             files.append((raw, *resolve_cue_audio_file(raw, cue_dir)))
-            current = None
+            # EAC non-compliant CUE : TRACK + TITLE + INDEX 00 peuvent précéder FILE avant INDEX 01.
+            # On ne réinitialise `current` que si la piste précédente a déjà reçu son INDEX 01.
+            if current is not None and current.has_index01:
+                current = None
         elif m := _TRACK_RE.match(line):
             current = _TrackDraft(number=int(m.group(1)), is_audio=m.group(2).upper() == "AUDIO")
         elif m := _INDEX_RE.match(line):
             if current is not None and current.is_audio and int(m.group(1)) == 1 and files:
                 start = cue_time_to_ms(int(m.group(2)), int(m.group(3)), int(m.group(4)))
                 tracks.append((len(files) - 1, current.number, current.title, current.artist, start))
+                current.has_index01 = True
         elif m := _TEXT_RE.match(line):
             value = (m.group(2) if m.group(2) is not None else m.group(3)).strip()
             is_title = m.group(1).upper() == "TITLE"

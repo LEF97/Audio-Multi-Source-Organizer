@@ -14,6 +14,7 @@ import os
 import shutil
 import threading
 import time
+from collections.abc import Iterator
 from pathlib import Path
 from typing import overload
 
@@ -53,6 +54,20 @@ KEY_FADE_IN_RESUME_ENABLED = "fade_in_resume_enabled"
 KEY_FADE_IN_RESUME_DURATION = "fade_in_resume_duration"
 KEY_AUDIO_ENGINE = "audio_engine"
 KEY_VLC_GAPLESS_LATENCY = "vlc_gapless_latency_ms"
+KEY_COVER_TRANSITION = "cover_transition"
+
+COVER_TRANSITION_MODES = ("fade", "slide", "zoom", "flip", "none")
+
+SECTION_UI = "UI"
+KEY_WINDOW_WIDTH = "window_width"
+KEY_WINDOW_HEIGHT = "window_height"
+KEY_WINDOW_X = "window_x"
+KEY_WINDOW_Y = "window_y"
+KEY_WINDOW_MAXIMIZED = "window_maximized"
+DEFAULT_WINDOW_WIDTH = 1200
+DEFAULT_WINDOW_HEIGHT = 780
+MIN_WINDOW_WIDTH = 950
+MIN_WINDOW_HEIGHT = 620
 
 
 def get_config_path() -> Path:
@@ -82,6 +97,7 @@ class ConfigManager:
             self.config_path = Path(config_path).resolve()
 
         self._config = configparser.ConfigParser()
+        self._batch_depth = 0
         self.load()
 
     def load(self) -> None:
@@ -141,12 +157,24 @@ class ConfigManager:
             return self._config.get(section, key)
         return fallback
 
+    @contextlib.contextmanager
+    def batch(self) -> Iterator[None]:
+        """Regroupe plusieurs écritures de configuration en une seule sauvegarde disque."""
+        self._batch_depth += 1
+        try:
+            yield
+        finally:
+            self._batch_depth -= 1
+            if self._batch_depth == 0:
+                self.save()
+
     def set(self, section: str, key: str, value: str) -> None:
         """Définit une valeur de configuration et persiste sur le disque."""
         if not self._config.has_section(section):
             self._config.add_section(section)
         self._config.set(section, key, str(value))
-        self.save()
+        if self._batch_depth == 0:
+            self.save()
 
     def get_language(self) -> str | None:
         """Retourne la langue configurée ou None si non définie."""
@@ -170,6 +198,7 @@ class ConfigManager:
             "playlist",
             "settings_general",
             "settings_sources",
+            "library_sources",
             "settings_player",
             "logs",
         }
@@ -310,6 +339,16 @@ class ConfigManager:
         if effect in valid:
             self.set(SECTION_PLAYER, KEY_VISUAL_EFFECT, effect)
 
+    def get_cover_transition(self) -> str:
+        """Retourne l'effet de transition de pochette configuré ('fade', 'slide', 'zoom', 'flip', 'none')."""
+        val = self.get(SECTION_PLAYER, KEY_COVER_TRANSITION, "fade")
+        return val if val in COVER_TRANSITION_MODES else "fade"
+
+    def set_cover_transition(self, mode: str) -> None:
+        """Définit l'effet de transition lors d'un changement de pochette."""
+        if mode in COVER_TRANSITION_MODES:
+            self.set(SECTION_PLAYER, KEY_COVER_TRANSITION, mode)
+
     def get_player_position_ms(self) -> int:
         """Retourne la dernière position temporelle de lecture sauvegardée en ms (0 par défaut)."""
         val = self.get(SECTION_PLAYER, KEY_POSITION_MS, "0")
@@ -399,6 +438,65 @@ class ConfigManager:
     def set_fade_in_resume_duration(self, seconds: float) -> None:
         """Définit la durée du fondu à la reprise de lecture en secondes."""
         self.set(SECTION_PLAYER, KEY_FADE_IN_RESUME_DURATION, f"{max(0.1, min(5.0, seconds)):.1f}")
+
+    def get_library_sources_expanded_nodes(self) -> list[str]:
+        """Retourne la liste des clés de nœuds dépliés dans la page Gestion de la bibliothèque > Sources."""
+        raw = self.get(SECTION_UI, "library_sources_expanded", "")
+        if not raw:
+            return []
+        return [part.strip() for part in str(raw).split(",") if part.strip()]
+
+    def set_library_sources_expanded_nodes(self, node_keys: list[str]) -> None:
+        """Persiste la liste des clés de nœuds dépliés dans Gestion de la bibliothèque > Sources."""
+        clean = [k.strip() for k in node_keys if k and k.strip()]
+        self.set(SECTION_UI, "library_sources_expanded", ",".join(clean))
+
+    def get_window_size(self) -> tuple[int, int]:
+        """Retourne la taille mémorisée en mode fenêtré (largeur, hauteur)."""
+        raw_w = self.get(SECTION_UI, KEY_WINDOW_WIDTH)
+        raw_h = self.get(SECTION_UI, KEY_WINDOW_HEIGHT)
+        try:
+            w = int(raw_w) if raw_w is not None else DEFAULT_WINDOW_WIDTH
+            h = int(raw_h) if raw_h is not None else DEFAULT_WINDOW_HEIGHT
+        except (ValueError, TypeError):
+            return (DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
+        return (max(MIN_WINDOW_WIDTH, w), max(MIN_WINDOW_HEIGHT, h))
+
+    def get_window_position(self) -> tuple[int, int] | None:
+        """Retourne la position mémorisée en mode fenêtré (x, y) ou None si absente/invalide."""
+        raw_x = self.get(SECTION_UI, KEY_WINDOW_X)
+        raw_y = self.get(SECTION_UI, KEY_WINDOW_Y)
+        if raw_x is None or raw_y is None:
+            return None
+        try:
+            return (int(raw_x), int(raw_y))
+        except (ValueError, TypeError):
+            return None
+
+    def get_window_maximized(self) -> bool:
+        """Retourne True si la fenêtre était agrandie lors de la dernière fermeture."""
+        val = self.get(SECTION_UI, KEY_WINDOW_MAXIMIZED, "false")
+        return str(val).lower() in ("true", "1", "yes", "on")
+
+    def set_window_state(
+        self,
+        width: int,
+        height: int,
+        maximized: bool,
+        x: int | None = None,
+        y: int | None = None,
+    ) -> None:
+        """Persiste la taille, la position en mode fenêtré et l'état agrandi en une seule écriture."""
+        if not self._config.has_section(SECTION_UI):
+            self._config.add_section(SECTION_UI)
+        self._config.set(SECTION_UI, KEY_WINDOW_WIDTH, str(max(MIN_WINDOW_WIDTH, int(width))))
+        self._config.set(SECTION_UI, KEY_WINDOW_HEIGHT, str(max(MIN_WINDOW_HEIGHT, int(height))))
+        if x is not None and y is not None:
+            self._config.set(SECTION_UI, KEY_WINDOW_X, str(int(x)))
+            self._config.set(SECTION_UI, KEY_WINDOW_Y, str(int(y)))
+        self._config.set(SECTION_UI, KEY_WINDOW_MAXIMIZED, "true" if maximized else "false")
+        if self._batch_depth == 0:
+            self.save()
 
 
 # Instance singleton globale pour simplifier l'accès à travers l'application

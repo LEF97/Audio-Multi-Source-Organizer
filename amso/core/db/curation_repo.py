@@ -133,6 +133,40 @@ class TrackCurationMixin:
                     groups.append(tracks)
             return groups
 
+    @staticmethod
+    def find_duplicates_in_tracks(
+        tracks: Sequence[TrackRecord],
+        duration_tolerance_sec: float = 3.0,
+    ) -> tuple[list[list[TrackRecord]], list[list[TrackRecord]], list[TrackRecord]]:
+        """Identifie les doublons stricts (hash) et probables (métadonnées) au sein d'une séquence de pistes."""
+        by_hash: dict[str, list[tuple[int, TrackRecord]]] = {}
+        by_meta: dict[tuple[str, str], list[tuple[int, TrackRecord]]] = {}
+
+        for idx, track in enumerate(tracks):
+            if track.file_hash:
+                by_hash.setdefault(track.file_hash, []).append((idx, track))
+            artist_norm = (track.artist or "").strip().lower()
+            title_norm = (track.title or "").strip().lower()
+            if artist_norm and title_norm:
+                by_meta.setdefault((artist_norm, title_norm), []).append((idx, track))
+
+        hash_groups = [[t for _, t in grp] for grp in by_hash.values() if len(grp) > 1]
+        meta_groups: list[list[TrackRecord]] = []
+        seen_indices: set[int] = {idx for grp in by_hash.values() if len(grp) > 1 for idx, _ in grp}
+
+        for grp in by_meta.values():
+            if len(grp) < 2:
+                continue
+            durations = [t.duration_seconds for _, t in grp if t.duration_seconds and t.duration_seconds > 0]
+            if len(durations) >= 2 and (max(durations) - min(durations)) > duration_tolerance_sec:
+                continue
+            meta_groups.append([t for _, t in grp])
+            for idx, _ in grp:
+                seen_indices.add(idx)
+
+        unique_tracks = [tracks[idx] for idx in sorted(seen_indices)]
+        return hash_groups, meta_groups, unique_tracks
+
     def assign_duplicate_cluster(self, track_ids: Sequence[int], cluster_id: int) -> None:
         """Associe un groupe de pistes à un cluster de doublons."""
         if not track_ids:

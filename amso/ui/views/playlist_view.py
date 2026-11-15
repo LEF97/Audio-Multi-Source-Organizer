@@ -7,7 +7,7 @@ et un tableau détaillé de la file d'attente en dessous.
 from __future__ import annotations
 
 from PySide6.QtCore import QPoint, Qt, QTimer
-from PySide6.QtGui import QAction, QCursor, QPixmap, QShowEvent
+from PySide6.QtGui import QAction, QCursor, QShowEvent
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QMenu,
@@ -17,21 +17,20 @@ from PySide6.QtWidgets import (
 from amso.core.database import TrackRecord
 from amso.core.i18n import tr
 from amso.services.player_service import PlayerService
-from amso.ui.models import PlaylistTableModel, format_duration
+from amso.ui.models import PlaylistTableModel
 from amso.ui.table_settings import app_settings
-from amso.ui.views.cover_helper import load_cover_async
-from amso.ui.views.playlist_ui_builder import PlaylistUiMixin
+from amso.ui.views.playlist_ui_builder import PlaylistHeaderWidget, PlaylistUiMixin
 from amso.ui.widgets.playlist_table_view import PlaylistTableView
 from amso.ui.widgets.transport_mixin import TransportViewMixin
 
-__all__ = ["PlaylistView", "PlaylistTableView"]
+__all__ = ["PlaylistHeaderWidget", "PlaylistTableView", "PlaylistView"]
 
 
 class PlaylistView(PlaylistUiMixin, TransportViewMixin, QWidget):
     """Page Playlist : Mini-lecteur en haut + Tableau de la file d'attente en dessous."""
 
     _transport_btn_radius = 4
-    _transport_btn_font = 12
+    _transport_btn_font = 19
     _transport_cover_size = 56
     _transport_cover_radius = 8
 
@@ -49,23 +48,11 @@ class PlaylistView(PlaylistUiMixin, TransportViewMixin, QWidget):
         self._update_stats_label()
 
     def _connect_signals(self) -> None:
-        # Signaux du PlayerService et contrôles de transport (partagés)
-        self._connect_transport_signals()
-        self.player.playlist_updated.connect(self._on_playlist_updated)
-        self.btn_shuffle_tracks.clicked.connect(self._on_shuffle_tracks_clicked)
-        self.btn_clear_playlist.clicked.connect(self.player.clear_playlist)
+        self._connect_playlist_header_signals()
 
         # Interactions sur le tableau de playlist
         self.table_view.doubleClicked.connect(self._on_table_double_clicked)
         self.table_view.customContextMenuRequested.connect(self._on_context_menu)
-
-        # Synchronisation de l'état initial
-        self.update_shuffle_ui(self.player.is_shuffle)
-        self.update_repeat_ui(self.player.repeat_mode)
-        self.update_volume(self.player.volume, self.player.is_muted)
-        self._update_stats_label()
-        if self.player.current_track:
-            self.update_track_info(self.player.current_track)
 
     def _on_header_context_menu(self, pos: QPoint) -> None:
         header = self.table_view.horizontalHeader()
@@ -133,16 +120,6 @@ class PlaylistView(PlaylistUiMixin, TransportViewMixin, QWidget):
             return bool(self.table_view.horizontalHeader().restoreState(state))
         return False
 
-    def _on_shuffle_tracks_clicked(self) -> None:
-        """Déclenche le mélange complet des titres de la playlist."""
-        if not self.player.is_shuffle:
-            return
-        self.player.shuffle_all_tracks()
-
-    def _on_shuffle_below_clicked(self) -> None:
-        """Alias de rétrocompatibilité."""
-        self._on_shuffle_tracks_clicked()
-
     def _on_table_double_clicked(self, index) -> None:
         if index.isValid():
             self.player.play_index(index.row())
@@ -163,6 +140,11 @@ class PlaylistView(PlaylistUiMixin, TransportViewMixin, QWidget):
 
             menu.addSeparator()
 
+        act_save = QAction(tr("playlist.menu_save"), self)
+        act_save.setEnabled(len(self.player.playlist) > 0)
+        act_save.triggered.connect(self._on_save_playlist_clicked)
+        menu.addAction(act_save)
+
         act_shuffle = QAction(tr("playlist.btn_shuffle_tracks"), self)
         act_shuffle.setEnabled(bool(self.player.is_shuffle) and len(self.player.playlist) > 1)
         act_shuffle.triggered.connect(self._on_shuffle_tracks_clicked)
@@ -175,28 +157,9 @@ class PlaylistView(PlaylistUiMixin, TransportViewMixin, QWidget):
 
         menu.exec(QCursor.pos())
 
-    def _update_shuffle_tracks_state(self) -> None:
-        """Active ou désactive le bouton et actions de mélange selon le mode aléatoire."""
-        can_shuffle = bool(self.player.is_shuffle) and len(self.player.playlist) > 1
-        if hasattr(self, "btn_shuffle_tracks"):
-            self.btn_shuffle_tracks.setEnabled(can_shuffle)
-
-    def _update_stats_label(self) -> None:
-        self._update_shuffle_tracks_state()
-        tracks = self.player.playlist
-        count = len(tracks)
-        if count == 0:
-            self.lbl_playlist_stats.setText(tr("player.empty_playlist"))
-            return
-
-        total_sec = sum(t.duration_seconds or 0 for t in tracks)
-        dur_str = format_duration(total_sec)
-        key = "playlist.stats_count_singular" if count == 1 else "playlist.stats_count"
-        self.lbl_playlist_stats.setText(tr(key, count=f"{count:,}", duration=dur_str))
-
     def _on_playlist_updated(self) -> None:
         """Appelé lorsque la composition de la playlist change."""
-        self._update_stats_label()
+        super()._on_playlist_updated()
         QTimer.singleShot(60, self.scroll_to_current_track)
 
     def scroll_to_current_track(self) -> None:
@@ -214,72 +177,14 @@ class PlaylistView(PlaylistUiMixin, TransportViewMixin, QWidget):
         super().showEvent(event)
         QTimer.singleShot(60, self.scroll_to_current_track)
 
-    def _on_cover_loaded(self, path: str, pixmap: QPixmap) -> None:
-        """Appelé dès que la vignette asynchrone a fini de charger."""
-        if getattr(self, "_displayed_track_path", None) == path:
-            self.lbl_thumb.setPixmap(pixmap)
-
     def update_track_info(self, track: TrackRecord | None) -> None:
-        """Met à jour l'affichage avec la piste en cours de lecture de façon instantanée."""
-        try:
-            track_path = track.source_path if track else ""
-            self._displayed_track_path = track_path
-
-            pixmap = load_cover_async(track, size=56, radius=8, callback=self._on_cover_loaded, force_check=True)
-            self.lbl_thumb.setPixmap(pixmap)
-
-            if not track:
-                self.lbl_track_title.setText(tr("player.no_track"))
-                self.lbl_track_artist.setText("")
-                self.lbl_time_cur.setText("00:00")
-                self.lbl_time_total.setText("00:00")
-                self.slider_seek.setValue(0)
-                return
-
-            title_text = track.title or track.file_name or tr("track.untitled")
-            self.lbl_track_title.setText(title_text)
-
-            artist_part = track.artist or tr("track.unknown_artist")
-            album_part = f" — {track.album}" if track.album else ""
-            self.lbl_track_artist.setText(f"{artist_part}{album_part}")
-
-            total_sec = track.duration_seconds or 0
-            self.lbl_time_total.setText(format_duration(total_sec))
-
-            # Faire défiler la table pour que la ligne active soit centrée
+        """Met à jour l'affichage avec la piste en cours de lecture et centre la ligne active."""
+        super().update_track_info(track)
+        if track:
             self.scroll_to_current_track()
-        except RuntimeError:
-            pass
-
-    def update_shuffle_ui(self, active: bool) -> None:
-        """Met en valeur le bouton aléatoire puis met à jour l'état du bouton de mélange."""
-        super().update_shuffle_ui(active)
-        self._update_shuffle_tracks_state()
 
     def retranslate_ui(self) -> None:
         """Met à jour l'ensemble des textes, infobulles et en-têtes selon la langue active."""
-        self.lbl_page_title.setText(tr("playlist.page_title"))
-        if hasattr(self, "btn_shuffle_tracks"):
-            self.btn_shuffle_tracks.setText(tr("playlist.btn_shuffle_tracks"))
-        elif hasattr(self, "btn_shuffle_below"):
-            self.btn_shuffle_below.setText(tr("playlist.btn_shuffle_tracks"))
-        self.btn_clear_playlist.setText(tr("player.btn_clear_playlist"))
-        self._update_stats_label()
-
-        if not self.player.current_track:
-            self.lbl_track_title.setText(tr("player.no_track"))
-        else:
-            self.update_track_info(self.player.current_track)
-
-        self.btn_shuffle.setToolTip(tr("player.btn_shuffle"))
-        self.btn_prev.setToolTip(tr("player.btn_previous"))
-        if self.player.is_playing:
-            self.btn_play_pause.setToolTip(tr("player.btn_pause"))
-        else:
-            self.btn_play_pause.setToolTip(tr("player.btn_play"))
-        self.btn_stop.setToolTip(tr("player.btn_stop"))
-        self.btn_next.setToolTip(tr("player.btn_next"))
-        self.btn_repeat.setToolTip(tr("player.btn_repeat"))
-
+        self.retranslate_header_ui()
         if hasattr(self, "playlist_model"):
             self.playlist_model.notify_language_changed()

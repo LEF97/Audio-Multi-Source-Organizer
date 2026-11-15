@@ -38,6 +38,8 @@ amso/
 │   ├── scanner.py            parcours récursif multithread
 │   ├── metadata.py           tags (mutagen), formats, pochettes embarquées
 │   ├── playlist_parser.py    M3U / PLS / XSPF / WPL (+ CUE)
+│   ├── playlist_exporter.py  export de la file vers M3U8 / M3U / PLS / XSPF / WPL
+│   ├── playlist_repair.py    recherche et scoring de fichiers renommés/déplacés pour réparer une playlist
 │   ├── pcm_mixer.py          mixage PCM Int16 stéréo (numpy) : gains égale puissance, StreamingCrossfade (fondu au fil du décodage)
 │   ├── cue_parser.py         feuilles CUE : pistes virtuelles (début/fin dans un fichier audio)
 │   ├── cover_art.py          pochettes
@@ -67,7 +69,7 @@ amso/
     ├── views/                vues autonomes : main_window, player, playlist, logs, splash…
     │   ├── blind_test/       sous-modules du mode Blind Test
     │   └── effects/          effets visuels (types, painters, barres de spectre)
-    ├── pages/                mixins de MainWindow (folders_*, settings_*, navigation, retranslate, scan_controller…)
+    ├── pages/                mixins de MainWindow (folders_*, settings_*, library_sources*, navigation, retranslate, scan_controller…)
     ├── widgets/              composants réutilisables (tiroirs, badges, combos)
     ├── dialogs/              boîtes de dialogue (sources, VLC, suppression…)
     ├── models*.py, folder_track_model.py, playlist_table_model.py   modèles Qt virtualisés

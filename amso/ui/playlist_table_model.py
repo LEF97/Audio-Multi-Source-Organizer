@@ -18,7 +18,7 @@ class PlaylistTableModel(QAbstractTableModel):
     """Modèle de tableau pour la liste de lecture (Playlist) en cours."""
 
     COLUMNS: list[tuple[str, int]] = [
-        ("table.col_playing", 40),
+        ("table.col_playing", 30),
         ("table.col_order", 45),
         ("table.col_title", 240),
         ("table.col_artist", 180),
@@ -32,6 +32,7 @@ class PlaylistTableModel(QAbstractTableModel):
         self.player = player_service
         self.player.playlist_updated.connect(self._on_playlist_updated)
         self.player.track_changed.connect(self._on_track_changed)
+        self.player.state_changed.connect(self._on_track_changed)
 
     def _on_playlist_updated(self) -> None:
         self.beginResetModel()

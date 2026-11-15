@@ -42,8 +42,7 @@ class FoldersTrashMixin(_MixinBase):
         """Charge et affiche les éléments de la corbeille (morceaux ignorés)."""
         ignored_items = self.db.get_ignored_tracks()
         cnt = len(ignored_items)
-        count_key = "folders.track_count_singular" if cnt == 1 else "folders.track_count"
-        self.lbl_folder_count_badge.setText(tr(count_key, count=f"{cnt:,}"))
+        self._update_folder_count_badge(count=cnt, total_duration_sec=0.0)
 
         self.trash_table.setRowCount(cnt)
         for row, it in enumerate(ignored_items):
@@ -195,7 +194,6 @@ class FoldersTrashMixin(_MixinBase):
         self.table_model.reload_data()
         self.folder_table_model.reload_data()
         self._update_track_count()
-        self._refresh_stats_view()
 
         self.status_label.setText(f"♻️ {tr('trash.restore_success', count=restored_count)}")
 
@@ -257,5 +255,4 @@ class FoldersTrashMixin(_MixinBase):
         self.folder_table_model.reload_data()
         self.table_model.reload_data()
         self._update_track_count()
-        self._refresh_stats_view()
         self._refresh_folders_tree()

@@ -291,7 +291,8 @@ class BlindTestUiMixin(EffectsViewMixin, _MixinBase):
                 color: #CBD5E1;
                 border: 1px solid #333846;
                 border-radius: 23px;
-                font-size: 18px;
+                font-size: 26px;
+                padding: 0px;
             }
             QPushButton:hover {
                 background-color: #2B303C;

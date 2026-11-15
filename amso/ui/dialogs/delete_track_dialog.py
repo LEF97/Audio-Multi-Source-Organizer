@@ -94,6 +94,7 @@ class DeleteTrackDialog(QDialog):
 
         self.setWindowTitle(tr("dialog.delete_confirm_title"))
         self.setMinimumWidth(540)
+        self.setSizeGripEnabled(True)
         self.setModal(True)
         self.setStyleSheet(DARK_THEME_QSS)
 

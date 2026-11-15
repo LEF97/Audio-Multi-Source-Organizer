@@ -38,6 +38,7 @@ class LargeSelectionDialog(QDialog):
 
         self.setWindowTitle(tr("dialog.large_selection_title"))
         self.setMinimumWidth(560)
+        self.setSizeGripEnabled(True)
         self.setModal(True)
         self.setStyleSheet(DARK_THEME_QSS)
 
