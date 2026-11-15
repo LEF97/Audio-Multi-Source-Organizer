@@ -27,6 +27,7 @@ from amso.ui.styles import style_icon_button, volume_label_qss, volume_slider_qs
 from amso.ui.views.blind_test.zoom_fade_label import ZoomFadeLabel
 from amso.ui.widgets.common import ClickableSlider
 from amso.ui.widgets.effects_view_mixin import EffectsViewMixin
+from amso.ui.widgets.play_pause_button import PlayPauseButton
 
 if TYPE_CHECKING:
     _MixinBase = QWidget
@@ -282,24 +283,7 @@ class BlindTestUiMixin(EffectsViewMixin, _MixinBase):
         ctrl_layout.addWidget(self.btn_prev)
 
         # Bouton Play / Pause (pour lancer ou figer le chrono)
-        self.btn_play_pause = QPushButton("▶")
-        self.btn_play_pause.setFixedSize(46, 46)
-        self.btn_play_pause.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_play_pause.setStyleSheet("""
-            QPushButton {
-                background-color: #20242D;
-                color: #CBD5E1;
-                border: 1px solid #333846;
-                border-radius: 23px;
-                font-size: 26px;
-                padding: 0px;
-            }
-            QPushButton:hover {
-                background-color: #2B303C;
-                color: #F8FAFC;
-                border-color: #38BDF8;
-            }
-        """)
+        self.btn_play_pause = PlayPauseButton(diameter=46)
         self.btn_play_pause.clicked.connect(self._on_play_pause_clicked)
         ctrl_layout.addWidget(self.btn_play_pause)
 

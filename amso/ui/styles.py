@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QPushButton
 # Couleurs partagées du thème sombre
 COLOR_PRIMARY = "#0284C7"
 COLOR_PRIMARY_HOVER = "#38BDF8"
+COLOR_PLAY_ACCENT = "#D97706"
 COLOR_BG_CARD = "#20242D"
 COLOR_BG_HOVER = "#2B303C"
 COLOR_BORDER = "#282C37"

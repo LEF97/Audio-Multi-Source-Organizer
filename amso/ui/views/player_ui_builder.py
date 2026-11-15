@@ -25,6 +25,7 @@ from amso.ui.styles import (
 from amso.ui.widgets.common import ClickableSlider
 from amso.ui.widgets.cover_transition_label import CoverTransitionLabel
 from amso.ui.widgets.effects_view_mixin import EffectsViewMixin
+from amso.ui.widgets.play_pause_button import PlayPauseButton
 
 if TYPE_CHECKING:
     _MixinBase = QWidget
@@ -219,27 +220,8 @@ class PlayerUiMixin(EffectsViewMixin, _MixinBase):
         self._style_transport_button(self.btn_prev, font_size=24)
         ctrl_layout.addWidget(self.btn_prev)
 
-        self.btn_play_pause = QPushButton("▶")
-        self.btn_play_pause.setFixedSize(50, 50)
-        self.btn_play_pause.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_play_pause = PlayPauseButton()
         self.btn_play_pause.setToolTip(tr("player.btn_play"))
-        self.btn_play_pause.setStyleSheet("""
-            QPushButton {
-                background-color: #0284C7;
-                color: #FFFFFF;
-                border-radius: 25px;
-                font-size: 28px;
-                padding: 0px;
-                border: none;
-            }
-            QPushButton:hover {
-                background-color: #0369A1;
-                color: #FFFFFF;
-            }
-            QPushButton:pressed {
-                background-color: #075985;
-            }
-        """)
         ctrl_layout.addWidget(self.btn_play_pause)
 
         self.btn_stop = QPushButton("⏹")

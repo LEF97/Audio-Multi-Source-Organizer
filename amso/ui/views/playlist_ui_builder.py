@@ -34,6 +34,7 @@ from amso.ui.views.cover_helper import (
 )
 from amso.ui.widgets.common import ClickableSlider
 from amso.ui.widgets.cover_transition_label import CoverTransitionLabel
+from amso.ui.widgets.play_pause_button import PlayPauseButton
 from amso.ui.widgets.playlist_table_view import PlaylistTableView
 from amso.ui.widgets.transport_mixin import TransportViewMixin
 
@@ -79,20 +80,6 @@ _CLEAR_PLAYLIST_BTN_QSS = """
         background-color: #2E1A1A;
         border-color: #EF4444;
         color: #FCA5A5;
-    }
-"""
-
-_PLAY_PAUSE_BTN_QSS = """
-    QPushButton {
-        background-color: #0284C7;
-        color: #FFFFFF;
-        border-radius: 20px;
-        font-size: 23px;
-        padding: 0px;
-        border: none;
-    }
-    QPushButton:hover {
-        background-color: #0369A1;
     }
 """
 
@@ -247,11 +234,8 @@ class PlaylistHeaderMixin(_MixinBase):
         self._style_mini_button(self.btn_prev, font_size=20)
         ctrl_layout.addWidget(self.btn_prev)
 
-        self.btn_play_pause = QPushButton("▶")
-        self.btn_play_pause.setFixedSize(40, 40)
-        self.btn_play_pause.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_play_pause = PlayPauseButton(diameter=40)
         self.btn_play_pause.setToolTip(tr("player.btn_play"))
-        self.btn_play_pause.setStyleSheet(_PLAY_PAUSE_BTN_QSS)
         ctrl_layout.addWidget(self.btn_play_pause)
 
         self.btn_stop = QPushButton("⏹")
