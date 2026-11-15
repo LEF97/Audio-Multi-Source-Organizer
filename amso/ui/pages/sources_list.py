@@ -109,7 +109,6 @@ class SourcesListMixin(_MixinBase):
 
         self.refresh_sources_list()
         self._refresh_folders_tree()
-        self._refresh_settings_sources_table()
         if hasattr(self, "_refresh_library_sources_tree"):
             self._refresh_library_sources_tree()
         if hasattr(self, "scheduler") and self.scheduler:
@@ -159,18 +158,11 @@ class SourcesListMixin(_MixinBase):
                 self.page_logs.mark_dirty()
             self.refresh_sources_list()
             self._refresh_folders_tree()
-            self._refresh_settings_sources_table()
             if hasattr(self, "scheduler") and self.scheduler:
                 self.scheduler.refresh_watched_directories()
             self.table_model.reload_data()
             self.folder_table_model.reload_data()
             self._update_track_count()
-
-    def _on_settings_source_double_clicked(self, row: int, column: int) -> None:
-        """Ouvre les propriétés d'une source au double-clic sur une ligne du tableau."""
-        sources = self.db.get_sources()
-        if 0 <= row < len(sources):
-            self._on_edit_source_properties(sources[row])
 
     def _on_table_source_mode_changed(self, source: SourceRecord, new_mode: str) -> None:
         """Modifie instantanément le mode de synchronisation d'une source depuis le tableau."""
@@ -189,4 +181,5 @@ class SourcesListMixin(_MixinBase):
             if new_mode == "realtime" and source.id and not source.last_scanned_at:
                 self.scheduler.enqueue_source(source.id)
         self.status_label.setText(tr("status.source_sync_updated", name=source.name))
-        self._refresh_settings_sources_table()
+        if hasattr(self, "_refresh_library_sources_tree"):
+            self._refresh_library_sources_tree()

@@ -13,10 +13,19 @@ and this project adheres to [Semantic Versioning (SemVer)](https://semver.org/).
 
 ---
 
-## [0.5.0-dev] - 2026-10-30
+## [0.5.0] - 2026-11-15
 
 ### Added
-- *(TBD)*
+- **"Sources & Library" view:** new dedicated page replacing the old Statistics screen, with a global or per-source view, health indicators (offline sources, scan errors, missing playlist files or entries), and quick actions (edit, rescan, delete, open in library).
+- **Playlist editor and repair:** dedicated window to reorder tracks (move up/down), remove entries, reload from disk, relocate a missing file, or run automatic repair (local search then database with confidence score and proposal preview).
+- **Playlist export / save:** save the current playback queue as `.m3u`, `.m3u8`, `.pls`, `.xspf`, or `.wpl` with immediate database indexing.
+- **Album-grouped playlists:** virtual album folders inside the playlist tree (with an "unknown album" folder for tracks without an album).
+- **Cover art visual transitions:** 5 configurable styles in player settings (None, Fade, Slide, Zoom, Flip).
+- **Window geometry persistence:** save and restore window size, position, and maximized state on restart.
+
+### Changed
+- **3-phase scan:** clear separation between inventory, metadata extraction, and playlist analysis with detailed logging and progress tracking.
+- **Visual identity:** new AMSO icon (high-resolution PNG, 7-size ICO, 4-size ICNS).
 
 ## [0.4.1] - 2026-10-29
 

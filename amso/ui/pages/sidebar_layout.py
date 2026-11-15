@@ -176,15 +176,7 @@ class SidebarLayoutMixin(_MixinBase):
         self.nav_button_group.addButton(self.btn_settings_player)
         self.drawer_settings.add_widget(self.btn_settings_player)
 
-        # 3. Sources
-        self.btn_settings_sources = QPushButton(tr("sidebar.nav_settings_sources"))
-        self.btn_settings_sources.setProperty("class", "nav-btn")
-        self.btn_settings_sources.setCheckable(True)
-        self.btn_settings_sources.clicked.connect(self._on_settings_sources_clicked)
-        self.nav_button_group.addButton(self.btn_settings_sources)
-        self.drawer_settings.add_widget(self.btn_settings_sources)
-
-        # 4. Logs
+        # 3. Logs
         self.btn_settings_logs = QPushButton(tr("sidebar.nav_settings_logs"))
         self.btn_settings_logs.setProperty("class", "nav-btn")
         self.btn_settings_logs.setCheckable(True)
@@ -192,7 +184,7 @@ class SidebarLayoutMixin(_MixinBase):
         self.nav_button_group.addButton(self.btn_settings_logs)
         self.drawer_settings.add_widget(self.btn_settings_logs)
 
-        # 5. À propos
+        # 4. À propos
         self.btn_settings_about = QPushButton(tr("sidebar.nav_settings_about"))
         self.btn_settings_about.setProperty("class", "nav-btn")
         self.btn_settings_about.setCheckable(True)
@@ -223,11 +215,7 @@ class SidebarLayoutMixin(_MixinBase):
         self.page_folders = self._create_folders_page()
         self.stacked_widget.addWidget(self.page_folders)
 
-        # Page 4 : Paramètres > Sources (Configuration des sources et synchronisation)
-        self.page_settings_sources = self._create_settings_sources_page()
-        self.stacked_widget.addWidget(self.page_settings_sources)
-
-        # Page 4b : Gestion de la bibliothèque > Sources
+        # Page 4 : Gestion de la bibliothèque > Sources
         self.page_library_sources = self._create_library_sources_page()
         self.stacked_widget.addWidget(self.page_library_sources)
 

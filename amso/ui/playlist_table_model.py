@@ -104,7 +104,9 @@ class PlaylistTableModel(QAbstractTableModel):
         if role == Qt.ItemDataRole.DisplayRole:
             if col == 0:
                 if is_current:
-                    return "▶" if self.player.is_playing else "⏸"
+                    if self.player.is_playing:
+                        return "▶"
+                    return "⏹" if getattr(self.player, "is_stopped", False) else "⏸"
                 return ""
             elif col == 1:
                 return str(row + 1)

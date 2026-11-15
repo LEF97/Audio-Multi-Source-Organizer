@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING, Any
 from PySide6.QtCore import QPoint, Qt
 from PySide6.QtGui import QAction, QCursor
 from PySide6.QtWidgets import (
-    QAbstractItemView,
     QDialog,
     QMainWindow,
     QMenu,
@@ -193,14 +192,12 @@ class TrackActionsMixin(_MixinBase):
         """Double-clic sur un morceau dans la table principale."""
         if not index.isValid():
             return
-        self.table_view.scrollTo(index, QAbstractItemView.ScrollHint.PositionAtCenter)
         self._play_from_table(self.table_model, index.row())
 
     def _on_folder_table_view_double_clicked(self, index) -> None:
         """Double-clic sur un morceau dans la table par dossier."""
         if not index.isValid():
             return
-        self.folder_table_view.scrollTo(index, QAbstractItemView.ScrollHint.PositionAtCenter)
         self._play_from_table(self.folder_table_model, index.row())
 
     def _play_from_table(self, model: Any, start_row: int) -> None:

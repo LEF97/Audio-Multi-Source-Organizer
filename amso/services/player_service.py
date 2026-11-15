@@ -372,6 +372,20 @@ class PlayerService(
         return bool(self._media_player.is_playing())
 
     @property
+    def is_stopped(self) -> bool:
+        """Vrai quand aucune piste n'est en cours ni en pause (démarrage, après un stop) : l'interface affiche ⏹, pas ⏸."""
+        if get_config_manager().get_audio_engine() == "buffer" and self._engine and self._engine.is_available:
+            return not (self._engine.is_playing or self._engine.is_paused or self._timer.isActive())
+        if not self._media_player:
+            return True
+        return self._media_player.get_state() not in (
+            vlc.State.Playing,
+            vlc.State.Paused,
+            vlc.State.Opening,
+            vlc.State.Buffering,
+        )
+
+    @property
     def current_time_ms(self) -> int:
         """Retourne la position temporelle courante en millisecondes."""
         if (

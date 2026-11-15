@@ -50,7 +50,6 @@ from amso.ui.pages.session_state import SessionStateMixin
 from amso.ui.pages.settings_about import SettingsAboutPageMixin
 from amso.ui.pages.settings_general import SettingsGeneralPageMixin
 from amso.ui.pages.settings_player import SettingsPlayerPageMixin
-from amso.ui.pages.settings_sources import SettingsSourcesPageMixin
 from amso.ui.pages.sidebar_layout import SidebarLayoutMixin
 from amso.ui.pages.sources_list import SourcesListMixin
 from amso.ui.pages.table_columns import TableColumnsMixin
@@ -68,7 +67,6 @@ class MainWindow(
     SettingsPlayerPageMixin,
     SettingsAboutPageMixin,
     SettingsGeneralPageMixin,
-    SettingsSourcesPageMixin,
     LibrarySourcesPageMixin,
     ScanControllerMixin,
     FoldersPageMixin,

@@ -241,7 +241,9 @@ class BaseTrackTableModel(QAbstractTableModel):
         if field == "is_playing":
             if is_current:
                 is_playing = bool(self._player_service and getattr(self._player_service, "is_playing", False))
-                return "▶" if is_playing else "⏸"
+                if is_playing:
+                    return "▶"
+                return "⏹" if getattr(self._player_service, "is_stopped", False) else "⏸"
             return ""
         if field == "file_name":
             prefix = "⚠️ " if getattr(track, "is_missing", False) else ""

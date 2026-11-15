@@ -197,7 +197,6 @@ class ConfigManager:
             "blind_test",
             "playlist",
             "settings_general",
-            "settings_sources",
             "library_sources",
             "settings_player",
             "logs",

@@ -70,7 +70,6 @@ class ScanControllerMixin(_MixinBase):
         )
         self.refresh_sources_list()
         self._refresh_folders_tree()
-        self._refresh_settings_sources_table()
         if hasattr(self, "_refresh_library_sources_tree"):
             self._refresh_library_sources_tree()
         if hasattr(self, "scheduler") and self.scheduler:
@@ -380,10 +379,6 @@ class ScanControllerMixin(_MixinBase):
             if has_any_changes:
                 self.folder_table_model.reload_data()
             self._folders_dirty = False
-        elif curr_page == 4:
-            if has_any_changes:
-                self._refresh_settings_sources_table()
-            self._sources_dirty = False
         elif self.stacked_widget.currentWidget() == getattr(self, "page_library_sources", None):
             if has_any_changes and hasattr(self, "_refresh_library_sources_tree"):
                 self._refresh_library_sources_tree()

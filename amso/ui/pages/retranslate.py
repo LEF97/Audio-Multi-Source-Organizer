@@ -56,8 +56,6 @@ class RetranslateMixin(_MixinBase):
         self.btn_by_folder.setText(tr("sidebar.nav_by_folder"))
         self.btn_duplicates.setText(tr("sidebar.nav_duplicates"))
         self.btn_settings_general.setText(tr("sidebar.nav_settings_general"))
-        if hasattr(self, "btn_settings_sources"):
-            self.btn_settings_sources.setText(tr("sidebar.nav_settings_sources"))
         if hasattr(self, "drawer_library_mgmt"):
             self.drawer_library_mgmt.set_title(tr("sidebar.drawer_library_mgmt"))
         if hasattr(self, "btn_library_sources"):
@@ -122,13 +120,6 @@ class RetranslateMixin(_MixinBase):
 
         # Page Paramètres
         self.lbl_settings_title.setText(tr("settings.page_title"))
-        if hasattr(self, "lbl_settings_sources_page_title"):
-            self.lbl_settings_sources_page_title.setText(tr("settings.page_sources_title"))
-        if hasattr(self, "lbl_card_sources_title"):
-            self.lbl_card_sources_title.setText(tr("settings.section_sources_title"))
-            self.lbl_card_sources_desc.setText(tr("settings.section_sources_desc"))
-            self.btn_add_source_settings.setText(tr("sidebar.btn_add_source"))
-            self._refresh_settings_sources_table()
         if hasattr(self, "lbl_library_sources_page_title"):
             self.lbl_library_sources_page_title.setText(tr("settings.page_sources_title"))
         if hasattr(self, "lbl_lib_sources_card_title"):

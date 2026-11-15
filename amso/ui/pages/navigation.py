@@ -129,17 +129,6 @@ class NavigationMixin(_MixinBase):
         """Bascule sur la page des Paramètres Généraux."""
         self._switch_to_page("settings_general", self.page_settings)
 
-    def _on_settings_sources_clicked(self) -> None:
-        """Bascule sur la page Paramètres > Sources."""
-        self._switch_to_page("settings_sources", self.page_settings_sources)
-        if (
-            getattr(self, "_sources_dirty", False)
-            or not hasattr(self, "table_settings_sources")
-            or self.table_settings_sources.rowCount() == 0
-        ):
-            self._refresh_settings_sources_table()
-            self._sources_dirty = False
-
     def _on_library_sources_clicked(self) -> None:
         """Bascule sur la page Gestion de la bibliothèque > Sources."""
         self._switch_to_page("library_sources", self.page_library_sources)
@@ -174,8 +163,6 @@ class NavigationMixin(_MixinBase):
                 self._current_active_page = "folders"
             elif curr_widget == getattr(self, "page_settings", None):
                 self._current_active_page = "settings_general"
-            elif curr_widget == getattr(self, "page_settings_sources", None):
-                self._current_active_page = "settings_sources"
             elif curr_widget == getattr(self, "page_library_sources", None):
                 self._current_active_page = "library_sources"
             elif curr_widget == getattr(self, "page_settings_player", None):

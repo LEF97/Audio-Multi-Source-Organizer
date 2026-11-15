@@ -164,7 +164,7 @@ def test_playlist_table_model(qapp: QApplication, sample_tracks: list[TrackRecor
     idx_title = model.index(0, 2)
     idx_artist = model.index(0, 3)
 
-    assert model.data(idx_playing, Qt.ItemDataRole.DisplayRole) in {"▶", "⏸", ""}
+    assert model.data(idx_playing, Qt.ItemDataRole.DisplayRole) in {"▶", "⏸", "⏹", ""}
     assert model.data(idx_order, Qt.ItemDataRole.DisplayRole) == "1"
     assert model.data(idx_title, Qt.ItemDataRole.DisplayRole) == "Track 1"
     assert model.data(idx_artist, Qt.ItemDataRole.DisplayRole) == "Artist 1"

@@ -86,11 +86,6 @@ class SessionStateMixin(_MixinBase):
                 getattr(self, "drawer_settings", None),
                 self._on_settings_general_clicked,
             ),
-            "settings_sources": (
-                getattr(self, "btn_settings_sources", None),
-                getattr(self, "drawer_settings", None),
-                self._on_settings_sources_clicked,
-            ),
             "library_sources": (
                 getattr(self, "btn_library_sources", None),
                 getattr(self, "drawer_library_mgmt", None),

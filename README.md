@@ -24,15 +24,15 @@
 ---
 
 <p align="center">
-  <img src="screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Audio player with the Hyperspace (3D starfield) visual ambience" width="850">
+  <img src="screenshots/2026-11-15%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Audio player v0.5.0" width="850">
+</p>
+
+<p align="center">
+  <img src="screenshots/2026-11-15%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Sources and library management" width="850">
 </p>
 
 <p align="center">
   <img src="screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Folder tree & CUE sheet 💿 (virtual tracks)" width="850">
-</p>
-
-<p align="center">
-  <img src="screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Playlist of a CUE sheet (virtual tracks)" width="850">
 </p>
 
 <p align="center">
@@ -67,6 +67,7 @@
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - **Python 3.11** or newer
 - Git
 
@@ -147,9 +148,9 @@ Tests run automatically across **Windows, macOS, and Ubuntu** on every push via 
 
 AMSO is 100% free and open-source software. If you enjoy the project and want to support ongoing development:
 
-* 🎮 **Download & Pay What You Want:** [AMSO on Itch.io](https://lef97.itch.io/audio-multi-source-organizer) (precompiled portable standalone executable)
-* ☕ **Direct Donation:** [Ko-fi (@lef97)](https://ko-fi.com/lef97)
-* ⭐ **GitHub Sponsors:** [Sponsor LEF97](https://github.com/sponsors/LEF97)
+- 🎮 **Download & Pay What You Want:** [AMSO on Itch.io](https://lef97.itch.io/audio-multi-source-organizer) (precompiled portable standalone executable)
+- ☕ **Direct Donation:** [Ko-fi (@lef97)](https://ko-fi.com/lef97)
+- ⭐ **GitHub Sponsors:** [Sponsor LEF97](https://github.com/sponsors/LEF97)
 
 ---
 

@@ -182,11 +182,6 @@ def test_main_window_instantiation(qapp: QApplication, db: DatabaseManager):
     assert window.btn_settings_general.isChecked() is True
     assert window.stacked_widget.currentIndex() == 1
 
-    # Test clic sur Paramètres > Sources (page dédiée avec sources)
-    window.btn_settings_sources.click()
-    assert window.btn_settings_sources.isChecked() is True
-    assert window.stacked_widget.currentIndex() == 3
-
     # Test retour sur Par dossiers
     window.btn_by_folder.click()
     assert window.btn_by_folder.isChecked() is True
@@ -743,9 +738,9 @@ def test_session_restore_positions_on_cue_and_m3u_playlist_in_tree(
     idx_active = win2.folder_table_model.index(1, 0)
     idx_inactive = win2.folder_table_model.index(0, 0)
     idx_active_fn = win2.folder_table_model.index(1, 1)
-    assert win2.folder_table_model.data(idx_active, Qt.ItemDataRole.DisplayRole) in ("▶", "⏸")
+    assert win2.folder_table_model.data(idx_active, Qt.ItemDataRole.DisplayRole) in ("▶", "⏸", "⏹")
     assert win2.folder_table_model.data(idx_inactive, Qt.ItemDataRole.DisplayRole) == ""
-    assert not str(win2.folder_table_model.data(idx_active_fn, Qt.ItemDataRole.DisplayRole)).startswith(("▶", "⏸"))
+    assert not str(win2.folder_table_model.data(idx_active_fn, Qt.ItemDataRole.DisplayRole)).startswith(("▶", "⏸", "⏹"))
     assert win2.folder_table_model.data(idx_active, Qt.ItemDataRole.ForegroundRole).name().upper() == "#38BDF8"
     assert win2.folder_table_model.data(idx_active, Qt.ItemDataRole.FontRole).bold() is True
     # La sélection de lignes dans la table ne doit pas impacter l'indicateur de lecture
@@ -758,7 +753,7 @@ def test_session_restore_positions_on_cue_and_m3u_playlist_in_tree(
     monkeypatch.setattr(win2.folder_table_view, "scrollTo", lambda idx, hint=None: scroll_calls.append(idx))
     win2.player_service.load_index(0)
     assert win2.folder_table_model.current_track_row() == 0
-    assert win2.folder_table_model.data(idx_inactive, Qt.ItemDataRole.DisplayRole) in ("▶", "⏸")
+    assert win2.folder_table_model.data(idx_inactive, Qt.ItemDataRole.DisplayRole) in ("▶", "⏸", "⏹")
     assert scroll_calls == []
 
     # 2. Test restauration d'une playlist M3U

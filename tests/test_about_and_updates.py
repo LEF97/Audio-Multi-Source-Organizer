@@ -274,10 +274,9 @@ def test_main_window_menu_and_shortcuts(qapp: QApplication, db: DatabaseManager)
     assert hasattr(window, "btn_settings_about")
     assert window.btn_settings_about.text() != ""
 
-    # Ordre des boutons dans le tiroir Paramètres : Général, Lecteur, Sources, Logs, À propos
+    # Ordre des boutons dans le tiroir Paramètres : Général, Lecteur, Logs, À propos
     assert hasattr(window, "btn_settings_general")
     assert hasattr(window, "btn_settings_player")
-    assert hasattr(window, "btn_settings_sources")
     assert hasattr(window, "btn_settings_logs")
 
     # Clic sur le logo AMSO (en haut à gauche) mène directement à la page À propos
