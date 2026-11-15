@@ -34,7 +34,7 @@ from amso.ui.models_base import format_duration
 from amso.ui.styles import make_tree_action_button
 from amso.ui.views.cover_helper import get_default_cover_pixmap, load_cover_async, load_folder_cover_async
 from amso.ui.views.playlist_ui_builder import PlaylistHeaderWidget
-from amso.ui.widgets.common import ClickableLabel
+from amso.ui.widgets.common import ElidedClickableLabel
 
 logger = logging.getLogger(__name__)
 
@@ -81,14 +81,11 @@ class FoldersPageMixin(_MixinBase):
         top_layout.addWidget(self.lbl_folders_page_title)
 
         # Fil d'Ariane / Chemin sélectionné (cliquable pour ouvrir dans l'Explorateur)
-        self.lbl_folder_breadcrumb = ClickableLabel("📁  --")
+        self.lbl_folder_breadcrumb = ElidedClickableLabel("📁  --")
         self.lbl_folder_breadcrumb.setObjectName("folderBreadcrumbLabel")
         self.lbl_folder_breadcrumb.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.lbl_folder_breadcrumb.setMaximumWidth(450)
         self.lbl_folder_breadcrumb.clicked.connect(self._on_open_current_folder_explorer)
-        top_layout.addWidget(self.lbl_folder_breadcrumb)
-
-        top_layout.addStretch()
+        top_layout.addWidget(self.lbl_folder_breadcrumb, 1)
 
         # Badge de décompte des pistes
         self.lbl_folder_count_badge = QLabel("")
@@ -172,10 +169,13 @@ class FoldersPageMixin(_MixinBase):
 
         self.folder_tree.header().setStretchLastSection(False)
         self.folder_tree.header().setMinimumSectionSize(35)
-        self.folder_tree.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
-        self.folder_tree.header().setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
-        self.folder_tree.header().resizeSection(0, 240)
+        # Colonnes 240 + 75 px > largeur du panneau (280 px) : la barre horizontale apparaissait et
+        # scrollTo() décalait la vue à chaque changement de ligne courante. La colonne du nom
+        # absorbe la largeur restante, la barre horizontale est désactivée.
+        self.folder_tree.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        self.folder_tree.header().setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
         self.folder_tree.header().resizeSection(1, 75)
+        self.folder_tree.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.folder_tree.setIndentation(16)
         self.folder_tree.setAnimated(True)
         self.folder_tree.itemClicked.connect(self._on_folder_tree_item_clicked)

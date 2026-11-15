@@ -10,6 +10,7 @@ from PySide6.QtGui import QMouseEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QLabel,
     QPushButton,
+    QSizePolicy,
     QSlider,
     QVBoxLayout,
     QWidget,
@@ -42,6 +43,37 @@ class ClickableLabel(QLabel):
         if event.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit()
         super().mousePressEvent(event)
+
+
+class ElidedClickableLabel(ClickableLabel):
+    """Label cliquable dont la largeur ne dépend pas du texte : il est tronqué par « … » si besoin.
+
+    Un QLabel normal impose une largeur minimale égale à son texte, ce qui fait varier la mise en page
+    à chaque changement de contenu.
+    """
+
+    def __init__(self, text: str = "", parent: QWidget | None = None) -> None:
+        super().__init__("", parent)
+        self._full_text = ""
+        self.setMinimumWidth(0)
+        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        self.setText(text)
+
+    def setText(self, text: str) -> None:
+        self._full_text = text
+        self._apply_elision()
+
+    def text(self) -> str:
+        return self._full_text
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+        self._apply_elision()
+
+    def _apply_elision(self) -> None:
+        width = max(self.contentsRect().width(), 0)
+        elided = self.fontMetrics().elidedText(self._full_text, Qt.TextElideMode.ElideRight, width)
+        super().setText(elided)
 
 
 class CollapsibleDrawer(QWidget):
