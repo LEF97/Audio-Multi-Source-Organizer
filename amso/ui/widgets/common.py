@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any
 
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QMouseEvent, QResizeEvent
+from PySide6.QtCore import QPoint, Qt, Signal
+from PySide6.QtGui import QCursor, QGuiApplication, QHideEvent, QMouseEvent, QResizeEvent
 from PySide6.QtWidgets import (
+    QFrame,
     QLabel,
     QPushButton,
+    QSizePolicy,
     QSlider,
     QVBoxLayout,
     QWidget,
@@ -42,6 +45,37 @@ class ClickableLabel(QLabel):
         if event.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit()
         super().mousePressEvent(event)
+
+
+class ElidedClickableLabel(ClickableLabel):
+    """Label cliquable dont la largeur ne dépend pas du texte : il est tronqué par « … » si besoin.
+
+    Un QLabel normal impose une largeur minimale égale à son texte, ce qui fait varier la mise en page
+    à chaque changement de contenu.
+    """
+
+    def __init__(self, text: str = "", parent: QWidget | None = None) -> None:
+        super().__init__("", parent)
+        self._full_text = ""
+        self.setMinimumWidth(0)
+        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        self.setText(text)
+
+    def setText(self, text: str) -> None:
+        self._full_text = text
+        self._apply_elision()
+
+    def text(self) -> str:
+        return self._full_text
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+        self._apply_elision()
+
+    def _apply_elision(self) -> None:
+        width = max(self.contentsRect().width(), 0)
+        elided = self.fontMetrics().elidedText(self._full_text, Qt.TextElideMode.ElideRight, width)
+        super().setText(elided)
 
 
 class CollapsibleDrawer(QWidget):
@@ -130,3 +164,54 @@ class EffectContainer(QWidget):
         if self.effect_canvas:
             self.effect_canvas.setGeometry(0, 0, self.width(), self.height())
             self.effect_canvas.lower()
+
+
+class AnchoredPopup(QFrame):
+    """Panneau flottant ancré à un bouton, avec anti-rebond à la fermeture."""
+
+    def __init__(self, parent: QWidget | None = None, *, prefer_below: bool = False) -> None:
+        super().__init__(parent, Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint)
+        self._prefer_below = prefer_below
+        self._anchor: QWidget | None = None
+        self._closed_at: float = 0.0
+        self._closed_on_anchor: bool = False
+
+    def hideEvent(self, event: QHideEvent) -> None:
+        super().hideEvent(event)
+        self._closed_at = time.monotonic()
+        self._closed_on_anchor = self._anchor is not None and self._anchor.rect().contains(
+            self._anchor.mapFromGlobal(QCursor.pos())
+        )
+
+    def _before_show(self) -> None:
+        """Hook appelé juste avant le positionnement et l'affichage."""
+
+    def toggle_anchored(self, anchor: QWidget) -> None:
+        """Ouvre ou ferme la popup sans réouverture intempestive au clic sur le bouton ancre."""
+        if self.isVisible():
+            self.close()
+            return
+        if self._closed_on_anchor and (time.monotonic() - self._closed_at) < 0.35:
+            self._closed_on_anchor = False
+            return
+        self.show_anchored(anchor)
+
+    def show_anchored(self, anchor: QWidget) -> None:
+        """Positionne et affiche la popup au-dessus ou en dessous du bouton ancre."""
+        self._anchor = anchor
+        self._before_show()
+        self.adjustSize()
+        popup_h = self.sizeHint().height()
+        global_top_left = anchor.mapToGlobal(QPoint(0, 0))
+        x = global_top_left.x() + (anchor.width() - self.width()) // 2
+        y = global_top_left.y() + anchor.height() + 8 if self._prefer_below else global_top_left.y() - popup_h - 8
+        screen = QGuiApplication.screenAt(global_top_left) or QGuiApplication.primaryScreen()
+        if screen is not None:
+            geo = screen.availableGeometry()
+            x = max(geo.left() + 8, min(x, geo.right() - self.width() - 8))
+            if self._prefer_below and y + popup_h > geo.bottom() - 8:
+                y = global_top_left.y() - popup_h - 8
+            elif not self._prefer_below and y < geo.top() + 8:
+                y = global_top_left.y() + anchor.height() + 8
+        self.move(x, y)
+        self.show()

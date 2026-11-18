@@ -12,6 +12,7 @@ from amso.core.config import get_config_manager
 from amso.core.database import TrackRecord
 from amso.core.i18n import tr
 from amso.services.player_service import PlayerService, RepeatMode
+from amso.ui.styles import COLOR_PRIMARY_HOVER, COLOR_SUCCESS, COLOR_TEXT_MUTED
 from amso.ui.views.blind_test.compat import BlindTestCompatMixin
 from amso.ui.views.blind_test.fades import BlindTestFadesMixin
 from amso.ui.views.blind_test.round_controller import BlindTestRoundMixin
@@ -42,7 +43,8 @@ class BlindTestView(BlindTestUiMixin, BlindTestRoundMixin, BlindTestFadesMixin, 
         self._total_round_duration: int = self._countdown_remain + self._reveal_remain
         self._current_round_elapsed: int = 0
         self._is_active_page: bool = False
-        self.current_effect: str = cfg.get_visual_effect()
+        self.effect_context = "blind_test"
+        self.current_effect: str = cfg.get_blind_test_visual_effect()
         self._nominal_volume: int = getattr(self.player, "volume", 100)
         self._is_fading: bool = False
         self._fade_start_time: float = 0.0
@@ -122,7 +124,7 @@ class BlindTestView(BlindTestUiMixin, BlindTestRoundMixin, BlindTestFadesMixin, 
 
         # Synchroniser l'effet visuel actif avec le ConfigManager
         cfg = get_config_manager()
-        eff = cfg.get_visual_effect()
+        eff = cfg.get_blind_test_visual_effect()
         self.set_effect_type(eff)
 
         # Préparer la manche sur le morceau courant à 0 seconde, en attente de play
@@ -145,6 +147,7 @@ class BlindTestView(BlindTestUiMixin, BlindTestRoundMixin, BlindTestFadesMixin, 
         La musique doit impérativement s'arrêter dès qu'on sort du Blind Test."""
         self._is_active_page = False
         self._session_playing = False
+        self._stop_random_timer()
         if hasattr(self, "effect_canvas") and self.effect_canvas:
             self.effect_canvas.set_playback_state("stopped")
             self.effect_canvas.hideEvent(event)
@@ -171,7 +174,8 @@ class BlindTestView(BlindTestUiMixin, BlindTestRoundMixin, BlindTestFadesMixin, 
 
         try:
             super().hideEvent(event)
-        except Exception:
+        except RuntimeError:
+            # Vue en cours de destruction à la fermeture : l'objet C++ parent peut déjà être libéré.
             pass
 
     def resizeEvent(self, event: QResizeEvent) -> None:
@@ -285,8 +289,8 @@ class BlindTestView(BlindTestUiMixin, BlindTestRoundMixin, BlindTestFadesMixin, 
                 self._fade_in_paused_elapsed = max(0.0, time.time() - self._fade_in_start_time)
             self.btn_play_pause.setText("▶")
             self.lbl_status_badge.setText(tr("blind_test.status_paused"))
-            self.lbl_status_badge.setStyleSheet("""
-                color: #94A3B8;
+            self.lbl_status_badge.setStyleSheet(f"""
+                color: {COLOR_TEXT_MUTED};
                 font-size: 12px;
                 font-weight: 600;
                 padding: 3px 12px;
@@ -322,8 +326,8 @@ class BlindTestView(BlindTestUiMixin, BlindTestRoundMixin, BlindTestFadesMixin, 
             self.btn_play_pause.setText("⏸")
             if self._state == "countdown":
                 self.lbl_status_badge.setText(tr("blind_test.status_searching"))
-                self.lbl_status_badge.setStyleSheet("""
-                    color: #38BDF8;
+                self.lbl_status_badge.setStyleSheet(f"""
+                    color: {COLOR_PRIMARY_HOVER};
                     font-size: 12px;
                     font-weight: 600;
                     padding: 3px 12px;
@@ -333,8 +337,8 @@ class BlindTestView(BlindTestUiMixin, BlindTestRoundMixin, BlindTestFadesMixin, 
                 """)
             elif self._state == "revealed":
                 self.lbl_status_badge.setText(tr("blind_test.status_revealed", remain=self._reveal_remain))
-                self.lbl_status_badge.setStyleSheet("""
-                    color: #4ADE80;
+                self.lbl_status_badge.setStyleSheet(f"""
+                    color: {COLOR_SUCCESS};
                     font-size: 12px;
                     font-weight: 600;
                     padding: 3px 12px;
@@ -347,6 +351,8 @@ class BlindTestView(BlindTestUiMixin, BlindTestRoundMixin, BlindTestFadesMixin, 
         """Appelé lors d'un changement de piste dans le PlayerService."""
         if hasattr(self, "effect_canvas") and self.effect_canvas:
             self.effect_canvas.set_track(track)
+        if track is not None and get_config_manager().get_visual_effect_random_interval("blind_test") == "track":
+            self.apply_random_effect_step()
         if self._is_active_page and not self._is_starting_playback:
             auto_play = self._session_playing or self.player.is_playing
             # Moteur buffer uniquement : le chemin VLC est validé tel quel et garde son repositionnement.
@@ -368,8 +374,8 @@ class BlindTestView(BlindTestUiMixin, BlindTestRoundMixin, BlindTestFadesMixin, 
             self._session_playing = True
             if self._state == "countdown":
                 self.lbl_status_badge.setText(tr("blind_test.status_searching"))
-                self.lbl_status_badge.setStyleSheet("""
-                    color: #38BDF8;
+                self.lbl_status_badge.setStyleSheet(f"""
+                    color: {COLOR_PRIMARY_HOVER};
                     font-size: 12px;
                     font-weight: 600;
                     padding: 3px 12px;
@@ -381,8 +387,8 @@ class BlindTestView(BlindTestUiMixin, BlindTestRoundMixin, BlindTestFadesMixin, 
                     self._start_fade_in(2.0)
             elif self._state == "revealed":
                 self.lbl_status_badge.setText(tr("blind_test.status_revealed", remain=self._reveal_remain))
-                self.lbl_status_badge.setStyleSheet("""
-                    color: #4ADE80;
+                self.lbl_status_badge.setStyleSheet(f"""
+                    color: {COLOR_SUCCESS};
                     font-size: 12px;
                     font-weight: 600;
                     padding: 3px 12px;
@@ -396,8 +402,8 @@ class BlindTestView(BlindTestUiMixin, BlindTestRoundMixin, BlindTestFadesMixin, 
             self._game_timer.stop()
             if state in ("paused", "stopped"):
                 self.lbl_status_badge.setText(tr("blind_test.status_paused"))
-                self.lbl_status_badge.setStyleSheet("""
-                    color: #94A3B8;
+                self.lbl_status_badge.setStyleSheet(f"""
+                    color: {COLOR_TEXT_MUTED};
                     font-size: 12px;
                     font-weight: 600;
                     padding: 3px 12px;
@@ -452,6 +458,8 @@ class BlindTestView(BlindTestUiMixin, BlindTestRoundMixin, BlindTestFadesMixin, 
         """Met à jour les textes traduits lors d'un changement de langue."""
         self.lbl_page_title.setText("🎭  " + tr("blind_test.title"))
         self.lbl_effect_badge.setText(tr("player.visual_effect"))
+        if hasattr(self, "btn_help"):
+            self.btn_help.retranslate_ui()
         self._populate_effects_combo()
         if hasattr(self, "btn_prev"):
             self.btn_prev.setText(tr("blind_test.btn_prev"))

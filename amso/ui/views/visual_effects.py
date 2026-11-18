@@ -13,8 +13,8 @@ Optimisé pour de hautes performances (30 FPS, pause automatique hors écran).
 
 from __future__ import annotations
 
+import logging
 import math
-import random
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import (
@@ -25,6 +25,9 @@ from PySide6.QtWidgets import QWidget
 from amso.ui.views.effects.bars import SpectrumBarsMixin
 from amso.ui.views.effects.effect_types import Comet, Particle, WarpStar
 from amso.ui.views.effects.painters import EffectPaintersMixin
+from amso.ui.views.effects.warp_pilot import WarpPilot
+
+logger = logging.getLogger(__name__)
 
 
 class VisualEffectWidget(EffectPaintersMixin, SpectrumBarsMixin, QWidget):
@@ -68,14 +71,7 @@ class VisualEffectWidget(EffectPaintersMixin, SpectrumBarsMixin, QWidget):
         self._warp_stars: list[WarpStar] = []
 
         # Navigation pour l'hyperespace dynamique (changement de trajectoire 3D)
-        self._warp_dyn_timer: float = 0.0
-        self._warp_dyn_interval: float = 4.0
-        self._warp_dyn_vx: float = 0.0
-        self._warp_dyn_vy: float = 0.0
-        self._warp_dyn_target_vx: float = 0.0
-        self._warp_dyn_target_vy: float = 0.0
-        self._warp_dyn_roll: float = 0.0
-        self._warp_dyn_target_roll: float = 0.0
+        self._warp_pilot = WarpPilot()
 
         # Barres de son rétro (Égaliseur de spectre audio)
         self._bars_align_left: bool = False
@@ -173,7 +169,8 @@ class VisualEffectWidget(EffectPaintersMixin, SpectrumBarsMixin, QWidget):
             else:
                 svc.stop()
         except Exception:
-            pass
+            # Service de spectre indisponible (pas de loopback WASAPI) : l'effet tourne en mode simulé.
+            logger.debug("Service de spectre non piloté", exc_info=True)
 
     def set_playback_state(self, state: str) -> None:
         """Adapte la réactivité et la vitesse de l'animation à l'état de lecture."""
@@ -298,6 +295,10 @@ class VisualEffectWidget(EffectPaintersMixin, SpectrumBarsMixin, QWidget):
         for s in self._warp_stars:
             s.x = s.x * rx
             s.y = s.y * ry
+            s.sx = None
+            s.sy = None
+            s.psx = None
+            s.psy = None
 
         while len(self._warp_stars) < target_w_count:
             self._warp_stars.append(WarpStar(w_new, h_new, max_depth=1000.0, random_z=True))
@@ -362,57 +363,45 @@ class VisualEffectWidget(EffectPaintersMixin, SpectrumBarsMixin, QWidget):
             cy = h * 0.5
             fov = max(w, h) * 0.55
 
-            # Gestion aléatoire des changements de trajectoire (virages toutes les 3.5 à 7 secondes)
-            self._warp_dyn_timer += dt
-            if self._warp_dyn_timer >= self._warp_dyn_interval:
-                self._warp_dyn_timer = 0.0
-                self._warp_dyn_interval = random.uniform(3.5, 7.0)
-                if random.random() < 0.22:
-                    # Rétablissement d'une trajectoire droite
-                    self._warp_dyn_target_vx = 0.0
-                    self._warp_dyn_target_vy = 0.0
-                    self._warp_dyn_target_roll = 0.0
-                else:
-                    # Choix d'un nouvel angle de virage dans l'espace 3D
-                    ang = random.uniform(0.0, math.pi * 2.0)
-                    speed_drift = random.uniform(22.0, 48.0)
-                    self._warp_dyn_target_vx = math.cos(ang) * speed_drift
-                    self._warp_dyn_target_vy = math.sin(ang) * speed_drift * 0.65
-                    self._warp_dyn_target_roll = -math.cos(ang) * 0.32
-
-            # Interpolation progressive (inertie et amorti de pilotage réaliste)
-            self._warp_dyn_vx += (self._warp_dyn_target_vx - self._warp_dyn_vx) * 0.045
-            self._warp_dyn_vy += (self._warp_dyn_target_vy - self._warp_dyn_vy) * 0.045
-            self._warp_dyn_roll += (self._warp_dyn_target_roll - self._warp_dyn_roll) * 0.04
-
-            # Le point de fuite de la caméra se décale dynamiquement dans le sens du virage
-            vanish_x = cx + self._warp_dyn_vx * 4.0
-            vanish_y = cy + self._warp_dyn_vy * 4.0
+            # Lignes droites et manœuvres (virage, tonneau, spirale) : voir WarpPilot.
+            # Le virage est une vraie rotation de la caméra appliquée au monde 3D, centre de
+            # fuite fixe : décaler en plus le point de fuite contredirait le mouvement des étoiles.
+            step = self._warp_pilot.advance(dt)
+            cos_r = math.cos(step.roll)
+            sin_r = math.sin(step.roll)
+            cos_y, sin_y = math.cos(step.yaw), math.sin(step.yaw)
+            cos_p, sin_p = math.cos(step.pitch), math.sin(step.pitch)
 
             for s in self._warp_stars:
+                s.psx = s.sx
+                s.psy = s.sy
                 s.pz = s.z
                 s.z -= s.speed * self._speed_multiplier
 
-                # Dérive latérale en fonction du virage du vaisseau
-                s.x -= self._warp_dyn_vx * self._speed_multiplier * 0.8
-                s.y -= self._warp_dyn_vy * self._speed_multiplier * 0.8
-
                 if s.z <= 12.0:
                     s.reset(w, h, max_depth=max_depth, random_z=False)
-                    s.x += self._warp_dyn_vx * random.uniform(8.0, 20.0)
-                    s.y += self._warp_dyn_vy * random.uniform(8.0, 20.0)
                     continue
 
-                # Calcul rapide de projection écran
+                s.x, s.z = s.x * cos_y - s.z * sin_y, s.x * sin_y + s.z * cos_y
+                s.y, s.z = s.y * cos_p - s.z * sin_p, s.y * sin_p + s.z * cos_p
+                if s.z <= 12.0:
+                    s.reset(w, h, max_depth=max_depth, random_z=False)
+                    continue
+
+                # Projection écran avec roulis (identique au rendu)
                 k = fov / s.z
-                sx = vanish_x + s.x * k
-                sy = vanish_y + s.y * k
+                dx = s.x * k
+                dy = s.y * k
+                sx = cx + dx * cos_r - dy * sin_r
+                sy = cy + dx * sin_r + dy * cos_r
 
                 # Si l'étoile est sortie de l'écran avec une marge
                 if sx < -140 or sx > w + 140 or sy < -140 or sy > h + 140:
                     s.reset(w, h, max_depth=max_depth, random_z=False)
-                    s.x += self._warp_dyn_vx * random.uniform(8.0, 20.0)
-                    s.y += self._warp_dyn_vy * random.uniform(8.0, 20.0)
+                    continue
+
+                s.sx = sx
+                s.sy = sy
 
         elif self._effect_type in (self.EFFECT_BARS, self.EFFECT_BARS_FULL):
             self._update_bars_tick(dt, w, h)

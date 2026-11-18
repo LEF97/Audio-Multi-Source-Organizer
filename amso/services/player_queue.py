@@ -300,8 +300,9 @@ class PlayerQueueMixin(_MixinBase):
             self._shuffle = shuffle
             try:
                 get_config_manager().set_player_shuffle(self._shuffle)
-            except Exception:
-                pass
+            except OSError:
+                # config.ini verrouillé : l'aléatoire reste actif, seule sa persistance échoue.
+                logger.debug("Sauvegarde du mode aléatoire impossible", exc_info=True)
 
             if self._shuffle:
                 # Activation : mémorise l'ordre initial et mélange toute la playlist

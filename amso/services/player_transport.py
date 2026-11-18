@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 
 from amso.core.config import get_config_manager
 from amso.core.i18n import tr
-from amso.services.player_cue import start_track_decode
+from amso.services.player_cue import start_track_run
 from amso.services.player_types import RepeatMode
 from amso.services.vlc_binding import vlc
 from amso.services.windows_audio import ensure_windows_audio_session_active
@@ -57,11 +57,13 @@ class PlayerTransportMixin(_MixinBase):
                 self._standby_player.stop()
                 self._standby_player.audio_set_volume(0)
             except Exception:
+                # Moteur vlc_direct figé : lecteur VLC déjà libéré ou sans média, l'échec est sans effet sur la lecture.
                 pass
         if getattr(self, "_standby_decoder", None):
             try:
                 self._standby_decoder.stop()
             except Exception:
+                # Décodeur standby déjà arrêté : la réinitialisation commune aux deux moteurs doit aboutir.
                 pass
             self._standby_decoder = None
         if hasattr(self, "_standby_pcm"):
@@ -82,6 +84,7 @@ class PlayerTransportMixin(_MixinBase):
             try:
                 self._media_player.audio_set_volume(self._volume)
             except Exception:
+                # Moteur vlc_direct figé : lecteur VLC déjà libéré ou sans média, l'échec est sans effet sur la lecture.
                 pass
 
     def load_index(self, index: int, seek_ms: int = 0, announce_track: bool = True) -> None:
@@ -98,11 +101,13 @@ class PlayerTransportMixin(_MixinBase):
             try:
                 self._media_player.stop()
             except Exception:
+                # Moteur vlc_direct figé : lecteur VLC déjà libéré ou sans média, l'échec est sans effet sur la lecture.
                 pass
 
         self._is_paused_requested = True
         self._current_index = index
         self._pending_seek_ms = max(0, seek_ms)
+        self._vlc_seek_hold_ms = 0
         self._current_time_ms = max(0, seek_ms)
         track = self._playlist[index]
         file_path = track.source_path
@@ -113,13 +118,20 @@ class PlayerTransportMixin(_MixinBase):
                 try:
                     self._media_player.stop()
                 except Exception:
+                    # Lecteur VLC inutilisé en mode buffer : seul son arrêt est tenté, l'échec est sans effet.
                     pass
-            self._engine.stop()
+            # Sortie conservée : la fermer puis la rouvrir à froid à la reprise accroche le début du son (tick),
+            # comme pour le double clic (cf. play_index). Le sink reste suspendu tant que le titre est en pause.
+            self._engine.stop(keep_output=True)
+            self._engine.discard_output_buffer()
+            self._engine.prepare_output(paused=True)
             dur_ms = int((track.duration_seconds or 0) * 1000)
             self._pending_seek_ms = seek_ms
             self._current_time_ms = seek_ms
             if file_path and os.path.exists(file_path):
-                start_track_decode(self._decoder, track, seek_ms)
+                start_track_run(
+                    self._engine, self._decoder, self._playlist, index, seek_ms, self._repeat_mode != RepeatMode.ONE
+                )
             if announce_track:
                 self.track_changed.emit(track)
             self.state_changed.emit("paused")
@@ -169,6 +181,7 @@ class PlayerTransportMixin(_MixinBase):
         try:
             seek_ms = self._pending_seek_ms if resume_pending else 0
             self._pending_seek_ms = 0
+            self._vlc_seek_hold_ms = 0
             self._reset_standby_player()
             self._current_index = index
             track = self._playlist[index]
@@ -192,11 +205,19 @@ class PlayerTransportMixin(_MixinBase):
                     try:
                         self._media_player.stop()
                     except Exception:
+                        # Lecteur VLC inutilisé en mode buffer : seul son arrêt est tenté, l'échec est sans effet.
                         pass
-                self._engine.stop(keep_output=getattr(self, "_advancing_after_track_end", False))
+                advancing = getattr(self, "_advancing_after_track_end", False)
+                # Changement manuel en pleine lecture : micro-fondu et sortie ouverte, pour ne pas couper en pleine onde.
+                # En pause le sink est suspendu : le fondu n'y serait jamais joué, l'arrêt franc reste donc de mise.
+                cut_with_fade = not advancing and self._engine.is_playing
+                self._engine.stop(keep_output=advancing or cut_with_fade, fade_out=cut_with_fade)
                 self._pending_seek_ms = seek_ms
                 self._current_time_ms = seek_ms
-                start_track_decode(self._decoder, track, seek_ms)
+                start_track_run(
+                    self._engine, self._decoder, self._playlist, index, seek_ms, self._repeat_mode != RepeatMode.ONE
+                )
+                self._engine.prepare_output()
                 self._timer.start()
                 self.track_changed.emit(track)
                 self.state_changed.emit("playing")
@@ -270,6 +291,7 @@ class PlayerTransportMixin(_MixinBase):
             try:
                 self._media_player.audio_set_volume(0)
             except Exception:
+                # Moteur vlc_direct figé : lecteur VLC déjà libéré ou sans média, l'échec est sans effet sur la lecture.
                 pass
             self._media_player.pause()
             if self._is_crossfading:
@@ -277,6 +299,7 @@ class PlayerTransportMixin(_MixinBase):
                     try:
                         self._standby_player.pause()
                     except Exception:
+                        # Moteur vlc_direct figé : lecteur VLC déjà libéré ou sans média, l'échec est sans effet sur la lecture.
                         pass
                 if hasattr(self, "_fade_timer") and self._fade_timer.isActive():
                     self._fade_timer.stop()
@@ -316,6 +339,7 @@ class PlayerTransportMixin(_MixinBase):
             try:
                 self._standby_player.play()
             except Exception:
+                # Moteur vlc_direct figé : lecteur VLC déjà libéré ou sans média, l'échec est sans effet sur la lecture.
                 pass
             if hasattr(self, "_fade_timer") and not self._fade_timer.isActive():
                 self._fade_start_time = time.time() - self._fade_paused_elapsed
@@ -345,6 +369,7 @@ class PlayerTransportMixin(_MixinBase):
         # l'arrêterait seul et LibVLC continuerait à jouer (Blind Test ouvert pendant une lecture du Lecteur).
         use_buffer = get_config_manager().get_audio_engine() == "buffer" and self._engine and self._engine.is_available
         if use_buffer:
+            self._is_paused_requested = True
             self._engine.pause()
             self.state_changed.emit("paused")
             return
@@ -355,6 +380,7 @@ class PlayerTransportMixin(_MixinBase):
             try:
                 self._media_player.set_pause(1)
             except Exception:
+                # Certaines libvlc n'exposent pas set_pause : repli sur la bascule pause() (état Playing vérifié en amont).
                 self._media_player.pause()
         self._is_paused_requested = True
         self.state_changed.emit("paused")
@@ -372,11 +398,13 @@ class PlayerTransportMixin(_MixinBase):
                 if hasattr(self._media_player, "stop"):
                     self._media_player.stop()
             except Exception:
+                # Moteur vlc_direct figé : lecteur VLC déjà libéré ou sans média, l'échec est sans effet sur la lecture.
                 pass
         self._reset_standby_player()
         self._volume_enforce_ticks = 0
         self._timer.stop()
         self._pending_seek_ms = 0
+        self._vlc_seek_hold_ms = 0
         self._current_time_ms = 0
         self.state_changed.emit("stopped")
         self.position_changed.emit(0, 0, 0.0)
@@ -387,6 +415,9 @@ class PlayerTransportMixin(_MixinBase):
             return
 
         next_idx = self.get_next_index()
+        if self._repeat_mode == RepeatMode.ONE and not getattr(self, "_advancing_after_track_end", False):
+            # Pas de préchargement « même piste » pour un « Suivant » manuel : on vise la piste d'après.
+            next_idx = self._current_index + 1 if self._current_index + 1 < len(self._playlist) else 0
         if next_idx is None:
             self.stop()
             return
@@ -409,16 +440,32 @@ class PlayerTransportMixin(_MixinBase):
 
         self._reset_standby_player()
 
-        if self._repeat_mode == RepeatMode.ONE and self._current_index >= 0:
-            self.play_index(self._current_index)
+        # « Suivant » manuel en pause : charger sans lire (même invariant que previous()).
+        # Le moteur buffer peut être en pause sans que le drapeau le soit (pause() n'y touchait pas, reprise de session).
+        paused = bool(getattr(self, "_is_paused_requested", False)) or bool(use_buffer and self._engine.is_paused)
+        # Rien ne joue (démarrage de l'application, après un stop) : « Suivant » charge sans lire. Le timer de
+        # lecture est actif dès play_index, avant même l'arrivée du premier bloc décodé (is_playing serait faux).
+        idle = not self.is_playing and not self._timer.isActive()
+        stay_paused = (paused or idle) and not getattr(self, "_advancing_after_track_end", False)
+
+        def go(idx: int) -> None:
+            self.load_index(idx) if stay_paused else self.play_index(idx)
+
+        # La répétition d'une piste ne vaut que pour la fin naturelle : « Suivant » manuel avance quand même.
+        if (
+            self._repeat_mode == RepeatMode.ONE
+            and self._current_index >= 0
+            and getattr(self, "_advancing_after_track_end", False)
+        ):
+            go(self._current_index)
             return
 
         if self._current_index + 1 < len(self._playlist):
-            self.play_index(self._current_index + 1)
-        elif self._repeat_mode == RepeatMode.ALL:
+            go(self._current_index + 1)
+        elif self._repeat_mode in (RepeatMode.ALL, RepeatMode.ONE):
             if self._shuffle:
                 self.shuffle_playlist(below_current=False)
-            self.play_index(0)
+            go(0)
         else:
             self.stop()
 
@@ -459,6 +506,7 @@ class PlayerTransportMixin(_MixinBase):
                 try:
                     self._media_player.audio_set_volume(self._volume)
                 except Exception:
+                    # Moteur vlc_direct figé : lecteur VLC déjà libéré ou sans média, l'échec est sans effet sur la lecture.
                     pass
 
     def seek_ratio(self, ratio: float) -> None:
@@ -497,7 +545,14 @@ class PlayerTransportMixin(_MixinBase):
                 self._engine.reset_buffer_for_seek(ms)
                 if self.current_track and self.current_track.source_path and self._decoder:
                     self._pending_seek_ms = ms
-                    start_track_decode(self._decoder, self.current_track, ms)
+                    start_track_run(
+                        self._engine,
+                        self._decoder,
+                        self._playlist,
+                        self._current_index,
+                        ms,
+                        self._repeat_mode != RepeatMode.ONE,
+                    )
 
             self.position_changed.emit(ms, int(dur), ratio)
             return
@@ -508,9 +563,12 @@ class PlayerTransportMixin(_MixinBase):
 
         state = self._media_player.get_state() if self._media_player else None
         if state in (vlc.State.Playing, vlc.State.Paused):
+            self._vlc_seek_hold_ms = ms
+            self._vlc_seek_hold_deadline = time.monotonic() + 1.5
             try:
                 self._media_player.set_time(ms)
             except Exception:
+                # Moteur vlc_direct figé : lecteur VLC déjà libéré ou sans média, l'échec est sans effet sur la lecture.
                 pass
         elif state == vlc.State.Ended:
             if self._is_paused_requested or not self.is_playing:

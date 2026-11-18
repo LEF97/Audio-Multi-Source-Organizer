@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any
 from PySide6.QtCore import QPoint, Qt
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
+    QAbstractItemView,
     QMainWindow,
     QMenu,
     QMessageBox,
@@ -51,7 +52,7 @@ class FoldersTreeMixin(_MixinBase):
         if not sources:
             self.right_stack.setCurrentIndex(0)
             self.lbl_folder_breadcrumb.setText("📁  --")
-            self.lbl_folder_count_badge.setText(tr("folders.track_count", count="0"))
+            self._update_folder_count_badge(count=0, total_duration_sec=0.0)
             return
 
         reselect_item = None
@@ -184,10 +185,13 @@ class FoldersTreeMixin(_MixinBase):
                     },
                 )
                 tree_items[pl.file_path.lower()] = pl_node
+                if pl.track_count > 0:
+                    placeholder = QTreeWidgetItem(pl_node)
+                    placeholder.setData(0, Qt.ItemDataRole.UserRole, {"is_placeholder": True})
 
             def _calc_totals(node: QTreeWidgetItem) -> int:
                 d = node.data(0, Qt.ItemDataRole.UserRole) or {}
-                if d.get("is_playlist"):
+                if d.get("is_playlist") or d.get("is_playlist_album") or d.get("is_placeholder"):
                     return 0
                 direct = d.get("count", 0)
                 tot = direct
@@ -230,15 +234,166 @@ class FoldersTreeMixin(_MixinBase):
             reselect_item = trash_item
 
         if reselect_item:
-            self.folder_tree.setCurrentItem(reselect_item)
             p = reselect_item.parent()
             while p is not None:
                 p.setExpanded(True)
                 p = p.parent()
+            self.folder_tree.setCurrentItem(reselect_item)
+            self.folder_tree.scrollToItem(reselect_item, QAbstractItemView.ScrollHint.PositionAtCenter)
         elif self.folder_tree.topLevelItemCount() > 0:
             first_item = self.folder_tree.topLevelItem(0)
             if first_item is not None:
                 self.folder_tree.setCurrentItem(first_item)
+
+    def select_folder_in_tree(self, folder_path: str | None, source_id: int | None = None) -> bool:
+        """Déplie l'arborescence jusqu'au dossier cible, le sélectionne et positionne l'ascenseur dessus."""
+        norm_target = (folder_path or "").replace("\\", "/").rstrip("/").lower()
+        if not norm_target or not hasattr(self, "folder_tree"):
+            return False
+
+        matched_item: QTreeWidgetItem | None = None
+        fallback_item: QTreeWidgetItem | None = None
+
+        def _walk(node: QTreeWidgetItem) -> None:
+            nonlocal matched_item, fallback_item
+            if matched_item is not None:
+                return
+            data = node.data(0, Qt.ItemDataRole.UserRole)
+            if isinstance(data, dict) and not data.get("is_trash") and not data.get("is_playlist"):
+                item_fp = (data.get("folder_path") or "").replace("\\", "/").rstrip("/").lower()
+                if item_fp == norm_target:
+                    if source_id is not None and data.get("source_id") == source_id:
+                        matched_item = node
+                        return
+                    if fallback_item is None:
+                        fallback_item = node
+            for idx in range(node.childCount()):
+                child = node.child(idx)
+                if child is not None:
+                    _walk(child)
+                    if matched_item is not None:
+                        return
+
+        for i in range(self.folder_tree.topLevelItemCount()):
+            top_item = self.folder_tree.topLevelItem(i)
+            if top_item is not None:
+                _walk(top_item)
+                if matched_item is not None:
+                    break
+
+        target = matched_item or fallback_item
+        if target is None:
+            return False
+
+        parent = target.parent()
+        while parent is not None:
+            parent.setExpanded(True)
+            parent = parent.parent()
+        data = target.data(0, Qt.ItemDataRole.UserRole)
+        if isinstance(data, dict) and data.get("is_source_root"):
+            target.setExpanded(True)
+
+        self.folder_tree.setCurrentItem(target)
+        self._select_folder_item(target)
+        self.folder_tree.scrollToItem(target, QAbstractItemView.ScrollHint.PositionAtCenter)
+        return True
+
+    def select_playlist_in_tree(self, playlist_id: int | None, playlist_path: str | None = None) -> bool:
+        """Déplie l'arborescence jusqu'à la playlist/feuille CUE cible, la sélectionne et y place l'ascenseur."""
+        if (playlist_id is None and not playlist_path) or not hasattr(self, "folder_tree"):
+            return False
+        norm_path = (playlist_path or "").replace("\\", "/").rstrip("/").lower()
+        matched_item: QTreeWidgetItem | None = None
+
+        def _walk(node: QTreeWidgetItem) -> None:
+            nonlocal matched_item
+            if matched_item is not None:
+                return
+            data = node.data(0, Qt.ItemDataRole.UserRole)
+            if isinstance(data, dict) and data.get("is_playlist"):
+                if playlist_id is not None and data.get("playlist_id") == playlist_id:
+                    matched_item = node
+                    return
+                item_fp = (
+                    (data.get("file_path") or data.get("folder_path") or "").replace("\\", "/").rstrip("/").lower()
+                )
+                if norm_path and item_fp == norm_path:
+                    matched_item = node
+                    return
+            for idx in range(node.childCount()):
+                child = node.child(idx)
+                if child is not None:
+                    _walk(child)
+                    if matched_item is not None:
+                        return
+
+        for i in range(self.folder_tree.topLevelItemCount()):
+            top_item = self.folder_tree.topLevelItem(i)
+            if top_item is not None:
+                _walk(top_item)
+                if matched_item is not None:
+                    break
+
+        if matched_item is None:
+            return False
+
+        parent = matched_item.parent()
+        while parent is not None:
+            parent.setExpanded(True)
+            parent = parent.parent()
+
+        self.folder_tree.setCurrentItem(matched_item)
+        self._select_folder_item(matched_item)
+        self.folder_tree.scrollToItem(matched_item, QAbstractItemView.ScrollHint.PositionAtCenter)
+        return True
+
+    def _on_folder_tree_item_expanded(self, item: QTreeWidgetItem) -> None:
+        """Charge paresseusement les dossiers virtuels par album lorsqu'une playlist est dépliée."""
+        if item.childCount() != 1:
+            return
+        first_child = item.child(0)
+        if first_child is None:
+            return
+        child_data = first_child.data(0, Qt.ItemDataRole.UserRole)
+        if not isinstance(child_data, dict) or not child_data.get("is_placeholder"):
+            return
+
+        data = item.data(0, Qt.ItemDataRole.UserRole)
+        if not isinstance(data, dict) or not data.get("is_playlist"):
+            return
+        pl_id = data.get("playlist_id")
+        if not isinstance(pl_id, int):
+            return
+
+        item.removeChild(first_child)
+        groups = self.db.get_playlist_album_groups(pl_id)
+        for album_raw, cnt in groups:
+            album_label = album_raw if album_raw else tr("folders.unknown_album")
+            alb_node = QTreeWidgetItem(item)
+            alb_node.setText(0, f"📁  {album_label}")
+            alb_node.setText(1, f"{cnt:,}" if cnt > 0 else "")
+            alb_node.setTextAlignment(1, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+            alb_node.setToolTip(0, album_label)
+            alb_node.setData(
+                0,
+                Qt.ItemDataRole.UserRole,
+                {
+                    "source_id": data.get("source_id"),
+                    "is_playlist_album": True,
+                    "playlist_id": pl_id,
+                    "album": album_raw,
+                    "file_name": data.get("file_name", "Playlist"),
+                    "file_path": data.get("file_path", ""),
+                    "format": data.get("format", ""),
+                    "count": cnt,
+                },
+            )
+
+    def _play_playlist_from_tree(self, playlist_id: int | None, tracks: list[Any]) -> None:
+        """Lance la lecture d'une playlist/CUE depuis l'arbre en mémorisant son identifiant."""
+        self._active_playback_playlist_id = playlist_id
+        self._active_playback_from_folder = False
+        self.player_service.play_tracks(tracks, start_index=0)
 
     def _on_folder_tree_context_menu(self, pos: QPoint) -> None:
         """Menu contextuel pour l'arborescence des dossiers harmonisé avec la vue tableau."""
@@ -265,7 +420,7 @@ class FoldersTreeMixin(_MixinBase):
             menu = QMenu(self)
             if tracks:
                 act_play = QAction(tr("context_menu.play_playlist"), self)
-                act_play.triggered.connect(lambda: self.player_service.play_tracks(tracks, start_index=0))
+                act_play.triggered.connect(lambda: self._play_playlist_from_tree(pl_id, tracks))
                 menu.addAction(act_play)
 
                 act_next = QAction(tr("context_menu.play_next"), self)

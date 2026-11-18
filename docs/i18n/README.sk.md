@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,14 +47,17 @@
 | **Podpora playlistov (M3U, PLS, XSPF, WPL) a CUE listov** | Strukturované indexovanie (🎶), sekvenčný poradie počúvania, vizuálna lokalizácia chýbajúceho obsahu; súbory `.cue` (💿) sa otvoria ako virtuálna priečka so skladbami s ich trvaním a prehrávajú sa ako skutočné skladby | 🟢 Implementované |
 | **Správca playlistov a Preťahovanie-Odlepovanie** | Virtualizovaná výčka, plynulé drag & drop, zvratené náhodné (shuffle) a slučky | 🟢 Implementované |
 | **Interaktívny režim „🎲 Blind Test“** | Imerzitívna hudobná hra s animovaným odpočítavaniím, zvukovým prechodom, jemným odhalením a automatickým prechodom | 🟢 Implementované |
-| **Aktualizácie v aplikácii** | Automatická/ručná kontrola verzií cez GitHub Releases | 🟢 Implémenté |
-| **Verzie pre Linux a macOS** | Balíčky .AppImage / .tar.gz (Linux) a nepodpísaný .dmg (macOS), vyžaduje sa VLC | 🟡 Experimentálne (neteštené) |
-| **Správa umelníkov a diskografie** | Dedikovaná prehliadka podľa umelníka s albumami, singlmi a kompletnou diskografiou | 🟡 Plánované |
-| **Grafický ekvalizér (EQ)** | Audio prednastavenia a paramatrický multibándový ekvalizér | 🟡 Plánované |
-| **Pripojka Google Drive** | Skenerovanie a synchronizácia vzdialených audio kolekcií cez OAuth 2.0 | ⚪ Plánované |
-| **Pripojka Amazon Music** | Skenerovanie a synchronizácia vzdialených kolekcií cez OAuth 2.0 | ⚪ Plánované |
-| **Pripojka Spotify / Deezer** | Importovanie playlistov a zodpovednosť skladieb | ⚪ Plánované |
-| **Inteligentné odstraňovanie duplicitných záznamov** | Detekcia duplicitných záznamov (rozmazané názvy/umelníkov + akustické fingerprnty) | ⚪ Plánované |
+| **Zdrojové materiály a knižnica** | Dashboard zdrojov s indikátormi zdravia (offline zdroje, chyby skenovania, chýbajúce súbory), globálny pohľad alebo podľa zdroja a rýchle akcie | 🟢 Implémentované |
+| **Editor, oprava a export playlistov** | Preorganizovanie, manuálne alebo automatické umiestnenie chýbajúceho súboru, zálohovanie do M3U / M3U8 / PLS / XSPF / WPL, skupinovanie podľa albumu | 🟢 Implémentované |
+| **Audio nástroje** | Grafický ekvalizér 10 pásiem s prednastaveniami, normalizácia ReplayGain, rýchlosť prehrávania, výber audio výstupu a časovač vypnutia (kontinuálny búforový motor) | 🟢 Implémentované |
+| **Integrácia Windows a vizuálne efekty** | Panel zadačiek, zóna upozornení, sprievodci, nastaviteľné vizuálne efekty s režimom Náhodne | 🟢 Implémentované |
+| **Aktualizácie v aplikácii** | Automatická/ručná kontrola verzií cez GitHub Releases | 🟢 Implémentované |
+| **Verzie Linux a macOS** | Balíčky `.AppImage` / `.tar.gz` (Linux) a nepodpísané `.dmg` (macOS), vyžaduje sa VLC | 🟡 Expérimental (non testé) |
+| **Správa nghệstitelov a diskografia** | Vädedená prehliadka podľa nghệstitela s albumami, singlmi a kompletnou diskografiou | 🟡 Právido |
+| **Konektor Google Drive** | Skenovanie a synchronizácia vzdialených audio kolekcií cez OAuth 2.0 | ⚪ Plánované |
+| **Connecteur Amazon Music** | Skenovanie a synchronizácia vzdialených kolekcií cez OAuth 2.0 | ⚪ Naplánované |
+| **Connecteur Spotify / Deezer** | Importovanie playlistov a zodpovednosť skladieb | ⚪ Naplánované |
+| **Inteligentné odstraňovanie duplicitných záznamov** | Detekcia duplicitných záznamov (rozmazané názvy/umelci + akustické fingerprighty) | ⚪ Naplánované |
 
 > 💡 *Ak chcete zistiť podrobnosti plánovaných milníkov a verzií, pozrite sa na [Mapu cesty (Roadmap)](../../ROADMAP.md).*
 

@@ -15,6 +15,7 @@ from amso.core.metadata import extract_cover_art
 from amso.services.player_service import PlayerService, RepeatMode, vlc
 from amso.ui.models import PlaylistTableModel
 from amso.ui.views.cover_helper import get_cover_pixmap, load_cover_async
+from amso.ui.views.effects.warp_pilot import Maneuver, WarpPilot
 from amso.ui.views.main_window import MainWindow
 from amso.ui.views.player_view import PlayerView
 from amso.ui.views.visual_effects import VisualEffectWidget
@@ -164,7 +165,7 @@ def test_playlist_table_model(qapp: QApplication, sample_tracks: list[TrackRecor
     idx_title = model.index(0, 2)
     idx_artist = model.index(0, 3)
 
-    assert model.data(idx_playing, Qt.ItemDataRole.DisplayRole) in {"▶", "⏸", ""}
+    assert model.data(idx_playing, Qt.ItemDataRole.DisplayRole) in {"▶", "⏸", "⏹", ""}
     assert model.data(idx_order, Qt.ItemDataRole.DisplayRole) == "1"
     assert model.data(idx_title, Qt.ItemDataRole.DisplayRole) == "Track 1"
     assert model.data(idx_artist, Qt.ItemDataRole.DisplayRole) == "Artist 1"
@@ -349,7 +350,7 @@ def test_main_window_player_drawer_and_views(qapp: QApplication):
     assert window.stacked_widget.currentWidget() == window.page_playlist
 
     # 4. Simulation du double-clic sur un morceau dans la table
-    window.btn_all_tracks.click()
+    window._on_all_tracks_clicked()
     assert window.stacked_widget.currentWidget() == window.page_tracks
     window.table_model.reload_data()
     assert window.table_model.rowCount() == 3
@@ -863,66 +864,50 @@ def test_player_visual_effects(qapp: QApplication, tmp_path: Path):
     db = DatabaseManager(tmp_path / "test.db")
     win = MainWindow(db=db)
 
-    # Vérification de la présence des composants sur PlayerView
+    # Vérification de la présence des composants sur PlayerView (9 effets + Random)
     assert hasattr(win.page_player, "combo_effect")
     assert hasattr(win.page_player, "effect_canvas")
-    assert win.page_player.combo_effect.count() == 9
+    assert win.page_player.combo_effect.count() == 10
 
-    # Vérification des boutons radio dans Paramètres > Lecteur
-    assert hasattr(win, "radio_eff_particles")
-    assert hasattr(win, "radio_eff_waves")
-    assert hasattr(win, "radio_eff_stars")
-    assert hasattr(win, "radio_eff_warp")
-    assert hasattr(win, "radio_eff_warp_dynamic")
-    assert hasattr(win, "radio_eff_aurora")
-    assert hasattr(win, "radio_eff_bars")
-    assert hasattr(win, "radio_eff_bars_full")
-    assert hasattr(win, "radio_eff_none")
+    # Vérification de la page dédiée Paramètres > Effets
+    assert hasattr(win, "btn_settings_effects")
+    assert hasattr(win, "page_settings_effects")
+    assert hasattr(win, "table_effects_settings")
+    assert win.table_effects_settings.rowCount() == 9
+    assert win.table_effects_settings.columnCount() == 3
+    assert all(chk.isChecked() for chk in win._effect_checks_player.values())
+    assert all(chk.isChecked() for chk in win._effect_checks_blind_test.values())
+    assert win.combo_effects_random_player.currentData() == "30"
+    assert win.combo_effects_random_blind_test.currentData() == "track"
 
     # Changement depuis le lecteur (combobox)
     idx_waves = win.page_player.combo_effect.findData("waves")
     win.page_player.combo_effect.setCurrentIndex(idx_waves)
     assert win.page_player.effect_canvas.effect_type == "waves"
-    assert win.radio_eff_waves.isChecked()
 
     idx_warp_dyn = win.page_player.combo_effect.findData("warp_dynamic")
     win.page_player.combo_effect.setCurrentIndex(idx_warp_dyn)
     assert win.page_player.effect_canvas.effect_type == "warp_dynamic"
-    assert win.radio_eff_warp_dynamic.isChecked()
 
     idx_bars = win.page_player.combo_effect.findData("bars")
     win.page_player.combo_effect.setCurrentIndex(idx_bars)
     assert win.page_player.effect_canvas.effect_type == "bars"
-    assert win.radio_eff_bars.isChecked()
 
     idx_bars_full = win.page_player.combo_effect.findData("bars_full")
     win.page_player.combo_effect.setCurrentIndex(idx_bars_full)
     assert win.page_player.effect_canvas.effect_type == "bars_full"
-    assert win.radio_eff_bars_full.isChecked()
 
     idx_warp = win.page_player.combo_effect.findData("warp")
     win.page_player.combo_effect.setCurrentIndex(idx_warp)
     assert win.page_player.effect_canvas.effect_type == "warp"
-    assert win.radio_eff_warp.isChecked()
 
-    # Changement depuis les paramètres (radio buttons)
-    win.radio_eff_warp_dynamic.setChecked(True)
-    assert win.page_player.effect_canvas.effect_type == "warp_dynamic"
-    assert win.page_player.combo_effect.currentData() == "warp_dynamic"
-
-    win.radio_eff_bars.setChecked(True)
-    assert win.page_player.effect_canvas.effect_type == "bars"
-    assert win.page_player.combo_effect.currentData() == "bars"
-
-    win.radio_eff_bars_full.setChecked(True)
-    assert win.page_player.effect_canvas.effect_type == "bars_full"
-    assert win.page_player.combo_effect.currentData() == "bars_full"
-
-    win.radio_eff_stars.setChecked(True)
-    assert win.page_player.effect_canvas.effect_type == "stars"
-    assert win.page_player.combo_effect.currentData() == "stars"
+    # Décocher un effet dans le tableau le retire de la liste du Lecteur uniquement
+    win._effect_checks_player["aurora"].setChecked(False)
+    assert win.page_player.combo_effect.findData("aurora") == -1
+    assert win.page_blind_test.combo_effect.findData("aurora") != -1
 
     # Changement d'effet depuis le lecteur vers l'hyperespace dynamique
+    idx_warp_dyn = win.page_player.combo_effect.findData("warp_dynamic")
     win.page_player.combo_effect.setCurrentIndex(idx_warp_dyn)
     assert win.page_player.effect_type == "warp_dynamic"
 
@@ -1009,6 +994,37 @@ def test_visual_effects_resize_reinitialization(qapp) -> None:
     v.set_effect_type(VisualEffectWidget.EFFECT_WARP)
     qapp.processEvents()
     assert len(v._warp_stars) >= 50
+    v.close()
+
+
+def test_visual_effect_warp_dynamic_trajectories(qapp) -> None:
+    """Vérifie que l'hyperespace dynamique conserve des déplacements bornés et cohérents."""
+    v = VisualEffectWidget(VisualEffectWidget.EFFECT_WARP_DYNAMIC)
+    v.resize(1280, 720)
+    v.set_playback_state("playing")
+    ticks = [(m, i) for m in Maneuver for i in range(100)]
+    for m, i in ticks:
+        if i == 0:
+            v._warp_pilot = WarpPilot()
+            v._warp_pilot.start(m)
+        v._on_tick()
+        for s in v._warp_stars:
+            # Au-delà de z=60 : en deçà, le seul avancement donne de grands sauts (étoiles quasi invisibles).
+            # i > 0 : le remplacement du pilote remet le roulis à zéro d'un coup (artefact du test).
+            if (
+                i > 0
+                and s.z > 60.0
+                and s.sx is not None
+                and s.psx is not None
+                and s.sy is not None
+                and s.psy is not None
+            ):
+                step_dist = ((s.sx - s.psx) ** 2 + (s.sy - s.psy) ** 2) ** 0.5
+                assert step_dist < 260.0
+            if s.z == s.pz:
+                assert s.psx is None and s.psy is None
+
+    v.repaint()
     v.close()
 
 
@@ -2197,6 +2213,8 @@ def test_buffer_engine_seek_in_memory_vs_redecode(
     player._playlist = list(sample_tracks)
     player._current_index = 0
     monkeypatch.setattr(get_config_manager(), "get_audio_engine", lambda: "buffer")
+    # Un runner de CI n'a pas de carte son : sans sortie, le moteur se déclare indisponible et seek_ms bascule sur VLC
+    monkeypatch.setattr(type(player._engine), "is_available", True)
 
     # Mode buffer en cours de lecture
     with patch.object(PlayerService, "is_playing", new_callable=PropertyMock) as mock_playing:

@@ -70,6 +70,7 @@ class LocalScanner:
         self.max_workers = max_workers or min(4, max(2, cpu_count // 2))
         self.batch_size = batch_size
         self._cancel_event = threading.Event()
+        self._last_playlist_files: tuple[int | None, list[tuple[Path, str, str, str, float, int]]] | None = None
 
     def cancel(self) -> None:
         """Demande l'annulation immédiate du scan en cours."""
@@ -128,6 +129,7 @@ class LocalScanner:
         # 2. Parcours récursif mono-passe ultra-rapide avec os.scandir (exploite WIN32_FIND_DATAW sous Windows/SMB)
         stack: list[Path] = [root_path]
         try:
+            scanned_entries = 0
             while stack:
                 if self._cancel_event.is_set():
                     summary.cancelled = True
@@ -143,6 +145,10 @@ class LocalScanner:
                             if self._cancel_event.is_set():
                                 summary.cancelled = True
                                 break
+                            scanned_entries += 1
+                            if scanned_entries % 250 == 0:
+                                # Relâche brièvement le GIL et la bande passante SMB pour préserver le thread audio
+                                time.sleep(0.001)
 
                             try:
                                 is_d = entry.is_dir(follow_symlinks=False)
@@ -246,47 +252,8 @@ class LocalScanner:
         if not summary.cancelled and source.id is not None:
             summary.deleted = self.db.prune_missing_tracks(source.id, current_refs)
 
-        # 4. Traitement et indexation des fichiers de playlist (M3U, M3U8, PLS, XSPF, WPL)
-        current_playlist_paths: set[str] = set()
-        for pl_path, pl_name, pl_folder, pl_ext, pl_mtime, pl_size in playlist_files:
-            if self._cancel_event.is_set():
-                summary.cancelled = True
-                break
-            clean_pl_path = str(pl_path).replace("\\", "/")
-            current_playlist_paths.add(clean_pl_path)
-
-            existing_pl = self.db.get_playlist_by_path(clean_pl_path)
-            if existing_pl and abs(existing_pl.file_mtime - pl_mtime) < 0.001 and existing_pl.file_size == pl_size:
-                continue
-
-            try:
-                parsed_entries = parse_playlist_file(pl_path)
-                src_type_str = "local"
-                if hasattr(source, "source_type") and source.source_type:
-                    src_type_str = getattr(source.source_type, "value", str(source.source_type))
-                self.db.upsert_playlist(
-                    source_id=source.id or 0,
-                    file_path=clean_pl_path,
-                    file_name=pl_name,
-                    folder_path=pl_folder,
-                    format_str=pl_ext.lstrip("."),
-                    file_mtime=pl_mtime,
-                    file_size=pl_size,
-                    entries=parsed_entries,
-                    source_type=src_type_str,
-                )
-                if existing_pl:
-                    summary.playlists_updated += 1
-                else:
-                    summary.playlists_added += 1
-                summary.playlist_names.append(tr("scan.playlist_entry", name=pl_name, count=len(parsed_entries)))
-            except Exception as e:
-                summary.errors.append(tr("scan.playlist_error", name=pl_name, error=e))
-
-        # Nettoyage des playlists qui n'existent plus sur le disque et liaison automatique avec tracks
-        if not summary.cancelled and source.id is not None:
-            summary.playlists_deleted = self.db.delete_playlists_not_in(source.id, current_playlist_paths)
-            self.db.link_playlist_entries_to_tracks(source.id)
+        # Mémorise les playlists / feuilles CUE découvertes pour la Phase 3 (scan_playlists)
+        self._last_playlist_files = (source.id, playlist_files)
 
         summary.elapsed_seconds = round(time.perf_counter() - start_time, 2)
         if on_status:
@@ -395,19 +362,133 @@ class LocalScanner:
 
         return summary
 
+    def _collect_playlist_files(self, root_path: Path) -> list[tuple[Path, str, str, str, float, int]]:
+        """Collecte uniquement les fichiers playlists/CUE d'une arborescence."""
+        collected: list[tuple[Path, str, str, str, float, int]] = []
+        if not root_path.exists() or not root_path.is_dir():
+            return collected
+        for current_root, dirs, files in os.walk(root_path):
+            if self._cancel_event.is_set():
+                break
+            dirs[:] = [d for d in dirs if not d.startswith(".")]
+            for fn in files:
+                if self._cancel_event.is_set():
+                    break
+                if fn.startswith("."):
+                    continue
+                dot_idx = fn.rfind(".")
+                if dot_idx == -1:
+                    continue
+                ext = fn[dot_idx:].lower()
+                if ext not in SUPPORTED_PLAYLIST_EXTENSIONS:
+                    continue
+                full_path = os.path.join(current_root, fn)
+                try:
+                    stat_res = os.stat(full_path)
+                    collected.append((Path(full_path), fn, current_root, ext, stat_res.st_mtime, stat_res.st_size))
+                except OSError:
+                    continue
+        return collected
+
+    def scan_playlists(
+        self,
+        source: SourceRecord,
+        playlist_files: list[tuple[Path, str, str, str, float, int]] | None = None,
+        *,
+        force: bool = False,
+        on_progress: ProgressCallback | None = None,
+        on_status: StatusCallback | None = None,
+    ) -> ScanSummary:
+        """Phase 3 : Analyse et indexation des playlists et feuilles CUE."""
+        start_time = time.perf_counter()
+        summary = ScanSummary(
+            source_id=source.id or 0,
+            source_path=source.path_or_uri,
+            phase=3,
+        )
+
+        if playlist_files is None:
+            if self._last_playlist_files is not None and self._last_playlist_files[0] == source.id:
+                playlist_files = self._last_playlist_files[1]
+            else:
+                playlist_files = self._collect_playlist_files(Path(source.path_or_uri))
+
+        total_pl = len(playlist_files)
+        current_playlist_paths: set[str] = set()
+        for idx, (pl_path, pl_name, pl_folder, pl_ext, pl_mtime, pl_size) in enumerate(playlist_files, start=1):
+            if self._cancel_event.is_set():
+                summary.cancelled = True
+                break
+            if on_progress:
+                on_progress(idx, total_pl, str(pl_path))
+
+            clean_pl_path = str(pl_path).replace("\\", "/")
+            current_playlist_paths.add(clean_pl_path)
+
+            existing_pl = self.db.get_playlist_by_path(clean_pl_path)
+            if (
+                not force
+                and existing_pl
+                and abs(existing_pl.file_mtime - pl_mtime) < 0.001
+                and existing_pl.file_size == pl_size
+            ):
+                continue
+
+            try:
+                parsed_entries = parse_playlist_file(pl_path)
+                src_type_str = "local"
+                if hasattr(source, "source_type") and source.source_type:
+                    src_type_str = getattr(source.source_type, "value", str(source.source_type))
+                self.db.upsert_playlist(
+                    source_id=source.id or 0,
+                    file_path=clean_pl_path,
+                    file_name=pl_name,
+                    folder_path=pl_folder,
+                    format_str=pl_ext.lstrip("."),
+                    file_mtime=pl_mtime,
+                    file_size=pl_size,
+                    entries=parsed_entries,
+                    source_type=src_type_str,
+                )
+                if existing_pl:
+                    summary.playlists_updated += 1
+                else:
+                    summary.playlists_added += 1
+                summary.playlist_names.append(tr("scan.playlist_entry", name=pl_name, count=len(parsed_entries)))
+            except Exception as e:
+                summary.errors.append(tr("scan.playlist_error", name=pl_name, error=e))
+
+        if not summary.cancelled and source.id is not None:
+            summary.playlists_deleted = self.db.delete_playlists_not_in(source.id, current_playlist_paths)
+            self.db.link_playlist_entries_to_tracks(source.id)
+
+        summary.elapsed_seconds = round(time.perf_counter() - start_time, 2)
+        if on_status:
+            on_status(
+                tr(
+                    "log.detail_playlists",
+                    added=summary.playlists_added,
+                    updated=summary.playlists_updated,
+                    deleted=summary.playlists_deleted,
+                )
+            )
+        return summary
+
     def scan_source(
         self,
         source: SourceRecord,
         on_progress: ProgressCallback | None = None,
         on_status: StatusCallback | None = None,
         on_phase1_finished: PhaseFinishedCallback | None = None,
+        on_phase2_finished: PhaseFinishedCallback | None = None,
+        on_phase3_finished: PhaseFinishedCallback | None = None,
         compute_hash: bool = True,
     ) -> ScanSummary:
-        """Exécute la synchronisation complète (Phase 1 inventaire puis Phase 2 analyse audio)."""
+        """Exécute la synchronisation en 3 temps : inventaire, analyse audio, puis playlists/CUE."""
         self._cancel_event.clear()
         total_start = time.perf_counter()
 
-        # 1. Phase 1 : Inventaire rapide
+        # 1. Phase 1 : Inventaire rapide des fichiers
         inv_summary, _ = self.scan_inventory(source=source, on_status=on_status)
         if inv_summary.cancelled or inv_summary.errors:
             return inv_summary
@@ -415,13 +496,32 @@ class LocalScanner:
         if on_phase1_finished:
             on_phase1_finished(inv_summary)
 
-        # 2. Phase 2 : Extraction audio
+        # 2. Phase 2 : Extraction des métadonnées audio
         ext_summary = self.extract_audio_metadata(
             source=source,
             on_progress=on_progress,
             on_status=on_status,
             compute_hash=compute_hash,
         )
+        if on_phase2_finished and not ext_summary.cancelled:
+            on_phase2_finished(ext_summary)
+
+        # 3. Phase 3 : Analyse et indexation des playlists / feuilles CUE
+        pl_summary = ScanSummary(source_id=source.id or 0, source_path=source.path_or_uri, phase=3)
+        if not self._cancel_event.is_set() and not ext_summary.cancelled:
+            pl_files = (
+                self._last_playlist_files[1]
+                if self._last_playlist_files is not None and self._last_playlist_files[0] == source.id
+                else None
+            )
+            pl_summary = self.scan_playlists(
+                source=source,
+                playlist_files=pl_files,
+                on_progress=on_progress,
+                on_status=on_status,
+            )
+            if on_phase3_finished and not pl_summary.cancelled:
+                on_phase3_finished(pl_summary)
 
         if not self._cancel_event.is_set() and source.id is not None:
             self.db.update_source_scanned(source.id)
@@ -430,19 +530,22 @@ class LocalScanner:
         combined = ScanSummary(
             source_id=source.id or 0,
             source_path=source.path_or_uri,
-            phase=2,
+            phase=3,
             total_found=inv_summary.total_found,
             added=inv_summary.added,
             updated=inv_summary.updated,
             unchanged=inv_summary.unchanged,
             deleted=inv_summary.deleted,
-            playlists_added=inv_summary.playlists_added,
-            playlists_updated=inv_summary.playlists_updated,
-            playlists_deleted=inv_summary.playlists_deleted,
-            playlist_names=inv_summary.playlist_names,
+            playlists_added=pl_summary.playlists_added,
+            playlists_updated=pl_summary.playlists_updated,
+            playlists_deleted=pl_summary.playlists_deleted,
+            playlist_names=pl_summary.playlist_names,
             analyzed=ext_summary.analyzed,
-            errors=inv_summary.errors + ext_summary.errors,
+            errors=inv_summary.errors + ext_summary.errors + pl_summary.errors,
             elapsed_seconds=round(time.perf_counter() - total_start, 2),
-            cancelled=self._cancel_event.is_set() or inv_summary.cancelled or ext_summary.cancelled,
+            cancelled=self._cancel_event.is_set()
+            or inv_summary.cancelled
+            or ext_summary.cancelled
+            or pl_summary.cancelled,
         )
         return combined

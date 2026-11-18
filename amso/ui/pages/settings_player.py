@@ -3,17 +3,14 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QObject, Qt
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QButtonGroup,
     QFrame,
     QHBoxLayout,
     QLabel,
-    QRadioButton,
     QScrollArea,
-    QSizePolicy,
     QSpinBox,
     QVBoxLayout,
     QWidget,
@@ -21,8 +18,17 @@ from PySide6.QtWidgets import (
 
 from amso.core.config import get_config_manager
 from amso.core.i18n import tr
+from amso.ui.pages.settings_player_cover import SettingsPlayerCoverMixin
 from amso.ui.pages.settings_player_effects import SettingsPlayerEffectsMixin
-from amso.ui.styles import settings_radio_qss
+from amso.ui.styles import (
+    COLOR_BG_CARD,
+    COLOR_BORDER_LIGHT,
+    COLOR_PRIMARY_HOVER,
+    COLOR_TEXT,
+    COLOR_TEXT_BRIGHT,
+    COLOR_TEXT_MUTED,
+)
+from amso.ui.widgets.page_header import build_page_top_bar
 
 if TYPE_CHECKING:
     from amso.services.player_service import PlayerService
@@ -30,7 +36,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class SettingsPlayerPageMixin(SettingsPlayerEffectsMixin):
+class SettingsPlayerPageMixin(SettingsPlayerEffectsMixin, SettingsPlayerCoverMixin):
     """Page Paramètres > Lecteur (mixin de MainWindow)."""
 
     if TYPE_CHECKING:
@@ -43,7 +49,6 @@ class SettingsPlayerPageMixin(SettingsPlayerEffectsMixin):
         def _update_vlc_latency_controls_state(self) -> None: ...
         def _on_sleep_mode_changed(self) -> None: ...
         def _on_transition_mode_changed(self) -> None: ...
-        def _on_visual_effect_changed(self) -> None: ...
         def _update_crossfade_controls_state(self) -> None: ...
 
     def _create_settings_player_page(self) -> QWidget:
@@ -54,17 +59,11 @@ class SettingsPlayerPageMixin(SettingsPlayerEffectsMixin):
         main_layout.setSpacing(0)
 
         # 1. En-tête
-        top_bar = QFrame()
-        top_bar.setObjectName("topBarFrame")
-        top_bar.setFixedHeight(50)
-        top_bar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        top_layout = QHBoxLayout(top_bar)
-        top_layout.setContentsMargins(20, 12, 20, 12)
-
-        self.lbl_settings_player_page_title = QLabel(tr("settings.page_player_title"))
-        self.lbl_settings_player_page_title.setStyleSheet("color: #F8FAFC; font-size: 16px; font-weight: 700;")
-        top_layout.addWidget(self.lbl_settings_player_page_title)
-        top_layout.addStretch()
+        top_bar, self.lbl_settings_player_page_title, self.btn_settings_player_help = build_page_top_bar(
+            tr("settings.page_player_title"),
+            "settings.player_help_title",
+            "settings.player_help_body",
+        )
         main_layout.addWidget(top_bar, 0)
 
         scroll = QScrollArea()
@@ -77,90 +76,10 @@ class SettingsPlayerPageMixin(SettingsPlayerEffectsMixin):
         content_layout.setSpacing(16)
         content_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        # Carte 1 : Alimentation et Veille
-        card_sleep = QFrame()
-        card_sleep.setProperty("class", "dashboard-card")
-        l_sleep = QVBoxLayout(card_sleep)
-        l_sleep.setContentsMargins(18, 16, 18, 16)
-        l_sleep.setSpacing(12)
-
-        self.lbl_card_player_title = QLabel(tr("settings.player_playback_title"))
-        self.lbl_card_player_title.setStyleSheet("color: #F8FAFC; font-size: 14px; font-weight: 700;")
-        l_sleep.addWidget(self.lbl_card_player_title)
-
-        self.lbl_card_player_desc = QLabel(tr("settings.player_playback_desc"))
-        self.lbl_card_player_desc.setStyleSheet("color: #94A3B8; font-size: 13px;")
-        l_sleep.addWidget(self.lbl_card_player_desc)
-
         cfg = get_config_manager()
-        radio_qss = settings_radio_qss()
 
-        self.sleep_group = QButtonGroup(cast("QObject", self))
-
-        # Choix 1 : Autoriser la veille
-        box_allow = QVBoxLayout()
-        box_allow.setSpacing(3)
-        self.radio_sleep_allow = QRadioButton(tr("settings.sleep_mode_allow"))
-        self.radio_sleep_allow.setStyleSheet(radio_qss)
-        self.sleep_group.addButton(self.radio_sleep_allow)
-        box_allow.addWidget(self.radio_sleep_allow)
-
-        self.lbl_sleep_allow_hint = QLabel(tr("settings.sleep_mode_allow_hint"))
-        self.lbl_sleep_allow_hint.setStyleSheet("color: #64748B; font-size: 12px; margin-left: 26px;")
-        self.lbl_sleep_allow_hint.setWordWrap(True)
-        box_allow.addWidget(self.lbl_sleep_allow_hint)
-        l_sleep.addLayout(box_allow)
-
-        # Choix 2 (par défaut) : Ne pas autoriser la veille sur les écrans Lecteur et Playlist
-        box_screens = QVBoxLayout()
-        box_screens.setSpacing(3)
-        self.radio_sleep_screens = QRadioButton(tr("settings.sleep_mode_player_playlist"))
-        self.radio_sleep_screens.setStyleSheet(radio_qss)
-        self.sleep_group.addButton(self.radio_sleep_screens)
-        box_screens.addWidget(self.radio_sleep_screens)
-
-        self.lbl_sleep_screens_hint = QLabel(tr("settings.sleep_mode_player_playlist_hint"))
-        self.lbl_sleep_screens_hint.setStyleSheet("color: #64748B; font-size: 12px; margin-left: 26px;")
-        self.lbl_sleep_screens_hint.setWordWrap(True)
-        box_screens.addWidget(self.lbl_sleep_screens_hint)
-        l_sleep.addLayout(box_screens)
-
-        # Choix 3 : Ne pas autoriser la veille
-        box_always = QVBoxLayout()
-        box_always.setSpacing(3)
-        self.radio_sleep_always = QRadioButton(tr("settings.sleep_mode_always"))
-        self.radio_sleep_always.setStyleSheet(radio_qss)
-        self.sleep_group.addButton(self.radio_sleep_always)
-        box_always.addWidget(self.radio_sleep_always)
-
-        self.lbl_sleep_always_hint = QLabel(tr("settings.sleep_mode_always_hint"))
-        self.lbl_sleep_always_hint.setStyleSheet("color: #64748B; font-size: 12px; margin-left: 26px;")
-        self.lbl_sleep_always_hint.setWordWrap(True)
-        box_always.addWidget(self.lbl_sleep_always_hint)
-        l_sleep.addLayout(box_always)
-
-        sleep_mode = cfg.get_sleep_mode()
-        if sleep_mode == "allow":
-            self.radio_sleep_allow.setChecked(True)
-        elif sleep_mode == "always":
-            self.radio_sleep_always.setChecked(True)
-        else:
-            self.radio_sleep_screens.setChecked(True)
-
-        self.radio_sleep_allow.toggled.connect(self._on_sleep_mode_changed)
-        self.radio_sleep_screens.toggled.connect(self._on_sleep_mode_changed)
-        self.radio_sleep_always.toggled.connect(self._on_sleep_mode_changed)
-
-        content_layout.addWidget(card_sleep)
-
-        # Carte 2 : Architecture du moteur de lecture audio
-        content_layout.addWidget(self._build_card_audio_engine())
-
-        # Carte 3 : Transitions et enchaînement des pistes
-        content_layout.addWidget(self._build_card_transitions())
-
-        # Carte 4 : Effets visuels d'ambiance
-        content_layout.addWidget(self._build_card_effects())
+        # Carte 5 : Transitions des pochettes
+        content_layout.addWidget(self._build_card_cover_transitions())
 
         # Carte 4 : Paramètres du Blind Test
         card_bt = QFrame()
@@ -171,26 +90,26 @@ class SettingsPlayerPageMixin(SettingsPlayerEffectsMixin):
         l_bt.setSpacing(12)
 
         self.lbl_card_bt_title = QLabel("🎭  " + tr("blind_test.settings_title"))
-        self.lbl_card_bt_title.setStyleSheet("color: #F8FAFC; font-size: 14px; font-weight: 700;")
+        self.lbl_card_bt_title.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-size: 14px; font-weight: 700;")
         l_bt.addWidget(self.lbl_card_bt_title)
 
         self.lbl_card_bt_desc = QLabel(tr("settings.blind_test_desc"))
-        self.lbl_card_bt_desc.setStyleSheet("color: #94A3B8; font-size: 13px;")
+        self.lbl_card_bt_desc.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 13px;")
         l_bt.addWidget(self.lbl_card_bt_desc)
 
-        spin_qss = """
-            QSpinBox {
-                background-color: #20242D;
-                color: #F8FAFC;
-                border: 1px solid #333846;
+        spin_qss = f"""
+            QSpinBox {{
+                background-color: {COLOR_BG_CARD};
+                color: {COLOR_TEXT_BRIGHT};
+                border: 1px solid {COLOR_BORDER_LIGHT};
                 border-radius: 6px;
                 padding: 4px 8px;
                 font-size: 12.5px;
                 font-weight: 600;
-            }
-            QSpinBox:focus {
-                border-color: #38BDF8;
-            }
+            }}
+            QSpinBox:focus {{
+                border-color: {COLOR_PRIMARY_HOVER};
+            }}
         """
 
         inputs_layout = QHBoxLayout()
@@ -200,7 +119,7 @@ class SettingsPlayerPageMixin(SettingsPlayerEffectsMixin):
         cd_box = QHBoxLayout()
         cd_box.setSpacing(8)
         self.lbl_bt_countdown = QLabel(tr("blind_test.countdown_label"))
-        self.lbl_bt_countdown.setStyleSheet("color: #CBD5E1; font-size: 12.5px; font-weight: 500;")
+        self.lbl_bt_countdown.setStyleSheet(f"color: {COLOR_TEXT}; font-size: 12.5px; font-weight: 500;")
         cd_box.addWidget(self.lbl_bt_countdown)
 
         self.spin_bt_countdown = QSpinBox()
@@ -218,7 +137,7 @@ class SettingsPlayerPageMixin(SettingsPlayerEffectsMixin):
         rev_box = QHBoxLayout()
         rev_box.setSpacing(8)
         self.lbl_bt_reveal = QLabel(tr("blind_test.reveal_label"))
-        self.lbl_bt_reveal.setStyleSheet("color: #CBD5E1; font-size: 12.5px; font-weight: 500;")
+        self.lbl_bt_reveal.setStyleSheet(f"color: {COLOR_TEXT}; font-size: 12.5px; font-weight: 500;")
         rev_box.addWidget(self.lbl_bt_reveal)
 
         self.spin_bt_reveal = QSpinBox()
@@ -236,7 +155,7 @@ class SettingsPlayerPageMixin(SettingsPlayerEffectsMixin):
         fade_box = QHBoxLayout()
         fade_box.setSpacing(8)
         self.lbl_bt_fade = QLabel(tr("blind_test.fade_label"))
-        self.lbl_bt_fade.setStyleSheet("color: #CBD5E1; font-size: 12.5px; font-weight: 500;")
+        self.lbl_bt_fade.setStyleSheet(f"color: {COLOR_TEXT}; font-size: 12.5px; font-weight: 500;")
         fade_box.addWidget(self.lbl_bt_fade)
 
         self.spin_bt_fade = QSpinBox()
@@ -255,7 +174,9 @@ class SettingsPlayerPageMixin(SettingsPlayerEffectsMixin):
 
         # Label d'information résumé de la manche
         self.lbl_bt_total = QLabel()
-        self.lbl_bt_total.setStyleSheet("color: #38BDF8; font-size: 12px; font-weight: 500; margin-top: 4px;")
+        self.lbl_bt_total.setStyleSheet(
+            f"color: {COLOR_PRIMARY_HOVER}; font-size: 12px; font-weight: 500; margin-top: 4px;"
+        )
         self._update_blind_test_summary_label()
         l_bt.addWidget(self.lbl_bt_total)
 

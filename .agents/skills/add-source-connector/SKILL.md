@@ -10,8 +10,8 @@ description: Ajouter un nouveau type de source audio à AMSO (cloud, streaming, 
 ## Points d'intégration à vérifier (grep `SourceType`)
 - `amso/core/db/models.py` : valeur d'enum (`StrEnum`) ; stockée en TEXT dans `sources.source_type` et `tracks.source_type`.
 - `amso/core/scanner.py` : branches `SourceType.LOCAL` → ajouter le scan du nouveau type.
-- `amso/core/scheduler.py` : la synchro temps réel est limitée à `LOCAL` (`sync_mode`, `sync_interval_*`).
-- `amso/ui/pages/scan_controller.py`, `session_state.py` (pistes non locales), `folders_page.py`, `settings_sources.py` : icônes/libellés par type (`💾` local, `☁️` autre).
+- `amso/services/scheduler.py` : la synchro temps réel est limitée à `LOCAL` (`sync_mode`, `sync_interval_*`).
+- `amso/ui/pages/scan_controller.py`, `session_state.py` (pistes non locales), `folders_page.py` : icônes/libellés par type (`💾` local, `☁️` autre).
 - `amso/ui/dialogs/source_config_dialog.py` (`SourceConfigData`) : champs de configuration (identifiants, URL…).
 - `amso/services/player_service.py` : lecture d'un chemin/URL non local.
 

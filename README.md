@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Audio player with the Hyperspace (3D starfield) visual ambience" width="850">
+  <img src="screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Audio player v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Folder tree & CUE sheet 💿 (virtual tracks)" width="850">
-</p>
-
-<p align="center">
-  <img src="screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Playlist of a CUE sheet (virtual tracks)" width="850">
+  <img src="screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Sources and library management" width="850">
 </p>
 
 <p align="center">
@@ -51,10 +47,13 @@
 | **Playlist Files Support (M3U, PLS, XSPF, WPL) & CUE sheets** | Tree-based indexing (🎶), natural sequential track ordering, visual missing track alerts; `.cue` files (💿) open like a folder of virtual tracks with their duration and play like real tracks | 🟢 Implemented |
 | **Playlist & Queue Management** | Virtualized queue table, smooth drag & drop reordering, reversible shuffle, and repeat modes | 🟢 Implemented |
 | **Interactive « 🎲 Blind Test » Mode** | Immersive music guessing game with animated pulsing countdown, soft audio fade-out, smooth reveal, and auto-progression | 🟢 Implemented |
+| **Sources & Library** | Sources dashboard with health indicators (offline sources, scan errors, missing files), global or per-source view and quick actions | 🟢 Implemented |
+| **Playlist editor, repair & export** | Reordering, manual or automatic relocation of missing files, saving to M3U / M3U8 / PLS / XSPF / WPL, grouping by album | 🟢 Implemented |
+| **Audio tools** | 10-band graphical equalizer with presets, ReplayGain normalization, playback speed, audio output choice and sleep timer (continuous buffer engine) | 🟢 Implemented |
+| **Windows integration & visual effects** | Taskbar, notification area, help guides, adjustable visual effects with Random mode | 🟢 Implemented |
 | **In-App Update Checker** | Automatic and manual version checking via GitHub Releases | 🟢 Implemented |
 | **Linux & macOS versions** | `.AppImage` / `.tar.gz` packages (Linux) and unsigned `.dmg` (macOS), VLC required | 🟡 Experimental (untested) |
 | **Artists & Discography Hub** | Dedicated artist overview with albums, singles, and full discographies | 🟡 Planned |
-| **Graphical Equalizer (EQ)** | Curated sound presets and multi-band parametric equalizer | 🟡 Planned |
 | **Google Drive Cloud Connector** | Remote audio library indexing and streaming via OAuth 2.0 | ⚪ Planned |
 | **Amazon Music Connector** | Remote music folder scanning and cloud sync via OAuth 2.0 | ⚪ Planned |
 | **Spotify / Deezer Streaming Integration** | Playlist import and hybrid collection track matching | ⚪ Planned |
@@ -67,6 +66,7 @@
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - **Python 3.11** or newer
 - Git
 
@@ -147,9 +147,9 @@ Tests run automatically across **Windows, macOS, and Ubuntu** on every push via 
 
 AMSO is 100% free and open-source software. If you enjoy the project and want to support ongoing development:
 
-* 🎮 **Download & Pay What You Want:** [AMSO on Itch.io](https://lef97.itch.io/audio-multi-source-organizer) (precompiled portable standalone executable)
-* ☕ **Direct Donation:** [Ko-fi (@lef97)](https://ko-fi.com/lef97)
-* ⭐ **GitHub Sponsors:** [Sponsor LEF97](https://github.com/sponsors/LEF97)
+- 🎮 **Download & Pay What You Want:** [AMSO on Itch.io](https://lef97.itch.io/audio-multi-source-organizer) (precompiled portable standalone executable)
+- ☕ **Direct Donation:** [Ko-fi (@lef97)](https://ko-fi.com/lef97)
+- ⭐ **GitHub Sponsors:** [Sponsor LEF97](https://github.com/sponsors/LEF97)
 
 ---
 

@@ -6,6 +6,7 @@ pour garantir la compatibilité ascendante.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Sequence
 
 from PySide6.QtCore import QModelIndex, QObject, QPersistentModelIndex, Qt
@@ -21,6 +22,8 @@ from amso.ui.models_base import (
 )
 from amso.ui.playlist_table_model import PlaylistTableModel
 
+logger = logging.getLogger(__name__)
+
 
 class TrackTableModel(BaseTrackTableModel):
     """Modèle de table virtualisé pour l'affichage haute performance des pistes de la bibliothèque."""
@@ -30,6 +33,7 @@ class TrackTableModel(BaseTrackTableModel):
 
     def __init__(self, db: DatabaseManager, parent: QObject | None = None, defer_loading: bool = False) -> None:
         super().__init__(db, parent)
+        self.db: DatabaseManager = db
         # Au démarrage, la configuration de la vue (tri, état des colonnes) déclenche plusieurs rechargements de
         # toute la bibliothèque (~1 s chacun pour 50 000 pistes) pour une page qui n'est pas encore affichée.
         # Tant que defer_loading est vrai, seul le premier set_filter() (affichage de la page) charge les données.
@@ -58,6 +62,7 @@ class TrackTableModel(BaseTrackTableModel):
     def set_tracks(self, tracks: Sequence[TrackRecord]) -> None:
         """Remplace directement la collection de pistes du modèle (ex: doublons)."""
         self.beginResetModel()
+        self._loading_deferred = False
         self._tracks = list(tracks)
         self.endResetModel()
 
@@ -76,7 +81,7 @@ class TrackTableModel(BaseTrackTableModel):
 
     def sort(self, column: int, order: Qt.SortOrder = Qt.SortOrder.AscendingOrder) -> None:
         """Effectue le tri des données selon la colonne sélectionnée."""
-        if not (0 <= column < len(self.COLUMNS)):
+        if not (0 <= column < len(self.COLUMNS)) or self.COLUMNS[column][1] == "is_playing":
             return
 
         self._current_sort_col = column
@@ -96,6 +101,8 @@ class TrackTableModel(BaseTrackTableModel):
             return
         self._refresh_sources_cache()
         col = sort_by or self.COLUMNS[self._current_sort_col][1]
+        if col == "is_playing":
+            col = "file_name"
         direction = sort_order or ("DESC" if self._current_sort_order == Qt.SortOrder.DescendingOrder else "ASC")
 
         if self._search_query:
@@ -108,8 +115,9 @@ class TrackTableModel(BaseTrackTableModel):
             reverse = direction == "DESC"
             try:
                 tracks.sort(key=lambda t: (getattr(t, col, None) is None, getattr(t, col, "")), reverse=reverse)
-            except Exception:
-                pass
+            except TypeError:
+                # Colonne aux types mélangés (int/str) : l'ordre de la base est conservé.
+                logger.debug("Tri impossible sur la colonne %s", col, exc_info=True)
         else:
             tracks, _ = self.db.get_tracks(
                 limit=self.MAX_LOADED_TRACKS,

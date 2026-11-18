@@ -6,7 +6,6 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QDialog,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -17,10 +16,23 @@ from PySide6.QtWidgets import (
 
 from amso.core.database import TrackRecord
 from amso.core.i18n import tr
-from amso.ui.theme import DARK_THEME_QSS
+from amso.ui.dialogs.base_dialog import AmsoDialog
+from amso.ui.styles import (
+    COLOR_BG_CARD,
+    COLOR_BG_DARK,
+    COLOR_BG_SLATE,
+    COLOR_BORDER,
+    COLOR_BORDER_LIGHT,
+    COLOR_PRIMARY_HOVER,
+    COLOR_TEXT_BRIGHT,
+    COLOR_TEXT_DIM,
+    COLOR_TEXT_DISABLED,
+    COLOR_TEXT_MUTED,
+    COLOR_TEXT_SOFT,
+)
 
 
-class LargeSelectionDialog(QDialog):
+class LargeSelectionDialog(AmsoDialog):
     """Dialogue modal proposant les choix de chargement pour les très grandes listes (> 1000 morceaux)."""
 
     def __init__(
@@ -30,16 +42,11 @@ class LargeSelectionDialog(QDialog):
         folder_track_count: int = 0,
         parent: QWidget | None = None,
     ) -> None:
-        super().__init__(parent)
+        super().__init__(tr("dialog.large_selection_title"), 560, parent)
         self.track = track
         self.total_count = total_count
         self.folder_track_count = folder_track_count
         self._choice: str = "cancel"
-
-        self.setWindowTitle(tr("dialog.large_selection_title"))
-        self.setMinimumWidth(560)
-        self.setModal(True)
-        self.setStyleSheet(DARK_THEME_QSS)
 
         self._setup_ui()
 
@@ -54,11 +61,11 @@ class LargeSelectionDialog(QDialog):
         header.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         icon_lbl = QLabel("⚡")
-        icon_lbl.setStyleSheet("""
+        icon_lbl.setStyleSheet(f"""
             font-size: 30px;
             padding: 10px;
-            background-color: #1A1D24;
-            border: 1px solid #282C37;
+            background-color: {COLOR_BG_DARK};
+            border: 1px solid {COLOR_BORDER};
             border-radius: 12px;
         """)
         header.addWidget(icon_lbl)
@@ -67,20 +74,20 @@ class LargeSelectionDialog(QDialog):
         text_layout.setSpacing(4)
 
         title_lbl = QLabel(tr("dialog.large_selection_title"))
-        title_lbl.setStyleSheet("color: #F8FAFC; font-size: 16px; font-weight: 700;")
+        title_lbl.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-size: 16px; font-weight: 700;")
         text_layout.addWidget(title_lbl)
 
         track_title = self.track.title or self.track.file_name or tr("track.untitled")
         artist = self.track.artist or tr("track.unknown_artist")
-        track_info = QLabel(f"<b>{track_title}</b> — <span style='color: #94A3B8;'>{artist}</span>")
+        track_info = QLabel(f"<b>{track_title}</b> — <span style='color: {COLOR_TEXT_MUTED};'>{artist}</span>")
         track_info.setTextFormat(Qt.TextFormat.RichText)
-        track_info.setStyleSheet("color: #38BDF8; font-size: 13px;")
+        track_info.setStyleSheet(f"color: {COLOR_PRIMARY_HOVER}; font-size: 13px;")
         text_layout.addWidget(track_info)
 
         folder_name = self.track.folder_name or (Path(self.track.folder_path).name if self.track.folder_path else "")
         if folder_name:
             folder_lbl = QLabel(f"📁 {folder_name}")
-            folder_lbl.setStyleSheet("color: #64748B; font-size: 11px;")
+            folder_lbl.setStyleSheet(f"color: {COLOR_TEXT_DIM}; font-size: 11px;")
             text_layout.addWidget(folder_lbl)
 
         header.addLayout(text_layout, 1)
@@ -88,39 +95,39 @@ class LargeSelectionDialog(QDialog):
 
         # Question / Explication
         prompt_lbl = QLabel(tr("dialog.large_selection_prompt", count=f"{self.total_count:,}"))
-        prompt_lbl.setStyleSheet("color: #E2E8F0; font-size: 13px; font-weight: 600; margin-top: 4px;")
+        prompt_lbl.setStyleSheet(f"color: {COLOR_TEXT_SOFT}; font-size: 13px; font-weight: 600; margin-top: 4px;")
         prompt_lbl.setWordWrap(True)
         layout.addWidget(prompt_lbl)
 
         # Conteneur des boutons d'options
         options_frame = QFrame()
-        options_frame.setStyleSheet("""
-            QFrame {
+        options_frame.setStyleSheet(f"""
+            QFrame {{
                 background-color: #161920;
-                border: 1px solid #282C37;
+                border: 1px solid {COLOR_BORDER};
                 border-radius: 10px;
                 padding: 10px;
-            }
+            }}
         """)
         options_layout = QVBoxLayout(options_frame)
         options_layout.setSpacing(10)
 
-        button_qss = """
-            QPushButton {
+        button_qss = f"""
+            QPushButton {{
                 background-color: #1A1E26;
-                color: #F8FAFC;
+                color: {COLOR_TEXT_BRIGHT};
                 border: 1px solid #2D3342;
                 border-radius: 8px;
                 padding: 10px 14px;
                 font-size: 13px;
                 font-weight: 600;
                 text-align: left;
-            }
-            QPushButton:hover {
-                background-color: #1E293B;
-                border-color: #38BDF8;
-                color: #38BDF8;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {COLOR_BG_SLATE};
+                border-color: {COLOR_PRIMARY_HOVER};
+                color: {COLOR_PRIMARY_HOVER};
+            }}
         """
 
         # Option 1 : Lire uniquement le dossier du morceau
@@ -163,21 +170,21 @@ class LargeSelectionDialog(QDialog):
 
         btn_cancel = QPushButton(tr("common.cancel"))
         btn_cancel.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_cancel.setStyleSheet("""
-            QPushButton {
+        btn_cancel.setStyleSheet(f"""
+            QPushButton {{
                 background-color: transparent;
-                color: #94A3B8;
-                border: 1px solid #333846;
+                color: {COLOR_TEXT_MUTED};
+                border: 1px solid {COLOR_BORDER_LIGHT};
                 border-radius: 6px;
                 padding: 6px 18px;
                 font-size: 12px;
                 font-weight: 500;
-            }
-            QPushButton:hover {
-                background-color: #20242D;
-                color: #F8FAFC;
-                border-color: #475569;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {COLOR_BG_CARD};
+                color: {COLOR_TEXT_BRIGHT};
+                border-color: {COLOR_TEXT_DISABLED};
+            }}
         """)
         btn_cancel.clicked.connect(self.reject)
         bottom_layout.addWidget(btn_cancel)

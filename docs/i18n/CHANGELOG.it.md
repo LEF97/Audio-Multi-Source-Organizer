@@ -13,67 +13,116 @@ e questo progetto aderisce alla specifica [Semantic Versioning (SemVer)](https:/
 
 ---
 
+## [0.5.0] - 2026-11-18
+
+### Aggiunto
+
+- **Strumenti audio rapidi (pulsante ⚙ del Lettore) :** finestra a schede che raggruppa la scelta del dispositivo di output, del motore audio e della modalità di transizione (Standard, Gapless 0 ms, Crossfade), un **equalizzatore grafico a 10 bande** con preset (Piano, Rock, Jazz, Classica, Bassi potenziati, Voce, Elettronica, Personalizzato), la **normalizzazione ReplayGain**, la **velocità di riproduzione** e un **timer di spegnimento** (15, 30, 45 o 60 minuti, fine del brano corrente o della coda). Output, equalizzatore, ReplayGain e velocità sono disponibili solo con il motore `buffer`.
+- **Barra « Da seguire » :** il prossimo titolo viene visualizzato passando il mouse sul pulsante Avanti e un clic passa immediatamente.
+- **Guide di utilizzo :** pulsante aiuto su ogni pagina (Lettore, Blind Test, Playlist, Brani, Duplicati, Cartelle, Sorgenti e Libreria, Impostazioni, Diario) che apre una finestra di spiegazioni.
+- **Pagine "Suono" ed "Effetti" nelle impostazioni :** impostazioni di normalizzazione e velocità di riproduzione, e scelta degli effetti visivi disponibili in Lettore e Blind Test.
+- **Effetti visivi :** nuovo effetto "Warp Pilot" e atmosfera **Casuale** che cambia effetto ad ogni brano o a intervalli regolabili (15 s, 30 s, 1, 2 o 5 minuti), separatamente per Lettore e Blind Test.
+- **Integrazione con Windows :** integrazione nella barra delle applicazioni e icona nell'area di notifica (mostra o nascondi la finestra, titolo corrente, esci).
+- **Riepilogo dello scan cliccabile :** il risultato di uno scan rimanda agli elementi interessati.
+- **Pulsante Play/Pausa animato :** alone reattivo alle basse e transizione fluida tra riproduzione e pausa (blu a riposo, ambra in riproduzione).
+- **Larghezza del menu laterale memorizzata :** viene ripristinata all'avvio e non cambia più da una pagina all'altra, solo l'utente la modifica.
+
+- **Vista "Fonti e Libreria" :** nuova pagina dedicata che sostituisce il vecchio schermo delle statistiche, con vista globale o per fonte, indicatori di salute (fonti offline, errori di scansione, file o voci di playlist mancanti) e azioni rapide (modifica, riscansiona, elimina, apri nella libreria).
+- **Editor e riparazione delle playlist :** finestra dedicata per riorganizzare i brani (su/giù), eliminare voci, ricaricare dal disco, rilocare un file mancante o avviare una riparazione automatica (ricerca locale e poi database con punteggio di fiducia e anteprima delle proposte).
+- **Esportazione/salvataggio delle playlist :** salvataggio della coda corrente in `.m3u`, `.m3u8`, `.pls`, `.xspf` o `.wpl` con indicizzazione immediata nel database.
+- **Playlist raggruppate per album :** visualizzazione in cartelle virtuali per album nell'albero delle playlist (con cartella "album sconosciuto" per i brani senza album).
+- **Transizioni visive delle copertine :** 5 stili configurabili nelle impostazioni del lettore (Nessuna, Dissolvenza, Scorrimento, Zoom, Capovolgimento).
+- **Memorizzazione della geometria della finestra :** salvataggio e ripristino di dimensione, posizione e stato massimo all'avvio.
+
+### Modificato
+
+- **Feuilles CUE : enchaînement continu des pistes d'un même fichier (moteur `buffer`) :** il file è decodificato una sola volta per tutta una serie di tracce contigue, e i confini sono posizioni esatte nel buffer PCM calcolate dal CUE. Corregge la fine del brano precedente riprodotto all'inizio del successivo (seek impreciso su un MP3 a bitrate variabile). Il crossfade non viene applicato tra due tracce dello stesso file CUE (flusso già continuo).
+- **Scan in 3 fasi :** separazione chiara dell'inventario, dell'estrazione dei metadati e dell'analisi delle playlist con logging e progressione dettagliati.
+- **Identità visiva :** nuova icona AMSO (PNG alta risoluzione, ICO 7 dimensioni, ICNS 4 dimensioni).
+- **Tabella tracce più veloce :** visualizzazione delle celle per campo e etichette tradotte memorizzate in cache (circa il 40 % di tempo in meno per cella su 50 000 righe).
+- **Qualità interna :** schema SQLite dichiarativo (`db/schema.py`), colonne dei tabelle fattorizzate in `table_settings`, colori del tema centralizzati in `styles.py`, barra del titolo, controllo del volume e finestre di dialogo fattorizzati, `except` silenziosi mirati o registrati. Nessun cambiamento di comportamento visibile.
+
+### Corrigé
+
+- **Moteur \`buffer\` — vecchio titolo riprodotto al riavvio:** il \`QAudioSink\` conservava circa 185 ms di audio dopo una pausa o un arresto, il che riproduceva la fine del vecchio titolo dopo un Precedente/Successivo in pausa o un doppio clic dopo l'arresto. Il buffer viene ora svuotato al caricamento e alla riapertura dell'uscita.
+- **Libreria :** la barra superiore non si ridimensiona più, il breadcrumb è troncato da « … » e l'albero non ha più scorrimento orizzontale.
+
+- **Motore `buffer` — aggancio all'avvio di un titolo:** dopo una pausa, l'uscita audio veniva riaperta a freddo direttamente sul primo blocco decodificato, cosa che agganciava l'inizio di un suono tenuto (« TU-TUUU »). L'uscita è ora aperta non appena viene richiesta la riproduzione e riproduce il silenzio durante il decodifica del primo blocco: nessuna latenza aggiunta, sessione audio sempre unica.
+- **Motore `buffer` — pop al cambio manuale di titolo:** cambiare titolo durante la riproduzione interrompeva il suono precedente nel pieno dell'onda. Ora termina con un micro-fade di 10 ms (uscita lasciata aperta) e il titolo successivo entra con un fade della stessa durata. La transizione automatica e il motore `vlc_direct` non sono modificati.
+
+### Test
+
+- **Sortie factice de la TNR :** `CaptureOutput` segue l'interfaccia di `SinkOutput` (la TNR non rilevava più né la fine del brano né la transizione).
+- **Rilevamento dei pop nella TNR :** `tests/tnr/clicks.py` rileva i bordi di silenzio improvvisi e misura il salto di ampiezza in un punto di taglio noto, validato su segnali sintetici (`tests/test_tnr_clicks.py`).
+
 ## [0.4.1] - 2026-10-29
 
-### Added
-- **Non-regressione delle transizioni audio (TNR):** `scripts/tnr_transitions.bat` riproduce la fine di un brano e poi l'inizio del successivo (Sirius → Eye in the Sky di default) nel lettore reale, con un output audio fittizio, e confronta la registrazione con una costruzione ideale (identica all'esempio quasi in gapless, dissolvenza a potenza uguale in crossfade, assenza di interruzioni, sessione audio unica).
+### Aggiunto
+
+- **Non-regressione delle transizioni audio (TNR):** `scripts/tnr_transitions.bat` riproduce la fine di un brano e poi l'inizio del successivo (Sirius → Eye in the Sky di default) nel lettore reale, con un output audio fittizio, e confronta la registrazione con una costruzione ideale (identica all'esempio per gapless, dissolvenza a potenza uguale per crossfade, assenza di interruzione, sessione audio unica).
 - **Log della TNR:** ogni esecuzione scrive `tests/tnr/log/tnr_AAAA-MM-JJ_HH-MM-SS.log` (versione, commit, tracce, risultati dettagliati, messaggi Qt e log del lettore); la cartella è ignorata da git.
-- **Log di avvio:** `startup.log` nella cartella dati cronometra ogni fase dell'avvio, il ripristino della sessione e i thread ancora attivi alla chiusura.
+- **Log all'avvio:** `startup.log` nella cartella dati cronometra ogni fase dell'avvio, il ripristino della sessione e i thread ancora attivi alla chiusura.
 - **Log di crash nativo:** `crash.log` nella cartella dati (`%APPDATA%/AMSO/`) riceve lo stack di un crash di LibVLC o di Qt.
-- **Stato di libVLC:** le impostazioni del lettore mostrano la versione di libVLC effettivamente caricata e la sua provenienza (copia AMSO o VLC del sistema), con il percorso nel tooltip.
+- **Stato di libVLC:** le impostazioni del lettore mostrano la versione di libVLC effettivamente caricata e la sua origine (copia AMSO o VLC del sistema), con il percorso nel tooltip.
 - **Preparazione Linux e macOS:** il download automatico di VLC (archivio Windows) è riservato a Windows; altrove, AMSO indica come installare VLC (gestore di pacchetti, VLC.app). Su macOS, VLC.app è anche rilevato in `~/Applications`.
 - **Versioni Linux e macOS sperimentali (non testate):** `release.yml` produce un archivio `.tar.gz` e un `.AppImage` (Linux x86_64), oltre a un `.dmg` non firmato per macOS Apple Silicon e Intel, tramite `scripts/package_unix.py`. VLC deve essere installato (gestore di pacchetti o VLC.app) e, su Linux, le librerie `libpulse0`, `libxcb-cursor0` e `libxkbcommon-x11-0`. Il motore audio `buffer` e la non-regressione delle transizioni sono stati validati solo su Windows: i feedback (`startup.log`, `crash.log`) sono benvenuti. Il CI Linux ora installa `libpulse0` (QtMultimedia falliva all'import) e il deployment itch.io del workflow avviene solo su un tag.
 
-### Modifiche
-- **Avvio :** la tabella « Tutti i brani » non viene più caricata (fino a ~3 volte 50.000 brani) prima dell'apertura della sua pagina; il contatore della barra rimane esatto tramite una query `COUNT`.
+### Modificato
+
+- **Avvio :** la tabella « Tutti i brani » non è più caricata (fino a 3 volte ~50 000 brani) prima dell'apertura della sua pagina; il contatore della barra rimane esatto tramite una query `COUNT`.
 - **Avvio :** lo schermo di caricamento viene visualizzato prima dell'importazione della finestra principale e del database, numpy non viene più caricato che in background una volta che la finestra è visibile, l'icona e il logo vengono memorizzati nella cache.
 
-### Corretti
-- **Avvio senza rete:** nessun sondaggio disco (`exists`, `isdir`) viene più eseguito su un percorso di rete (UNC o unità mappata) dal thread dell'interfaccia all'avvio (copertina, monitoraggio cartelle, ripristino sessione); una condivisione irraggiungibile non blocca più la finestra. La copertina di un brano di rete viene ricontrollata ogni 30 s in background.
+### Corrigé
+
+- **Avvio senza rete:** nessun sondaggio disco (`exists`, `isdir`) viene più eseguito su un percorso di rete (UNC o unità mappata) dal thread dell'interfaccia all'avvio (copertina, monitoraggio cartella, ripristino sessione); una condivisione irraggiungibile non blocca più la finestra. La copertina di un brano di rete viene ricontrollata ogni 30 s in background.
 - **Chiusura:** correzione di « QThread: Destroyed while thread is still running » (segnale `finished` del worker delle copertine che mascherava quello di `QThread`, thread delle copertine non attesi).
 - **Motore `buffer` — cambio di modalità di transizione:** dopo un cambio di modalità nelle impostazioni del lettore, un seek seguito da Riproduzione non avviava più nulla (il reset lasciava il motore senza uscita audio, e il lettore passava erroneamente al percorso VLC). La sessione audio viene ora ricreata immediatamente. Il brano in corso riparte dall'inizio dopo un cambio di motore o di modalità. Infine, riprendere un titolo caricato in pausa (dopo un reset o un seek a fermo) riavvia il timer di trasferimento del motore `buffer`: senza di esso, Riproduzione non produceva alcun suono. Il decoder non emette più i blocchi di un decoding sostituito nel frattempo (reset seguito da Riproduzione, seeks ravvicinati): potevano falsare la posizione o impedire l'avvio del motore `buffer`.
-- **Blind Test con il motore `buffer`:** Riproduzione, Avanti e Indietro non emettevano alcun suono (il brano rimaneva caricato in pausa, era necessario ripremere Riproduzione): il cambio di brano riavviava la manovella, che riposizionava il brano prima dell'arrivo del primo blocco decodificato. La manovella non riposiziona più un brano che il lettore ha appena avviato da solo.
+- **Blind Test con il motore `buffer`:** Riproduzione, Avanti e Indietro non emettevano alcun suono (il brano rimaneva caricato in pausa, era necessario ripremere Riproduzione): il cambio di brano riavviava la manovella, che riposizionava il brano prima dell'arrivo del primo blocco decodato. La manovella non riposiziona più un brano che il lettore ha appena avviato da solo.
 - **Motore `buffer` — suono alterato spostando o ridimensionando la finestra:** la scheda audio era alimentata da un timer del thread dell'interfaccia (buffer di 185 ms) ; questo thread, bloccato dal ciclo di spostamento di Windows (fino a 400 ms misurati), la lasciava senza dati. Il `QAudioSink` passa in modalità pull in un thread audio dedicato (`audio_output.py`): il buffer di memoria, il gapless e il crossfade non sono modificati, e il motore `vlc_direct` non è coinvolto.
 - **Traduzioni:** una chiave assente dalla lingua e dall'inglese (chiave recente, presente solo in `fr.json`) veniva visualizzata con il suo nome tecnico; il fallback passa ora per il francese. `sync_translations.py` rileva le traduzioni in cui il modello ha ripreso il testo francese seguito da una trascrizione (« testo (romaji) »), le ritraduce, rifiuta queste risposte e non invia più l'inglese a Ollama.
 - **Testo hardcoded:** la pagina Statistiche (« brani », « Go », « h »), le formati dei file (Ko, Mo, Go) e il suffisso « s » delle durate del Blind Test passano attraverso chiavi di traduzione.
 - **Testo hardcoded (continua):** i messaggi dello scanner, gli errori del lettore e del decoder, il download di VLC, « Stereo / Mono », il tooltip « File non trovato », « SISTEMA PRONTO » e la schermata di avvio passano attraverso chiavi di traduzione. Le 42 lingue sono risincronizzate (Ollama), comprese 15 traduzioni di cui erano scomparsi i marcatori `{count}` / `{name}`.
 - **Diario attività tradotto:** « Sincronizzazione riuscita », « Durata », « Brani aggiunti », i livelli (SUCCESS…) e le caselle di esportazione venivano visualizzati in francese indipendentemente dalla lingua. I messaggi sono ora registrati sotto forma di chiave e parametri (nuova colonna `i18n`, aggiunta senza toccare le voci esistenti) e tradotti all'visualizzazione. Le voci già registrate rimangono in francese.
-- **Moteur `buffer` — « Suivant » manuel :** con la traccia successiva precaricata (Gapless 0 o Crossfade), un « Suivant » avviava bene la traccia successiva ma manteneva la posizione della traccia precedente (es. 1:00). Il raccord al sample vicino è ora riservato alla fine naturale della traccia; un « Suivant » manuale riavvia la successiva da 0.
-- **Moteur `buffer` — crossfade :** lo sfumare è ora mixato durante il decoding (calcolato per tutta la durata richiesta, vettorizzato). Non interrompe più la fine del titolo in uscita, non accorcia più lo sfumare e non provoca più scatti (il vecchio calcolo campione per campione bloccava il thread dell'interfaccia).
-- **Blind Test con il motore `buffer` :** correzione di una ricorsione infinita (`track_changed` ↔ `seek_ratio`) che chiudeva l'applicazione; gli sfumature di volume del Blind Test agiscono ora anche su questo motore.
-- **Décodeur audio (`amem`) :** la fine dello stream annunciata da VLC interrompeva un `QTimer` dal thread eventi di VLC (`QObject::killTimer: Timers cannot be stopped from another thread`, comportamento indefinito per ogni traccia); ora viene inoltrata al thread Qt.
-- **Moteur `buffer` — mode « Pas de fondu » :** la sessione audio hardware non viene più chiusa e riaperta tra due titoli.
+- **Motore `buffer` — « Avanti » manuale:** con la traccia successiva precaricata (Gapless 0 o Crossfade), un « Avanti » avvierebbe bene la traccia successiva ma manteneva la posizione della traccia precedente (es. 1:00). La giunzione campione per campione è ora riservata alla fine naturale della traccia; un « Avanti » manuale riavvia la successiva da 0.
+- **Motore `buffer` — crossfade:** il dissolvenza incrociata è ora mixata durante il decoding (calcolata per tutta la durata richiesta, vettorializzata). Non interrompe più la fine del titolo in uscita, non accorcia più il crossfade e non provoca più scatti (il vecchio calcolo campione per campione bloccava il thread dell'interfaccia).
+- **Blind Test con il motore `buffer`:** correzione di una ricorsione infinita (`track_changed` ↔ `seek_ratio`) che chiudeva l'applicazione; i dissolvenze di volume del Blind Test agiscono ora anche su questo motore.
+- **Decoder audio (`amem`) :** la fine dello stream annunciata da VLC interrompeva un `QTimer` dal thread eventi di VLC (`QObject::killTimer: Timers cannot be stopped from another thread`, comportamento indefinito per ogni traccia) ; ora viene inoltrata al thread Qt.
+- **Motore `buffer` — modalità « Senza crossfade » :** la sessione audio hardware non viene più chiusa e riaperta tra due titoli.
+- **Motore `vlc_direct` — pausa :** `pause()` metteva in pausa solo il motore `buffer` (sempre istanziato) e lasciava suonare LibVLC ; aprire il Blind Test durante la riproduzione del Player non interrompeva quindi la musica.
+- **Schermata di caricamento :** l'etichetta « Connessione al database » rimaneva visualizzata durante gli import (~5 s) ; ora indica « Avvio dell'applicazione... ».
 
 ---
 
 ## [0.4.0] - 2026-10-25
 
 ### Aggiunto
-- **Supporto per i file CUE (`.cue`):**
+
+- **Supporto dei fogli CUE (`.cue`):**
   - Un file `.cue` appare nell'albero come una cartella virtuale (icona 💿) contenente i suoi brani con titolo, artista e durata; il file audio originale rimane leggibile normalmente.
-  - Riproduzione di un brano CUE come porzione del file (inizio `INDEX 01`, fine all'inizio del brano successivo, ultimo brano fino alla fine del file) con posizione e durata proprie del brano, spostamento nel brano e collegamento gapless / crossfade tra porzioni (solo motore a buffer continuo; il motore `vlc_direct` visualizza un messaggio esplicativo).
-  - Tolleranza per i file mal formati (riga `FILE` che punta al `.cue` stesso: fallback sul file audio dello stesso nome), più `FILE` per file, codifiche UTF-8 / CP1252.
-- **Supporto esteso per 43 lingue internazionali:**
+  - Riproduzione di un brano CUE come porzione del file (inizio `INDEX 01`, fine all'inizio del brano successivo, ultimo brano fino alla fine del file) con posizione e durata proprie del brano, spostamento nel brano e collegamento gapless / crossfade tra porzioni (motore a buffer continuo solo; il motore `vlc_direct` mostra un messaggio esplicativo).
+  - Tolleranza ai fogli mal formati (riga `FILE` che punta al `.cue` stesso: fallback sul file audio dello stesso nome), più `FILE` per foglio, codifiche UTF-8 / CP1252.
+- **Supporto esteso di 43 lingue internazionali:**
   - Integrazione di 38 nuove lingue con le loro etichette native nel selettore di lingua (`amso/core/i18n.py`).
   - Traduzione automatizzata e parità integrale (401 chiavi per lingua) tramite l'IA locale Ollama (`mistral:latest`).
   - Script di sincronizzazione globale con un clic: `scripts/sync_all_languages_ollama.bat`.
-- **Modalità di diagnostica visiva delle traduzioni (`⟦...⟧`) :**
-  - Aggiunta dell'argomento CLI `--debug-i18n` e dello script `run_debug_i18n.bat` che racchiude ogni testo tradotto tra i tag `⟦...⟧` per individuare immediatamente sullo schermo i testi dinamici e isolare eventuali stringhe hardcoded.
+- **Mode di diagnostica visiva delle traduzioni (`⟦...⟧`) :**
+  - Aggiunta dell'argomento CLI `--debug-i18n` e dello script `run_debug_i18n.bat` che racchiudono ogni testo tradotto con i tag `⟦...⟧` per individuare immediatamente sullo schermo i testi dinamici e isolare eventuali stringhe hardcoded.
 - **Strumento di audit e integrità i18n (`scripts/audit_translations.py`) :**
-  - Rilevamento automatico della parità delle 43 lingue, rilevamento di duplicati di etichette da fondere e identificazione delle chiavi orfane tramite `scripts/audit_translations.bat`.
+  - Rilevamento automatico della parità delle 43 lingue, rilevamento di duplicati di etichette da fondere e identificazione di chiavi orfane tramite `scripts/audit_translations.bat`.
 - **Selettore di architettura audio nelle Impostazioni / Riproduzione perfetta in modalità gapless 0 (rimangono alcune anomalie in modalità cross fade) :**
-  - Scelta trasparente in `Paramètres > Lecteur` tra:
+  - Scelta trasparente in `Impostazioni > Lettore` tra:
     - *Buffer continuo in memoria (QAudioSink / WASAPI)* : flusso unico ininterrotto verso la scheda audio, transizioni gapless 0 e dissolvenza senza interruzione hardware.
-- *Uscita diretta LibVLC (doppio lettore hardware)* : motore hardware classico pilotato direttamente da LibVLC.
-- **Telaio di validazione qualità unificato (Quality Gate) :** Creazione dello script `scripts/verify.py` e del suo wrapper radice `verify.bat` che esegue consecutivamente il formattamento (Ruff), il linter (Ruff check), il tipaggio rigoroso (Mypy senza mascheramento), il controllo dei limiti di dimensione dei file e i test automatizzati (Pytest).
+    - *Uscita diretta LibVLC (doppio lettore hardware)* : motore hardware classico pilotato direttamente da LibVLC.
+- **Harness di validazione qualità unificato (Quality Gate) :** Creazione dello script `scripts/verify.py` e del suo wrapper radice `verify.bat` che esegue consecutivamente il formattamento (Ruff), il linter (Ruff check), il tipaggio rigoroso (Mypy senza mascheramento), il controllo dei limiti di dimensione dei file e i test automatizzati (Pytest).
 
-### Fixed
-- **Playliste e fogli CUE scoperti: registro di attività e aggiornamento dell'albero:** un'analisi che aggiungeva solo playlist (M3U, PLS, XSPF, WPL, CUE) non era menzionata da nessuna parte e non aggiornava l'albero delle cartelle (il nuovo nodo appariva solo dopo un riavvio). Il registro indica ora il numero di playlist/fogli CUE aggiunti, aggiornati o eliminati (con i primi nomi), e l'albero si aggiorna alla fine dell'analisi.
-- **Motore audio nativo WASAPI & Risoluzione dell'interruzione prematura alla fine del brano:**
-  - *Uscita audio nativa Windows WASAPI (`mmdevice`)*: eliminazione del forzare `--aout=directsound` su Windows. Il modulo DirectSound di VLC troncava in modo anomalo gli ultimi 1,3-1,4 secondi dei file audio (tagliando la fine di *Sirius*). L'allineamento su `mmdevice` consente a LibVLC di trasmettere l'intero flusso audio fino all'ultimo millisecondo in 32-bit float.
-  - *Rimozione dei bops e artefatti di click rapidi*: eliminazione dei tagli artificiali di volume a 0 durante i `seek` e `stop` che causavano discontinuità di fase e collisioni di timer asincroni durante i click rapidi. Il riposizionamento temporale (`set_time`) e l'arresto vengono ora eseguiti in modo nativo e fluido.
-  - *Rimozione dei micro-glitch alla fine del brano / passaggi calmi*: arresto del polling permanente del volume nel ciclo di tick, evitando di inviare continui e ripetitivi aggiustamenti di guadagno hardware durante la riproduzione.
-- **Precisione millimetrica delle transizioni & Collegamenti fluidi (Gapless & Senza dissolvenza) :**
+### Corrigé
+
+- **Playliste e schede CUE scoperte: diario di attività e aggiornamento dell'albero:** un'analisi che aggiungeva solo playlist (M3U, PLS, XSPF, WPL, CUE) non era menzionata da nessuna parte e non aggiornava l'albero delle cartelle (il nuovo nodo appariva solo dopo un riavvio). Il diario indica ora il numero di playlist/schede CUE aggiunte, aggiornate o eliminate (con i primi nomi), e l'albero si aggiorna alla fine dell'analisi.
+- **Motore audio nativo WASAPI e Risoluzione della interruzione prematura di fine traccia:**
+  - *Output audio nativo Windows WASAPI (`mmdevice`)*: eliminazione del forzare `--aout=directsound` sotto Windows. Il modulo DirectSound di VLC troncava in modo anomalo gli ultimi 1,3-1,4 secondi dei file audio (tagliando la fine di *Sirius*). L'allineamento su `mmdevice` permette a LibVLC di trasmettere l'intero flusso audio fino all'ultimo millisecondo in 32-bit float.
+  - *Rimozione dei bops e degli artefatti di click rapido*: eliminazione delle interruzioni artificiali di volume a 0 durante i `seek` e `stop` che causavano discontinuità di fase e collisioni di timer asincroni durante i click rapidi. Il riposizionamento temporale (`set_time`) e l'arresto vengono ora eseguiti in modo nativo e fluido.
+  - *Rimozione dei micro-glitch alla fine della traccia / passaggi calmi*: arresto del polling permanente del volume nel ciclo di tick, evitando di inviare continuamente regolazioni di guadagno hardware ripetitive durante la riproduzione.
+- **Precisione millimetrica delle transizioni e transizioni fluide (Gapless e Senza dissolvenza):**
   - *Eliminazione di scatti e pop all'avvio del brano successivo* : soppressione del forzamento del volume a 0 sul secondo lettore in standby, che causava una interruzione globale della sessione sotto WASAPI e poi un transitorio impulsivo ("scatto") allo sblocco della pausa. Il secondo lettore viene precaricato in pausa (`:start-paused`) al volume nominale senza alterare il brano corrente.
   - *Collegamento senza interruzioni (Gapless 0)* : considerazione esatta della latenza del pipeline LibVLC (`vlc_gapless_latency_ms`, 250 ms di default) per sbloccare il lettore successivo prima della fine esatta del brano corrente, garantendo una continuità musicale ininterrotta senza alcun silenzio tra brani collegati (*Sirius* -> *Eye In The Sky*).
   - *Collegamento naturale in modalità Crossfade* : soppressione del ritardo artificiale di 400 ms dopo `State.Ended`, consentendo una transizione immediata e pulita alla fine della riproduzione del brano precedente.
@@ -96,16 +145,16 @@ e questo progetto aderisce alla specifica [Semantic Versioning (SemVer)](https:/
     - Qualsiasi modifica nelle Impostazioni del motore audio (*VLC diretto* vs *Buffer continuo*) o del modo di transizione (*Nessun dissolvenza*, *Gapless 0*, *Crossfade*) interrompe immediatamente la riproduzione in corso e ripristina completamente i flussi (distruzione pulita di `QAudioSink`, svuotamento dei buffer PCM in memoria, arresto dei decoder, disconnessione dei media LibVLC, annullamento di tutti i timer di transizione/dissolvenza).
     - La traccia attiva rimane selezionata in pausa a 00:00 pronta per essere avviata con la nuova configurazione senza la necessità di riavviare l'applicazione.
 
+### Modificato
 
-### Modifiche
 - **Suddivisione modulare completa dell'architettura (< 500 righe per file):**
-  - Obiettivo raggiunto al 100 %: **0 file > 500 righe** su tutto il codice base AMSO (contro 8 file sopra la soglia inizialmente).
+  - Obiettivo raggiunto al 100 %: **0 file > 500 righe** nell'intera base di codice AMSO (contro 8 file sopra la soglia inizialmente).
   - Alleggerimento di `main_window.py` (~1 500 -> 357 righe) tramite mixin specializzati in `amso/ui/pages/`.
   - Scomposizione di `player_service.py` (~1 400 -> 329 righe) con l'estrazione di `player_transport.py`, `player_queue.py`, `player_transitions.py` e `windows_audio.py`.
   - Divisione di `blind_test_view.py` (864 -> 447 righe) in `round_controller.py` e `compat.py`.
   - Divisione di `player_view.py` (693 -> 316 righe) in `player_ui_builder.py`.
   - Divisione di `settings_player.py` (668 -> 345 righe) in `settings_player_effects.py`.
-  - Suddivisione di `theme.py` (633 -> 20 righe) in `resources.py`, `qss_base.py` e `qss_components.py`.
+  - Divisione di `theme.py` (633 -> 20 righe) in `resources.py`, `qss_base.py` e `qss_components.py`.
   - Suddivisione di `models.py` (631 -> 118 righe) in `models_base.py`, `folder_track_model.py` e `playlist_table_model.py`.
   - Suddivisione di `metadata.py` (621 -> 420 righe) in `cover_art.py`.
   - Suddivisione di `playlist_view.py` (603 -> 284 righe) in `playlist_ui_builder.py` e `playlist_table_view.py`.
@@ -113,16 +162,17 @@ e questo progetto aderisce alla specifica [Semantic Versioning (SemVer)](https:/
   - Suddivisione di `folders_page.py` (~970 -> 406 righe) in `folders_tree.py` e `folders_trash.py`.
 - **Razionalizzazione e fusione dei duplicati:**
   - Centralizzazione dei componenti condivisi (`ClickableSlider`, `EffectContainer`, `EffectsViewMixin`).
-- Fattorizzazione delle etichette UI generiche sotto il prefisso condiviso `common.*` (`common.cancel`, `common.close`, `common.refresh`, `common.later`, `common.open_explorer`, `table.col_filename`, `table.col_source`, `table.col_folder_name`).
-- Normalizzazione obbligatoria delle fine riga Windows CRLF (`\r\n`) su tutti i file `.bat`.
+  - Fattorizzazione delle etichette UI generiche sotto il prefisso condiviso `common.*` (`common.cancel`, `common.close`, `common.refresh`, `common.later`, `common.open_explorer`, `table.col_filename`, `table.col_source`, `table.col_folder_name`).
+- Normalizzazione obbligatoria delle fine riga Windows CRLF (\r\n) su tutti i file .bat.
 
-### Corretti
+### Corrigé
+
 - **Armonizzazione ed eliminazione dei residui di traduzione nelle 41 lingue:**
-  - Eradicazione di oltre 1 400 chiavi rimaste in francese o in inglese predefinito tramite il nuovo strumento `scripts/fix_residual_translations.py` (`scripts/fix_residual_translations.bat`).
+  - Eradicazione di oltre 1.400 chiavi rimaste in francese o in inglese predefinito tramite il nuovo strumento `scripts/fix_residual_translations.py` (`scripts/fix_residual_translations.bat`).
   - Correzione delle etichette di atmosfera visiva e degli effetti grafici (`player.visual_effect`, `effects.*`), ora tradotti nativamente in tutte le lingue.
   - Risoluzione dei placeholder di ricerca ibridi (`topbar.search_placeholder`) che mescolano lingua di destinazione e inglese sugli schermi Duplicati, Sorgenti e Navigazione.
   - Traduzione fedele dei titoli di configurazione delle sorgenti (`settings.page_sources_title`, `settings.section_sources_title`) e della configurazione generale (`settings.page_title`).
-  - Traduzione completa del pulsante condiviso di aggiornamento (`common.refresh` : « 🔄 刷新 » in cinese, ecc.) invece di un residuo "Actualiser" francese nei log.
+  - Traduzione completa del pulsante di aggiornamento condiviso (`common.refresh` : « 🔄 刷新 » in cinese, ecc.) invece di un residuo francofono « Actualiser » nei log.
   - Localizzazione completa delle sezioni di supporto, donazioni e link ufficiali della pagina Chi siamo (`dialog.about_*`, `update.btn_support`).
 
 ---
@@ -130,19 +180,20 @@ e questo progetto aderisce alla specifica [Semantic Versioning (SemVer)](https:/
 ## [0.3.0] - 2026-10-18
 
 ### Aggiunto
+
 - **Supporto completo per i file di playlist** :
   - Indicizzazione automatica dei formati di playlist: `.m3u`, `.m3u8`, `.pls`, `.xspf` e `.wpl`.
   - Integrazione nell'albero "Per cartella" sotto forma di nodi dedicati che mostrano l'icona **`🎶`**.
   - Rispetto dell'ordine di ascolto sequenziale definito nella playlist (colonna `#` con l'ordine 1, 2, 3...) senza forzare un ordinamento alfabetico automatico.
-  - Gestione e rilevamento visivo di brani mancanti o spostati: indicazione tramite un prefisso **`⚠️`**, colorazione di avviso delicata e tooltip descrittivo, senza bloccare la riproduzione degli altri brani.
+  - Gestione e rilevamento visivo di brani mancanti o spostati: indicazione tramite un prefisso **`⚠️`**, colorazione di avvertimento delicata e tooltip descrittivo, senza bloccare la riproduzione degli altri brani.
   - Menu contestuale arricchito sui nodi di playlist: riproduzione diretta, aggiunta alla coda e apertura della posizione del file playlist nell'Esplora file di Windows.
-- **Dolce dissolvenza d'ingresso (*Fade-in*)** :
+- **Dolce ingresso sonoro (*Fade-in*)** :
   - Transizione graduale del volume dallo 0% al volume impostato in 1 secondo all'avvio o alla ripresa di una riproduzione audio (fuori modalità Blind Test).
 - **Stabilità e fluidità della sincronizzazione** :
   - Rimozione della finestra di dialogo bloccante « Scan already running » a favore di una sequenza silenziosa in coda.
   - Mantenimento della selezione e non ricaricamento inutile dell'albero delle cartelle se non viene rilevato alcun cambiamento di cartella.
 - **Visualizzazione dinamica delle copertine** :
-  - Correzione del ridimensionamento e del riposizionamento della copertina durante il passaggio a schermo intero/finestra o il ridimensionamento libero della finestra.
+  - Correzione del ridimensionamento e del riposizionamento della copertina durante il passaggio a schermo intero / finestra o del ridimensionamento libero della finestra.
 
 ---
 
@@ -150,38 +201,44 @@ e questo progetto aderisce alla specifica [Semantic Versioning (SemVer)](https:/
 
 ### Aggiunto
 
-### Mode Blind Test & Sezione Giochi
-- **Nuovo scomparto « 🎲 Giochi »** : Categoria dedicata e collassabile nella barra laterale che ospita la vista Blind Test (localizzata in 5 lingue).
-- **Esperienza di gioco immersiva** : Contatore visivo dinamico al centro della copertina mascherata, rivelazione progressiva con dissolvenza dolce e sequenza automatica dei round.
-- **Gestione acustica avanzata** : Regolazione precisa dei tempi di ricerca, di scoperta e della dissolvenza sonora in uscita (*fade-out*).
-- **Configurazione dedicata** : Spostamento delle impostazioni del Blind Test in `Parametri > Lettore`.
+### Modalità Blind Test & Sezione Giochi
 
-### Ergonomia e Gestione Playlist
-- **Riprogettazione della modalità Casuale (Shuffle)** : Mescolamento visivo completo della coda che preserva il brano attivo, pulsante d'azione diretta « 🎲 Mescola i brani » e ripristino fedele dell'ordine originale non appena disattivato.
-- **Riorganizzazione tramite Drag-and-Drop** : Riordinamento fluido dei brani con il mouse nella griglia senza interrompere la riproduzione.
-- **Backup asincrono v2** : Formato compatto tramite identificatori SQLite che riduce l'occupazione del disco del 99 % (accesso non bloccanti, 60 FPS costanti).
+- **Nuovo scomparto « 🎲 Giochi »** : Categoria dedicata a fisarmonica nella barra laterale che ospita la vista Blind Test (localizzata in 5 lingue).
+- **Esperienza di gioco immersiva** : Contatore visivo dinamico al centro della copertina mascherata, rivelazione progressiva con dissolvenza dolce e sequenziamento automatico dei round.
+- **Gestione acustica avanzata** : Regolazione precisa dei tempi di ricerca, di scoperta e del dissolvenza sonora di uscita (*fade-out*).
+- **Configurazione dedicata** : Spostamento delle impostazioni del Blind Test in `Paramètres > Lecteur`.
+
+### Ergonomia & Gestione Playlist
+
+- **Riprogettazione della modalità Casuale (Shuffle)** : Mescolamento visivo completo della coda che preserva la traccia attiva, pulsante di azione diretta « 🎲 Mescola i titoli » e ripristino fedele dell'ordine originale non appena disattivato.
+- **Riorganizzazione tramite Drag-and-Drop** : Riordinamento fluido dei brani con il mouse nella tabella senza interrompere la riproduzione.
+- **Backup asincrono v2** : Formato compatto tramite identificatori SQLite che riduce l'impronta sul disco del 99 % (accesso non bloccante, 60 FPS costanti).
 - **Comportamento « No Autoplay »** : L'aggiunta di brani alla coda non forza più l'avvio prematuro della riproduzione.
 
-### Gestione libreria & Cestino intelligente
-- **Eliminazione a doppio livello** : Scelta tra la semplice rimozione della libreria (con esclusione memorizzata per futuri scan) e l'eliminazione fisica nel Cestino Windows.
+### Gestione della libreria & Cestino intelligente
+
+- **Eliminazione a doppio livello** : Scelta tra la semplice rimozione della libreria (con esclusione memorizzata per futuri scan) e l'eliminazione fisica nel Cestino di Windows.
 - **Vista dedicata « 🗑️ Cestino »** : Consultazione dei brani esclusi e ripristino con un clic con reintegrazione automatica nel database.
-- **Struttura ad albero chiarificata** : Distinzione visiva tra fonti locali e cloud, struttura ad albero ripiegata di default all'avvio e menu contestuali uniformati.
+- **Struttura chiarita** : Distinzione visiva tra fonti locali e cloud, struttura ad albero ripiegata di default all'avvio e menu contestuali uniformati.
 
 ### Stabilità del motore audio (LibVLC) & Prestazioni
-- **Eliminazione dei blocchi critici** : Rimozione del deadlock tra il thread C interno di LibVLC e il ciclo eventi Qt (fine dei blocchi dell'interfaccia e degli schermi bianchi).
-- **Robustezza delle transizioni** : Blocco anti-ri-entrata sui cambi rapidi di traccia e risoluzione dei blocchi durante i rewind successivi (« Brano precedente »).
-- **Controlli del volume affidabili** : Integrazione del cursore del volume nella barra superiore del lettore e rimozione dei conflitti di attenuazione sonora DirectSound.
 
-### Interfaccia e Link ufficiali
-- **Modernizzazione della pagina "Chi siamo"** : Intestazione riallineata, analizzatore di spettro retro interattivo integrato sotto il testo e aggiunta dei pulsanti ufficiali (Ko-fi, GitHub Sponsors, GitHub, Itch.io).
-- **Internazionalizzazione completa** : Sincronizzazione completa di tutte le etichette e opzioni in 5 lingue (FR, EN, ES, DE, IT).
+- **Eliminazione dei blocchi critici** : Eliminazione del deadlock tra il thread C interno di LibVLC e il ciclo eventi Qt (fine dei blocchi dell'interfaccia e degli schermi bianchi).
+- **Robustezza delle transizioni** : Blocco anti-ri-ingresso sui rapidi cambi di traccia e risoluzione dei blocchi durante i successivi ritorni indietro (« Brano precedente »).
+- **Controlli del volume affidabili** : Integrazione del cursore del volume nella barra superiore del lettore e eliminazione dei conflitti di attenuazione audio DirectSound.
 
-### Fixed
-- **Risoluzione degli errori `disk I/O error` (SQLite su Windows)**: configurazione della modalità WAL una sola volta all'inizializzazione del file del database, aggiunta di `PRAGMA busy_timeout = 30000`, archiviazione temporanea in memoria RAM (`PRAGMA temp_store = MEMORY`) e meccanismo di riprova automatico con backoff esponenziale per eliminare i conflitti di blocco dei file durante gli scans multithread.
-- **Rimozione delle allerte modali bloccanti in background** : le sincronizzazioni automatiche in background non mostrano più un dialogo modale intrusivo in caso di errore transitorio, ma registrano correttamente l'allerta nel log di attività e nella barra di stato cliccabile.
-- **Volume audio troppo basso all'avvio** : eliminazione di una condizione di gara durante l'inizializzazione del motore di riproduzione VLC e neutralizzazione dell'attenuazione automatica (*ducking*) del mixer audio di Windows.
-- **Visualizzazione del logo ufficiale nell'eseguibile Windows** : correzione della risoluzione multi-percorso delle risorse incorporate PyInstaller (`sys._MEIPASS`) per visualizzare il logo AMSO ad alta definizione nella barra laterale e nella pagina Informazioni anziché l'icona di riserva 🎵.
-- **Ripristino della playlist e isolamento ermetico dei test** : eliminazione di un inquinamento del profilo utente dove l'esecuzione dei test automatici poteva sovrascrivere `saved_playlist.json` con tracce fittizie (*Track 1, Track 2, Track 3*) e una posizione temporale errata (14:10 su un brano di 3:00). Isolamento completo di `AMSO_DATA_DIR`, `AMSO_PLAYLIST_PATH` e `AMSO_DB_PATH` nell'ambiente di test, filtraggio automatico delle tracce locali fantasma o irreperibili durante il caricamento della playlist, e sicurezza della posizione iniziale per non superare mai la durata del brano.
+### Interfaccia & Collegamenti ufficiali
+
+- **Modernizzazione della pagina « Chi siamo »** : Intestazione riallineata, analizzatore di spettro retro interattivo integrato sotto il testo e aggiunta dei pulsanti ufficiali (Ko-fi, GitHub Sponsors, GitHub, Itch.io).
+- **Internazionalizzazione completa** : Sincronizzazione completa di tutti i label e le opzioni in 5 lingue (FR, EN, ES, DE, IT).
+
+### Corrigé
+
+- **Risoluzione degli errori `disk I/O error` (SQLite su Windows)**: configurazione della modalità WAL una sola volta all'inizializzazione del file del database, aggiunta di `PRAGMA busy_timeout = 30000`, archiviazione temporanea in memoria RAM (`PRAGMA temp_store = MEMORY`) e meccanismo di riprova automatiche con backoff esponenziale per eliminare i conflitti di blocco dei file durante le scansioni multithread.
+- **Rimozione degli avvisi modali bloccanti in background**: le sincronizzazioni automatiche in background non mostrano più un popup modale intrusivo in caso di errore transitorio, ma registrano correttamente l'avviso nel registro attività e nella barra di stato cliccabile.
+- **Volume audio troppo basso all'avvio**: eliminazione di una race condition durante l'inizializzazione del motore di riproduzione VLC e neutralizzazione dell'attenuazione automatica (*ducking*) del mixer audio di Windows.
+- **Visualizzazione del logo ufficiale nell'eseguibile Windows**: correzione della risoluzione multi-percorso delle risorse incorporate PyInstaller (`sys._MEIPASS`) per visualizzare il logo AMSO ad alta definizione nella barra laterale e nella pagina Info al posto dell'icona di fallback 🎵.
+- **Ripristino della playlist e isolamento ermetico dei test**: eliminazione di una contaminazione del profilo utente dove l'esecuzione dei test automatici poteva sovrascrivere `saved_playlist.json` con tracce fittizie (*Track 1, Track 2, Track 3*) e una posizione temporale errata (14:10 su un brano di 3:00). Isolamento completo di `AMSO_DATA_DIR`, `AMSO_PLAYLIST_PATH` e `AMSO_DB_PATH` nell'ambiente di test, filtraggio automatico delle tracce locali fantasma o irreperibili durante il caricamento della playlist, e messa in sicurezza della posizione iniziale per non superare mai la durata del brano.
 - **Ottimizzazione del tempo di avvio con grandi playlist (eliminazione del blocco all'85%)** : eliminazione di un collo di bottiglia bloccante sul thread principale durante il ripristino della sessione di riproduzione. La convalida della playlist eseguiva migliaia di chiamate disco sincrone `Path.exists()` (~40 secondi per 12 000 brani). Ora privilegia un controllo istantaneo in memoria O(1) (< 1 ms) per tutti i brani provenienti dal database SQLite attivo, rendendo l'avvio dell'applicazione istantaneo.
 - **Progressione fluida passo-passo ed eliminazione del ritardo visivo dello Splash Screen** : riprogettazione del monitoraggio della progressione all'avvio con animazione fluida passo-passo dell'1% in 1% (10 ms per incremento) per una transizione continua e curata tra le tappe regolari (15% preferenze, 25% tema, 35% SQLite, 45% motore audio, 60% interfaccia, 75% libreria, 90% ripristino sessione, 100% finalizzazione). Risoluzione di un conflitto di stile CSS globale in cui l'applicazione del tema scuro imponeva un `max-width: 220px` su tutte le barre di progressione, dividendo improvvisamente la larghezza dello splash screen per due e dando l'illusione visiva di un ritorno indietro del contatore blu. Santuario della larghezza (`#splashProgressBar`), blocco della progressione strettamente monotona e rimozione della menzione superflua a destra del piè di pagina.
 - **Rendering visivo della copertina predefinita (vinile e nota)** : rimozione del ritaglio verticale sul bordo destro dell'icona di nota musicale al centro del vinile, causato dall'applicazione di un grassetto sintetico (*synthetic bold*) dal motore di font DirectWrite sull'emoji sotto Windows.
@@ -192,39 +249,42 @@ e questo progetto aderisce alla specifica [Semantic Versioning (SemVer)](https:/
 ## [0.1.0] - 2026-10-17
 
 ### Aggiunto
+
 - **Motore di riproduzione audio integrato (python-vlc) :**
   - Supporto nativo per formati audio popolari: MP3, FLAC, WAV, AAC, OGG, M4A, WMA.
   - Rilevamento e download automatico trasparente di un binario VLC portatile in caso di assenza di VLC sul sistema utente.
   - Controllo completo della riproduzione: Play, Pause, Stop, Traccia successiva, Traccia precedente, barra di avanzamento dinamica (Seekbar) e gestione del volume.
   - Modalità di riproduzione: riproduzione casuale (*Shuffle*) e modalità di ripetizione (*Disattivato*, *Ripeti la playlist*, *Ripeti il brano in loop*).
-  - Effetti visivi animati in tempo reale sincronizzati con la riproduzione (particelle, onde, stelle, distorsione spaziale, aurora boreale, barre dello spettro).
-- **Gestore di Playlist e Coda :**
-  - Vista dedicata con tabella virtualizzata che supporta decine di migliaia di titoli senza latenza.
+  - Effetti visivi animati in tempo reale sincronizzati con la riproduzione (particelle, onde, stelle, distorsione spaziale, aurora boreale, barre di spettro).
+- **Gestore Playlist e Coda :**
+  - Vista dedicata con tabella virtualizzata che supporta decine di migliaia di brani senza latenza.
   - Riorganizzazione intuitiva della coda tramite trascinamento (*Drag & Drop*).
-  - Menu contestuali completi: « Riproduci », « Aggiungi alla coda », « Rimuovi dalla coda », « Proprietà ».
+  - Menu contestuali completi: « Riprodurre », « Aggiungere alla coda », « Rimuovere dalla coda », « Proprietà ».
   - Salvataggio automatico della sessione di riproduzione (titolo corrente, posizione temporale in ms, playlist attiva).
 - **Scanner locale multithread ad alte prestazioni:**
-  - Percorso ricorsivo asincrono delle directory locali con barra di avanzamento e metriche in tempo reale.
+  - Navigazione ricorsiva asincrona delle directory locali con barra di avanzamento e metriche in tempo reale.
   - Estrazione rapida dei metadati (titolo, artista, album, anno, genere, durata, bitrate, numero di traccia) tramite `mutagen`.
   - Estrazione e caching delle copertine degli album integrate con rendering asincrono per evitare qualsiasi blocco dell'interfaccia.
-  - Calcolo delle impronte di hash del file per identificare i duplicati fisici.
-- **Database SQLite ottimizzata:**
-  - Architettura relazionale senza ORM pesante per un'esecuzione quasi istantanea delle query.
+  - Calcolo delle impronte hash dei file per identificare i duplicati fisici.
+- **Database SQLite ottimizzato:**
+  - Architettura relazionale senza ORM pesante per l'esecuzione quasi istantanea delle query.
   - Gestione delle fonti, dei brani scansionati e della cronologia di attività.
 - **Interfaccia Utente Moderna (PySide6 / Dark Mode):**
-  - Tema scuro personalizzato di alta gamma con palette di colori curata e animazioni fluide.
-  - Cassettiere laterale retrattile per la navigazione principale e le impostazioni.
-  - Supporto multilingue completo (Francese, Inglese, Spagnolo, Tedesco, Italiano) con cambio lingua a caldo.
-  - Pagina dedicata "Informazioni" nelle Impostazioni: dettagli del progetto, badge di versione, tecnologie open-source, link a GitHub, Itch.io e piattaforme di mecenat (Ko-fi, GitHub Sponsors).
+  - Tema scuro personalizzato di alta gamma con palette colori curata e animazioni fluide.
+  - Cassetto laterale retrattile per la navigazione principale e le impostazioni.
+  - Supporto multilingue completo (Français, English, Español, Deutsch, Italiano) con cambio lingua a caldo.
+  - Pagina dedicata "Informazioni" nelle Impostazioni: dettagli del progetto, badge di versione, tecnologie open-source, link a GitHub, Itch.io e piattaforme di mecenatismo (Ko-fi, GitHub Sponsors).
   - Verificatore manuale e automatico di aggiornamenti che interroga l'API GitHub Releases (`/releases/latest`) con banner di notifica interattivo.
-  - Scorciatoia da tastiera <kbd>F1</kbd> e clic diretto sul logo AMSO per aprire la pagina "Informazioni".
+  - Scorciatoia da tastiera <kbd>F1</kbd> e clic diretto sul logo AMSO per aprire la pagina « Chi siamo ».
 
-### Modifiche
-- Sostituzione del dialogo modale « Informazioni » con una sottosezione integrata e fluida nelle Impostazioni.
-- Riorganizzazione della navigazione delle Impostazioni in 5 sezioni: Generale, Lettore, Fonti, Log, Informazioni.
-- Occultamento della barra dei menu standard residua a favore di un'interfaccia snella senza un pulsante « Aiuto » orfano.
+### Modificato
 
-### Fixed
+- Sostituzione del dialogo modale "Informazioni" con una sottosegnalazione integrata e fluida nelle Impostazioni.
+- Riorganizzazione della navigazione delle Impostazioni in 5 sezioni: Generale, Lettore, Sorgenti, Log, Informazioni.
+- Nascondimento della barra dei menu standard residua a favore di un'interfaccia pulita senza pulsante "Aiuto" orfano.
+
+### Corrigé
+
 - **Avvio a 00:00 :** Reset sistematico della posizione temporale (`_pending_seek_ms = 0`) durante la selezione di una nuova musica dalla libreria o dalla playlist, riservando il ripristino della posizione solo al pulsante « Play » della sessione precedente ripristinata.
-- **Persistenza immediata del volume :** Salvataggio istantaneo in `config.ini` non appena viene manipolato il cursore del volume o il pulsante muto.
-- **Blocco del volume VLC :** Resincronizzazione automatica del volume audio quando si passa allo stato `Playing` nel ciclo dell'orologio per evitare qualsiasi perdita di impostazioni durante l'avvio a freddo del decoder VLC.
+- **Persistenza immediata del volume :** Salvataggio istantaneo in `config.ini` non appena si manipola il cursore del volume o il pulsante muto.
+- **Blocco del volume VLC :** Resincronizzazione automatica del volume audio durante il passaggio allo stato `Playing` nel ciclo dell'orologio per evitare qualsiasi perdita di impostazioni durante l'avvio a freddo del decoder VLC.

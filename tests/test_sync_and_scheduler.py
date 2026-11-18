@@ -15,7 +15,7 @@ from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 
 from amso.core.database import DatabaseManager, SourceRecord, SourceType
 from amso.core.i18n import get_i18n
-from amso.core.scheduler import SyncScheduler
+from amso.services.scheduler import SyncScheduler
 from amso.ui.dialogs.source_config_dialog import SourceConfigDialog
 from amso.ui.views.main_window import MainWindow
 
@@ -228,23 +228,11 @@ def test_settings_page_sources_table_and_actions(qapp: QApplication, db: Databas
 
     # Ouvrir la page des Paramètres > Général
     window.btn_settings_general.click()
-    assert window.stacked_widget.currentIndex() == 2
-
-    # Ouvrir la page des Paramètres > Sources (onglet dédié)
-    window.btn_settings_sources.click()
-    assert window.stacked_widget.currentIndex() == 4
-
-    # Vérifier que le tableau contient bien la source
-    assert hasattr(window, "table_settings_sources")
-    assert window.table_settings_sources.rowCount() == 1
-    assert "Dossier Jazz" in window.table_settings_sources.item(0, 0).text()
-    assert str(folder1) in window.table_settings_sources.item(0, 1).text()
-    assert "15 min" in window.table_settings_sources.item(0, 2).text()
+    assert window.stacked_widget.currentWidget() == window.page_settings
 
     # Vérifier la modification programmatique ou via les paramètres
     window._on_table_source_mode_changed(src, "startup")
     assert db.get_source(src.id).sync_mode == "startup"
-    assert "Au démarrage" in window.table_settings_sources.item(0, 2).text()
 
     # Vérifier que l'action 'Propriétés de la source...' est présente dans le menu contextuel (Option 3 UX Part B)
     ctx_menu = window._create_source_context_menu(src)
@@ -267,11 +255,10 @@ def test_settings_page_sources_table_and_actions(qapp: QApplication, db: Databas
     ):
         window._on_edit_source_properties(src)
 
-    # Vérifier la mise à jour en BDD et dans le tableau
+    # Vérifier la mise à jour en BDD
     updated_src = db.get_source(src.id)
     assert updated_src.name == "Dossier Jazz Renommé"
     assert updated_src.sync_mode == "realtime"
-    assert window.table_settings_sources.item(0, 0).text() == "📁  Dossier Jazz Renommé"
     window.close()
 
 

@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,14 +47,17 @@
 | **プレイリストサポート（M3U, PLS, XSPF, WPL）およびCUEシート** | ツリーインデックス化（🎶）、シーケンシャルな再生順序、欠落したトラックの視覚的な特定。`.cue`ファイル（💿）は、その長さとともに仮想トラックフォルダとして開き、実際のトラックのように再生されます。 | 🟢 実装済み |
 | **プレイリスト管理＆ドラッグ＆ドロップ** | 仮想キュー、スムーズなドラッグ＆ドロップ、リバーシブルなシャッフル、およびループ。 | 🟢 実装済み |
 | **対話型「🎲 ブラインドテスト」モード** | アニメーション付きのカウントダウン、サウンドフェード、穏やかな開示、および自動連続再生を備えた没入型の音楽ゲーム。 | 🟢 実装済み |
-| **アプリ内アップデート** | GitHub Releases を介した自動/手動バージョン確認 | 🟢 実装済み |
-| **Linux および macOS のバージョン** | パッケージ .AppImage / .tar.gz (Linux) および署名されていない .dmg (macOS)、VLC が必要 | 🟡 実験的 (未テスト) |
-| **アーティストおよびディスコグラフィ管理** | アルバム、シングル、完全なディスコグラフィを含むアーティスト専用ビュー | 🟡 予定 |
-| **グラフィックイコライザー (EQ)** | オーディオプリセットとパラメトリックマルチバンドイコライザー | 🟡 予定 |
-| **Google Drive コネクタ** | OAuth 2.0 を介したリモートオーディオコレクションのスキャンと同期 | ⚪ 計画中 |
-| **Amazon Music コネクタ** | OAuth 2.0 を介したリモートコレクションのスキャンと同期 | ⚪ 計画中 |
-| **Spotify / Deezer コネクタ** | プレイリストのインポートとトラックのマッチング | ⚪ 計画中 |
-| **スマート重複排除** | 重複検出 (タイトル/アーティストのぼかし + 音響指紋) | ⚪ 計画中 |
+| **ソースとライブラリ** | ヘルスインジケーター付きソースダッシュボード（オフラインソース、スキャンエラー、欠落ファイル）、全体ビューまたはソース別ビュー、クイックアクション | 🟢 実装済み |
+| **プレイリストのエディター、修復、エクスポート** | 欠落ファイルの再編成、手動または自動のリロケーション、M3U / M3U8 / PLS / XSPF / WPLへのバックアップ、アルバムごとのグループ化 | 🟢 実装済み |
+| **オーディオツール** | プリセット付き10バンドグラフィックイコライザー、ReplayGain正規化、再生速度、オーディオ出力の選択、および停止タイマー（連続バッファエンジン） | 🟢 実装済み |
+| **Windows統合と視覚効果** | タスクバー、通知領域、ヘルプガイド、ランダムモード付き調整可能な視覚効果 | 🟢 実装済み |
+| **アプリ内アップデート** | GitHub Releases経由での自動/手動バージョン確認 | 🟢 実装済み |
+| **LinuxおよびmacOSバージョン** | パッケージ（Linux用`.AppImage` / `.tar.gz`、macOS用署名なし`.dmg`）、VLCが必要 | 🟡 実験的（未テスト） |
+| **アーティスト管理とディスコグラフィ** | アルバム、シングル、完全なディスコグラフィを備えたアーティスト専用ビュー | 🟡 予定 |
+| **Google Driveコネクタ** | OAuth 2.0を介したリモートオーディオコレクションのスキャンと同期 | ⚪ 計画中 |
+| **Amazon Musicコネクタ** | OAuth 2.0経由でのリモートコレクションのスキャンと同期 | ⚪ 計画済み |
+| **Spotify / Deezerコネクタ** | プレイリストのインポートとトラックのマッチング | ⚪ 計画済み |
+| **スマート重複排除** | 重複の検出（ぼやけたタイトル/アーティスト + 音響指紋） | ⚪ 計画済み |
 
 > 💡 *計画されているマイルストーンとバージョンの詳細を確認するには、[ロードマップ (Roadmap)](../../ROADMAP.md)を参照してください。*
 

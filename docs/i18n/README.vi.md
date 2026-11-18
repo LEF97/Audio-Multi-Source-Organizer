@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,14 +47,17 @@
 | **Hỗ trợ Playlist (M3U, PLS, XSPF, WPL) & sheet CUE** | Lập chỉ mục cây (🎶), thứ tự nghe tuần tự, định vị trực quan các bài hát bị thiếu; các tệp `.cue` (💿) mở như một thư mục các bản nhạc ảo với thời lượng của chúng và phát như các bản nhạc thực tế | 🟢 Đã triển khai |
 | **Trình quản lý Playlist & Kéo-Thả** | Hàng đợi ảo, kéo & thả mượt mà, ngẫu nhiên (shuffle) có thể đảo ngược và vòng lặp | 🟢 Đã triển khai |
 | **Chế độ tương tác « 🎲 Blind Test »** | Trò chơi âm nhạc nhập vai với bộ đếm thời gian hoạt hình, fade âm thanh, tiết lộ nhẹ nhàng và chuyển tiếp tự động | 🟢 Đã triển khai |
-| **Cập nhật trong ứng dụng** | Kiểm tra phiên bản tự động/thủ công qua GitHub Releases | 🟢 Đã triển khai |
-| **Phiên bản Linux & macOS** | Gói `.AppImage` / `.tar.gz` (Linux) và `.dmg` không ký (macOS), yêu cầu VLC | 🟡 Thử nghiệm (chưa kiểm tra) |
-| **Quản lý nghệ sĩ & Discography** | Chế độ xem dành riêng cho nghệ sĩ với album, single và discography đầy đủ | 🟡 Dự kiến |
-| **Bộ cân bằng đồ họa (EQ)** | Thiết lập âm thanh và bộ cân bằng đa băng tần tham số | 🟡 Dự kiến |
-| **Kết nối Google Drive** | Quét và đồng bộ hóa các bộ sưu tập âm thanh từ xa qua OAuth 2.0 | ⚪ Lên kế hoạch |
-| **Kết nối Amazon Music** | Quét và đồng bộ hóa các bộ sưu tập từ xa qua OAuth 2.0 | ⚪ Lên kế hoạch |
-| **Kết nối Spotify / Deezer** | Nhập danh sách phát và khớp bài hát | ⚪ Lên kế hoạch |
-| **Loại bỏ trùng lặp thông minh** | Phát hiện bản sao (tiêu đề/nghệ sĩ mờ + dấu vân âm thanh) | ⚪ Lên kế hoạch |
+| **Nguồn & Thư viện** | Bảng điều khiển nguồn với chỉ báo sức khỏe (nguồn ngoại tuyến, lỗi quét, tệp bị thiếu), chế độ xem tổng quan hoặc theo nguồn và hành động nhanh | 🟢 Implémenté |
+| **Trình chỉnh sửa, sửa chữa & xuất playlist** | Tái tổ chức, định vị thủ công hoặc tự động các tệp bị thiếu, sao lưu bằng M3U / M3U8 / PLS / XSPF / WPL, nhóm theo album | 🟢 Implémenté |
+| **Công cụ âm thanh** | Bộ cân bằng đồ họa 10 băng với các preset, chuẩn hóa ReplayGain, tốc độ phát, lựa chọn đầu ra âm thanh và hẹn giờ tắt (engine đệm liên tục) | 🟢 Implémenté |
+| **Tích hợp Windows & hiệu ứng hình ảnh** | Thanh tác vụ, khu vực thông báo, hướng dẫn trợ giúp, hiệu ứng hình ảnh có thể điều chỉnh với chế độ Ngẫu nhiên | 🟢 Implémenté |
+| **Cập nhật trong ứng dụng** | Kiểm tra phiên bản tự động/thủ công qua GitHub Releases | 🟢 Implémenté |
+| **Phiên bản Linux & macOS** | Gói `.AppImage` / `.tar.gz` (Linux) và `.dmg` không ký (macOS), yêu cầu VLC | 🟡 Expérimental (non testé) |
+| **Quản lý nghệ sĩ & Discography** | Chế độ xem dành riêng cho nghệ sĩ với album, single và discography đầy đủ | 🟡 Prévu |
+| **Kết nối Google Drive** | Quét và đồng bộ hóa các bộ sưu tập âm thanh từ xa qua OAuth 2.0 | ⚪ Planifié |
+| **Connecteur Amazon Music** | Quét và đồng bộ hóa các bộ sưu tập từ xa qua OAuth 2.0 | ⚪ Đã lên kế hoạch |
+| **Connecteur Spotify / Deezer** | Nhập danh sách phát và đối sánh bài hát | ⚪ Đã lên kế hoạch |
+| **Dédoublonnage intelligent** | Phát hiện trùng lặp (tiêu đề/nghệ sĩ mờ + dấu vân tay âm thanh) | ⚪ Đã lên kế hoạch |
 
 > 💡 *Để xem chi tiết các cột mốc và phiên bản dự kiến, vui lòng tham khảo [Feuille de route (Roadmap)](../../ROADMAP.md).*
 

@@ -23,6 +23,14 @@ from PySide6.QtWidgets import (
 
 from amso import __version__
 from amso.core.i18n import tr
+from amso.ui.styles import (
+    COLOR_BORDER,
+    COLOR_PRIMARY,
+    COLOR_PRIMARY_HOVER,
+    COLOR_TEXT_BRIGHT,
+    COLOR_TEXT_DISABLED,
+    COLOR_TEXT_MUTED,
+)
 
 
 class SplashScreen(QWidget):
@@ -57,12 +65,12 @@ class SplashScreen(QWidget):
         # Cadre conteneur sombre avec coins arrondis et ombre
         self.card = QFrame(self)
         self.card.setObjectName("splashCard")
-        self.card.setStyleSheet("""
-            QFrame#splashCard {
+        self.card.setStyleSheet(f"""
+            QFrame#splashCard {{
                 background-color: #121418;
-                border: 1px solid #282C37;
+                border: 1px solid {COLOR_BORDER};
                 border-radius: 16px;
-            }
+            }}
         """)
 
         # Ombre portée douce
@@ -94,8 +102,8 @@ class SplashScreen(QWidget):
         title_box.setSpacing(2)
 
         lbl_logo = QLabel("AMSO" if not app_pm.isNull() else "🎵  AMSO")
-        lbl_logo.setStyleSheet("""
-            color: #F8FAFC;
+        lbl_logo.setStyleSheet(f"""
+            color: {COLOR_TEXT_BRIGHT};
             font-size: 28px;
             font-weight: 800;
             letter-spacing: 1.5px;
@@ -103,8 +111,8 @@ class SplashScreen(QWidget):
         title_box.addWidget(lbl_logo)
 
         lbl_subtitle = QLabel("Audio Multi-Source Organizer")
-        lbl_subtitle.setStyleSheet("""
-            color: #38BDF8;
+        lbl_subtitle.setStyleSheet(f"""
+            color: {COLOR_PRIMARY_HOVER};
             font-size: 13px;
             font-weight: 600;
             margin-top: 2px;
@@ -119,9 +127,9 @@ class SplashScreen(QWidget):
         # Ligne d'accentuation subtile
         accent_line = QFrame()
         accent_line.setFixedHeight(2)
-        accent_line.setStyleSheet("""
+        accent_line.setStyleSheet(f"""
             background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                stop:0 #0284C7, stop:0.7 #38BDF8, stop:1 transparent);
+                stop:0 {COLOR_PRIMARY}, stop:0.7 {COLOR_PRIMARY_HOVER}, stop:1 transparent);
             border-radius: 1px;
             margin-top: 10px;
             margin-bottom: 14px;
@@ -135,13 +143,13 @@ class SplashScreen(QWidget):
         status_box.setContentsMargins(0, 0, 0, 4)
 
         self.lbl_status = QLabel(tr("splash.starting"))
-        self.lbl_status.setStyleSheet("color: #94A3B8; font-size: 12px; font-weight: 500;")
+        self.lbl_status.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 12px; font-weight: 500;")
         status_box.addWidget(self.lbl_status)
 
         status_box.addStretch()
 
         self.lbl_percent = QLabel("0%")
-        self.lbl_percent.setStyleSheet("color: #38BDF8; font-size: 12px; font-weight: 700;")
+        self.lbl_percent.setStyleSheet(f"color: {COLOR_PRIMARY_HOVER}; font-size: 12px; font-weight: 700;")
         status_box.addWidget(self.lbl_percent)
 
         card_layout.addLayout(status_box)
@@ -153,20 +161,20 @@ class SplashScreen(QWidget):
         self.progress_bar.setValue(0)
         self.progress_bar.setTextVisible(False)
         self.progress_bar.setFixedHeight(8)
-        self.progress_bar.setStyleSheet("""
-            QProgressBar#splashProgressBar {
+        self.progress_bar.setStyleSheet(f"""
+            QProgressBar#splashProgressBar {{
                 background-color: #1E2430;
                 border: none;
                 border-radius: 4px;
                 max-width: 5000px;
                 min-width: 0px;
                 height: 8px;
-            }
-            QProgressBar#splashProgressBar::chunk {
+            }}
+            QProgressBar#splashProgressBar::chunk {{
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #0284C7, stop:1 #38BDF8);
+                    stop:0 {COLOR_PRIMARY}, stop:1 {COLOR_PRIMARY_HOVER});
                 border-radius: 4px;
-            }
+            }}
         """)
         card_layout.addWidget(self.progress_bar)
 
@@ -177,7 +185,7 @@ class SplashScreen(QWidget):
         footer_box.setContentsMargins(0, 0, 0, 0)
 
         lbl_version = QLabel(f"v{__version__}")
-        lbl_version.setStyleSheet("color: #475569; font-size: 11px; font-weight: 500;")
+        lbl_version.setStyleSheet(f"color: {COLOR_TEXT_DISABLED}; font-size: 11px; font-weight: 500;")
         footer_box.addWidget(lbl_version)
 
         footer_box.addStretch()

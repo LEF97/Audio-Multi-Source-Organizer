@@ -5,6 +5,7 @@ from __future__ import annotations
 from amso.ui.dialogs.about_dialog import AboutDialog
 from amso.ui.dialogs.delete_track_dialog import DeleteTrackDialog, send_file_to_trash
 from amso.ui.dialogs.large_selection_dialog import LargeSelectionDialog
+from amso.ui.dialogs.playlist_editor_dialog import PlaylistEditorDialog
 from amso.ui.dialogs.source_config_dialog import SourceConfigDialog
 from amso.ui.dialogs.vlc_download_dialog import VlcDownloadDialog
 
@@ -12,6 +13,7 @@ __all__ = [
     "AboutDialog",
     "DeleteTrackDialog",
     "LargeSelectionDialog",
+    "PlaylistEditorDialog",
     "SourceConfigDialog",
     "VlcDownloadDialog",
     "send_file_to_trash",

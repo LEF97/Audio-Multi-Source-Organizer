@@ -12,7 +12,6 @@ import sys
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QDialog,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -23,7 +22,21 @@ from PySide6.QtWidgets import (
 
 from amso.core.database import TrackRecord
 from amso.core.i18n import tr
-from amso.ui.theme import DARK_THEME_QSS
+from amso.ui.dialogs.base_dialog import AmsoDialog
+from amso.ui.styles import (
+    COLOR_BG_CARD,
+    COLOR_BG_DARK,
+    COLOR_BORDER,
+    COLOR_BORDER_LIGHT,
+    COLOR_DANGER,
+    COLOR_PRIMARY,
+    COLOR_PRIMARY_HOVER,
+    COLOR_TEXT_BRIGHT,
+    COLOR_TEXT_DIM,
+    COLOR_TEXT_MUTED,
+    COLOR_TEXT_SOFT,
+    COLOR_WHITE,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -84,18 +97,13 @@ def send_file_to_trash(path: str) -> bool:
         return False
 
 
-class DeleteTrackDialog(QDialog):
+class DeleteTrackDialog(AmsoDialog):
     """Dialogue modal proposant les deux modes de suppression d'un morceau."""
 
     def __init__(self, track: TrackRecord, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
+        super().__init__(tr("dialog.delete_confirm_title"), 540, parent)
         self.track = track
         self._action: str | None = None  # "ignore", "trash", ou None
-
-        self.setWindowTitle(tr("dialog.delete_confirm_title"))
-        self.setMinimumWidth(540)
-        self.setModal(True)
-        self.setStyleSheet(DARK_THEME_QSS)
 
         self._setup_ui()
 
@@ -110,11 +118,11 @@ class DeleteTrackDialog(QDialog):
         header.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         icon_lbl = QLabel("🗑️")
-        icon_lbl.setStyleSheet("""
+        icon_lbl.setStyleSheet(f"""
             font-size: 32px;
             padding: 10px;
-            background-color: #1A1D24;
-            border: 1px solid #282C37;
+            background-color: {COLOR_BG_DARK};
+            border: 1px solid {COLOR_BORDER};
             border-radius: 12px;
         """)
         header.addWidget(icon_lbl)
@@ -123,20 +131,20 @@ class DeleteTrackDialog(QDialog):
         text_layout.setSpacing(4)
 
         title_lbl = QLabel(tr("dialog.delete_confirm_title"))
-        title_lbl.setStyleSheet("color: #F8FAFC; font-size: 16px; font-weight: 700;")
+        title_lbl.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-size: 16px; font-weight: 700;")
         text_layout.addWidget(title_lbl)
 
         track_title = self.track.title or self.track.file_name or tr("track.untitled")
         artist = self.track.artist or tr("track.unknown_artist")
-        track_info = QLabel(f"<b>{track_title}</b> — <span style='color: #94A3B8;'>{artist}</span>")
+        track_info = QLabel(f"<b>{track_title}</b> — <span style='color: {COLOR_TEXT_MUTED};'>{artist}</span>")
         track_info.setTextFormat(Qt.TextFormat.RichText)
-        track_info.setStyleSheet("color: #38BDF8; font-size: 13px;")
+        track_info.setStyleSheet(f"color: {COLOR_PRIMARY_HOVER}; font-size: 13px;")
         text_layout.addWidget(track_info)
 
         path_str = self.track.source_path or self.track.source_ref
         if path_str:
             path_lbl = QLabel(f"📁 {path_str}")
-            path_lbl.setStyleSheet("color: #64748B; font-size: 11px;")
+            path_lbl.setStyleSheet(f"color: {COLOR_TEXT_DIM}; font-size: 11px;")
             path_lbl.setWordWrap(True)
             text_layout.addWidget(path_lbl)
 
@@ -145,18 +153,18 @@ class DeleteTrackDialog(QDialog):
 
         # Question d'action
         prompt_lbl = QLabel(tr("dialog.delete_track_prompt"))
-        prompt_lbl.setStyleSheet("color: #E2E8F0; font-size: 13px; font-weight: 600; margin-top: 6px;")
+        prompt_lbl.setStyleSheet(f"color: {COLOR_TEXT_SOFT}; font-size: 13px; font-weight: 600; margin-top: 6px;")
         layout.addWidget(prompt_lbl)
 
         # Cadre d'options
         options_frame = QFrame()
-        options_frame.setStyleSheet("""
-            QFrame {
+        options_frame.setStyleSheet(f"""
+            QFrame {{
                 background-color: #161920;
-                border: 1px solid #282C37;
+                border: 1px solid {COLOR_BORDER};
                 border-radius: 10px;
                 padding: 10px;
-            }
+            }}
         """)
         options_layout = QVBoxLayout(options_frame)
         options_layout.setSpacing(12)
@@ -164,55 +172,55 @@ class DeleteTrackDialog(QDialog):
         # Option 1 : Retirer de la bibliothèque (et ignorer)
         btn_ignore = QPushButton(tr("dialog.delete_option_ignore"))
         btn_ignore.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_ignore.setStyleSheet("""
-            QPushButton {
+        btn_ignore.setStyleSheet(f"""
+            QPushButton {{
                 background-color: #1E2430;
-                color: #F8FAFC;
-                border: 1px solid #38BDF8;
+                color: {COLOR_TEXT_BRIGHT};
+                border: 1px solid {COLOR_PRIMARY_HOVER};
                 border-radius: 8px;
                 padding: 10px 14px;
                 font-size: 13px;
                 font-weight: 600;
                 text-align: left;
-            }
-            QPushButton:hover {
-                background-color: #0284C7;
-                color: #FFFFFF;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {COLOR_PRIMARY};
+                color: {COLOR_WHITE};
+            }}
         """)
         btn_ignore.clicked.connect(self._on_choose_ignore)
         options_layout.addWidget(btn_ignore)
 
         desc_ignore = QLabel(tr("dialog.delete_option_ignore_desc"))
         desc_ignore.setWordWrap(True)
-        desc_ignore.setStyleSheet("color: #94A3B8; font-size: 11px; margin-left: 6px; margin-bottom: 4px;")
+        desc_ignore.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 11px; margin-left: 6px; margin-bottom: 4px;")
         options_layout.addWidget(desc_ignore)
 
         # Option 2 : Mettre à la corbeille Windows
         btn_trash = QPushButton(tr("dialog.delete_option_trash"))
         btn_trash.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_trash.setStyleSheet("""
-            QPushButton {
+        btn_trash.setStyleSheet(f"""
+            QPushButton {{
                 background-color: #1E2430;
                 color: #F87171;
-                border: 1px solid #EF4444;
+                border: 1px solid {COLOR_DANGER};
                 border-radius: 8px;
                 padding: 10px 14px;
                 font-size: 13px;
                 font-weight: 600;
                 text-align: left;
-            }
-            QPushButton:hover {
+            }}
+            QPushButton:hover {{
                 background-color: #DC2626;
-                color: #FFFFFF;
-            }
+                color: {COLOR_WHITE};
+            }}
         """)
         btn_trash.clicked.connect(self._on_choose_trash)
         options_layout.addWidget(btn_trash)
 
         desc_trash = QLabel(tr("dialog.delete_option_trash_desc"))
         desc_trash.setWordWrap(True)
-        desc_trash.setStyleSheet("color: #94A3B8; font-size: 11px; margin-left: 6px;")
+        desc_trash.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 11px; margin-left: 6px;")
         options_layout.addWidget(desc_trash)
 
         layout.addWidget(options_frame)
@@ -223,19 +231,19 @@ class DeleteTrackDialog(QDialog):
 
         btn_cancel = QPushButton(tr("common.cancel"))
         btn_cancel.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_cancel.setStyleSheet("""
-            QPushButton {
-                background-color: #20242D;
-                color: #94A3B8;
-                border: 1px solid #333846;
+        btn_cancel.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {COLOR_BG_CARD};
+                color: {COLOR_TEXT_MUTED};
+                border: 1px solid {COLOR_BORDER_LIGHT};
                 border-radius: 6px;
                 padding: 6px 16px;
                 font-size: 12px;
-            }
-            QPushButton:hover {
+            }}
+            QPushButton:hover {{
                 background-color: #2A303C;
-                color: #F8FAFC;
-            }
+                color: {COLOR_TEXT_BRIGHT};
+            }}
         """)
         btn_cancel.clicked.connect(self.reject)
         bottom_box.addWidget(btn_cancel)

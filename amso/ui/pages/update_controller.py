@@ -18,6 +18,7 @@ from amso.core.constants import (
 )
 from amso.core.i18n import get_i18n, tr
 from amso.services.update_checker import UpdateCheckerWorker
+from amso.ui.styles import COLOR_PRIMARY_HOVER, COLOR_SUCCESS, COLOR_TEXT_MUTED
 
 logger = logging.getLogger(__name__)
 
@@ -112,13 +113,15 @@ class UpdateControllerMixin(_MixinBase):
         status = self._last_update_check.get("status", "pending")
         if status == "checking":
             self.lbl_update_status_about.setText(f"⏳ {tr('settings.update_checking')}")
-            self.lbl_update_status_about.setStyleSheet("color: #38BDF8; font-size: 12px; font-weight: 500;")
+            self.lbl_update_status_about.setStyleSheet(
+                f"color: {COLOR_PRIMARY_HOVER}; font-size: 12px; font-weight: 500;"
+            )
             if hasattr(self, "btn_update_download"):
                 self.btn_update_download.setVisible(False)
         elif status == "latest":
             msg = tr("settings.update_latest").format(version=__version__)
             self.lbl_update_status_about.setText(msg)
-            self.lbl_update_status_about.setStyleSheet("color: #4ADE80; font-size: 12px; font-weight: 600;")
+            self.lbl_update_status_about.setStyleSheet(f"color: {COLOR_SUCCESS}; font-size: 12px; font-weight: 600;")
             if hasattr(self, "btn_update_download"):
                 self.btn_update_download.setVisible(False)
         elif status == "available":
@@ -137,7 +140,7 @@ class UpdateControllerMixin(_MixinBase):
                 self.btn_update_download.setText(tr("settings.btn_download_update"))
         elif status == "error":
             self.lbl_update_status_about.setText(tr("settings.update_error"))
-            self.lbl_update_status_about.setStyleSheet("color: #94A3B8; font-size: 12px;")
+            self.lbl_update_status_about.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 12px;")
             if hasattr(self, "btn_update_download"):
                 self.btn_update_download.setVisible(False)
         else:

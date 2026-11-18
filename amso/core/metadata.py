@@ -7,6 +7,7 @@ Garantit une extraction robuste même sur des fichiers corrompus ou sans tags.
 from __future__ import annotations
 
 import hashlib
+import logging
 import os
 import re
 from collections.abc import Sequence
@@ -35,6 +36,8 @@ from amso.core.cover_art import (
     find_cover_image_in_folder,
 )
 from amso.core.database import SourceType, TrackRecord, compute_quality_score
+
+logger = logging.getLogger(__name__)
 
 __all__ = [
     "SUPPORTED_IMAGE_EXTENSIONS",
@@ -209,6 +212,8 @@ def extract_metadata(
     try:
         audio = mutagen.File(str(path))
     except Exception:
+        # mutagen lève des erreurs hétérogènes (MutagenError, struct.error, OSError) sur un fichier corrompu.
+        logger.debug("Lecture mutagen impossible : %s", path, exc_info=True)
         audio = None
 
     tags = None
@@ -233,11 +238,15 @@ def extract_metadata(
             try:
                 tags = ID3(str(path))
             except Exception:
+                # Tags ID3 corrompus : le titre reste indexé sans métadonnées.
+                logger.debug("Lecture ID3 impossible : %s", path, exc_info=True)
                 tags = None
         elif fmt == "flac":
             try:
                 tags = FLAC(str(path))
             except Exception:
+                # Tags FLAC corrompus : le titre reste indexé sans métadonnées.
+                logger.debug("Lecture FLAC impossible : %s", path, exc_info=True)
                 tags = None
 
     if tags is not None:
@@ -275,8 +284,9 @@ def extract_metadata(
                     track_number = trkn_val[0][0]
                 else:
                     track_number = _parse_int_pair(trkn_val)
-            except Exception:
-                pass
+            except (ValueError, TypeError, IndexError, KeyError, AttributeError):
+                # Atome trkn mal formé : numéro de piste laissé vide.
+                logger.debug("Numéro de piste MP4 illisible : %s", path, exc_info=True)
 
             try:
                 disk_val = tags.get("\xa9disk") or tags.get("disk")
@@ -284,8 +294,9 @@ def extract_metadata(
                     disc_number = disk_val[0][0]
                 else:
                     disc_number = _parse_int_pair(disk_val)
-            except Exception:
-                pass
+            except (ValueError, TypeError, IndexError, KeyError, AttributeError):
+                # Atome disk mal formé : numéro de disque laissé vide.
+                logger.debug("Numéro de disque MP4 illisible : %s", path, exc_info=True)
         else:
             tr_val = _get_tag_value(tags, ["TRCK", "tracknumber", "TRACKNUMBER", "WM/TrackNumber"])
             track_number = _parse_int_pair(tr_val)
@@ -431,4 +442,6 @@ def save_metadata(
 
         return False
     except Exception:
+        # Écriture refusée (fichier verrouillé, format partiel) : l'appelant signale l'échec via False.
+        logger.debug("Écriture des tags impossible : %s", path, exc_info=True)
         return False

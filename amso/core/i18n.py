@@ -137,7 +137,8 @@ def detect_os_language() -> str:
                 if win_loc:
                     detected_code = win_loc.split("_")[0].lower()
         except Exception:
-            pass
+            # ctypes/kernel32 indisponible ou restreint (Wine, sandbox) : repli sur locale.getlocale().
+            logger.debug("Langue d'interface Windows indisponible", exc_info=True)
 
     # 2. Repli cross-platform sur locale standard
     if not detected_code:
@@ -145,8 +146,9 @@ def detect_os_language() -> str:
             loc = locale.getlocale()[0]
             if loc:
                 detected_code = loc.split("_")[0].lower()
-        except Exception:
-            pass
+        except ValueError:
+            # Locale système inconnue de Python : la langue par défaut s'applique.
+            logger.debug("Locale système illisible", exc_info=True)
 
     # 3. Repli sur les variables d'environnement (LANG, LC_ALL, LC_MESSAGES)
     if not detected_code:
@@ -287,7 +289,8 @@ class I18nManager:
         if kwargs:
             try:
                 res = template.format(**kwargs)
-            except Exception:
+            except (KeyError, IndexError, ValueError, AttributeError, TypeError):
+                # Paramètres incomplets passés à tr() : gabarit brut plutôt qu'un plantage (appel fréquent, pas de log).
                 res = template
         else:
             res = template

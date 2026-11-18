@@ -4,17 +4,15 @@ from __future__ import annotations
 
 import logging
 import os
+import sqlite3
 import subprocess
 import sys
 from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import QPoint, Qt
-from PySide6.QtGui import QAction, QCursor
 from PySide6.QtWidgets import (
-    QAbstractItemView,
     QDialog,
     QMainWindow,
-    QMenu,
     QMessageBox,
     QTableView,
 )
@@ -26,6 +24,7 @@ from amso.core.database import (
 from amso.core.i18n import tr
 from amso.ui.dialogs.delete_track_dialog import DeleteTrackDialog, send_file_to_trash
 from amso.ui.dialogs.large_selection_dialog import LargeSelectionDialog
+from amso.ui.pages.track_context_menu import show_track_context_menu
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +50,25 @@ class TrackActionsMixin(_MixinBase):
         self._update_track_count()
 
     def _update_track_count(self) -> None:
+        if getattr(self, "_current_active_page", None) == "duplicates":
+            playlist = (
+                list(self.player_service.playlist) if hasattr(self, "player_service") and self.player_service else []
+            )
+            if not playlist:
+                self.track_count_label.setText("")
+                return
+            dup_count = self.table_model.rowCount()
+            total_count = len(playlist)
+            dups_txt = tr(
+                "duplicates.dup_singular" if dup_count <= 1 else "duplicates.dup_plural", count=f"{dup_count:,}"
+            )
+            total_txt = tr(
+                "duplicates.track_singular" if total_count <= 1 else "duplicates.track_plural",
+                count=f"{total_count:,}",
+            )
+            self.track_count_label.setText(tr("duplicates.count_summary", dups=dups_txt, total=total_txt))
+            return
+
         count = self.table_model.display_count()
         if count <= 1:
             self.track_count_label.setText(tr("topbar.track_count_singular", count=f"{count:,}"))
@@ -58,42 +76,7 @@ class TrackActionsMixin(_MixinBase):
             self.track_count_label.setText(tr("topbar.track_count", count=f"{count:,}"))
 
     def _on_table_context_menu(self, pos: QPoint) -> None:
-        index = self.table_view.indexAt(pos)
-        menu = QMenu(self)
-
-        if index.isValid():
-            selected_tracks = self._get_selected_tracks(self.table_view, self.table_model, index.row())
-            if selected_tracks:
-                act_next = QAction(tr("context_menu.play_next"), self)
-                act_next.triggered.connect(lambda: self._insert_next_with_vlc_check(selected_tracks))
-                menu.addAction(act_next)
-
-                act_add = QAction(tr("context_menu.add_to_playlist"), self)
-                act_add.triggered.connect(lambda: self._append_tracks_with_vlc_check(selected_tracks))
-                menu.addAction(act_add)
-
-                menu.addSeparator()
-
-            track: TrackRecord | None = self.table_model.get_track_at(index.row())
-            if track:
-                action_open_dir = QAction(tr("context_menu.open_file_location"), self)
-                action_open_dir.triggered.connect(lambda: self._open_file_location(track.source_path))
-                menu.addAction(action_open_dir)
-
-                menu.addSeparator()
-
-                action_del = QAction(tr("context_menu.delete_track"), self)
-                action_del.triggered.connect(lambda: self._delete_track_from_lib(track))
-                menu.addAction(action_del)
-
-                menu.addSeparator()
-
-        # Personnalisation des colonnes accessible directement depuis le tableau
-        cols_submenu = self._build_columns_menu(self.table_view, self.table_model, "all_tracks")
-        cols_submenu.setTitle("⚙️  " + tr("table.menu_columns"))
-        menu.addMenu(cols_submenu)
-
-        menu.exec(QCursor.pos())
+        show_track_context_menu(self, self.table_view, self.table_model, pos, "all_tracks", self._delete_track_from_lib)
 
     def _open_file_location(self, file_path: str | None) -> None:
         if not file_path or not os.path.exists(file_path):
@@ -132,7 +115,6 @@ class TrackActionsMixin(_MixinBase):
         self.table_model.reload_data()
         self.folder_table_model.reload_data()
         self._update_track_count()
-        self._refresh_stats_view()
         self._refresh_folders_tree()
 
     def _remove_track_from_player(self, track: TrackRecord) -> None:
@@ -175,14 +157,12 @@ class TrackActionsMixin(_MixinBase):
         """Double-clic sur un morceau dans la table principale."""
         if not index.isValid():
             return
-        self.table_view.scrollTo(index, QAbstractItemView.ScrollHint.PositionAtCenter)
         self._play_from_table(self.table_model, index.row())
 
     def _on_folder_table_view_double_clicked(self, index) -> None:
         """Double-clic sur un morceau dans la table par dossier."""
         if not index.isValid():
             return
-        self.folder_table_view.scrollTo(index, QAbstractItemView.ScrollHint.PositionAtCenter)
         self._play_from_table(self.folder_table_model, index.row())
 
     def _play_from_table(self, model: Any, start_row: int) -> None:
@@ -194,6 +174,10 @@ class TrackActionsMixin(_MixinBase):
         clicked_track = model.get_track_at(start_row)
         if clicked_track is None:
             return
+
+        active_pl_id = getattr(model, "_current_playlist_id", None)
+        self._active_playback_playlist_id = active_pl_id
+        self._active_playback_from_folder = active_pl_id is None
 
         total_rows = model.rowCount()
 
@@ -207,7 +191,9 @@ class TrackActionsMixin(_MixinBase):
                         source_id=clicked_track.source_id,
                         recursive=False,
                     )
-                except Exception:
+                except sqlite3.Error:
+                    # Base verrouillée par un scan : le titre est lu seul, sans le reste du dossier.
+                    logger.debug("Comptage des titres du dossier impossible", exc_info=True)
                     folder_count = 0
 
             dialog = LargeSelectionDialog(
@@ -221,6 +207,8 @@ class TrackActionsMixin(_MixinBase):
 
             choice = dialog.get_choice()
             if choice == "folder":
+                self._active_playback_playlist_id = None
+                self._active_playback_from_folder = True
                 tracks_to_play = self.db.get_tracks_by_folder(
                     folder_path=clicked_track.folder_path,
                     source_id=clicked_track.source_id,

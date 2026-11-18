@@ -2,17 +2,32 @@
 
 from __future__ import annotations
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QPushButton
 
 # Couleurs partagées du thème sombre
 COLOR_PRIMARY = "#0284C7"
 COLOR_PRIMARY_HOVER = "#38BDF8"
+COLOR_PLAY_ACCENT = "#D97706"
 COLOR_BG_CARD = "#20242D"
 COLOR_BG_HOVER = "#2B303C"
 COLOR_BORDER = "#282C37"
 COLOR_TEXT = "#CBD5E1"
 COLOR_TEXT_BRIGHT = "#F8FAFC"
 COLOR_TEXT_MUTED = "#94A3B8"
+COLOR_TEXT_DIM = "#64748B"
+COLOR_TEXT_SOFT = "#E2E8F0"
+COLOR_TEXT_DISABLED = "#475569"
+COLOR_WHITE = "#FFFFFF"
+COLOR_BG_SLATE = "#1E293B"
+COLOR_BORDER_SLATE = "#334155"
+COLOR_BORDER_LIGHT = "#333846"
+COLOR_BG_DARK = "#1A1D24"
+COLOR_BG_DEEP = "#0F172A"
+COLOR_PRIMARY_DARK = "#0369A1"
+COLOR_SUCCESS = "#4ADE80"
+COLOR_DANGER = "#EF4444"
+COLOR_DANGER_SOFT = "#FCA5A5"
 
 
 def icon_button_qss(radius: int = 6, font_size: int = 14) -> str:
@@ -24,6 +39,7 @@ def icon_button_qss(radius: int = 6, font_size: int = 14) -> str:
             border: 1px solid {COLOR_BORDER};
             border-radius: {radius}px;
             font-size: {font_size}px;
+            padding: 0px;
         }}
         QPushButton:hover {{
             background-color: {COLOR_BG_HOVER};
@@ -45,6 +61,7 @@ def active_button_qss(radius: int = 6, font_size: int = 14) -> str:
         border: 1px solid {COLOR_PRIMARY_HOVER};
         border-radius: {radius}px;
         font-size: {font_size}px;
+        padding: 0px;
     """
 
 
@@ -114,6 +131,42 @@ def volume_label_qss(min_width: int = 38) -> str:
     return f"color: {COLOR_TEXT_MUTED}; font-size: 12px; min-width: {min_width}px;"
 
 
+def crossfade_slider_qss() -> str:
+    """QSS du curseur de durée du fondu (états actif et désactivé)."""
+    return f"""
+        QSlider::groove:horizontal {{
+            height: 6px;
+            background: #1E293B;
+            border-radius: 3px;
+        }}
+        QSlider::sub-page:horizontal {{
+            background: {COLOR_PRIMARY};
+            border-radius: 3px;
+        }}
+        QSlider::handle:horizontal {{
+            background: {COLOR_PRIMARY_HOVER};
+            border: 2px solid #0F172A;
+            width: 16px;
+            margin-top: -5px;
+            margin-bottom: -5px;
+            border-radius: 8px;
+        }}
+        QSlider::handle:horizontal:hover {{
+            background: #7DD3FC;
+        }}
+        QSlider::groove:horizontal:disabled {{
+            background: #1E293B;
+        }}
+        QSlider::sub-page:horizontal:disabled {{
+            background: #334155;
+        }}
+        QSlider::handle:horizontal:disabled {{
+            background: {COLOR_TEXT_DISABLED};
+            border: 2px solid #1E293B;
+        }}
+    """
+
+
 def effects_combo_qss() -> str:
     """QSS pour le sélecteur déroulant des effets visuels."""
     return f"""
@@ -166,3 +219,23 @@ def settings_radio_qss() -> str:
             border-color: {COLOR_PRIMARY_HOVER};
         }}
     """
+
+
+def tree_action_button_qss() -> str:
+    """QSS des petits boutons d'action d'en-tête d'arborescence (déplier, replier, rafraîchir)."""
+    return (
+        f"QPushButton {{ font-size: 11px; padding: 2px 6px; background: transparent; "
+        f"border: 1px solid #333846; border-radius: 4px; color: {COLOR_TEXT_MUTED}; }}"
+        f"QPushButton:hover {{ background-color: {COLOR_BG_HOVER}; color: {COLOR_TEXT_BRIGHT}; "
+        f"border-color: {COLOR_PRIMARY_HOVER}; }}"
+        f"QPushButton:pressed {{ background-color: {COLOR_PRIMARY}; color: #FFFFFF; }}"
+    )
+
+
+def make_tree_action_button(text: str, tooltip: str) -> QPushButton:
+    """Crée un petit bouton d'en-tête d'arborescence (déplier, replier, rafraîchir)."""
+    btn = QPushButton(text)
+    btn.setToolTip(tooltip)
+    btn.setCursor(Qt.CursorShape.PointingHandCursor)
+    btn.setStyleSheet(tree_action_button_qss())
+    return btn

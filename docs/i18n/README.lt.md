@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,14 +47,17 @@
 | **Pagalbos Playlistams (M3U, PLS, XSPF, WPL) ir CUE lapams** | Žangelinis indeksavimas (🎶), sekvencinis klausymosi tvarka, vizualus paieškos ištrukimų; `.cue` failai (💿) atsiranda kaip virtualus stravimų katalogas su jų trumpe ir grodžiama kaip tikri stravimai | 🟢 Implémenté |
 | **Playlistų valdytojas ir traukimas/išdėgavimas** | Virtualizuotas eilė, plėsliam traukimas ir išdėgavimas, atreversiuojamas atsitiktinis (shuffle) ir ciklai | 🟢 Implémenté |
 | **Interaktyvus „🎲 Blind Test“ režimas** | Immersyvinis muzikos žaidimas su animaciniu laikmeniu, garsiniu pereinamu, subtili atskleidimas ir automatinis plėslimas | 🟢 Implémenté |
-| **Atnaujinimai į programoje** | Automatinis/manuális versijų patikrinimas per GitHub Releases | 🟢 Įgyvendinta |
-| **Linux ir macOS versijos** | `.AppImage` / `.tar.gz` (Linux) ir nepašvestas `.dmg` (macOS) sau įrašai, reikalingas VLC | 🟡 Eksperimentinis (nebaudžintas) |
-| **Menadžerija ir diskografija** | Išskirtinė per menadžerį per albumus, singlius ir pilną diskografiją | 🟡 Planuojama |
-| **Grafinis ekvalizatorius (EQ)** | Audio išankstiniai nustatymai ir parametrinis daugiaspadžienių ekvalizatorius | 🟡 Planuojama |
-| **Google Drive jungties modulis** | Skaitmeninis ir sinchronizavimas išorinių audio kolekcijų per OAuth 2.0 | ⚪ Planuojama |
-| **Amazon Music jungties modulis** | Skaitmeninis ir sinchronizavimas išorinių kolekcijų per OAuth 2.0 | ⚪ Planuojama |
-| **Spotify / Deezer jungties modulis** | Playlist importas ir dainų atitikimas | ⚪ Planuojama |
-| **Išmanus dublikatų pašalinimas** | Dublikatų aptikimas (pažymė/menadžeris + akustiniai įspėjimai) | ⚪ Planuojama |
+| **Šaltiniai ir biblioteka** | Šaltinių lentelė su sveikatos rodikliais (offline šaltiniai, skaitojimo klaidos, trūkstančių failų), bendras vaizdas arba pagal šaltinį ir greitos veikmai | 🟢 Įgyvendinta |
+| **Playliścio redaktorius, remontuojimas ir eksportavimas** | Neišmanančių failų reorganizavimas, rankinis arba automatinis relokalizavimas, saugojimas į M3U / M3U8 / PLS / XSPF / WPL, grupuojimas pagal albumą | 🟢 Įgyvendinta |
+| **Audio įrankiai** | Grafinis ekvalizatorius 10 juostomis su išankstiniais nustatymais, ReplayGain normalizavimas, grodymo greitis, audio išvesties pasirinkimas ir išjungimo laikmatis (nuolat keliojantis pagrindas) | 🟢 Įgyvendinta |
+| **Windows integracija ir vizualūs efektai** | Darbdėlis, pranešimų zona, pagrindiniai vadovai, reguliuojami vizualūs efektai su Atsitiktinis režimu | 🟢 Įgyvendinta |
+| **Atnaujinimai programoje** | Automatinis/rankinis versijų patikrinimas per GitHub Releases | 🟢 Įgyvendinta |
+| **Linux ir macOS versijos** | Paquetai `.AppImage` / `.tar.gz` (Linux) ir nepaširtis `.dmg` (macOS) saupūnai, reikalingas VLC | 🟡 Eksperimentinis (nebaudžytas) |
+| **Menagerijos ir diskografija** | Išskirtinis vaizdas pagal menagerį su albumais, singliais ir pilna diskografija | 🟡 Planuojama |
+| **Google Drive jungiklis** | Skaitojimas ir sinchronizavimas išorinių audio kolekcijų per OAuth 2.0 | ⚪ Planuojama |
+| **Connecteur Amazon Music** | Skensija ir nuotolinių kolekcijų sinchronizavimas per OAuth 2.0 | ⚪ Planuojama |
+| **Connecteur Spotify / Deezer** | Playlišių importavimas ir dainų atitikimas | ⚪ Planuojama |
+| **Dédoublonnage intelligent** | Dublikatų aptikimas (pašvarnotas pavadinimas/muzikantė + akustiniai atspvarai) | ⚪ Planuojama |
 
 > 💡 *Norėdami peržiūrėti planuojamų etapų ir versijų detales, patyrėkite į [Feuille de route (Roadmap)](../../ROADMAP.md).*
 

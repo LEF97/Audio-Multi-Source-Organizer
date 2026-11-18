@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 
+import numpy as np
 import pytest
 from PySide6.QtWidgets import QApplication
 
@@ -88,3 +89,93 @@ def test_shutdown_arrete_le_thread_audio_et_est_idempotent(qapp: QApplication) -
 
     assert eng._output is not None
     assert not eng._output._thread.isRunning()
+
+
+class _CountingOutput:
+    available = True
+
+    def __init__(self) -> None:
+        self.starts = 0
+
+    def start(self, paused: bool = False, drain_ms: int = 0) -> None:
+        self.starts += 1
+
+    def suspend(self) -> None:
+        return None
+
+    def resume(self) -> None:
+        return None
+
+    def stop(self) -> None:
+        return None
+
+    def shutdown(self) -> None:
+        return None
+
+
+def test_prepare_output_avant_play_track_ouvre_la_sortie_une_seule_fois(engine: ContinuousAudioEngine) -> None:
+    engine._output.shutdown()
+    output = _CountingOutput()
+    engine._output = output  # type: ignore[assignment]  # double de test de SinkOutput
+    engine._output_started = False
+
+    engine.prepare_output()
+    engine.prepare_output()
+    engine.play_track("a.flac", b"\x01" * 400, 1000)
+
+    assert output.starts == 1
+
+
+def _cut_engine(engine: ContinuousAudioEngine) -> None:
+    engine._output.shutdown()
+    engine._output = _CountingOutput()  # type: ignore[assignment]  # double de test de SinkOutput
+    engine._output_started = True
+
+
+def _constant_pcm(frames: int, value: int) -> bytes:
+    return int(value).to_bytes(2, "little", signed=True) * 2 * frames
+
+
+def test_stop_fade_out_fin_fondue_vers_zero_puis_silence_sans_fermer_la_sortie(engine: ContinuousAudioEngine) -> None:
+    _cut_engine(engine)
+    engine._current_pcm = bytearray(_constant_pcm(4410, 10000))
+    engine._play_offset = 400 * BYTES_PER_FRAME
+
+    engine.stop(keep_output=True, fade_out=True)
+    data, padded = engine.read_pcm(600 * BYTES_PER_FRAME)
+
+    samples = np.frombuffer(data, dtype="<i2").reshape(-1, 2)[:, 0]
+    fade_frames = 441
+    assert samples[0] > 9900
+    assert abs(int(samples[fade_frames - 1])) < 50
+    assert np.all(np.diff(samples[:fade_frames].astype(np.int32)) <= 0)
+    assert not samples[fade_frames:].any()
+    assert padded == (600 - fade_frames) * BYTES_PER_FRAME
+    assert engine._output_started is True
+
+
+def test_play_track_apres_stop_fade_out_demarre_par_un_fondu_entrant_puis_plein_niveau(
+    engine: ContinuousAudioEngine,
+) -> None:
+    _cut_engine(engine)
+    engine._current_pcm = bytearray(_constant_pcm(2000, 10000))
+    engine.stop(keep_output=True, fade_out=True)
+
+    engine.play_track("b.flac", _constant_pcm(2000, 8000), 1000)
+    engine.read_pcm(441 * BYTES_PER_FRAME)  # purge de la fin fondue de l'ancien titre
+    data, _ = engine.read_pcm(1000 * BYTES_PER_FRAME)
+
+    samples = np.frombuffer(data, dtype="<i2").reshape(-1, 2)[:, 0]
+    assert abs(int(samples[0])) < 50
+    assert np.all(np.diff(samples[:441].astype(np.int32)) >= 0)
+    assert samples[600] == 8000
+
+
+def test_stop_sans_fondu_ne_fond_pas_le_titre_suivant(engine: ContinuousAudioEngine) -> None:
+    _cut_engine(engine)
+    engine.stop(keep_output=True)
+
+    engine.play_track("b.flac", _constant_pcm(2000, 8000), 1000)
+    data, _ = engine.read_pcm(10 * BYTES_PER_FRAME)
+
+    assert np.all(np.frombuffer(data, dtype="<i2") == 8000)

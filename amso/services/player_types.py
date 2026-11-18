@@ -33,6 +33,8 @@ class PlayerStateBase(QObject):
     _volume_enforce_ticks: int
     _is_seeking: bool
     _pending_seek_ms: int
+    _vlc_seek_hold_ms: int
+    _vlc_seek_hold_deadline: float
     _current_time_ms: int
     _total_time_ms: int
     _is_paused_requested: bool

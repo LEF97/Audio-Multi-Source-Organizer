@@ -23,10 +23,22 @@ from PySide6.QtWidgets import (
 )
 
 from amso.core.i18n import tr
-from amso.ui.styles import style_icon_button, volume_label_qss, volume_slider_qss
+from amso.ui.styles import (
+    COLOR_BG_CARD,
+    COLOR_BG_HOVER,
+    COLOR_BORDER_LIGHT,
+    COLOR_PRIMARY_HOVER,
+    COLOR_TEXT_BRIGHT,
+    COLOR_TEXT_DIM,
+    COLOR_TEXT_DISABLED,
+    COLOR_TEXT_MUTED,
+    style_icon_button,
+)
 from amso.ui.views.blind_test.zoom_fade_label import ZoomFadeLabel
-from amso.ui.widgets.common import ClickableSlider
 from amso.ui.widgets.effects_view_mixin import EffectsViewMixin
+from amso.ui.widgets.help_guide_popup import HelpButton
+from amso.ui.widgets.play_pause_button import PlayPauseButton
+from amso.ui.widgets.volume_control import VolumeControl
 
 if TYPE_CHECKING:
     _MixinBase = QWidget
@@ -55,38 +67,28 @@ class BlindTestUiMixin(EffectsViewMixin, _MixinBase):
         top_layout.setSpacing(8)
 
         self.lbl_page_title = QLabel("🎭  " + tr("blind_test.title"))
-        self.lbl_page_title.setStyleSheet("color: #F8FAFC; font-size: 16px; font-weight: 700;")
+        self.lbl_page_title.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-size: 16px; font-weight: 700;")
         top_layout.addWidget(self.lbl_page_title)
 
         top_layout.addSpacing(16)
 
         # Contrôle du volume sonore intégré dans la barre supérieure
-        self.btn_mute = QPushButton("🔊")
-        self.btn_mute.setFixedSize(30, 30)
-        self.btn_mute.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._style_icon_button(self.btn_mute, font_size=13)
+        volume_control = VolumeControl(self.player.volume, self)
+        self.btn_mute = volume_control.btn_mute
+        self.slider_volume = volume_control.slider
+        self.lbl_volume = volume_control.lbl_percent
         self.btn_mute.clicked.connect(self._toggle_mute)
-        top_layout.addWidget(self.btn_mute)
-
-        self.slider_volume = ClickableSlider(Qt.Orientation.Horizontal)
-        self.slider_volume.setRange(0, 100)
-        self.slider_volume.setValue(self.player.volume)
-        self.slider_volume.setFixedWidth(120)
-        self.slider_volume.setFixedHeight(22)
-        self.slider_volume.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.slider_volume.setStyleSheet(volume_slider_qss(groove_height=5, handle_size=12))
         self.slider_volume.valueChanged.connect(self._on_volume_changed)
-        top_layout.addWidget(self.slider_volume)
-
-        self.lbl_volume = QLabel(f"{self.player.volume}%")
-        self.lbl_volume.setStyleSheet(volume_label_qss(min_width=38))
-        top_layout.addWidget(self.lbl_volume)
+        top_layout.addWidget(volume_control)
 
         top_layout.addStretch()
 
         self.lbl_effect_badge, self.combo_effect = self._create_effects_combo()
         top_layout.addWidget(self.lbl_effect_badge)
         top_layout.addWidget(self.combo_effect)
+
+        self.btn_help = HelpButton("blind_test.help_title", "blind_test.help_body", parent=self)
+        top_layout.addWidget(self.btn_help)
         layout.addWidget(top_bar)
 
         # Sous-barre de progression globale de la session Blind Test
@@ -101,9 +103,9 @@ class BlindTestUiMixin(EffectsViewMixin, _MixinBase):
         self.lbl_session_progress = QLabel("")
         self.lbl_session_progress.setObjectName("lblSessionProgress")
         self.lbl_session_progress.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.lbl_session_progress.setStyleSheet("""
-            QLabel#lblSessionProgress {
-                color: #94A3B8;
+        self.lbl_session_progress.setStyleSheet(f"""
+            QLabel#lblSessionProgress {{
+                color: {COLOR_TEXT_MUTED};
                 font-size: 13px;
                 font-weight: 600;
                 padding: 4px 16px;
@@ -111,7 +113,7 @@ class BlindTestUiMixin(EffectsViewMixin, _MixinBase):
                 background-color: rgba(30, 41, 59, 0.7);
                 border: 1px solid rgba(56, 189, 248, 0.22);
                 margin-top: 2px;
-            }
+            }}
         """)
         sub_layout.addWidget(self.lbl_session_progress)
         sub_layout.addStretch()
@@ -182,8 +184,8 @@ class BlindTestUiMixin(EffectsViewMixin, _MixinBase):
         font.setWeight(QFont.Weight.ExtraBold)
         self.lbl_countdown.setFont(font)
         self.lbl_countdown.setText("20")
-        self.lbl_countdown.setStyleSheet("""
-            color: #38BDF8;
+        self.lbl_countdown.setStyleSheet(f"""
+            color: {COLOR_PRIMARY_HOVER};
             font-size: 88px;
             font-weight: 800;
             background: transparent;
@@ -198,24 +200,24 @@ class BlindTestUiMixin(EffectsViewMixin, _MixinBase):
         self.round_progress.setValue(0)
         self.round_progress.setFixedHeight(6)
         self.round_progress.setTextVisible(False)
-        self.round_progress.setStyleSheet("""
-            QProgressBar {
-                background-color: #20242D;
+        self.round_progress.setStyleSheet(f"""
+            QProgressBar {{
+                background-color: {COLOR_BG_CARD};
                 border-radius: 3px;
                 border: none;
-            }
-            QProgressBar::chunk {
-                background-color: #38BDF8;
+            }}
+            QProgressBar::chunk {{
+                background-color: {COLOR_PRIMARY_HOVER};
                 border-radius: 3px;
-            }
+            }}
         """)
         card_layout.addWidget(self.round_progress)
 
         # Badge de statut (ex: "À vous de deviner !", "Révélé !")
         self.lbl_status_badge = QLabel(tr("blind_test.status_searching"))
         self.lbl_status_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.lbl_status_badge.setStyleSheet("""
-            color: #38BDF8;
+        self.lbl_status_badge.setStyleSheet(f"""
+            color: {COLOR_PRIMARY_HOVER};
             font-size: 12px;
             font-weight: 600;
             padding: 3px 12px;
@@ -233,19 +235,21 @@ class BlindTestUiMixin(EffectsViewMixin, _MixinBase):
         info_layout.setSpacing(2)
 
         self.lbl_title = QLabel("❓  " + tr("blind_test.mystery_title"))
-        self.lbl_title.setStyleSheet("color: #F8FAFC; font-size: 19px; font-weight: 700;")
+        self.lbl_title.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-size: 19px; font-weight: 700;")
         self.lbl_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_title.setWordWrap(True)
         info_layout.addWidget(self.lbl_title)
 
         self.lbl_artist_album = QLabel("👥  " + tr("blind_test.mystery_artist"))
-        self.lbl_artist_album.setStyleSheet("color: #94A3B8; font-size: 14px;")
+        self.lbl_artist_album.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 14px;")
         self.lbl_artist_album.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_artist_album.setWordWrap(True)
         info_layout.addWidget(self.lbl_artist_album)
 
         self.lbl_file_name = QLabel("📁  " + tr("blind_test.mystery_file"))
-        self.lbl_file_name.setStyleSheet("color: #64748B; font-size: 12px; margin-top: 4px; margin-bottom: 12px;")
+        self.lbl_file_name.setStyleSheet(
+            f"color: {COLOR_TEXT_DIM}; font-size: 12px; margin-top: 4px; margin-bottom: 12px;"
+        )
         self.lbl_file_name.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_file_name.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.lbl_file_name.setWordWrap(True)
@@ -263,42 +267,26 @@ class BlindTestUiMixin(EffectsViewMixin, _MixinBase):
         self.btn_prev = QPushButton(tr("blind_test.btn_prev"))
         self.btn_prev.setFixedHeight(46)
         self.btn_prev.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_prev.setStyleSheet("""
-            QPushButton {
-                background-color: #20242D;
-                color: #F8FAFC;
-                border: 1px solid #333846;
+        self.btn_prev.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {COLOR_BG_CARD};
+                color: {COLOR_TEXT_BRIGHT};
+                border: 1px solid {COLOR_BORDER_LIGHT};
                 border-radius: 12px;
                 padding: 0 14px;
                 font-size: 13px;
                 font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #2B303C;
-                border-color: #38BDF8;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {COLOR_BG_HOVER};
+                border-color: {COLOR_PRIMARY_HOVER};
+            }}
         """)
         self.btn_prev.clicked.connect(self._on_prev_track_clicked)
         ctrl_layout.addWidget(self.btn_prev)
 
         # Bouton Play / Pause (pour lancer ou figer le chrono)
-        self.btn_play_pause = QPushButton("▶")
-        self.btn_play_pause.setFixedSize(46, 46)
-        self.btn_play_pause.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_play_pause.setStyleSheet("""
-            QPushButton {
-                background-color: #20242D;
-                color: #CBD5E1;
-                border: 1px solid #333846;
-                border-radius: 23px;
-                font-size: 18px;
-            }
-            QPushButton:hover {
-                background-color: #2B303C;
-                color: #F8FAFC;
-                border-color: #38BDF8;
-            }
-        """)
+        self.btn_play_pause = PlayPauseButton(diameter=46)
         self.btn_play_pause.clicked.connect(self._on_play_pause_clicked)
         ctrl_layout.addWidget(self.btn_play_pause)
 
@@ -306,25 +294,25 @@ class BlindTestUiMixin(EffectsViewMixin, _MixinBase):
         self.btn_reveal = QPushButton(tr("blind_test.btn_reveal"))
         self.btn_reveal.setFixedHeight(46)
         self.btn_reveal.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_reveal.setStyleSheet("""
-            QPushButton {
-                background-color: #20242D;
-                color: #F8FAFC;
-                border: 1px solid #333846;
+        self.btn_reveal.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {COLOR_BG_CARD};
+                color: {COLOR_TEXT_BRIGHT};
+                border: 1px solid {COLOR_BORDER_LIGHT};
                 border-radius: 12px;
                 padding: 0 18px;
                 font-size: 13px;
                 font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #2B303C;
-                border-color: #38BDF8;
-            }
-            QPushButton:disabled {
+            }}
+            QPushButton:hover {{
+                background-color: {COLOR_BG_HOVER};
+                border-color: {COLOR_PRIMARY_HOVER};
+            }}
+            QPushButton:disabled {{
                 background-color: #16181F;
-                color: #475569;
+                color: {COLOR_TEXT_DISABLED};
                 border-color: #242832;
-            }
+            }}
         """)
         self.btn_reveal.clicked.connect(self._on_reveal_clicked)
         ctrl_layout.addWidget(self.btn_reveal)
@@ -333,20 +321,20 @@ class BlindTestUiMixin(EffectsViewMixin, _MixinBase):
         self.btn_next = QPushButton(tr("blind_test.btn_next"))
         self.btn_next.setFixedHeight(46)
         self.btn_next.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_next.setStyleSheet("""
-            QPushButton {
-                background-color: #20242D;
-                color: #F8FAFC;
-                border: 1px solid #333846;
+        self.btn_next.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {COLOR_BG_CARD};
+                color: {COLOR_TEXT_BRIGHT};
+                border: 1px solid {COLOR_BORDER_LIGHT};
                 border-radius: 12px;
                 padding: 0 14px;
                 font-size: 13px;
                 font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #2B303C;
-                border-color: #38BDF8;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {COLOR_BG_HOVER};
+                border-color: {COLOR_PRIMARY_HOVER};
+            }}
         """)
         self.btn_next.clicked.connect(self._on_next_track_clicked)
         ctrl_layout.addWidget(self.btn_next)

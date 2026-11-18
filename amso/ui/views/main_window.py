@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import logging
+import sqlite3
 import subprocess
 import sys
 from typing import Any
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import QCoreApplication, QEvent, QEventLoop, Qt, QTimer
+from PySide6.QtGui import QMoveEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QDialog,
     QFrame,
@@ -17,19 +19,21 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QMessageBox,
     QSplitter,
+    QStackedWidget,
     QTableView,
     QVBoxLayout,
     QWidget,
 )
 
+from amso.core.config import get_config_manager
 from amso.core.database import (
     DatabaseManager,
     get_default_data_dir,
 )
 from amso.core.i18n import get_i18n, tr
-from amso.core.scheduler import SyncScheduler
 from amso.core.startup_timing import get_startup_clock
 from amso.services.player_service import PlayerService
+from amso.services.scheduler import SyncScheduler
 from amso.services.sleep_inhibitor import SleepInhibitor
 from amso.services.update_checker import UpdateCheckerWorker
 from amso.services.vlc_info import supports_vlc_download
@@ -38,35 +42,40 @@ from amso.ui.models import FolderTrackTableModel, TrackTableModel
 from amso.ui.pages.folders_page import FoldersPageMixin
 from amso.ui.pages.folders_trash import FoldersTrashMixin
 from amso.ui.pages.folders_tree import FoldersTreeMixin
+from amso.ui.pages.library_sources import LibrarySourcesPageMixin
 from amso.ui.pages.navigation import NavigationMixin
 from amso.ui.pages.playback_settings import PlaybackSettingsMixin
 from amso.ui.pages.retranslate import RetranslateMixin
 from amso.ui.pages.scan_controller import ScanControllerMixin
 from amso.ui.pages.session_state import SessionStateMixin
 from amso.ui.pages.settings_about import SettingsAboutPageMixin
+from amso.ui.pages.settings_effects import SettingsEffectsPageMixin
 from amso.ui.pages.settings_general import SettingsGeneralPageMixin
 from amso.ui.pages.settings_player import SettingsPlayerPageMixin
-from amso.ui.pages.settings_sources import SettingsSourcesPageMixin
+from amso.ui.pages.settings_sound import SettingsSoundPageMixin
 from amso.ui.pages.sidebar_layout import SidebarLayoutMixin
 from amso.ui.pages.sources_list import SourcesListMixin
-from amso.ui.pages.stats_page import StatsPageMixin
 from amso.ui.pages.table_columns import TableColumnsMixin
+from amso.ui.pages.taskbar_controller import TaskbarAndTrayMixin
 from amso.ui.pages.track_actions import TrackActionsMixin
 from amso.ui.pages.update_controller import UpdateControllerMixin
+from amso.ui.styles import COLOR_TEXT_BRIGHT, COLOR_TEXT_DISABLED, COLOR_TEXT_MUTED
 from amso.ui.theme import DARK_THEME_QSS
 from amso.ui.views.cover_helper import wait_for_cover_workers
 from amso.ui.views.update_banner import UpdateBannerWidget
+from amso.ui.widgets.help_guide_popup import HelpButton
 from amso.ui.workers import ScanWorker
 
 logger = logging.getLogger(__name__)
 
 
 class MainWindow(
+    SettingsSoundPageMixin,
     SettingsPlayerPageMixin,
+    SettingsEffectsPageMixin,
     SettingsAboutPageMixin,
-    StatsPageMixin,
     SettingsGeneralPageMixin,
-    SettingsSourcesPageMixin,
+    LibrarySourcesPageMixin,
     ScanControllerMixin,
     FoldersPageMixin,
     FoldersTreeMixin,
@@ -79,6 +88,7 @@ class MainWindow(
     SourcesListMixin,
     NavigationMixin,
     PlaybackSettingsMixin,
+    TaskbarAndTrayMixin,
     TrackActionsMixin,
     QMainWindow,
 ):
@@ -95,8 +105,7 @@ class MainWindow(
         self._current_scanning_source_id: int | None = None
         self.i18n = get_i18n()
 
-        self.resize(1200, 780)
-        self.setMinimumSize(950, 620)
+        self._restore_window_state()
 
         # Application du style sombre et de l'icône officielle
         self.setStyleSheet(DARK_THEME_QSS)
@@ -115,6 +124,8 @@ class MainWindow(
         clock.mark("MainWindow: modèles")
         self.player_service = PlayerService(parent=self)
         clock.mark("PlayerService (VLC, audio)")
+        self.table_model.set_player_service(self.player_service)
+        self.folder_table_model.set_player_service(self.player_service)
         self._player_state: str = "stopped"
         self.player_service.error_occurred.connect(self._on_player_error)
         self.player_service.state_changed.connect(self._on_player_state_changed)
@@ -191,6 +202,8 @@ class MainWindow(
         self._restore_active_page()
         clock.mark("restauration page active")
 
+        self._setup_taskbar_and_tray()
+
         # Vérification non-bloquante des mises à jour en tâche de fond (différée de 3,5s)
         self.update_worker: UpdateCheckerWorker | None = None
         QTimer.singleShot(3500, lambda: self._check_for_updates(manual=False))
@@ -201,12 +214,43 @@ class MainWindow(
         self._update_timer.timeout.connect(lambda: self._check_for_updates(manual=False))
         self._update_timer.start()
 
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+        if self._is_window_normal_state():
+            self._windowed_size = (self.width(), self.height())
+
+    def moveEvent(self, event: QMoveEvent) -> None:
+        super().moveEvent(event)
+        if self._is_window_normal_state():
+            self._windowed_pos = (self.x(), self.y())
+
+    def changeEvent(self, event: QEvent) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.WindowStateChange and self._is_window_normal_state():
+            self._windowed_size = (self.width(), self.height())
+            self._windowed_pos = (self.x(), self.y())
+
+    def nativeEvent(self, eventType: Any, message: Any) -> object:
+        """Intercepte les messages Win32 de la barre des tâches (boutons miniature)."""
+        if self._handle_taskbar_native_event(eventType, message):
+            return True, 0
+        return super().nativeEvent(eventType, message)
+
     def closeEvent(self, event) -> None:
+        self._cleanup_taskbar_and_tray()
         SleepInhibitor.release()
         if hasattr(self, "_playlist_save_timer") and self._playlist_save_timer.isActive():
             self._playlist_save_timer.stop()
+        window_snapshot = self._capture_window_state()
         self._save_all_tables_state()
-        self._save_player_state()
+
+        # Masquer immédiatement la fenêtre avant les E/S disque et l'arrêt des threads
+        self.hide()
+        QCoreApplication.processEvents(QEventLoop.ProcessEventsFlag.ExcludeUserInputEvents)
+
+        with get_config_manager().batch():
+            self._save_window_state(snapshot=window_snapshot)
+            self._save_player_state()
         self._save_current_playlist(immediate=True)
         if hasattr(self, "scheduler") and self.scheduler:
             self.scheduler.stop()
@@ -237,8 +281,9 @@ class MainWindow(
         if hasattr(self, "db") and self.db:
             try:
                 self.db.close()
-            except Exception:
-                pass
+            except sqlite3.Error:
+                # Fermeture de l'application : une base déjà invalide n'a rien à libérer.
+                logger.debug("Fermeture de la base impossible", exc_info=True)
         super().closeEvent(event)
 
     def _setup_ui(self) -> None:
@@ -261,9 +306,9 @@ class MainWindow(
         right_panel = self._create_right_panel()
         splitter.addWidget(right_panel)
 
-        # Ratios de largeur du splitter (240px / reste)
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
+        self._setup_sidebar_width(splitter, sidebar)
 
         # 3. Bannière discrète de mise à jour (placée juste au-dessus de la barre d'état)
         self.update_banner = UpdateBannerWidget(central_widget)
@@ -277,9 +322,9 @@ class MainWindow(
         layout.setSpacing(0)
 
         # Barre supérieure (Recherche & Actions)
-        top_bar = QFrame()
-        top_bar.setObjectName("topBarFrame")
-        top_layout = QHBoxLayout(top_bar)
+        self.tracks_top_bar = QFrame()
+        self.tracks_top_bar.setObjectName("topBarFrame")
+        top_layout = QHBoxLayout(self.tracks_top_bar)
         top_layout.setContentsMargins(16, 10, 16, 10)
         top_layout.setSpacing(12)
 
@@ -292,20 +337,45 @@ class MainWindow(
         top_layout.addStretch()
 
         self.track_count_label = QLabel(tr("topbar.track_count", count="0"))
-        self.track_count_label.setStyleSheet("color: #94A3B8; font-size: 12px; font-weight: 500;")
+        self.track_count_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 12px; font-weight: 500;")
         top_layout.addWidget(self.track_count_label)
 
-        top_bar.setFixedHeight(50)
-        layout.addWidget(top_bar, 0)
+        self.btn_tracks_help = HelpButton("tracks.help_title", "tracks.help_body", parent=self.tracks_top_bar)
+        top_layout.addWidget(self.btn_tracks_help)
 
-        # Table View virtualisée harmonisée
+        self.tracks_top_bar.setFixedHeight(50)
+        layout.addWidget(self.tracks_top_bar, 0)
+
+        # Pile de contenu (Tableau des pistes OU message liste de lecture vide pour les doublons)
+        self.tracks_stack = QStackedWidget()
+
         self.table_view = QTableView()
         self._setup_track_table_view(self.table_view, self.table_model, "all_tracks")
         self.table_view.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.table_view.customContextMenuRequested.connect(self._on_table_context_menu)
         self.table_view.doubleClicked.connect(self._on_table_view_double_clicked)
+        self.tracks_stack.addWidget(self.table_view)
 
-        layout.addWidget(self.table_view, 1)
+        self.tracks_empty_widget = QWidget()
+        empty_layout = QVBoxLayout(self.tracks_empty_widget)
+        empty_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        empty_layout.setSpacing(14)
+
+        empty_icon = QLabel("👥")
+        empty_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        empty_icon.setStyleSheet(f"font-size: 52px; color: {COLOR_TEXT_DISABLED};")
+        empty_layout.addWidget(empty_icon)
+
+        self.lbl_tracks_empty_message = QLabel(tr("duplicates.empty_playlist_message"))
+        self.lbl_tracks_empty_message.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.lbl_tracks_empty_message.setWordWrap(True)
+        self.lbl_tracks_empty_message.setStyleSheet(
+            f"color: {COLOR_TEXT_BRIGHT}; font-size: 16px; font-weight: 700; max-width: 520px;"
+        )
+        empty_layout.addWidget(self.lbl_tracks_empty_message)
+
+        self.tracks_stack.addWidget(self.tracks_empty_widget)
+        layout.addWidget(self.tracks_stack, 1)
         return container
 
     def _show_about_dialog(self) -> None:
@@ -315,11 +385,22 @@ class MainWindow(
     def _on_status_label_clicked(self) -> None:
         """Ouvre les logs lorsqu'on clique sur un avertissement ou une erreur dans la barre d'état."""
         text = self.status_label.text()
-        if getattr(self, "_status_is_alert", False) or "⚠️" in text or "❌" in text:
+        if (
+            getattr(self, "_status_is_alert", False)
+            or getattr(self, "_status_opens_logs", False)
+            or "⚠️" in text
+            or "❌" in text
+        ):
             self.show_logs_page()
 
     def _on_activity_feed_hover_entered(self) -> None:
-        if hasattr(self, "activity_popover") and self.activity_popover:
+        if (
+            hasattr(self, "activity_popover")
+            and self.activity_popover
+            and hasattr(self, "btn_activity_feed")
+            and self.btn_activity_feed.isVisible()
+            and self.btn_activity_feed.isEnabled()
+        ):
             self.activity_popover.show_above_widget(self.btn_activity_feed)
 
     def _on_activity_feed_hover_left(self) -> None:
@@ -327,7 +408,13 @@ class MainWindow(
             self.activity_popover.schedule_hide()
 
     def _on_activity_feed_clicked(self) -> None:
-        if hasattr(self, "activity_popover") and self.activity_popover:
+        if (
+            hasattr(self, "activity_popover")
+            and self.activity_popover
+            and hasattr(self, "btn_activity_feed")
+            and self.btn_activity_feed.isVisible()
+            and self.btn_activity_feed.isEnabled()
+        ):
             if self.activity_popover.isVisible():
                 self.activity_popover.hide()
             else:

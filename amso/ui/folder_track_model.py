@@ -13,6 +13,7 @@ class FolderTrackTableModel(BaseTrackTableModel):
 
     def __init__(self, db: DatabaseManager, parent: QObject | None = None) -> None:
         super().__init__(db, parent)
+        self.db: DatabaseManager = db
         self._all_tracks: list[TrackRecord] = []
         self._displayed_tracks: list[TrackRecord] = []
         self._current_folder_path: str | None = None
@@ -25,6 +26,10 @@ class FolderTrackTableModel(BaseTrackTableModel):
         if parent.isValid():
             return 0
         return len(self._displayed_tracks)
+
+    def total_duration_seconds(self) -> float:
+        """Retourne la durée totale en secondes des pistes actuellement affichées."""
+        return sum(t.duration_seconds or 0 for t in self._displayed_tracks)
 
     def _get_track_at_index(self, row: int) -> TrackRecord | None:
         if 0 <= row < len(self._displayed_tracks):
@@ -44,9 +49,10 @@ class FolderTrackTableModel(BaseTrackTableModel):
         self._recursive = recursive
         self.reload_data()
 
-    def set_playlist(self, playlist_id: int | None) -> None:
-        """Définit la playlist active et charge ses pistes ordonnées."""
+    def set_playlist(self, playlist_id: int | None, album: str | None = None) -> None:
+        """Définit la playlist active (et un filtre album optionnel) et charge ses pistes ordonnées."""
         self._current_playlist_id = playlist_id
+        self._current_playlist_album = album
         self._playlist_explicit_sort = False
         self._current_folder_path = None
         self._current_source_id = None
@@ -59,7 +65,7 @@ class FolderTrackTableModel(BaseTrackTableModel):
         self._apply_filter()
 
     def sort(self, column: int, order: Qt.SortOrder = Qt.SortOrder.AscendingOrder) -> None:
-        if not (0 <= column < len(self.COLUMNS)):
+        if not (0 <= column < len(self.COLUMNS)) or self.COLUMNS[column][1] == "is_playing":
             return
         self._current_sort_col = column
         self._current_sort_order = order
@@ -71,7 +77,10 @@ class FolderTrackTableModel(BaseTrackTableModel):
         self._refresh_sources_cache()
 
         if self._current_playlist_id is not None:
-            raw_tracks = self.db.get_playlist_tracks(self._current_playlist_id)
+            raw_tracks = self.db.get_playlist_tracks(
+                self._current_playlist_id,
+                album=getattr(self, "_current_playlist_album", None),
+            )
             if getattr(self, "_playlist_explicit_sort", False):
                 col = self.COLUMNS[self._current_sort_col][1]
                 if col != "track_number":
@@ -99,6 +108,8 @@ class FolderTrackTableModel(BaseTrackTableModel):
             return
 
         col = self.COLUMNS[self._current_sort_col][1]
+        if col == "is_playing":
+            col = "file_name"
         direction = "DESC" if self._current_sort_order == Qt.SortOrder.DescendingOrder else "ASC"
 
         self._all_tracks = self.db.get_tracks_by_folder(

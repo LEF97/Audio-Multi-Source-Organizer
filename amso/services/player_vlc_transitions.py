@@ -61,6 +61,7 @@ class PlayerVlcTransitionsMixin(_MixinBase):
                 if hasattr(old_player, "stop"):
                     QTimer.singleShot(1500, lambda p=old_player: self._safe_stop_player(p))
             except Exception:
+                # Arrêt différé facultatif : l'ancien lecteur est de toute façon remplacé.
                 pass
 
             self._current_index = next_idx
@@ -101,6 +102,7 @@ class PlayerVlcTransitionsMixin(_MixinBase):
                 if hasattr(player_obj, "stop"):
                     player_obj.stop()
             except Exception:
+                # Moteur vlc_direct figé : lecteur VLC déjà libéré ou sans média, l'échec est sans effet sur la lecture.
                 pass
 
     def _finish_standard_transition(self, idx: int) -> None:
@@ -150,6 +152,7 @@ class PlayerVlcTransitionsMixin(_MixinBase):
                 self._media_player.audio_set_volume(curr_vol)
                 self._last_fade_curr_vol = curr_vol
             except Exception:
+                # Moteur vlc_direct figé, appelé à chaque tick : un échec libvlc ponctuel se corrige au passage suivant.
                 pass
 
         if getattr(self, "_last_fade_next_vol", None) != next_vol:
@@ -157,6 +160,7 @@ class PlayerVlcTransitionsMixin(_MixinBase):
                 self._standby_player.audio_set_volume(next_vol)
                 self._last_fade_next_vol = next_vol
             except Exception:
+                # Moteur vlc_direct figé, appelé à chaque tick : un échec libvlc ponctuel se corrige au passage suivant.
                 pass
 
         if progress >= 1.0:

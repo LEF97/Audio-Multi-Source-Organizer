@@ -82,3 +82,45 @@ def no_blocking_vlc_prompts(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(QMessageBox, "warning", lambda *args, **kwargs: QMessageBox.StandardButton.Ok)
     monkeypatch.setattr(VlcDownloadDialog, "exec", lambda self: QDialog.DialogCode.Rejected)
+
+
+@pytest.fixture(autouse=True)
+def no_automatic_update_check(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Empêche les MainWindow de test de lancer la vérification réseau différée (QTimer à 3,5 s).
+
+    Le thread de requête HTTPS survit au test et fait abandonner Qt (« QThread destroyed while running »)
+    sur les runners macOS.
+    """
+    from amso.ui.pages.update_controller import UpdateControllerMixin
+
+    original = UpdateControllerMixin._check_for_updates
+
+    def check_only_when_manual(self: UpdateControllerMixin, manual: bool = False) -> None:
+        if manual:
+            original(self, manual=True)
+
+    monkeypatch.setattr(UpdateControllerMixin, "_check_for_updates", check_only_when_manual)
+
+
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    """Détruit fenêtres et threads Qt avant la sortie de l'interpréteur.
+
+    Sous Python 3.11 (CI Linux et Windows), les objets Qt encore vivants à la fermeture sont détruits dans un ordre
+    arbitraire et le processus plante (segfault) alors que tous les tests ont réussi.
+    """
+    import gc
+
+    from PySide6.QtCore import QCoreApplication, QEvent, QThreadPool
+    from PySide6.QtWidgets import QApplication
+
+    app = QApplication.instance()
+    if app is None:
+        return
+    for widget in app.topLevelWidgets():
+        widget.close()
+        widget.deleteLater()
+    QThreadPool.globalInstance().waitForDone(5000)
+    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+    app.processEvents()
+    gc.collect()
+    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)

@@ -14,6 +14,7 @@ from amso import __version__
 from amso.core.config import get_config_path
 from amso.core.i18n import tr
 from amso.ui.pages.vlc_status import build_vlc_status
+from amso.ui.widgets.help_guide_popup import HelpButton
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +22,138 @@ if TYPE_CHECKING:
     _MixinBase = QMainWindow
 else:
     _MixinBase = object
+
+# (attribut, clé i18n, préfixe) : les widgets absents sont ignorés, certaines pages ou menus étant optionnels.
+_TEXTS: tuple[tuple[str, str, str], ...] = (
+    # Barre latérale
+    ("btn_player", "sidebar.nav_player", ""),
+    ("btn_blind_test", "sidebar.nav_blind_test", ""),
+    ("btn_playlist", "sidebar.nav_playlist", ""),
+    ("btn_by_folder", "sidebar.nav_by_folder", ""),
+    ("btn_duplicates", "sidebar.nav_duplicates", ""),
+    ("btn_settings_general", "sidebar.nav_settings_general", ""),
+    ("btn_settings_sound", "sidebar.nav_settings_sound", ""),
+    ("btn_library_sources", "sidebar.nav_library_sources", ""),
+    ("btn_settings_player", "sidebar.nav_settings_player", ""),
+    ("btn_settings_effects", "sidebar.nav_settings_effects", ""),
+    ("btn_settings_logs", "sidebar.nav_settings_logs", ""),
+    ("btn_settings_about", "sidebar.nav_settings_about", ""),
+    # Page Morceaux
+    ("btn_cancel_scan", "common.cancel", ""),
+    ("lbl_tracks_empty_message", "duplicates.empty_playlist_message", ""),
+    # Page Par dossiers et corbeille
+    ("lbl_folders_page_title", "folders.page_title", ""),
+    ("lbl_tree_title", "folders.tree_title", ""),
+    ("cb_recursive", "folders.include_subfolders", ""),
+    ("lbl_placeholder_title", "folders.empty_selection_title", ""),
+    ("lbl_placeholder_desc", "folders.empty_selection_desc", ""),
+    ("lbl_trash_title", "trash.banner_title", ""),
+    ("lbl_trash_desc", "trash.banner_desc", ""),
+    ("btn_restore_selected_trash", "trash.btn_restore_selected", ""),
+    ("btn_clear_all_trash", "trash.btn_clear_all", ""),
+    # Paramètres généraux et Sources
+    ("lbl_settings_title", "settings.page_title", ""),
+    ("lbl_library_sources_page_title", "settings.page_sources_title", ""),
+    ("lbl_lib_sources_card_title", "settings.section_sources_title", ""),
+    ("lbl_lib_sources_card_desc", "settings.section_sources_desc", ""),
+    ("btn_lib_tab_sources", "library_sources.tab_by_source", ""),
+    ("btn_lib_tab_library", "library_sources.tab_library", ""),
+    ("btn_add_source_library", "sidebar.btn_add_source", ""),
+    ("lbl_card_lang_title", "settings.section_language", ""),
+    ("lbl_card_lang_desc", "settings.language_desc", ""),
+    ("lbl_card_storage_title", "settings.section_storage", ""),
+    ("btn_open_data_folder", "settings.btn_open_folder", ""),
+    # Paramètres > À propos
+    ("lbl_settings_about_page_title", "settings.about_page_title", ""),
+    ("lbl_about_app_name", "app.name", ""),
+    ("lbl_about_desc", "dialog.about_description", ""),
+    ("btn_check_updates_about", "settings.btn_check_updates", ""),
+    ("btn_update_download", "settings.btn_download_update", ""),
+    ("lbl_about_credits_title", "dialog.about_credits_title", "👍  "),
+    ("lbl_about_credits_tech", "dialog.about_credits_tech", ""),
+    ("lbl_about_license", "dialog.about_license", ""),
+    ("lbl_about_support_title", "dialog.about_support_title", "💖  "),
+    ("btn_about_kofi", "dialog.about_btn_kofi", ""),
+    ("btn_about_donate", "dialog.about_btn_kofi", ""),
+    ("btn_about_sponsors", "dialog.about_btn_sponsors", ""),
+    ("lbl_about_official_title", "dialog.about_official_pages_title", "🌐  "),
+    ("btn_about_github", "dialog.about_btn_github", ""),
+    ("btn_about_itch", "dialog.about_btn_itch", ""),
+    ("action_about", "menu.about", ""),
+    ("action_check_updates", "menu.check_updates", ""),
+    # Paramètres > Son
+    ("lbl_settings_sound_page_title", "settings.page_sound_title", ""),
+    ("lbl_card_sound_proc_title", "settings.sound_processing_title", ""),
+    ("lbl_card_sound_proc_desc", "settings.sound_processing_desc", ""),
+    ("chk_settings_replaygain", "audio_tools.replaygain_enable", ""),
+    ("lbl_settings_speed", "audio_tools.playback_speed", ""),
+    ("btn_settings_speed_reset", "audio_tools.speed_reset", ""),
+    # Paramètres > Lecteur : veille, transitions, moteur
+    ("lbl_settings_player_page_title", "settings.page_player_title", ""),
+    ("lbl_card_player_title", "settings.player_playback_title", ""),
+    ("lbl_card_player_desc", "settings.player_playback_desc", ""),
+    ("radio_sleep_allow", "settings.sleep_mode_allow", ""),
+    ("lbl_sleep_allow_hint", "settings.sleep_mode_allow_hint", ""),
+    ("radio_sleep_screens", "settings.sleep_mode_player_playlist", ""),
+    ("lbl_sleep_screens_hint", "settings.sleep_mode_player_playlist_hint", ""),
+    ("radio_sleep_always", "settings.sleep_mode_always", ""),
+    ("lbl_sleep_always_hint", "settings.sleep_mode_always_hint", ""),
+    ("lbl_card_transitions_title", "settings.player_transitions_title", ""),
+    ("lbl_card_transitions_desc", "settings.player_transitions_desc", ""),
+    ("radio_trans_standard", "settings.transition_standard", ""),
+    ("lbl_trans_standard_hint", "settings.transition_standard_hint", ""),
+    ("radio_trans_gapless", "settings.transition_gapless", ""),
+    ("lbl_trans_gapless_hint", "settings.transition_gapless_hint", ""),
+    ("radio_trans_crossfade", "settings.transition_crossfade", ""),
+    ("lbl_trans_crossfade_hint", "settings.transition_crossfade_hint", ""),
+    ("lbl_crossfade_duration", "settings.crossfade_duration", ""),
+    ("lbl_card_engine_title", "settings.player_engine_choice_title", ""),
+    ("lbl_card_engine_desc", "settings.player_engine_choice_desc", ""),
+    ("radio_engine_buffer", "settings.player_engine_buffer_label", ""),
+    ("lbl_engine_buffer_hint", "settings.player_engine_buffer_hint", ""),
+    ("radio_engine_vlc", "settings.player_engine_vlc_label", ""),
+    ("lbl_engine_vlc_hint", "settings.player_engine_vlc_hint", ""),
+    ("lbl_vlc_latency", "settings.player_engine_vlc_latency_label", ""),
+    ("lbl_vlc_latency_hint", "settings.player_engine_vlc_latency_hint", ""),
+    # Paramètres > Lecteur : Blind Test
+    ("lbl_card_bt_title", "blind_test.settings_title", "🎭  "),
+    ("lbl_card_bt_desc", "settings.blind_test_desc", ""),
+    ("lbl_bt_countdown", "blind_test.countdown_label", ""),
+    ("lbl_bt_reveal", "blind_test.reveal_label", ""),
+    ("lbl_bt_fade", "blind_test.fade_label", ""),
+)
+
+_TITLES: tuple[tuple[str, str], ...] = (
+    ("drawer_player", "sidebar.drawer_player"),
+    ("drawer_games", "sidebar.drawer_games"),
+    ("drawer_tools", "sidebar.drawer_tools"),
+    ("drawer_settings", "sidebar.drawer_settings"),
+    ("drawer_library_mgmt", "sidebar.drawer_library_mgmt"),
+)
+
+_TOOLTIPS: tuple[tuple[str, str], ...] = (
+    ("btn_refresh_tree", "folders.btn_refresh"),
+    ("btn_expand_tree", "folders.btn_expand_all"),
+    ("btn_collapse_tree", "folders.btn_collapse_all"),
+    ("btn_expand_lib_sources", "folders.btn_expand_all"),
+    ("btn_collapse_lib_sources", "folders.btn_collapse_all"),
+)
+
+_PLACEHOLDERS: tuple[tuple[str, str], ...] = (
+    ("search_edit", "topbar.search_placeholder"),
+    ("folder_search_edit", "folders.search_placeholder"),
+)
+
+# Vues autonomes qui gèrent elles-mêmes leurs libellés
+_SUB_VIEWS: tuple[str, ...] = (
+    "update_banner",
+    "page_player",
+    "page_blind_test",
+    "page_playlist",
+    "folders_player_header",
+    "page_logs",
+    "activity_popover",
+)
 
 
 class RetranslateMixin(_MixinBase):
@@ -33,81 +166,65 @@ class RetranslateMixin(_MixinBase):
     def retranslate_ui(self) -> None:
         """Applique les traductions de la langue active à l'ensemble de l'interface."""
         self.setWindowTitle(f"{tr('app.window_title')} v{__version__}")
+        self._apply_static_translations()
+        self._retranslate_status_and_counts()
+        self._retranslate_folders_state()
+        self._retranslate_settings_dynamic()
 
-        # Tiroirs
-        if hasattr(self, "drawer_player"):
-            self.drawer_player.set_title(tr("sidebar.drawer_player"))
-        if hasattr(self, "drawer_games"):
-            self.drawer_games.set_title(tr("sidebar.drawer_games"))
-        self.drawer_library.set_title(tr("sidebar.drawer_library"))
-        self.drawer_tools.set_title(tr("sidebar.drawer_tools"))
-        self.drawer_stats.set_title(tr("sidebar.drawer_stats"))
-        self.drawer_sources.set_title(tr("sidebar.drawer_sources"))
-        self.drawer_settings.set_title(tr("sidebar.drawer_settings"))
+        for name in _SUB_VIEWS:
+            view = getattr(self, name, None)
+            if view:
+                view.retranslate_ui()
+        for help_btn in self.findChildren(HelpButton):
+            help_btn.retranslate_ui()
+        self._sync_taskbar_and_tray()
 
-        # Boutons de tiroir
-        if hasattr(self, "btn_player"):
-            self.btn_player.setText(tr("sidebar.nav_player"))
-        if hasattr(self, "btn_blind_test"):
-            self.btn_blind_test.setText(tr("sidebar.nav_blind_test"))
-        if hasattr(self, "btn_playlist"):
-            self.btn_playlist.setText(tr("sidebar.nav_playlist"))
-        self.btn_all_tracks.setText(tr("sidebar.nav_all_tracks"))
-        self.btn_by_folder.setText(tr("sidebar.nav_by_folder"))
-        self.btn_duplicates.setText(tr("sidebar.nav_duplicates"))
-        self.btn_stats_page.setText(tr("sidebar.nav_stats_page"))
-        self.btn_settings_general.setText(tr("sidebar.nav_settings_general"))
-        if hasattr(self, "btn_settings_sources"):
-            self.btn_settings_sources.setText(tr("sidebar.nav_settings_sources"))
-        if hasattr(self, "btn_settings_player"):
-            self.btn_settings_player.setText(tr("sidebar.nav_settings_player"))
-        if hasattr(self, "btn_settings_logs"):
-            self.btn_settings_logs.setText(tr("sidebar.nav_settings_logs"))
-        if hasattr(self, "btn_settings_about"):
-            self.btn_settings_about.setText(tr("sidebar.nav_settings_about"))
-        if hasattr(self, "btn_activity_feed") and not (self.scan_worker and self.scan_worker.isRunning()):
-            self.btn_activity_feed.setText("⚡ " + tr("status.activity_feed"))
-        self.btn_add_source.setText(tr("sidebar.btn_add_source"))
+    def _apply_static_translations(self) -> None:
+        for attr, key, prefix in _TEXTS:
+            widget = getattr(self, attr, None)
+            if widget is not None:
+                widget.setText(prefix + tr(key))
+        for attr, key in _TITLES:
+            drawer = getattr(self, attr, None)
+            if drawer is not None:
+                drawer.set_title(tr(key))
+        for attr, key in _TOOLTIPS:
+            widget = getattr(self, attr, None)
+            if widget is not None:
+                widget.setToolTip(tr(key))
+        for attr, key in _PLACEHOLDERS:
+            widget = getattr(self, attr, None)
+            if widget is not None:
+                widget.setPlaceholderText(tr(key))
 
-        # Page Morceaux
-        self.search_edit.setPlaceholderText(tr("topbar.search_placeholder"))
-        self.btn_cancel_scan.setText(tr("common.cancel"))
+        menu_help = getattr(self, "menu_help", None)
+        if menu_help is not None:
+            menu_help.setTitle(tr("menu.help"))
+        btn_quick_about = getattr(self, "btn_quick_about", None)
+        if btn_quick_about is not None:
+            btn_quick_about.setToolTip(tr("dialog.about_title") + " (F1)")
 
-        if not (self.scan_worker and self.scan_worker.isRunning()):
-            if not getattr(self, "_status_is_alert", False):
-                self.status_label.setText(tr("status.ready"))
-                self.status_label.setToolTip("")
-                self.status_label.setCursor(Qt.CursorShape.ArrowCursor)
+    def _retranslate_status_and_counts(self) -> None:
+        scanning = bool(self.scan_worker and self.scan_worker.isRunning())
+        # Pendant un scan, le bouton et la barre d'état affichent la progression : ne pas l'écraser
+        btn_activity_feed = getattr(self, "btn_activity_feed", None)
+        if btn_activity_feed is not None and not scanning:
+            btn_activity_feed.setText("⚡ " + tr("status.activity_feed"))
+        if not scanning and not getattr(self, "_status_is_alert", False):
+            self.status_label.setText(tr("status.ready"))
+            self.status_label.setToolTip("")
+            self.status_label.setCursor(Qt.CursorShape.ArrowCursor)
 
         self._update_track_count()
         self.table_model.notify_language_changed()
 
-        # Page Statistiques
-        self.lbl_stats_page_title.setText(tr("stats.page_title"))
-        self.btn_refresh_stats.setText(tr("common.refresh"))
-        self.lbl_kpi_tracks_title.setText(tr("stats.card_tracks"))
-        self.lbl_kpi_size_title.setText(tr("stats.card_size"))
-        self.lbl_kpi_duration_title.setText(tr("stats.card_duration"))
-        self.lbl_kpi_sources_title.setText(tr("stats.card_sources"))
-        self.lbl_section_formats.setText(tr("stats.section_formats"))
-        self.lbl_section_sources.setText(tr("stats.section_sources"))
-        self._refresh_stats_view()
-
-        # Page Par dossiers
-        self.lbl_folders_page_title.setText(tr("folders.page_title"))
-        self.lbl_tree_title.setText(tr("folders.tree_title"))
-        self.btn_refresh_tree.setToolTip(tr("folders.btn_refresh"))
-        self.btn_expand_tree.setToolTip(tr("folders.btn_expand_all"))
-        self.btn_collapse_tree.setToolTip(tr("folders.btn_collapse_all"))
-        self.cb_recursive.setText(tr("folders.include_subfolders"))
-        self.folder_search_edit.setPlaceholderText(tr("folders.search_placeholder"))
-        self.lbl_placeholder_title.setText(tr("folders.empty_selection_title"))
-        self.lbl_placeholder_desc.setText(tr("folders.empty_selection_desc"))
+    def _retranslate_folders_state(self) -> None:
         self.folder_tree.setHeaderLabels([tr("table.col_folder_name"), tr("folders.tree_col_count")])
         self.folder_table_model.notify_language_changed()
-        cnt = self.folder_table_model.rowCount()
-        count_key = "folders.track_count_singular" if cnt == 1 else "folders.track_count"
-        self.lbl_folder_count_badge.setText(tr(count_key, count=f"{cnt:,}"))
+        if self.right_stack.currentIndex() == 2:
+            self._update_folder_count_badge(count=self.trash_table.rowCount(), total_duration_sec=0.0)
+        else:
+            self._update_folder_count_badge()
 
         cur_item = self.folder_tree.currentItem()
         if cur_item:
@@ -116,166 +233,37 @@ class RetranslateMixin(_MixinBase):
                 fp = cdata.get("folder_path")
                 self.lbl_folder_breadcrumb.setToolTip(f"{fp}\n({tr('folders.breadcrumb_tooltip')})")
 
-        # Corbeille dans la vue Dossiers
-        if hasattr(self, "lbl_trash_title"):
-            self.lbl_trash_title.setText(tr("trash.banner_title"))
-        if hasattr(self, "lbl_trash_desc"):
-            self.lbl_trash_desc.setText(tr("trash.banner_desc"))
-        if hasattr(self, "btn_restore_selected_trash"):
-            self.btn_restore_selected_trash.setText(tr("trash.btn_restore_selected"))
-        if hasattr(self, "btn_clear_all_trash"):
-            self.btn_clear_all_trash.setText(tr("trash.btn_clear_all"))
-
-        # Page Paramètres
-        self.lbl_settings_title.setText(tr("settings.page_title"))
-        if hasattr(self, "lbl_settings_sources_page_title"):
-            self.lbl_settings_sources_page_title.setText(tr("settings.page_sources_title"))
-        if hasattr(self, "lbl_card_sources_title"):
-            self.lbl_card_sources_title.setText(tr("settings.section_sources_title"))
-            self.lbl_card_sources_desc.setText(tr("settings.section_sources_desc"))
-            self.btn_add_source_settings.setText(tr("sidebar.btn_add_source"))
-            self._refresh_settings_sources_table()
-        self.lbl_card_lang_title.setText(tr("settings.section_language"))
-        self.lbl_card_lang_desc.setText(tr("settings.language_desc"))
-        self.lbl_card_storage_title.setText(tr("settings.section_storage"))
-        self.btn_open_data_folder.setText(tr("settings.btn_open_folder"))
-
-        # Page Paramètres > À propos
-        if hasattr(self, "lbl_settings_about_page_title"):
-            self.lbl_settings_about_page_title.setText(tr("settings.about_page_title"))
-        if hasattr(self, "lbl_about_app_name"):
-            self.lbl_about_app_name.setText(tr("app.name"))
-        if hasattr(self, "lbl_about_desc"):
-            self.lbl_about_desc.setText(tr("dialog.about_description"))
-        if hasattr(self, "btn_check_updates_about"):
-            self.btn_check_updates_about.setText(tr("settings.btn_check_updates"))
-        if hasattr(self, "btn_update_download"):
-            self.btn_update_download.setText(tr("settings.btn_download_update"))
+    def _retranslate_settings_dynamic(self) -> None:
+        """Libellés qui dépendent d'une valeur courante (curseurs, chemins, état VLC) ou d'un rafraîchissement."""
+        if hasattr(self, "lbl_lib_sources_card_title"):
+            self._refresh_library_sources_tree()
         self._refresh_update_ui()
-        if hasattr(self, "lbl_about_credits_title"):
-            self.lbl_about_credits_title.setText("👍  " + tr("dialog.about_credits_title"))
-        if hasattr(self, "lbl_about_credits_tech"):
-            self.lbl_about_credits_tech.setText(tr("dialog.about_credits_tech"))
-        if hasattr(self, "lbl_about_license"):
-            self.lbl_about_license.setText(tr("dialog.about_license"))
-        if hasattr(self, "lbl_about_support_title"):
-            self.lbl_about_support_title.setText("💖  " + tr("dialog.about_support_title"))
-        if hasattr(self, "btn_about_kofi"):
-            self.btn_about_kofi.setText(tr("dialog.about_btn_kofi"))
-        if hasattr(self, "btn_about_donate"):
-            self.btn_about_donate.setText(tr("dialog.about_btn_kofi"))
-        if hasattr(self, "btn_about_sponsors"):
-            self.btn_about_sponsors.setText(tr("dialog.about_btn_sponsors"))
-        if hasattr(self, "lbl_about_official_title"):
-            self.lbl_about_official_title.setText("🌐  " + tr("dialog.about_official_pages_title"))
-        if hasattr(self, "btn_about_github"):
-            self.btn_about_github.setText(tr("dialog.about_btn_github"))
-        if hasattr(self, "btn_about_itch"):
-            self.btn_about_itch.setText(tr("dialog.about_btn_itch"))
-
-        if hasattr(self, "btn_quick_about"):
-            self.btn_quick_about.setToolTip(tr("dialog.about_title") + " (F1)")
-        if hasattr(self, "menu_help") and self.menu_help is not None:
-            self.menu_help.setTitle(tr("menu.help"))
-        if hasattr(self, "action_about") and self.action_about is not None:
-            self.action_about.setText(tr("menu.about"))
-        if hasattr(self, "action_check_updates") and self.action_check_updates is not None:
-            self.action_check_updates.setText(tr("menu.check_updates"))
-        if hasattr(self, "update_banner"):
-            self.update_banner.retranslate_ui()
 
         cfg_p = str(get_config_path())
         db_p = str(self.db.db_path)
         self.lbl_config_path_val.setText(f"• <b>{tr('settings.config_file')}</b> <code>{cfg_p}</code>")
         self.lbl_db_path_val.setText(f"• <b>{tr('settings.db_file')}</b> <code>{db_p}</code>")
 
-        if hasattr(self, "lbl_settings_player_page_title"):
-            self.lbl_settings_player_page_title.setText(tr("settings.page_player_title"))
-            self.lbl_card_player_title.setText(tr("settings.player_playback_title"))
-            self.lbl_card_player_desc.setText(tr("settings.player_playback_desc"))
-            if hasattr(self, "radio_sleep_allow"):
-                self.radio_sleep_allow.setText(tr("settings.sleep_mode_allow"))
-                self.lbl_sleep_allow_hint.setText(tr("settings.sleep_mode_allow_hint"))
-                self.radio_sleep_screens.setText(tr("settings.sleep_mode_player_playlist"))
-                self.lbl_sleep_screens_hint.setText(tr("settings.sleep_mode_player_playlist_hint"))
-                self.radio_sleep_always.setText(tr("settings.sleep_mode_always"))
-                self.lbl_sleep_always_hint.setText(tr("settings.sleep_mode_always_hint"))
+        slider_crossfade = getattr(self, "slider_crossfade", None)
+        if slider_crossfade is not None and hasattr(self, "lbl_crossfade_value"):
+            self.lbl_crossfade_value.setText(
+                tr("settings.crossfade_duration_val", seconds=str(slider_crossfade.value()))
+            )
+        slider_vlc_latency = getattr(self, "slider_vlc_latency", None)
+        if slider_vlc_latency is not None and hasattr(self, "lbl_vlc_latency_val"):
+            self.lbl_vlc_latency_val.setText(
+                tr("settings.player_engine_vlc_latency_val", ms=str(slider_vlc_latency.value()))
+            )
 
-            if hasattr(self, "lbl_card_transitions_title"):
-                self.lbl_card_transitions_title.setText(tr("settings.player_transitions_title"))
-                self.lbl_card_transitions_desc.setText(tr("settings.player_transitions_desc"))
-                self.radio_trans_standard.setText(tr("settings.transition_standard"))
-                self.lbl_trans_standard_hint.setText(tr("settings.transition_standard_hint"))
-                self.radio_trans_gapless.setText(tr("settings.transition_gapless"))
-                self.lbl_trans_gapless_hint.setText(tr("settings.transition_gapless_hint"))
-                self.radio_trans_crossfade.setText(tr("settings.transition_crossfade"))
-                self.lbl_trans_crossfade_hint.setText(tr("settings.transition_crossfade_hint"))
-                self.lbl_crossfade_duration.setText(tr("settings.crossfade_duration"))
-                self.lbl_crossfade_value.setText(
-                    tr("settings.crossfade_duration_val", seconds=str(self.slider_crossfade.value()))
-                )
+        self._retranslate_cover_transition_card()
+        self._retranslate_settings_effects_page()
 
-            if hasattr(self, "lbl_card_engine_title"):
-                self.lbl_card_engine_title.setText(tr("settings.player_engine_choice_title"))
-                self.lbl_card_engine_desc.setText(tr("settings.player_engine_choice_desc"))
-                self.radio_engine_buffer.setText(tr("settings.player_engine_buffer_label"))
-                self.lbl_engine_buffer_hint.setText(tr("settings.player_engine_buffer_hint"))
-                self.radio_engine_vlc.setText(tr("settings.player_engine_vlc_label"))
-                self.lbl_engine_vlc_hint.setText(tr("settings.player_engine_vlc_hint"))
-                if hasattr(self, "lbl_vlc_latency"):
-                    self.lbl_vlc_latency.setText(tr("settings.player_engine_vlc_latency_label"))
-                if hasattr(self, "lbl_vlc_latency_hint"):
-                    self.lbl_vlc_latency_hint.setText(tr("settings.player_engine_vlc_latency_hint"))
-                if hasattr(self, "lbl_vlc_latency_val") and hasattr(self, "slider_vlc_latency"):
-                    self.lbl_vlc_latency_val.setText(
-                        tr("settings.player_engine_vlc_latency_val", ms=str(self.slider_vlc_latency.value()))
-                    )
+        if hasattr(self, "lbl_vlc_status_val"):
+            status_html, status_tip = build_vlc_status(self.player_service)
+            self.lbl_vlc_status_val.setText(status_html)
+            self.lbl_vlc_status_val.setToolTip(status_tip)
 
-            if hasattr(self, "lbl_card_effects_title"):
-                self.lbl_card_effects_title.setText(tr("settings.player_effects_title"))
-                self.lbl_card_effects_desc.setText(tr("settings.player_effects_desc"))
-                self.radio_eff_particles.setText(f"✨ {tr('effects.particles')}")
-                self.lbl_eff_particles_hint.setText(tr("effects.particles_hint"))
-                self.radio_eff_waves.setText(f"🌊 {tr('effects.waves')}")
-                self.lbl_eff_waves_hint.setText(tr("effects.waves_hint"))
-                self.radio_eff_stars.setText(f"☄️ {tr('effects.stars')}")
-                self.lbl_eff_stars_hint.setText(tr("effects.stars_hint"))
-                self.radio_eff_warp.setText(f"🚀 {tr('effects.warp')}")
-                self.lbl_eff_warp_hint.setText(tr("effects.warp_hint"))
-                self.radio_eff_warp_dynamic.setText(f"🛸 {tr('effects.warp_dynamic')}")
-                self.lbl_eff_warp_dynamic_hint.setText(tr("effects.warp_dynamic_hint"))
-                self.radio_eff_aurora.setText(f"🌌 {tr('effects.aurora')}")
-                self.lbl_eff_aurora_hint.setText(tr("effects.aurora_hint"))
-                self.radio_eff_bars.setText(f"📊 {tr('effects.bars')}")
-                self.lbl_eff_bars_hint.setText(tr("effects.bars_hint"))
-                self.radio_eff_bars_full.setText(f"📶 {tr('effects.bars_full')}")
-                self.lbl_eff_bars_full_hint.setText(tr("effects.bars_full_hint"))
-                self.radio_eff_none.setText(f"🚫 {tr('effects.none')}")
-                self.lbl_eff_none_hint.setText(tr("effects.none_hint"))
-
-            if hasattr(self, "lbl_vlc_status_val"):
-                status_html, status_tip = build_vlc_status(self.player_service)
-                self.lbl_vlc_status_val.setText(status_html)
-                self.lbl_vlc_status_val.setToolTip(status_tip)
-
-            if hasattr(self, "lbl_card_bt_title"):
-                self.lbl_card_bt_title.setText("🎭  " + tr("blind_test.settings_title"))
-                self.lbl_card_bt_desc.setText(tr("settings.blind_test_desc"))
-                self.lbl_bt_countdown.setText(tr("blind_test.countdown_label"))
-                self.lbl_bt_reveal.setText(tr("blind_test.reveal_label"))
-                self.lbl_bt_fade.setText(tr("blind_test.fade_label"))
-                for spin in (self.spin_bt_countdown, self.spin_bt_reveal, self.spin_bt_fade):
-                    spin.setSuffix(f" {tr('unit.seconds_short')}")
-                self._update_blind_test_summary_label()
-
-        # Vues Lecteur, Blind Test et Playlist
-        if hasattr(self, "page_player") and self.page_player:
-            self.page_player.retranslate_ui()
-        if hasattr(self, "page_blind_test") and self.page_blind_test:
-            self.page_blind_test.retranslate_ui()
-        if hasattr(self, "page_playlist") and self.page_playlist:
-            self.page_playlist.retranslate_ui()
-        if hasattr(self, "page_logs") and self.page_logs:
-            self.page_logs.retranslate_ui()
-        if hasattr(self, "activity_popover") and self.activity_popover:
-            self.activity_popover.retranslate_ui()
+        if hasattr(self, "spin_bt_countdown"):
+            for spin in (self.spin_bt_countdown, self.spin_bt_reveal, self.spin_bt_fade):
+                spin.setSuffix(f" {tr('unit.seconds_short')}")
+            self._update_blind_test_summary_label()

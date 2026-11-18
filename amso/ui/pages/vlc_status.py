@@ -5,13 +5,14 @@ from __future__ import annotations
 from amso.core.i18n import tr
 from amso.services.player_service import PlayerService
 from amso.services.vlc_info import describe_libvlc
+from amso.ui.styles import COLOR_DANGER
 
 
 def build_vlc_status(player_service: PlayerService | None) -> tuple[str, str]:
     """Retourne (HTML du statut, infobulle avec le chemin de la libvlc chargée)."""
     is_avail = bool(player_service and player_service.is_vlc_available)
     status_txt = tr("settings.player_engine_active") if is_avail else tr("settings.player_engine_inactive")
-    status_color = "#34D399" if is_avail else "#EF4444"
+    status_color = "#34D399" if is_avail else COLOR_DANGER
     html = (
         f"• <b>{tr('settings.player_engine_status')}</b> "
         f"<span style='color: {status_color}; font-weight: 600;'>{status_txt}</span>"

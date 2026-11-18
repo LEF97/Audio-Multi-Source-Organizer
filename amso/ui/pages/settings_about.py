@@ -26,8 +26,24 @@ from amso.core.constants import (
     URL_KO_FI,
 )
 from amso.core.i18n import tr
+from amso.ui.styles import (
+    COLOR_BG_SLATE,
+    COLOR_BORDER,
+    COLOR_BORDER_SLATE,
+    COLOR_PRIMARY,
+    COLOR_PRIMARY_DARK,
+    COLOR_PRIMARY_HOVER,
+    COLOR_TEXT,
+    COLOR_TEXT_BRIGHT,
+    COLOR_TEXT_DIM,
+    COLOR_TEXT_DISABLED,
+    COLOR_TEXT_MUTED,
+    COLOR_TEXT_SOFT,
+    COLOR_WHITE,
+)
 from amso.ui.theme import get_app_logo_pixmap
 from amso.ui.views.visual_effects import VisualEffectWidget
+from amso.ui.widgets.page_header import build_page_top_bar
 
 if TYPE_CHECKING:
     from amso.services.player_service import PlayerService
@@ -54,17 +70,11 @@ class SettingsAboutPageMixin:
         main_layout.setSpacing(0)
 
         # En-tête de page standardisé
-        top_bar = QFrame()
-        top_bar.setObjectName("topBarFrame")
-        top_bar.setFixedHeight(50)
-        top_bar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        top_layout = QHBoxLayout(top_bar)
-        top_layout.setContentsMargins(20, 12, 20, 12)
-
-        self.lbl_settings_about_page_title = QLabel(tr("settings.about_page_title"))
-        self.lbl_settings_about_page_title.setStyleSheet("color: #F8FAFC; font-size: 16px; font-weight: 700;")
-        top_layout.addWidget(self.lbl_settings_about_page_title)
-        top_layout.addStretch()
+        top_bar, self.lbl_settings_about_page_title, self.btn_settings_about_help = build_page_top_bar(
+            tr("settings.about_page_title"),
+            "settings.about_help_title",
+            "settings.about_help_body",
+        )
         main_layout.addWidget(top_bar, 0)
 
         scroll = QScrollArea()
@@ -81,12 +91,12 @@ class SettingsAboutPageMixin:
         top_card = QFrame()
         top_card.setFixedHeight(172)
         top_card.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        top_card.setStyleSheet("""
-            QFrame#aboutTopCard {
+        top_card.setStyleSheet(f"""
+            QFrame#aboutTopCard {{
                 background-color: #15181E;
-                border: 1px solid #282C37;
+                border: 1px solid {COLOR_BORDER};
                 border-radius: 18px;
-            }
+            }}
         """)
         top_card.setObjectName("aboutTopCard")
 
@@ -129,18 +139,20 @@ class SettingsAboutPageMixin:
 
         self.lbl_about_app_name = QLabel(tr("app.name"))
         self.lbl_about_app_name.setStyleSheet(
-            "color: #F8FAFC; font-size: 20px; font-weight: 800; letter-spacing: 0.5px; padding: 0px; margin: 0px;"
+            f"color: {COLOR_TEXT_BRIGHT}; font-size: 20px; font-weight: 800; letter-spacing: 0.5px; padding: 0px; margin: 0px;"
         )
         title_row.addWidget(self.lbl_about_app_name)
 
         acronym_lbl = QLabel("AMSO")
-        acronym_lbl.setStyleSheet("color: #38BDF8; font-size: 14px; font-weight: 700; padding: 0px; margin: 0px;")
+        acronym_lbl.setStyleSheet(
+            f"color: {COLOR_PRIMARY_HOVER}; font-size: 14px; font-weight: 700; padding: 0px; margin: 0px;"
+        )
         title_row.addWidget(acronym_lbl)
 
         ver_badge = QLabel(f"v{__version__}")
-        ver_badge.setStyleSheet("""
-            background-color: #0369A1;
-            color: #FFFFFF;
+        ver_badge.setStyleSheet(f"""
+            background-color: {COLOR_PRIMARY_DARK};
+            color: {COLOR_WHITE};
             padding: 2px 10px;
             border-radius: 10px;
             font-size: 11px;
@@ -154,7 +166,7 @@ class SettingsAboutPageMixin:
         self.lbl_about_desc = QLabel(tr("dialog.about_description"))
         self.lbl_about_desc.setWordWrap(True)
         self.lbl_about_desc.setStyleSheet(
-            "color: #CBD5E1; font-size: 13px; line-height: 1.45; padding: 0px; margin: 0px;"
+            f"color: {COLOR_TEXT}; font-size: 13px; line-height: 1.45; padding: 0px; margin: 0px;"
         )
         right_col.addWidget(self.lbl_about_desc)
 
@@ -203,45 +215,45 @@ class SettingsAboutPageMixin:
 
         self.btn_check_updates_about = QPushButton(tr("settings.btn_check_updates"))
         self.btn_check_updates_about.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_check_updates_about.setStyleSheet("""
-            QPushButton {
-                background-color: #1E293B;
-                color: #E2E8F0;
+        self.btn_check_updates_about.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {COLOR_BG_SLATE};
+                color: {COLOR_TEXT_SOFT};
                 font-size: 12px;
                 font-weight: 600;
                 padding: 7px 16px;
-                border: 1px solid #334155;
+                border: 1px solid {COLOR_BORDER_SLATE};
                 border-radius: 6px;
-            }
-            QPushButton:hover {
-                background-color: #334155;
-                border-color: #475569;
-                color: #FFFFFF;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {COLOR_BORDER_SLATE};
+                border-color: {COLOR_TEXT_DISABLED};
+                color: {COLOR_WHITE};
+            }}
         """)
         self.btn_check_updates_about.clicked.connect(lambda: self._check_for_updates(manual=True))
         update_row.addWidget(self.btn_check_updates_about)
 
         self.lbl_update_status_about = QLabel("")
-        self.lbl_update_status_about.setStyleSheet("color: #94A3B8; font-size: 12.5px; font-weight: 500;")
+        self.lbl_update_status_about.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 12.5px; font-weight: 500;")
         update_row.addWidget(self.lbl_update_status_about)
 
         self.btn_update_download = QPushButton(tr("settings.btn_download_update"))
         self.btn_update_download.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_update_download.setStyleSheet("""
-            QPushButton {
-                background-color: #0284C7;
-                color: #FFFFFF;
+        self.btn_update_download.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {COLOR_PRIMARY};
+                color: {COLOR_WHITE};
                 font-size: 12px;
                 font-weight: 700;
                 padding: 7px 14px;
-                border: 1px solid #38BDF8;
+                border: 1px solid {COLOR_PRIMARY_HOVER};
                 border-radius: 6px;
-            }
-            QPushButton:hover {
-                background-color: #0369A1;
+            }}
+            QPushButton:hover {{
+                background-color: {COLOR_PRIMARY_DARK};
                 border-color: #7DD3FC;
-            }
+            }}
         """)
         self.btn_update_download.setVisible(False)
         self.btn_update_download.clicked.connect(self._open_latest_release_url)
@@ -269,22 +281,22 @@ class SettingsAboutPageMixin:
         # Bouton Ko-fi
         self.btn_about_kofi = QPushButton(tr("dialog.about_btn_kofi"))
         self.btn_about_kofi.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_about_kofi.setStyleSheet("""
-            QPushButton {
+        self.btn_about_kofi.setStyleSheet(f"""
+            QPushButton {{
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
                     stop:0 #FF5E5B, stop:1 #D9413E);
-                color: #FFFFFF;
+                color: {COLOR_WHITE};
                 font-size: 13px;
                 font-weight: 700;
                 padding: 10px 22px;
                 border: 1px solid #FFA4A2;
                 border-radius: 8px;
-            }
-            QPushButton:hover {
+            }}
+            QPushButton:hover {{
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
                     stop:0 #FF7673, stop:1 #FF5E5B);
-                border-color: #FFFFFF;
-            }
+                border-color: {COLOR_WHITE};
+            }}
         """)
         self.btn_about_kofi.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(URL_KO_FI)))
         donate_row.addWidget(self.btn_about_kofi)
@@ -292,22 +304,22 @@ class SettingsAboutPageMixin:
         # Bouton GitHub Sponsors
         self.btn_about_sponsors = QPushButton(tr("dialog.about_btn_sponsors"))
         self.btn_about_sponsors.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_about_sponsors.setStyleSheet("""
-            QPushButton {
+        self.btn_about_sponsors.setStyleSheet(f"""
+            QPushButton {{
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
                     stop:0 #EA4AAA, stop:1 #C5288B);
-                color: #FFFFFF;
+                color: {COLOR_WHITE};
                 font-size: 13px;
                 font-weight: 700;
                 padding: 10px 22px;
                 border: 1px solid #F9A8D4;
                 border-radius: 8px;
-            }
-            QPushButton:hover {
+            }}
+            QPushButton:hover {{
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
                     stop:0 #F062BA, stop:1 #EA4AAA);
-                border-color: #FFFFFF;
-            }
+                border-color: {COLOR_WHITE};
+            }}
         """)
         self.btn_about_sponsors.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(URL_GITHUB_SPONSORS)))
         donate_row.addWidget(self.btn_about_sponsors)
@@ -364,11 +376,13 @@ class SettingsAboutPageMixin:
 
         self.lbl_about_credits_tech = QLabel(tr("dialog.about_credits_tech"))
         self.lbl_about_credits_tech.setWordWrap(True)
-        self.lbl_about_credits_tech.setStyleSheet("color: #94A3B8; font-size: 13px; line-height: 1.4;")
+        self.lbl_about_credits_tech.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 13px; line-height: 1.4;")
         l_credits.addWidget(self.lbl_about_credits_tech)
 
         self.lbl_about_license = QLabel(tr("dialog.about_license"))
-        self.lbl_about_license.setStyleSheet("color: #64748B; font-size: 11px; font-style: italic; margin-top: 4px;")
+        self.lbl_about_license.setStyleSheet(
+            f"color: {COLOR_TEXT_DIM}; font-size: 11px; font-style: italic; margin-top: 4px;"
+        )
         l_credits.addWidget(self.lbl_about_license)
 
         content_layout.addWidget(card_credits)

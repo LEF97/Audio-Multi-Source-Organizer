@@ -88,6 +88,7 @@ class LibraryQueriesMixin:
         recursive: bool = False,
         sort_by: str = "file_name",
         sort_order: str = "ASC",
+        limit: int | None = None,
     ) -> list[TrackRecord]:
         """Retourne les pistes audio situées dans un dossier (ou sous-dossiers si recursive=True)."""
         fp_clean = folder_path.replace("\\", "/").rstrip("/")
@@ -125,6 +126,7 @@ class LibraryQueriesMixin:
             "updated_at",
         }
         sort_col = sort_by if sort_by in allowed_sorts else "file_name"
+        limit_clause = "LIMIT :limit" if limit is not None else ""
 
         with self.get_connection() as conn:
             if not recursive:
@@ -132,16 +134,17 @@ class LibraryQueriesMixin:
                     SELECT * FROM tracks
                     WHERE (:source_id IS NULL OR source_id = :source_id)
                       AND (folder_path = :fp OR folder_path = :fp_alt)
-                    ORDER BY {sort_col} {direction};
+                    ORDER BY {sort_col} {direction}
+                    {limit_clause};
                 """
-                rows = conn.execute(
-                    query,
-                    {
-                        "source_id": source_id,
-                        "fp": fp_clean,
-                        "fp_alt": fp_alt,
-                    },
-                ).fetchall()
+                params: dict[str, Any] = {
+                    "source_id": source_id,
+                    "fp": fp_clean,
+                    "fp_alt": fp_alt,
+                }
+                if limit is not None:
+                    params["limit"] = int(limit)
+                rows = conn.execute(query, params).fetchall()
             else:
                 query = f"""
                     SELECT * FROM tracks
@@ -154,20 +157,21 @@ class LibraryQueriesMixin:
                           OR folder_path LIKE :p3
                           OR folder_path LIKE :p4
                       )
-                    ORDER BY {sort_col} {direction};
+                    ORDER BY {sort_col} {direction}
+                    {limit_clause};
                 """
-                rows = conn.execute(
-                    query,
-                    {
-                        "source_id": source_id,
-                        "fp": fp_clean,
-                        "fp_alt": fp_alt,
-                        "p1": f"{fp_clean}/%",
-                        "p2": f"{fp_clean}\\%",
-                        "p3": f"{fp_alt}/%",
-                        "p4": f"{fp_alt}\\%",
-                    },
-                ).fetchall()
+                params = {
+                    "source_id": source_id,
+                    "fp": fp_clean,
+                    "fp_alt": fp_alt,
+                    "p1": f"{fp_clean}/%",
+                    "p2": f"{fp_clean}\\%",
+                    "p3": f"{fp_alt}/%",
+                    "p4": f"{fp_alt}\\%",
+                }
+                if limit is not None:
+                    params["limit"] = int(limit)
+                rows = conn.execute(query, params).fetchall()
 
             return [TrackRecord.from_row(r) for r in rows]
 

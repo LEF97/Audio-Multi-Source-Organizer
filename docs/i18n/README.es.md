@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,14 +47,17 @@
 | **Soporte de Playlists (M3U, PLS, XSPF, WPL) y hojas CUE** | Indexación arborescente (🎶), orden de escucha secuencial, localización visual de pistas faltantes; los archivos `.cue` (💿) se abren como una carpeta de pistas virtuales con su duración y se reproducen como pistas reales | 🟢 Implementado |
 | **Gestor de Playlist y Arrastrar-Soltar** | Cola virtualizada, arrastrar y soltar fluido, aleatorio (shuffle) reversible y bucles | 🟢 Implementado |
 | **Modo « 🎲 Blind Test » interactivo** | Juego musical inmersivo con cuenta regresiva animada, fundido sonoro, revelación suave y enlazado automático | 🟢 Implementado |
-| **Actualizaciones in-app** | Verificación automática/manual de versiones vía GitHub Releases | 🟢 Implementado |
-| **Versiones Linux & macOS** | Paquetes `.AppImage` / `.tar.gz` (Linux) y `.dmg` no firmado (macOS), VLC requerido | 🟡 Experimental (no probado) |
-| **Gestión de artistas & Discografía** | Vista dedicada por artista con álbumes, sencillos y discografía completa | 🟡 Planificado |
-| **Ecualizador gráfico (EQ)** | Preajustes de audio y ecualizador multibanda paramétrico | 🟡 Planificado |
-| **Conector Google Drive** | Escaneo y sincronización de colecciones de audio remotas vía OAuth 2.0 | ⚪ Planificado |
-| **Conector Amazon Music** | Escaneo y sincronización de colecciones remotas vía OAuth 2.0 | ⚪ Planificado |
-| **Conector Spotify / Deezer** | Importación de listas de reproducción y coincidencia de pistas | ⚪ Planificado |
-| **Deduplicación inteligente** | Detección de duplicados (título/artista borrosos + huellas acústicas) | ⚪ Planificado |
+| **Fuentes y Biblioteca** | Panel de control de fuentes con indicadores de salud (fuentes sin conexión, errores de escaneo, archivos faltantes), vista general o por fuente y acciones rápidas | 🟢 Implémenté |
+| **Editor, reparación y exportación de listas de reproducción** | Reorganización, relocalización manual o automática de archivos faltantes, copia de seguridad en M3U / M3U8 / PLS / XSPF / WPL, agrupación por álbum | 🟢 Implémenté |
+| **Herramientas de audio** | Ecualizador gráfico de 10 bandas con preajustes, normalización ReplayGain, velocidad de reproducción, elección de salida de audio y temporizador de apagado (motor de búfer continuo) | 🟢 Implémenté |
+| **Integración Windows y efectos visuales** | Barra de tareas, zona de notificación, guías de ayuda, efectos visuales ajustables con modo Aleatorio | 🟢 Implémenté |
+| **Actualizaciones en la aplicación** | Verificación automática/manual de versiones vía GitHub Releases | 🟢 Implémenté |
+| **Versiones Linux y macOS** | Paquetes `.AppImage` / `.tar.gz` (Linux) y `.dmg` no firmado (macOS), VLC requerido | 🟡 Expérimental (non testé) |
+| **Gestión de artistas y Discografía** | Vista dedicada por artista con álbumes, sencillos y discografía completa | 🟡 Prévu |
+| **Conector Google Drive** | Escaneo y sincronización de colecciones de audio remotas vía OAuth 2.0 | ⚪ Planifié |
+| **Connecteur Amazon Music** | Escaneo y sincronización de colecciones remotas vía OAuth 2.0 | ⚪ Planificado |
+| **Connecteur Spotify / Deezer** | Importación de listas de reproducción y coincidencia de pistas | ⚪ Planificado |
+| **Dédoublonnage intelligent** | Detección de duplicados (título/artista borrosos + huellas acústicas) | ⚪ Planificado |
 
 > 💡 *Para consultar el detalle de los hitos y versiones previstas, consulte la [Hoja de ruta (Roadmap)](ROADMAP.es.md).*
 

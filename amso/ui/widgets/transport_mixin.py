@@ -30,7 +30,7 @@ class TransportViewMixin(_MixinBase):
         def __getattr__(self, name: str) -> Any: ...
 
     _transport_btn_radius: int = 6
-    _transport_btn_font: int = 14
+    _transport_btn_font: int = 22
     _transport_cover_size: int = 320
     _transport_cover_radius: int = 12
 

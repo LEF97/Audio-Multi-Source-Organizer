@@ -166,10 +166,10 @@ def check_docs(project_root: Path | None = None, release: bool = False) -> list[
         if not all(code in text for code in ["Français", "English", "Español", "Deutsch", "Italiano"]):
             errors.append(f"[{filename}] La barre de navigation multilingue est incomplète.")
 
-        # Vérification des screenshots v0.3.0
+        # Captures de la version courante (v0.5) et d'archives encore référencées
         expected_screenshots = [
-            "screenshots/2026-10-25%20v0.4.0%2002.png",
-            "screenshots/2026-10-25%20v0.4.0.png",
+            "screenshots/2026-11-18%20v0.5.png",
+            "screenshots/2026-11-18%20v0.5%20sources.png",
             "screenshots/2026-10-18%20v0.3.0%20blind%20test.png",
         ]
         for shot in expected_screenshots:

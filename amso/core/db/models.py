@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import sqlite3
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
@@ -307,7 +307,8 @@ class TrackRecord:
         st = data.get("source_type", "local")
         try:
             source_type = SourceType(st)
-        except Exception:
+        except ValueError:
+            # Type de source inconnu (base écrite par une autre version) : repli sur LOCAL.
             source_type = SourceType.LOCAL
         return cls(
             id=data.get("id"),
@@ -370,7 +371,8 @@ class PlaylistRecord:
         st = row["source_type"] if "source_type" in keys and row["source_type"] else "local"
         try:
             source_type = SourceType(st)
-        except Exception:
+        except ValueError:
+            # Type de source inconnu (base écrite par une autre version) : repli sur LOCAL.
             source_type = SourceType.LOCAL
         return cls(
             id=row["id"],
@@ -429,3 +431,41 @@ class PlaylistEntryRecord:
             start_ms=int(row["start_ms"]) if "start_ms" in keys and row["start_ms"] is not None else None,
             end_ms=int(row["end_ms"]) if "end_ms" in keys and row["end_ms"] is not None else None,
         )
+
+
+@dataclass(slots=True)
+class PlaylistSummaryRecord:
+    """Résumé agrégé d'une playlist rattachée à une source."""
+
+    id: int
+    source_id: int
+    name: str
+    file_path: str
+    format: str
+    track_count: int
+    total_duration_seconds: float
+    missing_count: int
+    updated_at: str | None
+
+
+@dataclass(slots=True)
+class FormatBreakdown:
+    """Statistiques agrégées d'un format audio (nombre, durée, taille disque)."""
+
+    format: str
+    track_count: int
+    duration_seconds: float
+    size_bytes: int = 0
+
+
+@dataclass(slots=True)
+class SourceLibrarySummary:
+    """Résumé agrégé d'une source (fichiers audio et playlists rattachées)."""
+
+    source: SourceRecord
+    track_count: int
+    track_duration_seconds: float
+    playlists: list[PlaylistSummaryRecord]
+    last_scan_errors: int = 0
+    track_size_bytes: int = 0
+    formats: list[FormatBreakdown] = field(default_factory=list)

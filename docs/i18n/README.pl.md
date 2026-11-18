@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,14 +47,17 @@
 | **Obsługa playlist (M3U, PLS, XSPF, WPL) i arkuszy CUE** | Indeksowanie drzewiaste (🎶), sekwencyjna kolejność słuchania, wizualne lokalizowanie brakujących utworów; pliki `.cue` (💿) otwierają się jak folder z wirtualnymi ścieżkami z ich czasem trwania i odtwarzają się jak prawdziwe ścieżki | 🟢 Zaimplementowano |
 | **Menedżer playlist i przeciąganie/upuszczanie** | Wirtualizowana kolejka, płynne przeciąganie i upuszczanie, odwracalny losowy układ (shuffle) i pętle | 🟢 Zaimplementowano |
 | **Interaktywny tryb „🎲 Blind Test”** | Immersywna gra muzyczna z animowanym odliczaniem, efektami dźwiękowymi, łagodnym ujawnieniem i automatycznym przejściem | 🟢 Zaimplementowano |
-| **Aktualizacje w aplikacji** | Automatyczna/ręczna weryfikacja wersji za pomocą GitHub Releases | 🟢 Zaimplementowano |
-| **Wersje Linux i macOS** | Pakiety `.AppImage` / `.tar.gz` (Linux) i niepodpisany `.dmg` (macOS), wymagany VLC | 🟡 Eksperymentalne (nie przetestowane) |
-| **Zarządzanie artystami i dyskografią** | Dedykowany widok dla artysty z albumami, singlami i pełną dyskografią | 🟡 Planowane |
-| **Graficzny ekwalizer (EQ)** | Presety audio i parametryczny ekwalizer wielopasmowy | 🟡 Planowane |
-| **Konnektor Google Drive** | Skany i synchronizacja zdalnych kolekcji audio za pomocą OAuth 2.0 | ⚪ Planowane |
-| **Konnektor Amazon Music** | Skany i synchronizacja zdalnych kolekcji za pomocą OAuth 2.0 | ⚪ Planowane |
-| **Konnektor Spotify / Deezer** | Importowanie playlist i dopasowywanie utworów | ⚪ Planowane |
-| **Inteligentne usuwanie duplikatów** | Wykrywanie duplikatów (rozmyte tytuły/artyści + wzorce akustyczne) | ⚪ Planowane |
+| **Źródła i Biblioteka** | Pulpit źródeł z wskaźnikami zdrowia (źródła offline, błędy skanowania, brakujące pliki), widok globalny lub według źródła i szybkie akcje | 🟢 Implémenté |
+| **Edytor, naprawa i eksport playlist** | Rekonfiguracja, ręczne lub automatyczne lokalizowanie brakujących plików, backup w M3U / M3U8 / PLS / XSPF / WPL, grupowanie według albumu | 🟢 Implémenté |
+| **Narzędzia audio** | 10-pasmowy equalizer graficzny z presetami, normalizacja ReplayGain, prędkość odtwarzania, wybór wyjścia audio i minutnik wyłączający (silnik z ciągłym buforem) | 🟢 Implémenté |
+| **Integracja z Windows i efekty wizualne** | Pasek zadań, obszar powiadomień, przewodniki pomocy, regulowane efekty wizualne z trybem Losowy | 🟢 Implémenté |
+| **Aktualizacje w aplikacji** | Automatyczna/ręczna weryfikacja wersji za pomocą GitHub Releases | 🟢 Implémenté |
+| **Wersje Linux i macOS** | Pakiety `.AppImage` / `.tar.gz` (Linux) i niepodpisany `.dmg` (macOS), wymagany VLC | 🟡 Expérimental (non testé) |
+| **Zarządzanie artystami i dyskografią** | Dedykowany widok dla artysty z albumami, singlami i pełną dyskografią | 🟡 Prévu |
+| **Konnektor Google Drive** | Skanowanie i synchronizacja zdalnych kolekcji audio za pomocą OAuth 2.0 | ⚪ Planifié |
+| **Connecteur Amazon Music** | Skanowanie i synchronizacja zdalnych kolekcji za pomocą OAuth 2.0 | ⚪ Zaplanowane |
+| **Connecteur Spotify / Deezer** | Importowanie playlist i dopasowywanie utworów | ⚪ Zaplanowane |
+| **Inteligentne usuwanie duplikatów** | Wykrywanie duplikatów (rozmyte tytuły/artyści + odciski akustyczne) | ⚪ Zaplanowane |
 
 > 💡 *Aby zapoznać się ze szczegółami planowanych kamieni milowych i wersji, zapoznaj się z [Mapą drogową (Roadmap)](../../ROADMAP.md).*
 

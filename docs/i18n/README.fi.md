@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,14 +47,17 @@
 | **Soittolistan tuki (M3U, PLS, XSPF, WPL) & CUE-tiedostot** | Puurakenteinen indeksointi (🎶), sarjallinen kuuntelujärjestys, puuttuvien kappaleiden visuaalinen paikannus; `.cue`-tiedostot (💿) avautuvat kuin virtuaalinen kappaleiden hakemisto pituutensa kanssa ja toistuvat kuin oikeat kappaleet | 🟢 Toteutettu |
 | **Soittolistan hallinta & Vedä-aseta** | Virtualisoitu jonotus, sujuva vedä-aseta, kääntäen toistuva satunnaisuus (shuffle) ja silmukoinnit | 🟢 Toteutettu |
 | **Interaktiivinen "🎲 Blind Test" -tila** | Immersiivinen musiikkipeli animaatiolla varustetulla laskurilla, äänihaihtumisella, pehmeällä paljastuksella ja automaattisella siirtymällä | 🟢 Toteutettu |
-| **Sisäiset päivitykset** | Versioiden automaattinen/manuaalinen tarkistus via GitHub Releases | 🟢 Implémenté |
-| **Linux & macOS -versiot** | Pakat .AppImage / .tar.gz (Linux) ja allekirjoittamaton .dmg (macOS), VLC vaaditaan | 🟡 Expérimental (non testé) |
-| **Artistien ja diskografian hallinta** | Artistikohtainen näkymä albumeilla, singleillä ja koko diskografialla | 🟡 Prévu |
-| **Graafinen ekvalaisoija (EQ)** | Äämeläasetukset ja parametrisesti monikaistainen ekvalaisoija | 🟡 Prévu |
-| **Google Drive -liitin** | Skannaus ja synkronointi etäpaikkojen äänikokoelmien kanssa via OAuth 2.0 | ⚪ Planifié |
-| **Amazon Music -liitin** | Skannaus ja synkronointi etäpaikkojen kokoelmien kanssa via OAuth 2.0 | ⚪ Planifié |
-| **Spotify / Deezer -liitin** | Soittolistojen tuonti ja kappaleiden vastaavuus | ⚪ Planifié |
-| **Älykäs duplikaattien poisto** | Duplikaattien tunnistus (sana/artisti epäselvä + akustiikan jälkennäytteet) | ⚪ Planifié |
+| **Lähteet & Kirjasto** | Lähteiden kojelauta terveysindikaattoreilla (offline-lähteet, skannausvirheet, puuttuvat tiedostot), yleisnäkymä tai lähteittäin ja nopeat toiminnot | 🟢 Implémenté |
+| **Soittolistan editorointi, korjaus & vienti** | Järjestely, manuaalinen tai automaattinen paikanmääritys puuttuville tiedostoille, tallennus M3U / M3U8 / PLS / XSPF / WPL, ryhmittely albumien mukaan | 🟢 Implémenté |
+| **Äänityökalut** | 10-pasmainen graafinen ekvalaizeri esiasetuksilla, ReplayGain-normalisointi, toistonopeus, äänilähdön valinta ja sammutusajastin (jatkuva puskurimoottori) | 🟢 Implémenté |
+| **Windows-integraatio & visuaaliset efektit** | Tehtäväpalkki, ilmoituskeskus, ohjeet, säädettävät visuaaliset efektit satunnaitustilalla | 🟢 Implémenté |
+| **Sovelluksen sisäiset päivitykset** | Versioiden automaattinen/manuaalinen tarkistus via GitHub Releases | 🟢 Implémenté |
+| **Linux- ja macOS-versiot** | Pakat `.AppImage` / `.tar.gz` (Linux) ja allekirjoittamaton `.dmg` (macOS), VLC requis | 🟡 Expérimental (non testé) |
+| **Artistien hallinta & Diskografia** | Omistettu näkymä taiteilijalta albumeilla, singleillä ja koko diskografialla | 🟡 Prévu |
+| **Google Drive -liitin** | Skannaus ja synkronointi etäaikojen äänikokoelmien kanssa OAuth 2.0:n kautta | ⚪ Planifié |
+| **Connecteur Amazon Music** | Skannaus ja etäkeräilyjen synkronointi OAuth 2.0:n kautta | ⚪ Planattu |
+| **Connecteur Spotify / Deezer** | Soittolistojen tuonti ja kappaleiden vastaavuus | ⚪ Planattu |
+| **Älykäs duplikaattien poisto** | Duplikaattien tunnistus (sana/artisti epäselvät + akustiikan jälkennäytteet) | ⚪ Planattu |
 
 > 💡 *Suunnitellut virstanpylväät ja versiot löytyvät tarkemmin [Feuille de route (Roadmap)](../../ROADMAP.md).*
 

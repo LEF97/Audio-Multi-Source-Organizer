@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QEvent, QObject, Qt, QTimer
 from PySide6.QtGui import QAction, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QButtonGroup,
@@ -15,13 +15,24 @@ from PySide6.QtWidgets import (
     QProgressBar,
     QPushButton,
     QScrollArea,
+    QSizePolicy,
+    QSplitter,
     QStackedWidget,
     QStatusBar,
     QVBoxLayout,
     QWidget,
 )
 
+from amso.core.config import MIN_SIDEBAR_WIDTH, get_config_manager
 from amso.core.i18n import tr
+from amso.ui.styles import (
+    COLOR_BG_SLATE,
+    COLOR_BORDER_SLATE,
+    COLOR_PRIMARY,
+    COLOR_PRIMARY_HOVER,
+    COLOR_TEXT_MUTED,
+    COLOR_WHITE,
+)
 from amso.ui.views.activity_feed_popover import ActivityFeedPopover
 from amso.ui.views.blind_test_view import BlindTestView
 from amso.ui.views.logs_view import LogsView
@@ -43,6 +54,52 @@ class SidebarLayoutMixin(_MixinBase):
     if TYPE_CHECKING:
         # Les attributs/méthodes de MainWindow sont résolus dynamiquement (typage uniquement)
         def __getattr__(self, name: str) -> Any: ...
+
+    def _setup_sidebar_width(self, splitter: QSplitter, sidebar: QWidget) -> None:
+        """Restaure la largeur sauvegardée et la verrouille : seul un glissement du séparateur la modifie."""
+        self._sidebar_width = get_config_manager().get_sidebar_width()
+        self._sidebar_splitter = splitter
+        self._sidebar_dragging = False
+        splitter.setChildrenCollapsible(False)
+        # Le minimumSizeHint du panneau droit change selon la page affichée et repoussait le séparateur :
+        # on l'ignore (la largeur minimale de la fenêtre garantit déjà un espace suffisant).
+        right_panel = splitter.widget(1)
+        if right_panel is not None:
+            right_panel.setSizePolicy(QSizePolicy.Policy.Ignored, right_panel.sizePolicy().verticalPolicy())
+        splitter.setSizes([self._sidebar_width, max(1, self.width() - self._sidebar_width)])
+        handle = splitter.handle(1)
+        handle.installEventFilter(self._sidebar_filter(handle))
+        sidebar.installEventFilter(self._sidebar_filter(sidebar))
+        splitter.splitterMoved.connect(self._on_sidebar_splitter_moved)
+
+    def _sidebar_filter(self, parent: QWidget) -> QObject:
+        window = self
+
+        class _Filter(QObject):
+            # Le sizeHint du menu varie avec la page active (texte en gras) : le splitter
+            # élargissait alors le menu tout seul ; on rétablit la largeur choisie.
+            def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+                kind = event.type()
+                if kind == QEvent.Type.MouseButtonPress:
+                    window._sidebar_dragging = True
+                elif kind == QEvent.Type.MouseButtonRelease:
+                    window._sidebar_dragging = False
+                elif kind == QEvent.Type.Resize and not window._sidebar_dragging:
+                    QTimer.singleShot(0, window._enforce_sidebar_width)
+                return False
+
+        return _Filter(parent)
+
+    def _enforce_sidebar_width(self) -> None:
+        splitter = self._sidebar_splitter
+        current = splitter.sizes()
+        if self._sidebar_dragging or len(current) < 2 or current[0] == self._sidebar_width:
+            return
+        splitter.setSizes([self._sidebar_width, max(1, sum(current) - self._sidebar_width)])
+
+    def _on_sidebar_splitter_moved(self, _pos: int, _index: int) -> None:
+        self._sidebar_width = max(MIN_SIDEBAR_WIDTH, self._sidebar_splitter.sizes()[0])
+        get_config_manager().set_sidebar_width(self._sidebar_width)
 
     def _create_sidebar(self) -> QWidget:
         frame = QFrame()
@@ -76,7 +133,7 @@ class SidebarLayoutMixin(_MixinBase):
             self.lbl_logo_icon.setPixmap(scaled_pm)
         else:
             self.lbl_logo_icon.setText("🎵")
-            self.lbl_logo_icon.setStyleSheet("font-size: 48px; color: #38BDF8;")
+            self.lbl_logo_icon.setStyleSheet(f"font-size: 48px; color: {COLOR_PRIMARY_HOVER};")
 
         self.lbl_logo_icon.clicked.connect(self._on_settings_about_clicked)
         logo_layout.addWidget(self.lbl_logo_icon)
@@ -89,6 +146,8 @@ class SidebarLayoutMixin(_MixinBase):
         # Zone défilante pour contenir l'ensemble des tiroirs confortablement
         sidebar_scroll = QScrollArea()
         sidebar_scroll.setWidgetResizable(True)
+        # La largeur du menu se règle via le séparateur vertical : pas de barre horizontale.
+        sidebar_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         sidebar_scroll.setStyleSheet("background: transparent; border: none;")
 
         sidebar_container = QWidget()
@@ -115,6 +174,13 @@ class SidebarLayoutMixin(_MixinBase):
         self.btn_playlist.clicked.connect(self._on_playlist_nav_clicked)
         self.nav_button_group.addButton(self.btn_playlist)
         self.drawer_player.add_widget(self.btn_playlist)
+
+        self.btn_by_folder = QPushButton(tr("sidebar.nav_by_folder"))
+        self.btn_by_folder.setProperty("class", "nav-btn")
+        self.btn_by_folder.setCheckable(True)
+        self.btn_by_folder.clicked.connect(self._on_by_folder_clicked)
+        self.nav_button_group.addButton(self.btn_by_folder)
+        self.drawer_player.add_widget(self.btn_by_folder)
         drawers_layout.addWidget(self.drawer_player)
 
         # 0b. Tiroir JEUX (Dédié au Blind Test, sous le tiroir Lecteur, fermé par défaut)
@@ -127,23 +193,15 @@ class SidebarLayoutMixin(_MixinBase):
         self.drawer_games.add_widget(self.btn_blind_test)
         drawers_layout.addWidget(self.drawer_games)
 
-        # 1. Tiroir BIBLIOTHÈQUE (fermé par défaut)
-        self.drawer_library = CollapsibleDrawer(tr("sidebar.drawer_library"), initially_expanded=False)
-        self.btn_all_tracks = QPushButton(tr("sidebar.nav_all_tracks"))
-        self.btn_all_tracks.setProperty("class", "nav-btn")
-        self.btn_all_tracks.setCheckable(True)
-        self.btn_all_tracks.setChecked(True)
-        self.btn_all_tracks.clicked.connect(self._on_all_tracks_clicked)
-        self.nav_button_group.addButton(self.btn_all_tracks)
-        self.drawer_library.add_widget(self.btn_all_tracks)
-
-        self.btn_by_folder = QPushButton(tr("sidebar.nav_by_folder"))
-        self.btn_by_folder.setProperty("class", "nav-btn")
-        self.btn_by_folder.setCheckable(True)
-        self.btn_by_folder.clicked.connect(self._on_by_folder_clicked)
-        self.nav_button_group.addButton(self.btn_by_folder)
-        self.drawer_library.add_widget(self.btn_by_folder)
-        drawers_layout.addWidget(self.drawer_library)
+        # 0c. Tiroir GESTION DE LA BIBLIOTHÈQUE (sous Jeux, fermé par défaut)
+        self.drawer_library_mgmt = CollapsibleDrawer(tr("sidebar.drawer_library_mgmt"), initially_expanded=False)
+        self.btn_library_sources = QPushButton(tr("sidebar.nav_library_sources"))
+        self.btn_library_sources.setProperty("class", "nav-btn")
+        self.btn_library_sources.setCheckable(True)
+        self.btn_library_sources.clicked.connect(self._on_library_sources_clicked)
+        self.nav_button_group.addButton(self.btn_library_sources)
+        self.drawer_library_mgmt.add_widget(self.btn_library_sources)
+        drawers_layout.addWidget(self.drawer_library_mgmt)
 
         # 2. Tiroir OUTILS (fermé par défaut)
         self.drawer_tools = CollapsibleDrawer(tr("sidebar.drawer_tools"), initially_expanded=False)
@@ -154,33 +212,6 @@ class SidebarLayoutMixin(_MixinBase):
         self.nav_button_group.addButton(self.btn_duplicates)
         self.drawer_tools.add_widget(self.btn_duplicates)
         drawers_layout.addWidget(self.drawer_tools)
-
-        # 3. Tiroir STATISTIQUES (fermé par défaut)
-        self.drawer_stats = CollapsibleDrawer(tr("sidebar.drawer_stats"), initially_expanded=False)
-        self.btn_stats_page = QPushButton(tr("sidebar.nav_stats_page"))
-        self.btn_stats_page.setProperty("class", "nav-btn")
-        self.btn_stats_page.setCheckable(True)
-        self.btn_stats_page.clicked.connect(self._on_stats_page_clicked)
-        self.nav_button_group.addButton(self.btn_stats_page)
-        self.drawer_stats.add_widget(self.btn_stats_page)
-        drawers_layout.addWidget(self.drawer_stats)
-
-        # Alias pour compatibilité tests existants
-        self.btn_stats = self.btn_stats_page
-
-        # 4. Tiroir SOURCES (fermé par défaut)
-        self.drawer_sources = CollapsibleDrawer(tr("sidebar.drawer_sources"), initially_expanded=False)
-        self.sources_container = QWidget()
-        self.sources_layout = QVBoxLayout(self.sources_container)
-        self.sources_layout.setContentsMargins(0, 0, 0, 0)
-        self.sources_layout.setSpacing(2)
-        self.drawer_sources.add_widget(self.sources_container)
-
-        self.btn_add_source = QPushButton(tr("sidebar.btn_add_source"))
-        self.btn_add_source.setProperty("class", "secondary-btn")
-        self.btn_add_source.clicked.connect(self._on_add_local_folder)
-        self.drawer_sources.add_widget(self.btn_add_source)
-        drawers_layout.addWidget(self.drawer_sources)
 
         # Espace élastique avant les paramètres
         drawers_layout.addStretch()
@@ -196,6 +227,14 @@ class SidebarLayoutMixin(_MixinBase):
         self.nav_button_group.addButton(self.btn_settings_general)
         self.drawer_settings.add_widget(self.btn_settings_general)
 
+        # 2. Son
+        self.btn_settings_sound = QPushButton(tr("sidebar.nav_settings_sound"))
+        self.btn_settings_sound.setProperty("class", "nav-btn")
+        self.btn_settings_sound.setCheckable(True)
+        self.btn_settings_sound.clicked.connect(self._on_settings_sound_clicked)
+        self.nav_button_group.addButton(self.btn_settings_sound)
+        self.drawer_settings.add_widget(self.btn_settings_sound)
+
         # 2. Lecteur
         self.btn_settings_player = QPushButton(tr("sidebar.nav_settings_player"))
         self.btn_settings_player.setProperty("class", "nav-btn")
@@ -204,15 +243,15 @@ class SidebarLayoutMixin(_MixinBase):
         self.nav_button_group.addButton(self.btn_settings_player)
         self.drawer_settings.add_widget(self.btn_settings_player)
 
-        # 3. Sources
-        self.btn_settings_sources = QPushButton(tr("sidebar.nav_settings_sources"))
-        self.btn_settings_sources.setProperty("class", "nav-btn")
-        self.btn_settings_sources.setCheckable(True)
-        self.btn_settings_sources.clicked.connect(self._on_settings_sources_clicked)
-        self.nav_button_group.addButton(self.btn_settings_sources)
-        self.drawer_settings.add_widget(self.btn_settings_sources)
+        # 2b. Effets
+        self.btn_settings_effects = QPushButton(tr("sidebar.nav_settings_effects"))
+        self.btn_settings_effects.setProperty("class", "nav-btn")
+        self.btn_settings_effects.setCheckable(True)
+        self.btn_settings_effects.clicked.connect(self._on_settings_effects_clicked)
+        self.nav_button_group.addButton(self.btn_settings_effects)
+        self.drawer_settings.add_widget(self.btn_settings_effects)
 
-        # 4. Logs
+        # 3. Logs
         self.btn_settings_logs = QPushButton(tr("sidebar.nav_settings_logs"))
         self.btn_settings_logs.setProperty("class", "nav-btn")
         self.btn_settings_logs.setCheckable(True)
@@ -220,7 +259,7 @@ class SidebarLayoutMixin(_MixinBase):
         self.nav_button_group.addButton(self.btn_settings_logs)
         self.drawer_settings.add_widget(self.btn_settings_logs)
 
-        # 5. À propos
+        # 4. À propos
         self.btn_settings_about = QPushButton(tr("sidebar.nav_settings_about"))
         self.btn_settings_about.setProperty("class", "nav-btn")
         self.btn_settings_about.setCheckable(True)
@@ -243,11 +282,7 @@ class SidebarLayoutMixin(_MixinBase):
         self.page_tracks = self._create_tracks_page()
         self.stacked_widget.addWidget(self.page_tracks)
 
-        # Page 1 : Vue Statistiques dédiée
-        self.page_stats = self._create_stats_page()
-        self.stacked_widget.addWidget(self.page_stats)
-
-        # Page 2 : Paramètres > Général (contenant le sélecteur de langue, stockage, à propos)
+        # Page 1 : Paramètres > Général (contenant le sélecteur de langue, stockage, à propos)
         self.page_settings = self._create_settings_page()
         self.stacked_widget.addWidget(self.page_settings)
 
@@ -255,32 +290,38 @@ class SidebarLayoutMixin(_MixinBase):
         self.page_folders = self._create_folders_page()
         self.stacked_widget.addWidget(self.page_folders)
 
-        # Page 4 : Paramètres > Sources (Configuration des sources et synchronisation)
-        self.page_settings_sources = self._create_settings_sources_page()
-        self.stacked_widget.addWidget(self.page_settings_sources)
+        # Page 4 : Gestion de la bibliothèque > Sources
+        self.page_library_sources = self._create_library_sources_page()
+        self.stacked_widget.addWidget(self.page_library_sources)
 
         # Page 5 : Vue Lecteur audio grand format
         self.page_player = PlayerView(self.player_service, parent=self)
-        self.page_player.effect_changed.connect(self._sync_visual_effect_radio)
         self.page_player.add_folder_requested.connect(self._on_add_local_folder)
         self.stacked_widget.addWidget(self.page_player)
 
         # Page 5b : Vue Blind Test (Intercalée entre Lecteur et Playlist)
         self.page_blind_test = BlindTestView(self.player_service, parent=self)
-        self.page_blind_test.effect_changed.connect(self._sync_visual_effect_radio)
         self.stacked_widget.addWidget(self.page_blind_test)
 
         # Page 6 : Vue Playlist (Mini-lecteur + Tableau de file d'attente)
-        self.page_playlist = PlaylistView(self.player_service, parent=self)
+        self.page_playlist = PlaylistView(self.player_service, parent=self, db=self.db)
         self.stacked_widget.addWidget(self.page_playlist)
 
         # Page 7 : Paramètres > Logs (Journal d'activité et événements)
         self.page_logs = LogsView(self.db, parent=self)
         self.stacked_widget.addWidget(self.page_logs)
 
-        # Page 8 : Paramètres > Lecteur (Options d'alimentation, veille et moteur audio)
+        # Page 8 : Paramètres > Son (moteur audio, transitions, normalisation, vitesse)
+        self.page_settings_sound = self._create_settings_sound_page()
+        self.stacked_widget.addWidget(self.page_settings_sound)
+
+        # Page 9 : Paramètres > Lecteur (pochettes, blind test)
         self.page_settings_player = self._create_settings_player_page()
         self.stacked_widget.addWidget(self.page_settings_player)
+
+        # Page 9b : Paramètres > Effets (effets disponibles et mode aléatoire)
+        self.page_settings_effects = self._create_settings_effects_page()
+        self.stacked_widget.addWidget(self.page_settings_effects)
 
         # Page 9 : Paramètres > À propos (Présentation, crédits et liens de soutien)
         self.page_settings_about = self._create_settings_about_page()
@@ -327,27 +368,30 @@ class SidebarLayoutMixin(_MixinBase):
         self.btn_activity_feed = HoverBadgeButton("⚡ " + tr("status.activity_feed"))
         self.btn_activity_feed.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_activity_feed.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #1E293B;
-                color: #94A3B8;
-                border: 1px solid #334155;
+            f"""
+            QPushButton {{
+                background-color: {COLOR_BG_SLATE};
+                color: {COLOR_TEXT_MUTED};
+                border: 1px solid {COLOR_BORDER_SLATE};
                 border-radius: 6px;
                 padding: 2px 10px;
                 font-size: 11px;
                 font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #0284C7;
-                color: #FFFFFF;
-                border: 1px solid #38BDF8;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {COLOR_PRIMARY};
+                color: {COLOR_WHITE};
+                border: 1px solid {COLOR_PRIMARY_HOVER};
+            }}
             """
         )
         self.btn_activity_feed.hover_entered.connect(self._on_activity_feed_hover_entered)
         self.btn_activity_feed.hover_left.connect(self._on_activity_feed_hover_left)
         self.btn_activity_feed.clicked.connect(self._on_activity_feed_clicked)
         self.status_bar.addPermanentWidget(self.btn_activity_feed)
+        # Fil d'activité et popover associé désactivés dans l'interface
+        self.btn_activity_feed.setVisible(False)
+        self.btn_activity_feed.setEnabled(False)
 
     def _setup_menu_bar(self) -> None:
         """Désactive la barre de menus standard pour une interface épurée et configure le raccourci F1."""

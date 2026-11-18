@@ -107,8 +107,10 @@ def test_next_buffer_raccord_gapless_seulement_en_fin_naturelle(
     played: list[int] = []
     monkeypatch.setattr(player, "_complete_buffer_transition", transitions.append)
     monkeypatch.setattr(player, "play_index", played.append)
+    player._timer.start()  # une lecture est en cours : « Suivant » lit la piste au lieu de la charger en pause
 
     player.next()
+    player._timer.stop()
 
     # Un « Suivant » manuel garde sinon la position de la piste précédente (suivante accolée dans le tampon).
     assert bool(transitions) is expected_gapless

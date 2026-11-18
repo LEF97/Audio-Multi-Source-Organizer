@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
-    QDialog,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -17,21 +16,26 @@ from PySide6.QtWidgets import (
 from amso.core.i18n import tr
 from amso.services.player_service import PlayerService
 from amso.services.vlc_downloader import VlcDownloadWorker
-from amso.ui.theme import DARK_THEME_QSS
+from amso.ui.dialogs.base_dialog import AmsoDialog
+from amso.ui.styles import (
+    COLOR_BG_DARK,
+    COLOR_BORDER,
+    COLOR_PRIMARY,
+    COLOR_PRIMARY_DARK,
+    COLOR_TEXT_BRIGHT,
+    COLOR_TEXT_MUTED,
+    COLOR_TEXT_SOFT,
+    COLOR_WHITE,
+)
 
 
-class VlcDownloadDialog(QDialog):
+class VlcDownloadDialog(AmsoDialog):
     """Dialogue guidant le téléchargement automatique et transparent des composants VLC."""
 
     def __init__(self, player_service: PlayerService, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
+        super().__init__(tr("dialog.vlc_title"), 520, parent)
         self.player_service = player_service
         self.worker: VlcDownloadWorker | None = None
-
-        self.setWindowTitle(tr("dialog.vlc_title"))
-        self.setMinimumWidth(520)
-        self.setModal(True)
-        self.setStyleSheet(DARK_THEME_QSS)
 
         self._setup_ui()
 
@@ -46,11 +50,11 @@ class VlcDownloadDialog(QDialog):
         header_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         icon_lbl = QLabel("🎵")
-        icon_lbl.setStyleSheet("""
+        icon_lbl.setStyleSheet(f"""
             font-size: 38px;
             padding: 10px;
-            background-color: #1A1D24;
-            border: 1px solid #282C37;
+            background-color: {COLOR_BG_DARK};
+            border: 1px solid {COLOR_BORDER};
             border-radius: 12px;
         """)
         header_layout.addWidget(icon_lbl)
@@ -59,11 +63,11 @@ class VlcDownloadDialog(QDialog):
         text_layout.setSpacing(6)
 
         title_lbl = QLabel(tr("dialog.vlc_title"))
-        title_lbl.setStyleSheet("color: #F8FAFC; font-size: 16px; font-weight: 700;")
+        title_lbl.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-size: 16px; font-weight: 700;")
         text_layout.addWidget(title_lbl)
 
         self.lbl_desc = QLabel(tr("dialog.vlc_desc"))
-        self.lbl_desc.setStyleSheet("color: #94A3B8; font-size: 13px; line-height: 1.4;")
+        self.lbl_desc.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 13px; line-height: 1.4;")
         self.lbl_desc.setWordWrap(True)
         text_layout.addWidget(self.lbl_desc)
 
@@ -72,9 +76,9 @@ class VlcDownloadDialog(QDialog):
 
         # Zone de progression (masquée au début)
         self.progress_frame = QFrame()
-        self.progress_frame.setStyleSheet("""
-            background-color: #1A1D24;
-            border: 1px solid #282C37;
+        self.progress_frame.setStyleSheet(f"""
+            background-color: {COLOR_BG_DARK};
+            border: 1px solid {COLOR_BORDER};
             border-radius: 8px;
             padding: 14px;
         """)
@@ -83,7 +87,7 @@ class VlcDownloadDialog(QDialog):
         prog_layout.setSpacing(10)
 
         self.lbl_status = QLabel(tr("dialog.vlc_downloading"))
-        self.lbl_status.setStyleSheet("color: #E2E8F0; font-size: 12px; font-weight: 500;")
+        self.lbl_status.setStyleSheet(f"color: {COLOR_TEXT_SOFT}; font-size: 12px; font-weight: 500;")
         prog_layout.addWidget(self.lbl_status)
 
         self.progress_bar = QProgressBar()
@@ -106,18 +110,18 @@ class VlcDownloadDialog(QDialog):
 
         self.btn_download = QPushButton(tr("dialog.vlc_btn_download"))
         self.btn_download.setProperty("class", "primary-btn")
-        self.btn_download.setStyleSheet("""
-            QPushButton.primary-btn {
-                background-color: #0284C7;
-                color: #FFFFFF;
+        self.btn_download.setStyleSheet(f"""
+            QPushButton.primary-btn {{
+                background-color: {COLOR_PRIMARY};
+                color: {COLOR_WHITE};
                 font-weight: 600;
                 padding: 8px 16px;
                 border-radius: 6px;
                 border: none;
-            }
-            QPushButton.primary-btn:hover {
-                background-color: #0369A1;
-            }
+            }}
+            QPushButton.primary-btn:hover {{
+                background-color: {COLOR_PRIMARY_DARK};
+            }}
         """)
         self.btn_download.clicked.connect(self._start_download)
         self.buttons_layout.addWidget(self.btn_download)

@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,14 +47,17 @@
 | **Playlistak (M3U, PLS, XSPF, WPL) eta CUE lehenelako babesarea** | Indeksazio arboreskiko (🎶), eskuratzea sekuentziako, labur nagusiak ikusiko; .cue kalanak (💿) dosierrak virtualak bezala irekitzen dira, beraien dureta eta labur nagusiak bezala irakurtzen dira. | 🟢 Implemetatuta |
 | **Playlist Kudeaketa eta Drag-Drop** | Cola virtualizatua, drag & drop zure, aleatorra (shuffle) berratu eta zikloak. | 🟢 Implemetatuta |
 | **Modu interaktibo « 🎲 Blind Test »** | Joko musikal immersibo, kontua animatikoarekin, fondu sonikoak, ireketa zaintzaile eta enplegatu otomatikoa. | 🟢 Implemetatuta |
-| **Actualizazioak aplikazioan** | Zigitalizazioak/manuelak biruzko erakundeak (GitHub Releases) bidez | 🟢 Implemendu |
-| **Zigitalizazioak Linux eta macOS** | Paquetak .AppImage / .tar.gz (Linux) eta .dmg ez-eginkako (macOS), VLC beharrezkoa | 🟡 Eksperimentalak (ez-testatu) |
-| **Artisteak eta Diskografiaren Kudeaketa** | Artista bakoitzeko ikuspegi dedikatuak albumak, singleak eta diskografia osoarekin | 🟡 Planifikatuta |
-| **Grafikoaren Ekuilizatzailea (EQ)** | Audio presetak eta ekuilizatzaile parametriko multibandeak | 🟡 Planifikatuta |
-| **Konektadore Google Drive** | Kolekzio audio ururak azkakarretik OAuth 2.0 bidez azkarazteak eta sinkronizazioa | ⚪ Planifikatuta |
-| **Konektadore Amazon Music** | Kolekzio ururak azkakarretik OAuth 2.0 bidez azkarazteak eta sinkronizazioa | ⚪ Planifikatuta |
-| **Konektadore Spotify / Deezer** | Playlistak importatzea eta laburrak lotzea | ⚪ Planifikatuta |
-| **Doblaketa Inteligentea** | Doblaketa detekzioa (titulu/artista blurrak + empreintza akustikoak) | ⚪ Planifikatuta |
+| **Sourak & Biblioteka** | Sourak kokapena, salbiki-indikatoreak (sourak oihunak, eskaneakko zizkarrarrak, atal handitzak), ikusipona globala edo sourak per eta ekintza azkarrak | 🟢 Implémenté |
+| **Editorea, zereginak eta playlistak eksportatzea** | Berrarratzea, manuan edo otomatikoki konponketa edo atal handitzak bilatu, M3U / M3U8 / PLS / XSPF / WPL-an babesera, album per arreagileak | 🟢 Implémenté |
+| **Audio tresnak** | Equalizador grafiko 10 bandak presets-ekin, ReplayGain normalizazioa, reproduktzeko indarreak, audio iragarkia aukerak eta itzale-kitak (motore bateko arduradunak) | 🟢 Implémenté |
+| **Windows integrazioa eta efektu vizu----\** | Tablestra, ziurtagiri-area, laguntza-argizuak, efektu vizu----\** Aléatoire moduaekin egokitzako efektu vizu----\** | 🟢 Implémenté |
+| **In-app egunerakuntza** | GitHub Releases-aren bertsioak otomatikoki/manuan egiaztatzeko | 🟢 Implémenté |
+| **Linux eta macOS bertsioak** | Paqueteak `.AppImage` / `.tar.gz` (Linux) eta `.dmg` ez-eginkako (macOS), VLC beharrezkoa | 🟡 Expérimental (non testé) |
+| **Artisteak eta diskografia gehienorduan** | Albumak, singleak eta diskografia osoa barneko ikusipona dedikatu | 🟡 Prévu |
+| **Google Drive konektatzailea** | Koleksi audio ururak eskaneatzea eta sinkronizazioa OAuth 2.0-aren bidez | ⚪ Planifié |
+| **Connecteur Amazon Music** | Eskaneak eta sinkronizazioa koleksiak ururak OAuth 2.0-aren bidez | ⚪ Planifikatuta |
+| **Connecteur Spotify / Deezer** | Playlistak importatzea eta laburrak lotzea | ⚪ Planifikatuta |
+| **Dédoublonnage intelligent** | Doblatzera detektatzea (titre/artiste flous + empreintes acoustiques) | ⚪ Planifikatuta |
 
 > 💡 *Planifikatako hitzegiak eta berseemakkoen ayrıntesia ikusteko, zuzenatu [Feuille de route (Roadmap)](../../ROADMAP.md).*
 

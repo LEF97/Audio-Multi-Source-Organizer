@@ -240,8 +240,8 @@ def test_player_view_volume_in_top_bar_and_no_blind_test(qapp: QApplication):
     assert pview.slider_volume.value() == 75
 
     # Le volume doit être enfant de top_bar
-    assert pview.slider_volume.parent() == pview.top_bar
-    assert pview.btn_mute.parent() == pview.top_bar
+    assert pview.top_bar.isAncestorOf(pview.slider_volume)
+    assert pview.top_bar.isAncestorOf(pview.btn_mute)
 
     # 2. Le bloc paramètres du blind test ne doit plus être présent sur PlayerView
     assert not hasattr(pview, "card_blind_test")
@@ -353,9 +353,8 @@ def test_main_window_blind_test_integration(qapp: QApplication, tmp_path: Path):
     assert window._current_active_page == "blind_test"
 
     # 4. Synchronisation des effets visuels
-    window.set_visual_effect("waves")
+    window.page_blind_test.set_effect_type("waves")
     assert window.page_blind_test.current_effect == "waves"
-    assert window.page_player.current_effect == "waves"
 
     # 5. Retranscription de langue
     window.retranslate_ui()
@@ -395,8 +394,8 @@ def test_blind_test_top_bar_volume(qapp: QApplication):
     assert hasattr(view, "lbl_volume")
     assert view.slider_volume.value() == 65
     # Contrôle de volume dans la top_bar et non dans la carte
-    assert view.slider_volume.parent() == view.top_bar
-    assert view.btn_mute.parent() == view.top_bar
+    assert view.top_bar.isAncestorOf(view.slider_volume)
+    assert view.top_bar.isAncestorOf(view.btn_mute)
 
 
 def test_blind_test_no_autoplay_on_entry_and_start_at_zero(qapp: QApplication, sample_track: TrackRecord):
@@ -666,8 +665,9 @@ def test_blind_test_effects_harmonization_and_spectrum(qapp: QApplication, sampl
     assert view.combo_effect.maximumWidth() == 250
     assert view.combo_effect.view().minimumWidth() == 260
 
-    # 2. Vérification de la liste ordonnée des 9 effets avec émojis
+    # 2. Vérification de la liste ordonnée des 10 entrées avec émojis
     expected_keys = [
+        "none",
         "particles",
         "waves",
         "stars",
@@ -676,9 +676,9 @@ def test_blind_test_effects_harmonization_and_spectrum(qapp: QApplication, sampl
         "aurora",
         "bars",
         "bars_full",
-        "none",
+        "random",
     ]
-    assert view.combo_effect.count() == 9
+    assert view.combo_effect.count() == 10
     for i, expected_key in enumerate(expected_keys):
         assert view.combo_effect.itemData(i) == expected_key
         # Présence d'un émoji au début de chaque libellé

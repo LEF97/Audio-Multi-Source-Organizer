@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 from amso.core.config import get_config_manager
 from amso.core.i18n import tr
 from amso.services.sleep_inhibitor import SleepInhibitor
+from amso.ui.styles import COLOR_PRIMARY_HOVER, COLOR_TEXT, COLOR_TEXT_DISABLED
 
 logger = logging.getLogger(__name__)
 
@@ -103,83 +104,16 @@ class PlaybackSettingsMixin(_MixinBase):
         self.crossfade_container.setEnabled(is_cf)
         if hasattr(self, "lbl_crossfade_duration"):
             self.lbl_crossfade_duration.setStyleSheet(
-                "color: #CBD5E1; font-size: 12.5px; font-weight: 500;"
+                f"color: {COLOR_TEXT}; font-size: 12.5px; font-weight: 500;"
                 if is_cf
-                else "color: #475569; font-size: 12.5px; font-weight: 500;"
+                else f"color: {COLOR_TEXT_DISABLED}; font-size: 12.5px; font-weight: 500;"
             )
         if hasattr(self, "lbl_crossfade_value"):
             self.lbl_crossfade_value.setStyleSheet(
-                "color: #38BDF8; font-size: 12.5px; font-weight: 600; min-width: 90px;"
+                f"color: {COLOR_PRIMARY_HOVER}; font-size: 12.5px; font-weight: 600; min-width: 90px;"
                 if is_cf
-                else "color: #475569; font-size: 12.5px; font-weight: 600; min-width: 90px;"
+                else f"color: {COLOR_TEXT_DISABLED}; font-size: 12.5px; font-weight: 600; min-width: 90px;"
             )
-
-    def _on_visual_effect_changed(self) -> None:
-        """Appelé lors d'un changement de sélection dans les boutons radio d'effets visuels."""
-        if not hasattr(self, "effect_group"):
-            return
-        if hasattr(self, "radio_eff_particles") and self.radio_eff_particles.isChecked():
-            eff = "particles"
-        elif hasattr(self, "radio_eff_waves") and self.radio_eff_waves.isChecked():
-            eff = "waves"
-        elif hasattr(self, "radio_eff_stars") and self.radio_eff_stars.isChecked():
-            eff = "stars"
-        elif hasattr(self, "radio_eff_warp") and self.radio_eff_warp.isChecked():
-            eff = "warp"
-        elif hasattr(self, "radio_eff_warp_dynamic") and self.radio_eff_warp_dynamic.isChecked():
-            eff = "warp_dynamic"
-        elif hasattr(self, "radio_eff_aurora") and self.radio_eff_aurora.isChecked():
-            eff = "aurora"
-        elif hasattr(self, "radio_eff_bars") and self.radio_eff_bars.isChecked():
-            eff = "bars"
-        elif hasattr(self, "radio_eff_bars_full") and self.radio_eff_bars_full.isChecked():
-            eff = "bars_full"
-        elif hasattr(self, "radio_eff_none") and self.radio_eff_none.isChecked():
-            eff = "none"
-        else:
-            eff = "particles"
-
-        cfg = get_config_manager()
-        cfg.set_visual_effect(eff)
-        if hasattr(self, "page_player") and self.page_player:
-            self.page_player.set_effect_type(eff)
-        if hasattr(self, "page_blind_test") and self.page_blind_test:
-            self.page_blind_test.set_effect_type(eff)
-
-    def set_visual_effect(self, eff: str) -> None:
-        """Applique l'effet visuel à l'ensemble de l'application (Lecteur, Blind Test et réglages)."""
-        cfg = get_config_manager()
-        cfg.set_visual_effect(eff)
-        self._sync_visual_effect_radio(eff)
-
-    def _sync_visual_effect_radio(self, eff: str) -> None:
-        """Synchronise l'état des boutons radio Paramètres > Lecteur avec le lecteur sans boucle."""
-        if hasattr(self, "page_blind_test") and self.page_blind_test:
-            if getattr(self.page_blind_test, "current_effect", None) != eff:
-                self.page_blind_test.set_effect_type(eff)
-        if hasattr(self, "page_player") and self.page_player:
-            if getattr(self.page_player, "current_effect", None) != eff:
-                self.page_player.blockSignals(True)
-                self.page_player.set_effect_type(eff)
-                self.page_player.blockSignals(False)
-        if not hasattr(self, "effect_group"):
-            return
-        radio_map = {
-            "particles": getattr(self, "radio_eff_particles", None),
-            "waves": getattr(self, "radio_eff_waves", None),
-            "stars": getattr(self, "radio_eff_stars", None),
-            "warp": getattr(self, "radio_eff_warp", None),
-            "warp_dynamic": getattr(self, "radio_eff_warp_dynamic", None),
-            "aurora": getattr(self, "radio_eff_aurora", None),
-            "bars": getattr(self, "radio_eff_bars", None),
-            "bars_full": getattr(self, "radio_eff_bars_full", None),
-            "none": getattr(self, "radio_eff_none", None),
-        }
-        target = radio_map.get(eff)
-        if target and not target.isChecked():
-            self.effect_group.blockSignals(True)
-            target.setChecked(True)
-            self.effect_group.blockSignals(False)
 
     def _on_player_state_changed(self, state: str) -> None:
         self._player_state = state

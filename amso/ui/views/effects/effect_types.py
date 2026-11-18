@@ -78,9 +78,13 @@ class Comet:
 class WarpStar:
     """Étoile 3D pour l'effet d'hyperespace / voyage spatial en profondeur."""
 
-    __slots__ = ("x", "y", "z", "pz", "speed", "color", "base_alpha", "radius")
+    __slots__ = ("x", "y", "z", "pz", "sx", "sy", "psx", "psy", "speed", "color", "base_alpha", "radius")
 
     def __init__(self, w: float, h: float, max_depth: float = 1000.0, random_z: bool = True) -> None:
+        self.sx: float | None = None
+        self.sy: float | None = None
+        self.psx: float | None = None
+        self.psy: float | None = None
         self.reset(w, h, max_depth, random_z=random_z)
 
     def reset(self, w: float, h: float, max_depth: float = 1000.0, random_z: bool = False) -> None:
@@ -93,6 +97,10 @@ class WarpStar:
 
         self.z = random.uniform(25.0, max_depth) if random_z else random.uniform(max_depth * 0.85, max_depth)
         self.pz = self.z
+        self.sx = None
+        self.sy = None
+        self.psx = None
+        self.psy = None
         self.speed = random.uniform(14.0, 24.0)
         self.radius = random.uniform(1.2, 3.2)
         self.base_alpha = random.uniform(0.65, 0.95)

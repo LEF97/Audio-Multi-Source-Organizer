@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QFrame,
+    QGraphicsOpacityEffect,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -18,12 +19,23 @@ from PySide6.QtWidgets import (
 
 from amso.core.i18n import tr
 from amso.ui.styles import (
+    COLOR_BG_DEEP,
+    COLOR_PRIMARY,
+    COLOR_PRIMARY_DARK,
+    COLOR_PRIMARY_HOVER,
+    COLOR_TEXT,
+    COLOR_TEXT_BRIGHT,
+    COLOR_TEXT_DIM,
+    COLOR_TEXT_MUTED,
+    COLOR_WHITE,
     seek_slider_qss,
-    volume_label_qss,
-    volume_slider_qss,
 )
 from amso.ui.widgets.common import ClickableSlider
+from amso.ui.widgets.cover_transition_label import CoverTransitionLabel
 from amso.ui.widgets.effects_view_mixin import EffectsViewMixin
+from amso.ui.widgets.help_guide_popup import create_help_button
+from amso.ui.widgets.play_pause_button import PlayPauseButton
+from amso.ui.widgets.volume_control import VolumeControl
 
 if TYPE_CHECKING:
     _MixinBase = QWidget
@@ -52,36 +64,26 @@ class PlayerUiMixin(EffectsViewMixin, _MixinBase):
         top_layout.setSpacing(8)
 
         self.lbl_page_title = QLabel(tr("player.title"))
-        self.lbl_page_title.setStyleSheet("color: #F8FAFC; font-size: 16px; font-weight: 700;")
+        self.lbl_page_title.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-size: 16px; font-weight: 700;")
         top_layout.addWidget(self.lbl_page_title)
 
         top_layout.addSpacing(16)
 
         # Contrôle du volume sonore intégré dans la barre supérieure
-        self.btn_mute = QPushButton("🔊")
-        self.btn_mute.setFixedSize(30, 30)
-        self.btn_mute.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._style_transport_button(self.btn_mute, font_size=13)
-        top_layout.addWidget(self.btn_mute)
-
-        self.slider_volume = ClickableSlider(Qt.Orientation.Horizontal)
-        self.slider_volume.setRange(0, 100)
-        self.slider_volume.setValue(self.player.volume)
-        self.slider_volume.setFixedWidth(120)
-        self.slider_volume.setFixedHeight(22)
-        self.slider_volume.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.slider_volume.setStyleSheet(volume_slider_qss(groove_height=5, handle_size=12))
-        top_layout.addWidget(self.slider_volume)
-
-        self.lbl_volume = QLabel(f"{self.player.volume}%")
-        self.lbl_volume.setStyleSheet(volume_label_qss(min_width=38))
-        top_layout.addWidget(self.lbl_volume)
+        volume_control = VolumeControl(self.player.volume, self)
+        self.btn_mute = volume_control.btn_mute
+        self.slider_volume = volume_control.slider
+        self.lbl_volume = volume_control.lbl_percent
+        top_layout.addWidget(volume_control)
 
         top_layout.addStretch()
 
         self.lbl_effect_badge, self.combo_effect = self._create_effects_combo()
         top_layout.addWidget(self.lbl_effect_badge)
         top_layout.addWidget(self.combo_effect)
+
+        self.btn_help = create_help_button("player.btn_help", self)
+        top_layout.addWidget(self.btn_help)
         layout.addWidget(top_bar)
 
         # Toile d'effet visuel dynamique en fond
@@ -120,7 +122,7 @@ class PlayerUiMixin(EffectsViewMixin, _MixinBase):
         self.card_layout = card_layout
 
         # 1. Grande Jaquette (taille adaptative calculée dynamiquement)
-        self.lbl_cover = QLabel()
+        self.lbl_cover = CoverTransitionLabel()
         self.lbl_cover.setFixedSize(280, 280)
         self.lbl_cover.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_cover.setStyleSheet("border-radius: 12px;")
@@ -135,21 +137,21 @@ class PlayerUiMixin(EffectsViewMixin, _MixinBase):
         info_layout.setSpacing(2)
 
         self.lbl_title = QLabel(tr("player.no_track"))
-        self.lbl_title.setStyleSheet("color: #F8FAFC; font-size: 19px; font-weight: 700;")
+        self.lbl_title.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-size: 19px; font-weight: 700;")
         self.lbl_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_title.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.lbl_title.setWordWrap(True)
         info_layout.addWidget(self.lbl_title)
 
         self.lbl_artist_album = QLabel("")
-        self.lbl_artist_album.setStyleSheet("color: #94A3B8; font-size: 14px;")
+        self.lbl_artist_album.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 14px;")
         self.lbl_artist_album.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_artist_album.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.lbl_artist_album.setWordWrap(True)
         info_layout.addWidget(self.lbl_artist_album)
 
         self.lbl_file_name = QLabel("")
-        self.lbl_file_name.setStyleSheet("color: #64748B; font-size: 12px; margin-top: 1px;")
+        self.lbl_file_name.setStyleSheet(f"color: {COLOR_TEXT_DIM}; font-size: 12px; margin-top: 1px;")
         self.lbl_file_name.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_file_name.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.lbl_file_name.setWordWrap(True)
@@ -157,8 +159,8 @@ class PlayerUiMixin(EffectsViewMixin, _MixinBase):
         info_layout.addWidget(self.lbl_file_name)
 
         self.lbl_badge = QLabel("")
-        self.lbl_badge.setStyleSheet("""
-            color: #38BDF8;
+        self.lbl_badge.setStyleSheet(f"""
+            color: {COLOR_PRIMARY_HOVER};
             font-size: 11px;
             font-weight: 600;
             padding: 2px 10px;
@@ -181,7 +183,7 @@ class PlayerUiMixin(EffectsViewMixin, _MixinBase):
         seek_layout.setSpacing(8)
 
         self.lbl_time_cur = QLabel("00:00")
-        self.lbl_time_cur.setStyleSheet("color: #94A3B8; font-size: 12px; font-family: monospace;")
+        self.lbl_time_cur.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 12px; font-family: monospace;")
         seek_layout.addWidget(self.lbl_time_cur)
 
         self.slider_seek = ClickableSlider(Qt.Orientation.Horizontal)
@@ -192,7 +194,7 @@ class PlayerUiMixin(EffectsViewMixin, _MixinBase):
         seek_layout.addWidget(self.slider_seek, 1)
 
         self.lbl_time_total = QLabel("00:00")
-        self.lbl_time_total.setStyleSheet("color: #94A3B8; font-size: 12px; font-family: monospace;")
+        self.lbl_time_total.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 12px; font-family: monospace;")
         seek_layout.addWidget(self.lbl_time_total)
 
         card_layout.addWidget(seek_container)
@@ -215,43 +217,25 @@ class PlayerUiMixin(EffectsViewMixin, _MixinBase):
         self.btn_prev.setFixedSize(40, 40)
         self.btn_prev.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_prev.setToolTip(tr("player.btn_previous"))
-        self._style_transport_button(self.btn_prev, font_size=14)
+        self._style_transport_button(self.btn_prev, font_size=24)
         ctrl_layout.addWidget(self.btn_prev)
 
-        self.btn_play_pause = QPushButton("▶")
-        self.btn_play_pause.setFixedSize(50, 50)
-        self.btn_play_pause.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_play_pause = PlayPauseButton()
         self.btn_play_pause.setToolTip(tr("player.btn_play"))
-        self.btn_play_pause.setStyleSheet("""
-            QPushButton {
-                background-color: #0284C7;
-                color: #FFFFFF;
-                border-radius: 25px;
-                font-size: 20px;
-                border: none;
-            }
-            QPushButton:hover {
-                background-color: #0369A1;
-                color: #FFFFFF;
-            }
-            QPushButton:pressed {
-                background-color: #075985;
-            }
-        """)
         ctrl_layout.addWidget(self.btn_play_pause)
 
         self.btn_stop = QPushButton("⏹")
         self.btn_stop.setFixedSize(36, 36)
         self.btn_stop.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_stop.setToolTip(tr("player.btn_stop"))
-        self._style_transport_button(self.btn_stop, font_size=12)
+        self._style_transport_button(self.btn_stop, font_size=22)
         ctrl_layout.addWidget(self.btn_stop)
 
         self.btn_next = QPushButton("⏭")
         self.btn_next.setFixedSize(40, 40)
         self.btn_next.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_next.setToolTip(tr("player.btn_next"))
-        self._style_transport_button(self.btn_next, font_size=14)
+        self._style_transport_button(self.btn_next, font_size=24)
         ctrl_layout.addWidget(self.btn_next)
 
         self.btn_repeat = QPushButton("🔁")
@@ -287,13 +271,13 @@ class PlayerUiMixin(EffectsViewMixin, _MixinBase):
 
         self.lbl_empty_title = QLabel(tr("player.empty_title"))
         self.lbl_empty_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.lbl_empty_title.setStyleSheet("color: #F8FAFC; font-size: 18px; font-weight: 700;")
+        self.lbl_empty_title.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-size: 18px; font-weight: 700;")
         self.lbl_empty_title.setWordWrap(True)
         empty_layout.addWidget(self.lbl_empty_title)
 
         self.lbl_empty_desc = QLabel(tr("player.empty_desc"))
         self.lbl_empty_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.lbl_empty_desc.setStyleSheet("color: #94A3B8; font-size: 13px; line-height: 1.5;")
+        self.lbl_empty_desc.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 13px; line-height: 1.5;")
         self.lbl_empty_desc.setWordWrap(True)
         empty_layout.addWidget(self.lbl_empty_desc)
 
@@ -301,24 +285,24 @@ class PlayerUiMixin(EffectsViewMixin, _MixinBase):
 
         self.btn_add_first_folder = QPushButton(tr("player.btn_add_first_folder"))
         self.btn_add_first_folder.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_add_first_folder.setStyleSheet("""
-            QPushButton {
-                background-color: #0284C7;
-                color: #FFFFFF;
-                border: 1px solid #38BDF8;
+        self.btn_add_first_folder.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {COLOR_PRIMARY};
+                color: {COLOR_WHITE};
+                border: 1px solid {COLOR_PRIMARY_HOVER};
                 border-radius: 8px;
                 font-size: 13.5px;
                 font-weight: 600;
                 padding: 10px 22px;
-            }
-            QPushButton:hover {
-                background-color: #38BDF8;
-                color: #0F172A;
-            }
-            QPushButton:pressed {
-                background-color: #0369A1;
-                color: #FFFFFF;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {COLOR_PRIMARY_HOVER};
+                color: {COLOR_BG_DEEP};
+            }}
+            QPushButton:pressed {{
+                background-color: {COLOR_PRIMARY_DARK};
+                color: {COLOR_WHITE};
+            }}
         """)
         self.btn_add_first_folder.clicked.connect(self._on_add_folder_clicked)
         empty_layout.addWidget(self.btn_add_first_folder, 0, Qt.AlignmentFlag.AlignCenter)
@@ -327,7 +311,46 @@ class PlayerUiMixin(EffectsViewMixin, _MixinBase):
         card_layout.addWidget(self.empty_container)
 
         center_layout.addWidget(self.card)
+        center_layout.addSpacing(10)
+
+        # Mini-barre "À suivre" sous la carte (apparition progressive en fin de piste ou au survol de Suivant)
+        self.up_next_bar = QPushButton("")
+        self.up_next_bar.setObjectName("upNextBar")
+        self.up_next_bar.setMinimumWidth(500)
+        self.up_next_bar.setMaximumWidth(580)
+        self.up_next_bar.setFixedHeight(36)
+        self.up_next_bar.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.up_next_bar.setStyleSheet(f"""
+            QPushButton#upNextBar {{
+                background-color: rgba(26, 29, 36, 0.85);
+                border: 1px solid rgba(56, 189, 248, 0.22);
+                border-radius: 12px;
+                color: {COLOR_TEXT};
+                font-size: 12.5px;
+                padding: 0 16px;
+                text-align: center;
+            }}
+            QPushButton#upNextBar:hover {{
+                background-color: rgba(34, 38, 48, 0.95);
+                border-color: rgba(56, 189, 248, 0.55);
+                color: {COLOR_TEXT_BRIGHT};
+            }}
+        """)
+        self._up_next_opacity = QGraphicsOpacityEffect(self.up_next_bar)
+        self._up_next_opacity.setOpacity(0.0)
+        self.up_next_bar.setGraphicsEffect(self._up_next_opacity)
+        self.up_next_bar.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        center_layout.addWidget(self.up_next_bar)
+
         scroll.setWidget(center_container)
         layout.addWidget(scroll, 1)
+
+        # Bouton flottant d'outils audio en bas à droite (au-dessus du fil d'activité)
+        self.btn_audio_tools = QPushButton("⚙", self)
+        self.btn_audio_tools.setFixedSize(36, 36)
+        self.btn_audio_tools.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_audio_tools.setToolTip(tr("player.btn_audio_tools"))
+        self._style_transport_button(self.btn_audio_tools)
+        self.btn_audio_tools.raise_()
 
         self._populate_effects_combo()

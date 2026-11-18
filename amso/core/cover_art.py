@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 import re
+from collections import deque
 from pathlib import Path
 
 import mutagen
+
+logger = logging.getLogger(__name__)
 
 SUPPORTED_IMAGE_EXTENSIONS = (
     ".png",
@@ -22,12 +26,19 @@ SUPPORTED_IMAGE_EXTENSIONS = (
 )
 
 
-def find_cover_image_in_folder(folder: Path, audio_stem: str = "") -> bytes | None:
+def find_cover_image_in_folder(
+    folder: Path,
+    audio_stem: str = "",
+    *,
+    recursive: bool = False,
+    max_subdirs: int = 200,
+) -> bytes | None:
     """Recherche la meilleure image de pochette disponible dans le dossier spécifié.
 
     Prend en compte folder.png, folder.jpg, cover, front, album, le nom du fichier audio,
     ou toute autre image présente dans le répertoire.
     Gère également les sous-dossiers multi-disques (CD1, Disc 2, etc.) en remontant au parent.
+    Si ``recursive=True``, explore les sous-dossiers en largeur et s'arrête à la première image trouvée.
     """
     if not folder.is_dir():
         return None
@@ -122,7 +133,9 @@ def find_cover_image_in_folder(folder: Path, audio_stem: str = "") -> bytes | No
             valid_candidates.append((sc, cand))
 
     if not valid_candidates:
-        return None
+        if not recursive:
+            return None
+        return _find_cover_in_subfolders(folder, max_subdirs=max_subdirs)
 
     valid_candidates.sort(key=lambda x: x[0], reverse=True)
     for _, cand in valid_candidates:
@@ -132,6 +145,32 @@ def find_cover_image_in_folder(folder: Path, audio_stem: str = "") -> bytes | No
                 return data
         except OSError:
             continue
+    if recursive:
+        return _find_cover_in_subfolders(folder, max_subdirs=max_subdirs)
+    return None
+
+
+def _find_cover_in_subfolders(root: Path, *, max_subdirs: int = 200) -> bytes | None:
+    """Parcourt les sous-dossiers en largeur et retourne la première image de pochette trouvée."""
+    queue: deque[Path] = deque([root])
+    visited = 0
+    while queue and visited < max_subdirs:
+        current = queue.popleft()
+        try:
+            subdirs = sorted(
+                (d for d in current.iterdir() if d.is_dir() and not d.is_symlink()),
+                key=lambda p: p.name.casefold(),
+            )
+        except OSError:
+            continue
+        for sub in subdirs:
+            visited += 1
+            data = find_cover_image_in_folder(sub, recursive=False)
+            if data:
+                return data
+            if visited >= max_subdirs:
+                break
+            queue.append(sub)
     return None
 
 
@@ -144,7 +183,8 @@ def extract_cover_art(file_path: str | Path) -> bytes | None:
     """
     try:
         path = Path(file_path).resolve()
-    except Exception:
+    except (OSError, RuntimeError, ValueError):
+        # Chemin invalide (octet nul, boucle de liens symboliques) : pas de pochette.
         return None
 
     # Si on passe directement un dossier
@@ -200,7 +240,8 @@ def extract_cover_art(file_path: str | Path) -> bytes | None:
                         if isinstance(raw, (bytes, bytearray)) and len(raw) > 0:
                             return bytes(raw)
     except Exception:
-        pass
+        # mutagen lève des erreurs hétérogènes sur un fichier corrompu : repli sur la recherche dans le dossier.
+        logger.debug("Pochette embarquée illisible : %s", path, exc_info=True)
 
     # 2. Fallback automatique : recherche dans le dossier du fichier audio
     parent = path.parent

@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,14 +47,17 @@
 | **Support for Playlists (M3U, PLS, XSPF, WPL) & CUE sheets** | Tree indexing (🎶), sequential listening order, visual locator para sa mga nawawalang kanta; ang mga file na `.cue` (💿) ay nagbubukas tulad ng isang virtual track folder kasama ang kanilang tagal at pinapatugtog tulad ng totoong track | 🟢 Naipatupad |
 | **Playlist Manager & Drag-and-Drop** | Virtualized queue, smooth drag & drop, reversible shuffle, at loops | 🟢 Naipatupad |
 | **Interactive "🎲 Blind Test" Mode** | Immersive music game na may animated countdown, sound fade, soft reveal, at automatic sequencing | 🟢 Naipatupad |
-| **Mga Pag-update sa App** | Automatic/manual version checking via GitHub Releases | 🟢 Na-implementa |
-| **Mga Bersyon ng Linux & macOS** | Paquets `.AppImage` / `.tar.gz` (Linux) at `.dmg` non-signed (macOS), VLC required | 🟡 Eksperimental (hindi pa nasubukan) |
-| **Pamamahala ng Artista & Diskograpiya** | Dedicated view per artist with albums, singles, and complete discography | 🟡 Planado |
-| **Graphic Equalizer (EQ)** | Audio presets at parametric multi-band equalizer | 🟡 Planado |
-| **Google Drive Connector** | Scanning and synchronizing remote audio collections via OAuth 2.0 | ⚪ Planado |
-| **Amazon Music Connector** | Scanning and synchronizing remote collections via OAuth 2.0 | ⚪ Planado |
-| **Spotify / Deezer Connector** | Importing playlists and track matching | ⚪ Planado |
-| **Smart Deduplication** | Duplicate detection (fuzzy title/artist + acoustic fingerprints) | ⚪ Planado |
+| **Mga Pinagmulan at Aklatan** | Dashboard ng mga pinagmulan na may mga indikasyon ng kalusugan (offline na pinagmulan, error sa pag-scan, nawawalang file), pangkalahatang o bawat pinagmulan na view, at mabilis na aksyon | 🟢 Implémenté |
+| **Editor, pag-aayos, at pag-e-export ng mga playlist** | Pag-aayos, mano-mano o awtomatikong paglipat ng mga nawawalang file, backup sa M3U / M3U8 / PLS / XSPF / WPL, pagpapangkat ayon sa album | 🟢 Implémenté |
+| **Mga kasangkapan sa audio** | 10-band graphic equalizer na may presets, ReplayGain normalization, bilis ng pagtugtog, pagpili ng audio output, at stop timer (continuous buffer engine) | 🟢 Implémenté |
+| **Integrasyon sa Windows at mga visual effects** | Taskbar, notification area, gabay sa pagtulong, adjustable visual effects na may Random mode | 🟢 Implémenté |
+| **Mga update sa loob ng app** | Awtomatiko/manu-manong pag-check ng mga bersyon sa pamamagitan ng GitHub Releases | 🟢 Implémenté |
+| **Mga bersyon para sa Linux at macOS** | Mga package na `.AppImage` / `.tar.gz` (Linux) at hindi nilagdaan na `.dmg` (macOS), kinakailangan ang VLC | 🟡 Expérimental (non testé) |
+| **Pamamahala ng artista at Discography** | Dedikadong view bawat artista na may mga album, single, at kumpletong discography | 🟡 Prévu |
+| **Konektor ng Google Drive** | Pag-scan at pag-sync ng mga malayong koleksyon ng audio sa pamamagitan ng OAuth 2.0 | ⚪ Planifié |
+| **Connecteur Amazon Music** | Pag-scan at pag-sync ng mga malayong koleksyon sa pamamagitan ng OAuth 2.0 | ⚪ Nakaplano |
+| **Connecteur Spotify / Deezer** | Pag-import ng mga playlist at pagtutugma ng mga kanta | ⚪ Nakaplano |
+| **Matatalinong pag-aalis ng duplicate** | Paghahanap ng duplicate (malabong pamagat/artista + acoustic fingerprints) | ⚪ Nakaplano |
 
 > 💡 *Upang tingnan ang detalye ng mga nakaplanong milestone at bersyon, tumukoy sa [Feuille de route (Roadmap)](../../ROADMAP.md).*
 

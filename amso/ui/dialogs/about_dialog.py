@@ -5,7 +5,6 @@ from __future__ import annotations
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
-    QDialog,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -22,19 +21,27 @@ from amso.core.constants import (
     URL_KO_FI,
 )
 from amso.core.i18n import tr
-from amso.ui.theme import DARK_THEME_QSS, get_app_logo_pixmap
+from amso.ui.dialogs.base_dialog import AmsoDialog
+from amso.ui.styles import (
+    COLOR_BG_DARK,
+    COLOR_BG_SLATE,
+    COLOR_BORDER,
+    COLOR_PRIMARY_DARK,
+    COLOR_PRIMARY_HOVER,
+    COLOR_TEXT,
+    COLOR_TEXT_BRIGHT,
+    COLOR_TEXT_DIM,
+    COLOR_TEXT_MUTED,
+    COLOR_WHITE,
+)
+from amso.ui.theme import get_app_logo_pixmap
 
 
-class AboutDialog(QDialog):
+class AboutDialog(AmsoDialog):
     """Boîte de dialogue présentant le projet AMSO, sa version, ses crédits et ses liens de soutien."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-
-        self.setWindowTitle(tr("dialog.about_title"))
-        self.setMinimumWidth(560)
-        self.setModal(True)
-        self.setStyleSheet(DARK_THEME_QSS)
+        super().__init__(tr("dialog.about_title"), 560, parent)
 
         self._init_ui()
 
@@ -65,10 +72,10 @@ class AboutDialog(QDialog):
             icon_lbl.setText("🎵")
             icon_lbl.setStyleSheet("font-size: 40px;")
 
-        icon_lbl.setStyleSheet("""
+        icon_lbl.setStyleSheet(f"""
             padding: 8px;
-            background-color: #1A1D24;
-            border: 1px solid #282C37;
+            background-color: {COLOR_BG_DARK};
+            border: 1px solid {COLOR_BORDER};
             border-radius: 14px;
         """)
         header_layout.addWidget(icon_lbl)
@@ -77,20 +84,22 @@ class AboutDialog(QDialog):
         title_layout.setSpacing(4)
 
         app_name_lbl = QLabel(tr("app.name"))
-        app_name_lbl.setStyleSheet("color: #F8FAFC; font-size: 19px; font-weight: 800; letter-spacing: 0.5px;")
+        app_name_lbl.setStyleSheet(
+            f"color: {COLOR_TEXT_BRIGHT}; font-size: 19px; font-weight: 800; letter-spacing: 0.5px;"
+        )
         title_layout.addWidget(app_name_lbl)
 
         sub_layout = QHBoxLayout()
         sub_layout.setSpacing(8)
 
         acronym_lbl = QLabel("AMSO")
-        acronym_lbl.setStyleSheet("color: #38BDF8; font-size: 14px; font-weight: 700;")
+        acronym_lbl.setStyleSheet(f"color: {COLOR_PRIMARY_HOVER}; font-size: 14px; font-weight: 700;")
         sub_layout.addWidget(acronym_lbl)
 
         ver_badge = QLabel(f"v{__version__}")
-        ver_badge.setStyleSheet("""
-            background-color: #0369A1;
-            color: #FFFFFF;
+        ver_badge.setStyleSheet(f"""
+            background-color: {COLOR_PRIMARY_DARK};
+            color: {COLOR_WHITE};
             padding: 2px 8px;
             border-radius: 10px;
             font-size: 11px;
@@ -109,20 +118,20 @@ class AboutDialog(QDialog):
         # ---------------------------------------------------------------------
         desc_lbl = QLabel(tr("dialog.about_description"))
         desc_lbl.setWordWrap(True)
-        desc_lbl.setStyleSheet("color: #CBD5E1; font-size: 13px; line-height: 1.4;")
+        desc_lbl.setStyleSheet(f"color: {COLOR_TEXT}; font-size: 13px; line-height: 1.4;")
         main_layout.addWidget(desc_lbl)
 
         # ---------------------------------------------------------------------
         # 3. Carte des Crédits & Technologies Open Source
         # ---------------------------------------------------------------------
         credits_card = QFrame()
-        credits_card.setStyleSheet("""
-            QFrame {
+        credits_card.setStyleSheet(f"""
+            QFrame {{
                 background-color: #161922;
-                border: 1px solid #282C37;
+                border: 1px solid {COLOR_BORDER};
                 border-radius: 12px;
                 padding: 14px;
-            }
+            }}
         """)
         credits_layout = QVBoxLayout(credits_card)
         credits_layout.setContentsMargins(14, 12, 14, 12)
@@ -133,11 +142,11 @@ class AboutDialog(QDialog):
         credits_layout.addWidget(credits_title)
 
         credits_desc = QLabel(tr("dialog.about_credits_tech"))
-        credits_desc.setStyleSheet("color: #94A3B8; font-size: 12px; line-height: 1.4;")
+        credits_desc.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 12px; line-height: 1.4;")
         credits_layout.addWidget(credits_desc)
 
         license_lbl = QLabel(tr("dialog.about_license"))
-        license_lbl.setStyleSheet("color: #64748B; font-size: 11px; font-style: italic; margin-top: 4px;")
+        license_lbl.setStyleSheet(f"color: {COLOR_TEXT_DIM}; font-size: 11px; font-style: italic; margin-top: 4px;")
         credits_layout.addWidget(license_lbl)
 
         main_layout.addWidget(credits_card)
@@ -146,13 +155,13 @@ class AboutDialog(QDialog):
         # 4. Liens externes & Boutons d'action (GitHub, Itch.io, Ko-fi)
         # ---------------------------------------------------------------------
         actions_card = QFrame()
-        actions_card.setStyleSheet("""
-            QFrame {
+        actions_card.setStyleSheet(f"""
+            QFrame {{
                 background-color: #12141C;
-                border: 1px solid #1E293B;
+                border: 1px solid {COLOR_BG_SLATE};
                 border-radius: 12px;
                 padding: 10px;
-            }
+            }}
         """)
         actions_layout = QVBoxLayout(actions_card)
         actions_layout.setContentsMargins(12, 10, 12, 10)
@@ -161,22 +170,22 @@ class AboutDialog(QDialog):
         # Bouton principal Don / Soutien (Mise en valeur)
         self.btn_donate = QPushButton(tr("dialog.about_btn_donate"))
         self.btn_donate.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_donate.setStyleSheet("""
-            QPushButton {
+        self.btn_donate.setStyleSheet(f"""
+            QPushButton {{
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
                     stop:0 #E11D48, stop:1 #BE123C);
-                color: #FFFFFF;
+                color: {COLOR_WHITE};
                 font-size: 13px;
                 font-weight: 700;
                 padding: 10px 18px;
                 border: 1px solid #F43F5E;
                 border-radius: 8px;
-            }
-            QPushButton:hover {
+            }}
+            QPushButton:hover {{
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
                     stop:0 #F43F5E, stop:1 #E11D48);
                 border: 1px solid #FDA4AF;
-            }
+            }}
         """)
         self.btn_donate.clicked.connect(lambda: self._open_url(URL_KO_FI))
         actions_layout.addWidget(self.btn_donate)

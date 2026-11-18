@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,14 +47,17 @@
 | **Atbalsts playlistām (M3U, PLS, XSPF, WPL) un CUE lapām** | Izakrojums (🎶), sekvenciāls klausīšanās pasākums, vizuāla atzīšana trūkstošajās dziesmās; `.cue` faili (💿) atver kā virtuālu dziesmu karordiņu ar to trūkumu un atspēlo kā patiešas dziesmas | 🟢 Implementēts |
 | **Playlist vadītājs un Drag & Drop** | Virtualizēta gaida, glāds drag & drop, reversīvs izrīkojums (shuffle) un cikli | 🟢 Implementēts |
 | **Interaktīvs « 🎲 Blind Test » režīms** | Imazīgs mūzikas spēles spēle ar animētu skaitītāju, skaņas fade, maigu atklāšanu un automātisku pāreju | 🟢 Implementēts |
-| **In-app atjauninājumi** | Otomātiska/manuālā versiju pārbaude caur GitHub Releases | 🟢 Implementēts |
-| **Linux & macOS versijas** | Pirksti .AppImage / .tar.gz (Linux) un neparakstīts .dmg (macOS), nepieciešams VLC | 🟡 Eksperimentāls (neierobešots) |
-| **Iznaudotāju & Diskografijas pārvaldība** | Idedinata skatīšanās pēc iznaudotājiem ar albumiem, singliem un pilnu diskografiju | 🟡 Plānotas |
-| **Grafisks ekvalizators (EQ)** | Audio iestatījumi un parametrisisks multi-bandu ekvalizators | 🟡 Plānotas |
-| **Google Drive konektors** | Skeneris un senkronizācija attālām audio kolekcijām caur OAuth 2.0 | ⚪ Plānotas |
-| **Amazon Music konektors** | Skeneris un senkronizācija attālām kolekcijām caur OAuth 2.0 | ⚪ Plānotas |
-| **Spotify / Deezer konektors** | Reproduktorietuveju importēšana un dziesmu atbalstība | ⚪ Plānotas |
-| **Gudrs dubultu dzēšana** | Dubultu atklāšana (tituls/iznaudotājs + akustiskie atspoguļojumi) | ⚪ Plānotas |
+| **Avro un bibliotēka** | Izvairodes panelis ar veselības indikatoriem (offline avro, skenera kļūmes, trūkušie faili), globāls poga vai pēc avro, un ātrās darbības | 🟢 Implémentēts |
+| **Spravo, remonts un eksports playlistu** | Pāreizorganizēšana, manuāla vai automātiska atjaunošana trūkušiem failiem, saglabāšana M3U / M3U8 / PLS / XSPF / WPL, rūpēšanās pēc albuma | 🟢 Implémentēts |
+| **Audio rīki** | Grafisks ekvalizators ar 10 joslām ar iestatījumiem, ReplayGain normalizācija, spiediena ātrums, audio izgādes izvēle un apturēšanas taimurs (nepārtrauktā virpola ceļš) | 🟢 Implémentēts |
+| **Windows integrācija un vizuālās efektu** | Uzraksta josla, paziņojumu zona, palīdzības vadlīnijas, regulējami vizuālās efektu ar Izdevējs režīmu | 🟢 Implémentēts |
+| **Atjauninājumi aplikācijā** | Automātiska/manuāla versiju pārbaude caur GitHub Releases | 🟢 Implémentēts |
+| **Linux un macOS versijas** | Pirksti `.AppImage` / `.tar.gz` (Linux) un nav parakstīts `.dmg` (macOS), nepieciešams VLC | 🟡 Eksperimentāls (neierobežots) |
+| **Iznaudotāju pārvaldība un diskogrāfija** | Iecelētā skatīšanās pēc iznaudotājs ar albumiem, singliem un pilnu diskogrāfiju | 🟡 Plānotas |
+| **Google Drive konektors** | Skenerēšana un sinhronizācija attālinojošo audio kolekciju caur OAuth 2.0 | ⚪ Plānotas |
+| **Connecteur Amazon Music** | Skeneris un attālās kolekciju sinhronizācija via OAuth 2.0 | ⚪ Plānotas |
+| **Connecteur Spotify / Deezer** | Playlistu importēšana un dziesmu atbalstība | ⚪ Plānotas |
+| **Gudrs dubultu dzēšana** | Dubultu detekcija (nosaukums/izveidnieks izskatījs + akustiskie atspoguļojumi) | ⚪ Plānotas |
 
 > 💡 *Lai uzzinātu plānotas milestones un versijas detalizāciju, atsaucieties uz [Ceļveikls (Roadmap)](../../ROADMAP.md).*
 

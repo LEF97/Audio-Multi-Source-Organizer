@@ -4,26 +4,35 @@ from __future__ import annotations
 
 import os
 
-from PySide6.QtCore import QFileSystemWatcher, Qt, QTimer, Signal
-from PySide6.QtGui import QPixmap
+from PySide6.QtCore import QEasingCurve, QEvent, QFileSystemWatcher, QObject, QPropertyAnimation, Qt, QTimer, Signal
+from PySide6.QtGui import QFontMetrics, QPixmap
 from PySide6.QtWidgets import QWidget
 
+from amso.core.config import get_config_manager
 from amso.core.database import TrackRecord
 from amso.core.i18n import tr
 from amso.core.network_paths import is_network_path
 from amso.services.player_service import PlayerService
+from amso.services.player_types import RepeatMode
 from amso.ui.models import format_duration
 from amso.ui.views.cover_helper import (
     get_default_cover_pixmap,
+    get_track_cover_hash,
+    has_cached_cover,
     invalidate_cover_cache,
     load_cover_async,
 )
 from amso.ui.views.player_ui_builder import PlayerUiMixin
+from amso.ui.widgets.audio_tools_popup import AudioToolsPopup
+from amso.ui.widgets.cover_transition_label import CoverTransitionLabel
+from amso.ui.widgets.help_guide_popup import HelpGuidePopup
 from amso.ui.widgets.transport_mixin import TransportViewMixin
 
 # Les dossiers réseau ne sont pas surveillés (QFileSystemWatcher, isdir() bloquants) : leur pochette est revérifiée
 # périodiquement en arrière-plan. Le premier passage a lieu après un intervalle complet, donc jamais au démarrage.
 NETWORK_COVER_POLL_MS = 30_000
+UP_NEXT_THRESHOLD_MS = 15_000
+UP_NEXT_FADE_MS = 300
 
 
 class PlayerView(PlayerUiMixin, TransportViewMixin, QWidget):
@@ -36,8 +45,17 @@ class PlayerView(PlayerUiMixin, TransportViewMixin, QWidget):
         super().__init__(parent)
         self.player = player_service
         self._has_sources: bool = True
+        self._has_up_next: bool = False
+        self._up_next_near_end: bool = False
+        self._up_next_hover: bool = False
+        self._up_next_visible: bool = False
+        self._audio_tools_popup: AudioToolsPopup | None = None
+        self._help_popup: HelpGuidePopup | None = None
 
         self._setup_ui()
+        self._up_next_anim = QPropertyAnimation(self._up_next_opacity, b"opacity", self)
+        self._up_next_anim.setDuration(UP_NEXT_FADE_MS)
+        self._up_next_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         self._connect_signals()
 
         # Surveillance dynamique du dossier pour recharger la pochette si folder.png change
@@ -59,6 +77,14 @@ class PlayerView(PlayerUiMixin, TransportViewMixin, QWidget):
         # Signaux du PlayerService et contrôles de transport (partagés)
         self._connect_transport_signals()
 
+        self.up_next_bar.clicked.connect(self.player.next)
+        self.btn_audio_tools.clicked.connect(self._on_audio_tools_clicked)
+        self.btn_help.clicked.connect(self._on_help_clicked)
+        self.btn_next.installEventFilter(self)
+        self.player.playlist_updated.connect(self._on_queue_or_mode_changed)
+        self.player.shuffle_changed.connect(self._on_queue_or_mode_changed)
+        self.player.repeat_changed.connect(self._on_queue_or_mode_changed)
+
         # Synchronisation de l'état initial
         self.update_shuffle_ui(self.player.is_shuffle)
         self.update_repeat_ui(self.player.repeat_mode)
@@ -70,7 +96,8 @@ class PlayerView(PlayerUiMixin, TransportViewMixin, QWidget):
         """Appelé dès que la pochette asynchrone a fini de charger."""
         if getattr(self, "_displayed_track_path", None) == path:
             self._current_pixmap = pixmap
-            self._update_scaled_cover()
+            self._current_cover_hash = get_track_cover_hash(self.player.current_track)
+            self._update_scaled_cover(animate=True)
 
     def _on_current_folder_changed(self, path: str) -> None:
         """Appelé dès qu'un fichier (ex: folder.png) est ajouté ou modifié dans le dossier courant."""
@@ -95,15 +122,16 @@ class PlayerView(PlayerUiMixin, TransportViewMixin, QWidget):
         if track and self.isVisible():
             load_cover_async(track, size=320, radius=12, callback=self._on_cover_loaded, force_check=True)
 
-    def _update_scaled_cover(self) -> None:
+    def _update_scaled_cover(self, *, animate: bool = False) -> None:
         """Applique l'image actuelle à la taille exacte du lbl_cover avec anticrénelage fluide."""
         pixmap = getattr(self, "_current_pixmap", None)
         size = self.lbl_cover.width()
+        cover_hash = getattr(self, "_current_cover_hash", None)
         if not pixmap or pixmap.isNull():
             pixmap = get_default_cover_pixmap(size, radius=12)
             self._current_pixmap = pixmap
-            self.lbl_cover.setPixmap(pixmap)
-            return
+            cover_hash = 0
+            self._current_cover_hash = 0
 
         if pixmap.width() != size or pixmap.height() != size:
             scaled = pixmap.scaled(
@@ -112,9 +140,14 @@ class PlayerView(PlayerUiMixin, TransportViewMixin, QWidget):
                 Qt.AspectRatioMode.KeepAspectRatio,
                 Qt.TransformationMode.SmoothTransformation,
             )
-            self.lbl_cover.setPixmap(scaled)
         else:
-            self.lbl_cover.setPixmap(pixmap)
+            scaled = pixmap
+
+        if isinstance(self.lbl_cover, CoverTransitionLabel):
+            transition = get_config_manager().get_cover_transition()
+            self.lbl_cover.set_cover_pixmap(scaled, cover_hash=cover_hash, transition=transition, animate=animate)
+        else:
+            self.lbl_cover.setPixmap(scaled)
 
     def _adjust_layout(self) -> None:
         """Ajuste dynamiquement la hauteur de la pochette et décale les blocs verticaux
@@ -131,7 +164,12 @@ class PlayerView(PlayerUiMixin, TransportViewMixin, QWidget):
             viewport_h = max(300, self.height() - top_h)
 
         c_margins = self.center_layout.contentsMargins()
-        net_available = viewport_h - c_margins.top() - c_margins.bottom()
+        up_next_h = (
+            self.up_next_bar.height() + self.center_layout.spacing() + 10
+            if hasattr(self, "up_next_bar") and self.up_next_bar.isVisible()
+            else 0
+        )
+        net_available = viewport_h - c_margins.top() - c_margins.bottom() - up_next_h
 
         # Hauteur requise pour les composants de la carte hors pochette
         card_hint = self.card.sizeHint().height()
@@ -149,8 +187,16 @@ class PlayerView(PlayerUiMixin, TransportViewMixin, QWidget):
 
     def update_track_info(self, track: TrackRecord | None) -> None:
         """Met à jour l'affichage avec la piste en cours de lecture de façon instantanée et non-bloquante."""
+        prev_track_path = getattr(self, "_displayed_track_path", "")
         track_path = (track.source_path or track.source_ref or track.folder_path or "") if track else ""
         self._displayed_track_path = track_path
+
+        if (
+            track_path
+            and track_path != prev_track_path
+            and get_config_manager().get_visual_effect_random_interval("player") == "track"
+        ):
+            self.apply_random_effect_step()
 
         # Mise à jour de la surveillance du dossier contenant la piste
         if hasattr(self, "_folder_watcher"):
@@ -180,9 +226,23 @@ class PlayerView(PlayerUiMixin, TransportViewMixin, QWidget):
         if hasattr(self, "effect_canvas") and self.effect_canvas:
             self.effect_canvas.set_track(track)
 
-        # Chargement immédiat (en cache) ou asynchrone (défaut puis cover) sans bloquer
-        pixmap = load_cover_async(track, size=320, radius=12, callback=self._on_cover_loaded, force_check=True)
-        self._current_pixmap = pixmap
+        # Conserver la pochette affichée tant que la nouvelle n'est pas prête (évite le flash vers l'icône par défaut)
+        animate_cover = False
+        if not track:
+            self._current_pixmap = get_default_cover_pixmap(320, radius=12)
+            self._current_cover_hash = 0
+            animate_cover = True
+        elif has_cached_cover(track, size=320):
+            self._current_pixmap = load_cover_async(
+                track, size=320, radius=12, callback=self._on_cover_loaded, force_check=True
+            )
+            self._current_cover_hash = get_track_cover_hash(track)
+            animate_cover = True
+        else:
+            pixmap = load_cover_async(track, size=320, radius=12, callback=self._on_cover_loaded, force_check=True)
+            if not getattr(self, "_current_pixmap", None):
+                self._current_pixmap = pixmap
+                self._current_cover_hash = None
 
         if not track:
             self.lbl_title.setText(tr("player.no_track"))
@@ -196,8 +256,11 @@ class PlayerView(PlayerUiMixin, TransportViewMixin, QWidget):
             self.lbl_time_cur.setText("00:00")
             self.lbl_time_total.setText("00:00")
             self.slider_seek.setValue(0)
+            self._up_next_near_end = False
+            self._update_up_next_content()
+            self._refresh_up_next_visibility()
             self._adjust_layout()
-            self._update_scaled_cover()
+            self._update_scaled_cover(animate=animate_cover)
             return
 
         title_text = track.title or track.file_name or tr("track.untitled")
@@ -243,20 +306,31 @@ class PlayerView(PlayerUiMixin, TransportViewMixin, QWidget):
 
         # Recalcul de l'ajustement vertical pour s'adapter aux textes (titre/auteur sur plusieurs lignes)
         self._adjust_layout()
-        self._update_scaled_cover()
+        self._update_scaled_cover(animate=animate_cover)
+        self._up_next_near_end = False
+        self._update_up_next_content()
+        self._refresh_up_next_visibility()
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
         self._adjust_layout()
         if hasattr(self, "effect_canvas"):
             self.effect_canvas.showEvent(event)
+        self._sync_random_timer()
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
         self._adjust_layout()
+        if hasattr(self, "btn_audio_tools"):
+            self.btn_audio_tools.move(
+                max(0, self.width() - self.btn_audio_tools.width() - 16),
+                max(0, self.height() - self.btn_audio_tools.height() - 12),
+            )
+            self.btn_audio_tools.raise_()
 
     def hideEvent(self, event) -> None:
         super().hideEvent(event)
+        self._stop_random_timer()
         if hasattr(self, "effect_canvas"):
             self.effect_canvas.hideEvent(event)
 
@@ -265,12 +339,74 @@ class PlayerView(PlayerUiMixin, TransportViewMixin, QWidget):
         if hasattr(self, "effect_canvas"):
             self.effect_canvas.set_playback_state(state)
         super().update_playback_state(state)
+        if state == "stopped" and self._up_next_near_end:
+            self._up_next_near_end = False
+            self._refresh_up_next_visibility()
 
     def update_position(self, current_ms: int, total_ms: int, ratio: float) -> None:
         """Met à jour la position courante, la barre de progression et l'animation."""
         super().update_position(current_ms, total_ms, ratio)
         if hasattr(self, "effect_canvas") and self.effect_canvas:
             self.effect_canvas.update_audio_time(current_ms, ratio)
+        near_end = total_ms > 0 and current_ms > 0 and (total_ms - current_ms) <= UP_NEXT_THRESHOLD_MS
+        if near_end != self._up_next_near_end:
+            self._up_next_near_end = near_end
+            self._refresh_up_next_visibility()
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """Affiche l'aperçu 'À suivre' au survol du bouton Suivant."""
+        if watched is getattr(self, "btn_next", None):
+            if event.type() == QEvent.Type.Enter:
+                self._up_next_hover = True
+                self._refresh_up_next_visibility()
+            elif event.type() == QEvent.Type.Leave:
+                self._up_next_hover = False
+                self._refresh_up_next_visibility()
+        return super().eventFilter(watched, event)
+
+    def _on_queue_or_mode_changed(self, *_args: object) -> None:
+        """Met à jour l'encart 'À suivre' lors d'un changement de file, aléatoire ou répétition."""
+        self._update_up_next_content()
+        self._refresh_up_next_visibility()
+
+    def _update_up_next_content(self) -> None:
+        """Construit le libellé du titre suivant (ou masque si fin de file sans répétition)."""
+        if not hasattr(self, "up_next_bar"):
+            return
+        current = self.player.current_track
+        next_track = self.player.next_track
+        if not current or not next_track or not self._has_sources:
+            self._has_up_next = False
+            self.up_next_bar.setText("")
+            self.up_next_bar.setToolTip("")
+            return
+
+        self._has_up_next = True
+        icon = "🔂" if self.player.repeat_mode == RepeatMode.ONE else "⏭"
+        title = next_track.title or next_track.file_name or tr("track.untitled")
+        track_label = f"{title} — {next_track.artist}" if next_track.artist else title
+        if next_track.duration_seconds:
+            track_label = f"{track_label} ({format_duration(next_track.duration_seconds)})"
+
+        full_text = f"{icon}  {tr('player.up_next', track=track_label)}"
+        elided = QFontMetrics(self.up_next_bar.font()).elidedText(full_text, Qt.TextElideMode.ElideRight, 520)
+        self.up_next_bar.setText(elided)
+        self.up_next_bar.setToolTip(full_text)
+
+    def _refresh_up_next_visibility(self) -> None:
+        """Anime l'apparition ou la disparition de la mini-barre 'À suivre'."""
+        if not hasattr(self, "up_next_bar") or not hasattr(self, "_up_next_anim"):
+            return
+        should_show = self._has_up_next and (self._up_next_near_end or self._up_next_hover)
+        if should_show == self._up_next_visible:
+            return
+        self._up_next_visible = should_show
+        # Rendre transparent aux clics dès qu'il est masqué pour ne pas intercepter la souris sur le fond
+        self.up_next_bar.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, not should_show)
+        self._up_next_anim.stop()
+        self._up_next_anim.setStartValue(self._up_next_opacity.opacity())
+        self._up_next_anim.setEndValue(1.0 if should_show else 0.0)
+        self._up_next_anim.start()
 
     def update_volume(self, volume: int, is_muted: bool) -> None:
         """Met à jour le volume, le libellé et l'animation."""
@@ -300,6 +436,12 @@ class PlayerView(PlayerUiMixin, TransportViewMixin, QWidget):
             self.seek_container.setVisible(not show_empty)
         if hasattr(self, "ctrl_container"):
             self.ctrl_container.setVisible(not show_empty)
+        if hasattr(self, "up_next_bar"):
+            self.up_next_bar.setVisible(not show_empty)
+        if show_empty:
+            self._up_next_near_end = False
+            self._update_up_next_content()
+            self._refresh_up_next_visibility()
         self._adjust_layout()
 
     def retranslate_ui(self) -> None:
@@ -321,7 +463,10 @@ class PlayerView(PlayerUiMixin, TransportViewMixin, QWidget):
             self.lbl_title.setText(tr("player.no_track"))
         else:
             self.update_track_info(self.player.current_track)
+        self._update_up_next_content()
 
+        self.btn_audio_tools.setToolTip(tr("player.btn_audio_tools"))
+        self.btn_help.setToolTip(tr("player.btn_help"))
         self.btn_shuffle.setToolTip(tr("player.btn_shuffle"))
         self.btn_prev.setToolTip(tr("player.btn_previous"))
         if self.player.is_playing:
@@ -333,3 +478,17 @@ class PlayerView(PlayerUiMixin, TransportViewMixin, QWidget):
         self.btn_repeat.setToolTip(tr("player.btn_repeat"))
         if self.player.is_muted or self.player.volume == 0:
             self.lbl_volume.setText(tr("player.btn_mute"))
+        if hasattr(self, "_audio_tools_popup") and self._audio_tools_popup is not None:
+            self._audio_tools_popup.retranslate_ui()
+        if hasattr(self, "_help_popup") and self._help_popup is not None:
+            self._help_popup.retranslate_ui()
+
+    def _on_audio_tools_clicked(self) -> None:
+        if self._audio_tools_popup is None:
+            self._audio_tools_popup = AudioToolsPopup(self.player, self)
+        self._audio_tools_popup.toggle_anchored(self.btn_audio_tools)
+
+    def _on_help_clicked(self) -> None:
+        if self._help_popup is None:
+            self._help_popup = HelpGuidePopup("player.help_title", "player.help_body", self)
+        self._help_popup.toggle_anchored(self.btn_help)

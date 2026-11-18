@@ -10,7 +10,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
 from amso.core.database import DatabaseManager, SourceType
-from amso.core.scheduler import SyncScheduler
+from amso.services.scheduler import SyncScheduler
 from amso.ui.views.activity_feed_popover import ActivityFeedPopover
 from amso.ui.views.logs_view import LogsView
 from amso.ui.views.main_window import MainWindow
@@ -222,6 +222,13 @@ def test_main_window_logs_integration(temp_db: DatabaseManager, qapp):
     assert hasattr(window, "page_logs")
     assert hasattr(window, "btn_activity_feed")
     assert hasattr(window, "activity_popover")
+    assert not window.btn_activity_feed.isVisible()
+    assert not window.btn_activity_feed.isEnabled()
+
+    # Le fil d'activité étant désactivé, son popover ne doit jamais s'afficher
+    window._on_activity_feed_hover_entered()
+    window._on_activity_feed_clicked()
+    assert not window.activity_popover.isVisible()
 
     # 2. Navigation vers la page Logs
     window.show_logs_page()
@@ -256,13 +263,14 @@ def test_player_error_logs_and_clickable_status(temp_db: DatabaseManager, qapp):
     assert err_text in logs[0].details
     assert logs[0].items_errors == 1
 
-    # 3. Rafraîchissement automatique de la vue Logs
-    assert window.page_logs.table.rowCount() == 1
+    # 3. Vue Logs marquée à rafraîchir (lazy refresh tant qu'elle est masquée)
+    assert window.page_logs._dirty is True
 
-    # 4. Clic sur la barre d'état ouvre directement la vue Logs
+    # 4. Clic sur la barre d'état ouvre directement la vue Logs et rafraîchit le tableau
     window.stacked_widget.setCurrentWidget(window.page_tracks)
     window.status_label.clicked.emit()
     assert window.stacked_widget.currentWidget() == window.page_logs
+    assert window.page_logs.table.rowCount() == 1
 
     window.close()
 

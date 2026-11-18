@@ -111,7 +111,7 @@ def main() -> int:
     QThread.msleep(80)
 
     # Affichage fluide de la fenêtre principale
-    window.show()
+    window.show_restored()
     splash.finish(window)
     startup_clock.mark("fenêtre affichée")
 

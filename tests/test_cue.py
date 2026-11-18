@@ -91,8 +91,10 @@ def test_cue_is_indexed_as_playlist_with_virtual_tracks(tmp_path: Path) -> None:
 
     db = DatabaseManager(str(tmp_path / "cue.db"))
     src = db.add_source(SourceType.LOCAL, "Musique", str(tmp_path / "Music"))
-    summary, _ = LocalScanner(db=db).scan_inventory(source=src)
+    scanner = LocalScanner(db=db)
+    summary, _ = scanner.scan_inventory(source=src)
     assert summary.total_found == 1  # seul le fichier audio est une piste de la bibliothèque
+    scanner.scan_playlists(source=src)
 
     playlists = db.get_playlists(source_id=src.id)
     assert len(playlists) == 1 and playlists[0].format == "cue" and playlists[0].track_count == 3
@@ -118,9 +120,9 @@ def test_cue_reindexed_when_file_changes_and_playlist_table_migrates(tmp_path: P
     db = DatabaseManager(str(tmp_path / "cue2.db"))
     src = db.add_source(SourceType.LOCAL, "Musique", str(music))
     scanner = LocalScanner(db=db)
-    scanner.scan_inventory(source=src)
+    scanner.scan_source(source=src)
     cue.write_text(CUE_TEXT.replace("Suite", "Suite modifiée") + "\n", encoding="utf-8")
-    scanner.scan_inventory(source=src)
+    scanner.scan_source(source=src)
     pl = db.get_playlists(source_id=src.id)[0]
     assert [t.title for t in db.get_playlist_tracks(pl.id or 0)][1] == "Suite modifiée"
     with db.get_connection() as conn:
@@ -216,18 +218,50 @@ def test_scan_summary_reports_added_updated_and_deleted_playlists(tmp_path: Path
     src = db.add_source(SourceType.LOCAL, "Musique", str(music))
     scanner = LocalScanner(db=db)
 
-    first, _ = scanner.scan_inventory(source=src)
+    first = scanner.scan_source(source=src)
     assert (first.playlists_added, first.playlists_updated, first.playlists_deleted) == (1, 0, 0)
     assert first.playlists_changed and first.playlist_names == ["album.cue (3 pistes)"]
     assert first.added == 1  # le fichier audio ; le .cue n'est pas compté comme morceau
 
-    unchanged, _ = scanner.scan_inventory(source=src)
+    unchanged = scanner.scan_source(source=src)
     assert not unchanged.playlists_changed and unchanged.playlist_names == []
 
+    forced = scanner.scan_playlists(source=src, force=True)
+    assert forced.playlists_updated == 1 and forced.playlists_changed
+
     cue.write_text(CUE_TEXT + "\n", encoding="utf-8")
-    modified, _ = scanner.scan_inventory(source=src)
+    modified = scanner.scan_source(source=src)
     assert (modified.playlists_added, modified.playlists_updated) == (0, 1)
 
     cue.unlink()
-    removed, _ = scanner.scan_inventory(source=src)
+    removed = scanner.scan_source(source=src)
     assert removed.playlists_deleted == 1 and removed.playlists_changed
+
+
+def test_parse_cue_eac_non_compliant_track_before_file(tmp_path: Path) -> None:
+    """EAC non-compliant : TRACK + TITLE + INDEX 00 peuvent précéder FILE + INDEX 01."""
+    (tmp_path / "01 - One.flac").write_bytes(b"a")
+    (tmp_path / "02 - Two.flac").write_bytes(b"b")
+    (tmp_path / "03 - Three.flac").write_bytes(b"c")
+
+    eac_cue = (
+        'PERFORMER "Kevin Ayers"\n'
+        'TITLE "Album"\n'
+        'FILE "01 - One.wav" WAVE\n'
+        "  TRACK 01 AUDIO\n"
+        '    TITLE "One"\n'
+        "    INDEX 01 00:00:00\n"
+        "  TRACK 02 AUDIO\n"
+        '    TITLE "Two"\n'
+        "    INDEX 00 03:15:40\n"
+        'FILE "02 - Two.wav" WAVE\n'
+        "    INDEX 01 00:00:00\n"
+        'FILE "03 - Three.wav" WAVE\n'
+        "  TRACK 03 AUDIO\n"
+        '    TITLE "Three"\n'
+        "    INDEX 01 00:00:00\n"
+    )
+    entries = parse_cue_content(eac_cue, tmp_path)
+    assert [e.title for e in entries] == ["One", "Two", "Three"]
+    assert [e.raw_path for e in entries] == ["01 - One.wav", "02 - Two.wav", "03 - Three.wav"]
+    assert all(not e.is_missing for e in entries)

@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,14 +47,17 @@
 | **Suport de llistes de reproducció (M3U, PLS, XSPF, WPL) & fitxes CUE** | Indexació arborescente (🎶), ordre seqüencial d'escolta, localització visual de les peces faltants; els fitxers `.cue` (💿) s'obre com una carpeta de pistes virtuals amb la seva durada i es reproduuen com a pistes reals | 🟢 Implementat |
 | **Gestor de llista de reproducció i Arrastar-Soltar** | Cola virtualitzada, arrastrar i soltar fluida, aleatori (shuffle) reversible i bucles | 🟢 Implementat |
 | **Mode « 🎲 Blind Test » interactiu** | Joc musical immersiu amb compte regressiu animat, fonament sonorr, revelació suau i transició automàtica | 🟢 Implementat |
-| **Actualitzacions in-app** | Verificació automàtica/manual de versions a través de GitHub Releases | 🟢 Implementat |
-| **Versió de Linux i macOS** | Paquets .AppImage / .tar.gz (Linux) i .dmg no signat (macOS), VLC requerit | 🟡 Experimental (no provat) |
-| **Gestió d'artistes i discografia** | Vista dedicada per artista amb àlbums, singles i discografia completa | 🟡 Previst |
-| **Ecualitzador gràfic (EQ)** | Presets de l'àudio i ecualitzador multibanda paramètric | 🟡 Previst |
-| **Conector Google Drive** | Scan i sincronització de col·leccions d'àudio distants a través d'OAuth 2.0 | ⚪ Planificat |
-| **Conector Amazon Music** | Scan i sincronització de col·leccions distants a través d'OAuth 2.0 | ⚪ Planificat |
-| **Conector Spotify / Deezer** | Importació de playlists i correspondència de pistes | ⚪ Planificat |
-| **Deduplicació intel·ligent** | Detecció de duplicats (títol/artista borros + improntes acústiques) | ⚪ Planificat |
+| **Font i Biblioteca** | Panell de control de les fonts amb indicadors de salut (fonts desconectades, errors de scan, fitxers faltants), vista global o per font i accions ràpides | 🟢 Implémentat |
+| **Editor, reparació i export de llistes de reproducció** | Reorganització, relocalització manual o automàtica de fitxers faltants, còpia de seguretat en M3U / M3U8 / PLS / XSPF / WPL, agrupació per àlbum | 🟢 Implémentat |
+| **Utilitats de àudio** | Ecualitzador gràfic de 10 bandes amb presets, normalització ReplayGain, velocitat de reproducció, elecció de la sortida de àudio i minuteria d'aturada (motiu amb buffer contínu) | 🟢 Implémentat |
+| **Integració Windows i efectes visuals** | Barra de tasques, zona de notificació, guies d'ajuda, efectes visuals ajustables amb mode Aleatori | 🟢 Implémentat |
+| **Actualitzacions in-app** | Verificació automàtica/manual de les versions a través de GitHub Releases | 🟢 Implémentat |
+| **Versió de Linux i macOS** | Paquets .AppImage / .tar.gz (Linux) i .dmg no signat (macOS), VLC requerit | 🟡 Expérimental (non testé) |
+| **Gestió d'artistes i Discografia** | Vista dedicada per artista amb àlbums, singles i discografia completa | 🟡 Prévu |
+| **Connector Google Drive** | Scan i sincronització de col·leccions de àudio distants a través de OAuth 2.0 | ⚪ Planificat |
+| **Connectador Amazon Music** | Scan i sincronització de col·leccions distants via OAuth 2.0 | ⚪ Planificat |
+| **Connectador Spotify / Deezer** | Importació de *playlists* i correspondència de pistes | ⚪ Planificat |
+| **Desduplicació intel·ligent** | Detecta de duplicats (títol/artista desenfocats + improntes acústiques) | ⚪ Planificat |
 
 > 💡 *Per consultar el detall dels hito i les versions previstes, refereu-vos a la [Feuella de ruta (Roadmap)](../../ROADMAP.md).*
 

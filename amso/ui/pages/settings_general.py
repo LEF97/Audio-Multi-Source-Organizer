@@ -3,23 +3,25 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QObject, Qt
 from PySide6.QtWidgets import (
+    QButtonGroup,
     QComboBox,
     QFrame,
-    QHBoxLayout,
     QLabel,
     QPushButton,
+    QRadioButton,
     QScrollArea,
-    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
 
-from amso.core.config import get_config_path
+from amso.core.config import get_config_manager, get_config_path
 from amso.core.i18n import SUPPORTED_LANGUAGES, tr
+from amso.ui.styles import COLOR_TEXT_BRIGHT, COLOR_TEXT_DIM, COLOR_TEXT_MUTED, settings_radio_qss
+from amso.ui.widgets.page_header import build_page_top_bar
 
 logger = logging.getLogger(__name__)
 
@@ -38,17 +40,11 @@ class SettingsGeneralPageMixin:
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        top_bar = QFrame()
-        top_bar.setObjectName("topBarFrame")
-        top_bar.setFixedHeight(50)
-        top_bar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        top_layout = QHBoxLayout(top_bar)
-        top_layout.setContentsMargins(20, 12, 20, 12)
-
-        self.lbl_settings_title = QLabel(tr("settings.page_title"))
-        self.lbl_settings_title.setStyleSheet("color: #F8FAFC; font-size: 16px; font-weight: 700;")
-        top_layout.addWidget(self.lbl_settings_title)
-        top_layout.addStretch()
+        top_bar, self.lbl_settings_title, self.btn_settings_general_help = build_page_top_bar(
+            tr("settings.page_title"),
+            "settings.general_help_title",
+            "settings.general_help_body",
+        )
         main_layout.addWidget(top_bar, 0)
 
         scroll = QScrollArea()
@@ -69,11 +65,11 @@ class SettingsGeneralPageMixin:
         l_lang.setSpacing(8)
 
         self.lbl_card_lang_title = QLabel(tr("settings.section_language"))
-        self.lbl_card_lang_title.setStyleSheet("color: #F8FAFC; font-size: 14px; font-weight: 700;")
+        self.lbl_card_lang_title.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-size: 14px; font-weight: 700;")
         l_lang.addWidget(self.lbl_card_lang_title)
 
         self.lbl_card_lang_desc = QLabel(tr("settings.language_desc"))
-        self.lbl_card_lang_desc.setStyleSheet("color: #94A3B8; font-size: 13px;")
+        self.lbl_card_lang_desc.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 13px;")
         l_lang.addWidget(self.lbl_card_lang_desc)
 
         self.combo_language = QComboBox()
@@ -107,18 +103,18 @@ class SettingsGeneralPageMixin:
         l_storage.setSpacing(8)
 
         self.lbl_card_storage_title = QLabel(tr("settings.section_storage"))
-        self.lbl_card_storage_title.setStyleSheet("color: #F8FAFC; font-size: 14px; font-weight: 700;")
+        self.lbl_card_storage_title.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-size: 14px; font-weight: 700;")
         l_storage.addWidget(self.lbl_card_storage_title)
 
         cfg_p = str(get_config_path())
         db_p = str(self.db.db_path)
 
         self.lbl_config_path_val = QLabel(f"• <b>{tr('settings.config_file')}</b> <code>{cfg_p}</code>")
-        self.lbl_config_path_val.setStyleSheet("color: #94A3B8; font-size: 12px;")
+        self.lbl_config_path_val.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 12px;")
         l_storage.addWidget(self.lbl_config_path_val)
 
         self.lbl_db_path_val = QLabel(f"• <b>{tr('settings.db_file')}</b> <code>{db_p}</code>")
-        self.lbl_db_path_val.setStyleSheet("color: #94A3B8; font-size: 12px;")
+        self.lbl_db_path_val.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 12px;")
         l_storage.addWidget(self.lbl_db_path_val)
 
         self.btn_open_data_folder = QPushButton(tr("settings.btn_open_folder"))
@@ -128,6 +124,7 @@ class SettingsGeneralPageMixin:
         l_storage.addWidget(self.btn_open_data_folder)
 
         content_layout.addWidget(card_storage)
+        content_layout.addWidget(self._build_card_sleep())
         content_layout.addStretch(1)
 
         # Alias de compatibilité pour tests existants
@@ -137,3 +134,72 @@ class SettingsGeneralPageMixin:
         main_layout.addWidget(scroll, 1)
 
         return container
+
+    def _build_card_sleep(self) -> QFrame:
+        """Carte Alimentation et Veille (déplacée dans Paramètres > Général)."""
+        card_sleep = QFrame()
+        card_sleep.setProperty("class", "dashboard-card")
+        l_sleep = QVBoxLayout(card_sleep)
+        l_sleep.setContentsMargins(18, 16, 18, 16)
+        l_sleep.setSpacing(12)
+
+        self.lbl_card_player_title = QLabel(tr("settings.player_playback_title"))
+        self.lbl_card_player_title.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-size: 14px; font-weight: 700;")
+        l_sleep.addWidget(self.lbl_card_player_title)
+
+        self.lbl_card_player_desc = QLabel(tr("settings.player_playback_desc"))
+        self.lbl_card_player_desc.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 13px;")
+        l_sleep.addWidget(self.lbl_card_player_desc)
+
+        cfg = get_config_manager()
+        radio_qss = settings_radio_qss()
+        self.sleep_group = QButtonGroup(cast("QObject", self))
+
+        box_allow = QVBoxLayout()
+        box_allow.setSpacing(3)
+        self.radio_sleep_allow = QRadioButton(tr("settings.sleep_mode_allow"))
+        self.radio_sleep_allow.setStyleSheet(radio_qss)
+        self.sleep_group.addButton(self.radio_sleep_allow)
+        box_allow.addWidget(self.radio_sleep_allow)
+        self.lbl_sleep_allow_hint = QLabel(tr("settings.sleep_mode_allow_hint"))
+        self.lbl_sleep_allow_hint.setStyleSheet(f"color: {COLOR_TEXT_DIM}; font-size: 12px; margin-left: 26px;")
+        self.lbl_sleep_allow_hint.setWordWrap(True)
+        box_allow.addWidget(self.lbl_sleep_allow_hint)
+        l_sleep.addLayout(box_allow)
+
+        box_screens = QVBoxLayout()
+        box_screens.setSpacing(3)
+        self.radio_sleep_screens = QRadioButton(tr("settings.sleep_mode_player_playlist"))
+        self.radio_sleep_screens.setStyleSheet(radio_qss)
+        self.sleep_group.addButton(self.radio_sleep_screens)
+        box_screens.addWidget(self.radio_sleep_screens)
+        self.lbl_sleep_screens_hint = QLabel(tr("settings.sleep_mode_player_playlist_hint"))
+        self.lbl_sleep_screens_hint.setStyleSheet(f"color: {COLOR_TEXT_DIM}; font-size: 12px; margin-left: 26px;")
+        self.lbl_sleep_screens_hint.setWordWrap(True)
+        box_screens.addWidget(self.lbl_sleep_screens_hint)
+        l_sleep.addLayout(box_screens)
+
+        box_always = QVBoxLayout()
+        box_always.setSpacing(3)
+        self.radio_sleep_always = QRadioButton(tr("settings.sleep_mode_always"))
+        self.radio_sleep_always.setStyleSheet(radio_qss)
+        self.sleep_group.addButton(self.radio_sleep_always)
+        box_always.addWidget(self.radio_sleep_always)
+        self.lbl_sleep_always_hint = QLabel(tr("settings.sleep_mode_always_hint"))
+        self.lbl_sleep_always_hint.setStyleSheet(f"color: {COLOR_TEXT_DIM}; font-size: 12px; margin-left: 26px;")
+        self.lbl_sleep_always_hint.setWordWrap(True)
+        box_always.addWidget(self.lbl_sleep_always_hint)
+        l_sleep.addLayout(box_always)
+
+        sleep_mode = cfg.get_sleep_mode()
+        if sleep_mode == "allow":
+            self.radio_sleep_allow.setChecked(True)
+        elif sleep_mode == "always":
+            self.radio_sleep_always.setChecked(True)
+        else:
+            self.radio_sleep_screens.setChecked(True)
+
+        self.radio_sleep_allow.toggled.connect(self._on_sleep_mode_changed)
+        self.radio_sleep_screens.toggled.connect(self._on_sleep_mode_changed)
+        self.radio_sleep_always.toggled.connect(self._on_sleep_mode_changed)
+        return card_sleep

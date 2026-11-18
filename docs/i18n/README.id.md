@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,14 +47,17 @@
 | **Dukungan Playlist (M3U, PLS, XSPF, WPL) & lembar CUE** | Pengindeksan pohon (🎶), urutan mendengarkan sekuensial, penandaan visual untuk potongan yang hilang; file `.cue` (💿) terbuka seperti folder trek virtual dengan durasinya dan diputar seperti trek nyata | 🟢 Implémenté |
 | **Pengelola Playlist & Seret-Lepas** | Antrian virtual, drag & drop mulus, acak (shuffle) yang dapat dibalik, dan loop | 🟢 Implémenté |
 | **Mode « 🎲 Blind Test » interaktif** | Permainan musik imersif dengan hitungan mundur animasi, fade suara, pengungkapan lembut, dan urutan otomatis | 🟢 Implémenté |
-| **Pembaruan dalam aplikasi** | Pemeriksaan versi otomatis/manual melalui GitHub Releases | 🟢 Diimplementasikan |
-| **Versi Linux & macOS** | Paket `.AppImage` / `.tar.gz` (Linux) dan `.dmg` tidak ditandatangani (macOS), VLC diperlukan | 🟡 Eksperimental (belum diuji) |
-| **Manajemen Artis & Diskografi** | Tampilan khusus per artis dengan album, single, dan diskografi lengkap | 🟡 Direncanakan |
-| **Equalizer Grafis (EQ)** | Preset audio dan equalizer multiband parametrik | 🟡 Direncanakan |
-| **Konektor Google Drive** | Pemindaian dan sinkronisasi koleksi audio jarak jauh melalui OAuth 2.0 | ⚪ Direncanakan |
-| **Konektor Amazon Music** | Pemindaian dan sinkronisasi koleksi jarak jauh melalui OAuth 2.0 | ⚪ Direncanakan |
-| **Konektor Spotify / Deezer** | Impor playlist dan pencocokan trek | ⚪ Direncanakan |
-| **Penghapusan Duplikat Cerdas** | Deteksi duplikat (judul/artis kabur + sidik jari akustik) | ⚪ Direncanakan |
+| **Sumber & Perpustakaan** | Dasbor sumber dengan indikator kesehatan (sumber offline, kesalahan pemindaian, file hilang), tampilan global atau per sumber dan tindakan cepat | 🟢 Implémenté |
+| **Editor, perbaikan & ekspor playlist** | Pengorganisasian ulang, relokasi manual atau otomatis file yang hilang, penyimpanan cadangan dalam M3U / M3U8 / PLS / XSPF / WPL, pengelompokan berdasarkan album | 🟢 Implémenté |
+| **Alat audio** | Equalizer grafis 10 pita dengan preset, normalisasi ReplayGain, kecepatan pemutaran, pilihan output audio dan timer berhenti (mesin buffer berkelanjutan) | 🟢 Implémenté |
+| **Integrasi Windows & efek visual** | Bilah tugas, area notifikasi, panduan bantuan, efek visual yang dapat disesuaikan dengan mode Acak | 🟢 Implémenté |
+| **Pembaruan dalam aplikasi** | Verifikasi versi otomatis/manual melalui GitHub Releases | 🟢 Implémenté |
+| **Versi Linux & macOS** | Paket .AppImage / .tar.gz (Linux) dan .dmg tidak ditandatangani (macOS), VLC diperlukan | 🟡 Expérimental (non testé) |
+| **Manajemen artis & Diskografi** | Tampilan khusus per artis dengan album, single, dan diskografi lengkap | 🟡 Prévu |
+| **Konektor Google Drive** | Pemindaian dan sinkronisasi koleksi audio jarak jauh melalui OAuth 2.0 | ⚪ Planifié |
+| **Connecteur Amazon Music** | Scanning dan sinkronisasi koleksi jarak jauh melalui OAuth 2.0 | ⚪ Terjadwal |
+| **Connecteur Spotify / Deezer** | Impor playlist dan pencocokan trek | ⚪ Terjadwal |
+| **Deduplikasi cerdas** | Deteksi duplikat (judul/artis kabur + sidik jari akustik) | ⚪ Terjadwal |
 
 > 💡 *Untuk melihat detail tonggak dan versi yang direncanakan, silakan merujuk ke [Feuille de route (Roadmap)](../../ROADMAP.md).*
 

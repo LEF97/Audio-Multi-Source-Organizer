@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,14 +47,17 @@
 | **Stuðningur Playlists (M3U, PLS, XSPF, WPL) og CUE blækhljóð** | Tré-índeksing (🎶), viðræðisriðan áheykkun, skoðulegt greining á þörnum stakka; `.cue` skjalefni (💿) opnast eins og skjalasafn virkilegra stakka með varan og lesast eins og raunverulegar staklar | 🟢 Implémenté |
 | **Playlist Stjórnkerfi og Drag & Drop** | Virkilega flæði, slök drag & drop, svofræði (shuffle) endurskráning og hringrásir | 🟢 Implémenté |
 | **Interaktív „🎲 Blind Test“ aðgerð** | Ímyndalegi tónlistaleikur með líflegri reikningu, hljóðflæði, mjúk uppgötvun og sjálfvirku flæði | 🟢 Implémenté |
-| **Uppfæringar innan appinnarinnar** | Automata/handvirkra útgáfustrullunar með GitHub Releases | 🟢 Implémentéð |
-| **Linux og macOS útgáfur** | `.AppImage` / `.tar.gz` pakkar (Linux) og óskrifað `.dmg` (macOS), VLC krafist | 🟡 Tilraunarafkókur (ekki prufað) |
-| **Stjörtastjórn og diskrófa** | Skipt staða fyrir stjörnu með blaðmyndum, singlum og fullkominnri diskrófu | 🟡 Áætlað |
-| **Grafískur yfirberærsleiki (EQ)** |Ljóðhöfundarinnstillingar og raunverulegs yfirberærsleiki (parametric multi-band equalizer) | 🟡 Áætlað |
-| **Google Drive tenging** | Skannun og synkróhanna fjarlægra ályddbyrjunar með OAuth 2.0 | ⚪ Áætlað |
-| **Amazon Music tenging** | Skannun og synkróhanna fjarlægra ályddbyrjunar með OAuth 2.0 | ⚪ Áætlað |
-| **Spotify / Deezer tenging** | Skráning spillistanna og samræmi stakkanna | ⚪ Áætlað |
-| **Snjallt fjallaverð** | Uppgötva raföld (títol/stjarna flous + hljóðmyndir) | ⚪ Áætlað |
+| **Killa og rýmið** | Yfirborð úr killa með heilbrigðisgreiningum (killa sem eru ekki í netinu, skannunartilkynningar, fjölækir skildir), yfirleegt eða eftir killa og hraðvirkar aðgerðir | 🟢 Implémentéð |
+| **Ritari, laga og úrskipting listspilalista** | Endurskipun, handvirk eða sjálfvirkt staðsetning fjölækir skildir, varning í M3U / M3U8 / PLS / XSPF / WPL, hópur eftir albúmi | 🟢 Implémentéð |
+| **Ljóðhöfundarverkfæri** | 10 bandar grafískur yfirlistar með fyrirsettum stöðum, ReplayGain normalíkur, spilhraði, val á hljóðútgangi og stöðva tölur (stöðugur búnaðarborði tæki) | 🟢 Implémentéð |
+| **Windows samþætting og sýnilegar áhrif** | Verkefnastolbi, tilkynningarsvæði, staðfestingar, reglulegar sýnilegar áhrif með Slumræði snertingu | 🟢 Implémentéð |
+| **Uppfærsla innan forritinu** | Sjálfvirk/handvirkt athugun útgáfuaðferða í gegnum GitHub Releases | 🟢 Implémentéð |
+| **Linux og macOS útgáfur** | Pakkar `.AppImage` / `.tar.gz` (Linux) og óskrifað `.dmg` (macOS), VLC þarf | 🟡 Expérimentelt (ekki prufað) |
+| **Stjörnumstýring og discógrafía** | Sérstakt utsjónarstaða fyrir stjörnu með albúm, singlar og fullkomna discógrafía | 🟡 Áætlað |
+| **Google Drive tenging** | Skannun og samræming fjarlægra hljóðsamleka í gegnum OAuth 2.0 | ⚪ Áætlað |
+| **Amazon Music Tengsl** | Skannun og synkrastilling á fjarlægum safnumbólkum með OAuth 2.0 | ⚪ Skipulagð |
+| **Spotify / Deezer Tengsl** | Skráning spillistanna og samræmi stafræða | ⚪ Skipulagð |
+| **Snjall stafræðisfjöllun** | Greining á stafræðismyndum (titill/listartöfn + hljóðmyndir) | ⚪ Skipulagð |
 
 > 💡 *Til að skoða detaljar um áhrifastig og áætlaðar útgáfur, vinsamlegast persónuðu þér á [Ferðalög (Roadmap)](../../ROADMAP.md).*
 

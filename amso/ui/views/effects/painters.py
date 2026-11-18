@@ -199,7 +199,8 @@ class EffectPaintersMixin(_MixinBase):
 
             # Profondeur relative (0.0 au fond, 1.0 très proche de l'écran)
             depth_ratio = max(0.0, min(1.0, 1.0 - (s.z / max_depth)))
-            alpha = max(0.1, min(1.0, s.base_alpha * (depth_ratio**1.2)))
+            far_fade = max(0.0, min(1.0, (max_depth - s.z) / 120.0))
+            alpha = max(0.1, min(1.0, s.base_alpha * (depth_ratio**1.2))) * far_fade
             radius = s.radius * (0.6 + 1.8 * depth_ratio)
 
             # 1. Traînée lumineuse vers l'extérieur (Warp speed streak)
@@ -242,16 +243,7 @@ class EffectPaintersMixin(_MixinBase):
 
     def _paint_warp_dynamic(self, painter: QPainter, w: float, h: float) -> None:
         """Dessine l'hyperespace dynamique avec virages aléatoires 3D et roulis."""
-        cx = w * 0.5
-        cy = h * 0.5
-        fov = max(w, h) * 0.55
         max_depth = 1000.0
-
-        # Point de fuite incurvé et rotation de roulis
-        vanish_x = cx + self._warp_dyn_vx * 4.0
-        vanish_y = cy + self._warp_dyn_vy * 4.0
-        cos_r = math.cos(self._warp_dyn_roll)
-        sin_r = math.sin(self._warp_dyn_roll)
 
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
 
@@ -259,46 +251,38 @@ class EffectPaintersMixin(_MixinBase):
             if s.z <= 1.0 or s.pz <= 1.0:
                 continue
 
-            # Position courante projetée
-            k = fov / s.z
-            raw_sx = vanish_x + s.x * k
-            raw_sy = vanish_y + s.y * k
-            dx = raw_sx - cx
-            dy = raw_sy - cy
-            sx = cx + dx * cos_r - dy * sin_r
-            sy = cy + dx * sin_r + dy * cos_r
+            # La projection (rotation caméra + roulis) est calculée dans _on_tick ;
+            # une étoile fraîchement recyclée n'a pas encore de position écran.
+            if s.sx is None or s.sy is None:
+                continue
+            sx = s.sx
+            sy = s.sy
 
-            # Position précédente projetée pour la traînée incurvée
-            pk = fov / s.pz
-            drift_x = self._warp_dyn_vx * self._speed_multiplier * 0.8
-            drift_y = self._warp_dyn_vy * self._speed_multiplier * 0.8
-            raw_px = vanish_x + (s.x + drift_x) * pk
-            raw_py = vanish_y + (s.y + drift_y) * pk
-            pdx = raw_px - cx
-            pdy = raw_py - cy
-            px = cx + pdx * cos_r - pdy * sin_r
-            py = cy + pdx * sin_r + pdy * cos_r
-
-            # Profondeur relative
+            # Profondeur relative, fondu d'apparition au loin et à l'approche du plan caméra
             depth_ratio = max(0.0, min(1.0, 1.0 - (s.z / max_depth)))
-            alpha = max(0.1, min(1.0, s.base_alpha * (depth_ratio**1.2)))
+            near_fade = max(0.0, min(1.0, (s.z - 12.0) / 28.0))
+            far_fade = max(0.0, min(1.0, (max_depth - s.z) / 120.0))
+            alpha = max(0.05, min(1.0, s.base_alpha * (depth_ratio**1.2))) * near_fade * far_fade
             radius = s.radius * (0.6 + 1.8 * depth_ratio)
 
-            # 1. Traînée lumineuse incurvée vers l'extérieur
-            dist_sq = (sx - px) ** 2 + (sy - py) ** 2
-            if dist_sq > 0.5:
-                grad = QLinearGradient(px, py, sx, sy)
-                c_tail = QColor(s.color)
-                c_tail.setAlphaF(0.0)
-                c_head = QColor(s.color)
-                c_head.setAlphaF(alpha * 0.88)
-                grad.setColorAt(0.0, c_tail)
-                grad.setColorAt(1.0, c_head)
+            # 1. Traînée lumineuse incurvée vers la position précédente réelle à l'écran
+            if s.psx is not None and s.psy is not None:
+                px = s.psx
+                py = s.psy
+                dist_sq = (sx - px) ** 2 + (sy - py) ** 2
+                if dist_sq > 0.5:
+                    grad = QLinearGradient(px, py, sx, sy)
+                    c_tail = QColor(s.color)
+                    c_tail.setAlphaF(0.0)
+                    c_head = QColor(s.color)
+                    c_head.setAlphaF(alpha * 0.88)
+                    grad.setColorAt(0.0, c_tail)
+                    grad.setColorAt(1.0, c_head)
 
-                pen = QPen(QBrush(grad), max(1.0, radius * 0.78))
-                pen.setCapStyle(Qt.PenCapStyle.RoundCap)
-                painter.setPen(pen)
-                painter.drawLine(QPointF(px, py), QPointF(sx, sy))
+                    pen = QPen(QBrush(grad), max(1.0, radius * 0.78))
+                    pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+                    painter.setPen(pen)
+                    painter.drawLine(QPointF(px, py), QPointF(sx, sy))
 
             # 2. Halo lumineux doux pour les étoiles proches
             if radius > 2.0 and depth_ratio > 0.4:

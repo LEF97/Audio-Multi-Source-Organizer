@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import TYPE_CHECKING, Any
 
@@ -14,6 +15,8 @@ from PySide6.QtGui import (
     QPen,
 )
 from PySide6.QtWidgets import QWidget
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     _MixinBase = QWidget
@@ -58,6 +61,10 @@ class SpectrumBarsMixin(_MixinBase):
 
                 real_levels = get_audio_spectrum_service().get_spectrum(n)
             except Exception:
+                # Capture WASAPI loopback indisponible : barres simulées. Tick d'animation : un seul log.
+                if not getattr(self, "_spectrum_error_logged", False):
+                    logger.debug("Spectre audio indisponible, barres simulées", exc_info=True)
+                    self._spectrum_error_logged = True
                 real_levels = None
 
         if real_levels is not None:
