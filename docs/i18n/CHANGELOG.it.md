@@ -13,9 +13,19 @@ e questo progetto aderisce alla specifica [Semantic Versioning (SemVer)](https:/
 
 ---
 
-## [0.5.0] - 2026-11-15
+## [0.5.0] - 2026-11-18
 
 ### Aggiunto
+
+- **Strumenti audio rapidi (pulsante ⚙ del Lettore) :** finestra a schede che raggruppa la scelta del dispositivo di output, del motore audio e della modalità di transizione (Standard, Gapless 0 ms, Crossfade), un **equalizzatore grafico a 10 bande** con preset (Piano, Rock, Jazz, Classica, Bassi potenziati, Voce, Elettronica, Personalizzato), la **normalizzazione ReplayGain**, la **velocità di riproduzione** e un **timer di spegnimento** (15, 30, 45 o 60 minuti, fine del brano corrente o della coda). Output, equalizzatore, ReplayGain e velocità sono disponibili solo con il motore `buffer`.
+- **Barra « Da seguire » :** il prossimo titolo viene visualizzato passando il mouse sul pulsante Avanti e un clic passa immediatamente.
+- **Guide di utilizzo :** pulsante aiuto su ogni pagina (Lettore, Blind Test, Playlist, Brani, Duplicati, Cartelle, Sorgenti e Libreria, Impostazioni, Diario) che apre una finestra di spiegazioni.
+- **Pagine "Suono" ed "Effetti" nelle impostazioni :** impostazioni di normalizzazione e velocità di riproduzione, e scelta degli effetti visivi disponibili in Lettore e Blind Test.
+- **Effetti visivi :** nuovo effetto "Warp Pilot" e atmosfera **Casuale** che cambia effetto ad ogni brano o a intervalli regolabili (15 s, 30 s, 1, 2 o 5 minuti), separatamente per Lettore e Blind Test.
+- **Integrazione con Windows :** integrazione nella barra delle applicazioni e icona nell'area di notifica (mostra o nascondi la finestra, titolo corrente, esci).
+- **Riepilogo dello scan cliccabile :** il risultato di uno scan rimanda agli elementi interessati.
+- **Pulsante Play/Pausa animato :** alone reattivo alle basse e transizione fluida tra riproduzione e pausa (blu a riposo, ambra in riproduzione).
+- **Larghezza del menu laterale memorizzata :** viene ripristinata all'avvio e non cambia più da una pagina all'altra, solo l'utente la modifica.
 
 - **Vista "Fonti e Libreria" :** nuova pagina dedicata che sostituisce il vecchio schermo delle statistiche, con vista globale o per fonte, indicatori di salute (fonti offline, errori di scansione, file o voci di playlist mancanti) e azioni rapide (modifica, riscansiona, elimina, apri nella libreria).
 - **Editor e riparazione delle playlist :** finestra dedicata per riorganizzare i brani (su/giù), eliminare voci, ricaricare dal disco, rilocare un file mancante o avviare una riparazione automatica (ricerca locale e poi database con punteggio di fiducia e anteprima delle proposte).
@@ -26,8 +36,24 @@ e questo progetto aderisce alla specifica [Semantic Versioning (SemVer)](https:/
 
 ### Modificato
 
-- **Scansione in 3 fasi :** separazione chiara dell'inventario, dell'estrazione dei metadati e dell'analisi delle playlist con logging e progressione dettagliati.
+- **Feuilles CUE : enchaînement continu des pistes d'un même fichier (moteur `buffer`) :** il file è decodificato una sola volta per tutta una serie di tracce contigue, e i confini sono posizioni esatte nel buffer PCM calcolate dal CUE. Corregge la fine del brano precedente riprodotto all'inizio del successivo (seek impreciso su un MP3 a bitrate variabile). Il crossfade non viene applicato tra due tracce dello stesso file CUE (flusso già continuo).
+- **Scan in 3 fasi :** separazione chiara dell'inventario, dell'estrazione dei metadati e dell'analisi delle playlist con logging e progressione dettagliati.
 - **Identità visiva :** nuova icona AMSO (PNG alta risoluzione, ICO 7 dimensioni, ICNS 4 dimensioni).
+- **Tabella tracce più veloce :** visualizzazione delle celle per campo e etichette tradotte memorizzate in cache (circa il 40 % di tempo in meno per cella su 50 000 righe).
+- **Qualità interna :** schema SQLite dichiarativo (`db/schema.py`), colonne dei tabelle fattorizzate in `table_settings`, colori del tema centralizzati in `styles.py`, barra del titolo, controllo del volume e finestre di dialogo fattorizzati, `except` silenziosi mirati o registrati. Nessun cambiamento di comportamento visibile.
+
+### Corrigé
+
+- **Moteur \`buffer\` — vecchio titolo riprodotto al riavvio:** il \`QAudioSink\` conservava circa 185 ms di audio dopo una pausa o un arresto, il che riproduceva la fine del vecchio titolo dopo un Precedente/Successivo in pausa o un doppio clic dopo l'arresto. Il buffer viene ora svuotato al caricamento e alla riapertura dell'uscita.
+- **Libreria :** la barra superiore non si ridimensiona più, il breadcrumb è troncato da « … » e l'albero non ha più scorrimento orizzontale.
+
+- **Motore `buffer` — aggancio all'avvio di un titolo:** dopo una pausa, l'uscita audio veniva riaperta a freddo direttamente sul primo blocco decodificato, cosa che agganciava l'inizio di un suono tenuto (« TU-TUUU »). L'uscita è ora aperta non appena viene richiesta la riproduzione e riproduce il silenzio durante il decodifica del primo blocco: nessuna latenza aggiunta, sessione audio sempre unica.
+- **Motore `buffer` — pop al cambio manuale di titolo:** cambiare titolo durante la riproduzione interrompeva il suono precedente nel pieno dell'onda. Ora termina con un micro-fade di 10 ms (uscita lasciata aperta) e il titolo successivo entra con un fade della stessa durata. La transizione automatica e il motore `vlc_direct` non sono modificati.
+
+### Test
+
+- **Sortie factice de la TNR :** `CaptureOutput` segue l'interfaccia di `SinkOutput` (la TNR non rilevava più né la fine del brano né la transizione).
+- **Rilevamento dei pop nella TNR :** `tests/tnr/clicks.py` rileva i bordi di silenzio improvvisi e misura il salto di ampiezza in un punto di taglio noto, validato su segnali sintetici (`tests/test_tnr_clicks.py`).
 
 ## [0.4.1] - 2026-10-29
 

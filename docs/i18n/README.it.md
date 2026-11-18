@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-11-15%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-11-15%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,14 +47,17 @@
 | **Supporto Playliste (M3U, PLS, XSPF, WPL) & fogli CUE** | Indicizzazione ad albero (🎶), ordine sequenziale di ascolto, rilevamento visivo dei brani mancanti; i file `.cue` (💿) si aprono come una cartella di tracce virtuali con la loro durata e vengono riprodotti come tracce vere | 🟢 Implementato |
 | **Gestore Playliste & Drag & Drop** | Coda virtualizzata, drag & drop fluido, casuale (shuffle) reversibile e cicli | 🟢 Implementato |
 | **Modalità « 🎲 Blind Test » interattiva** | Gioco musicale immersivo con conto alla rovescia animato, dissolvenza sonora, rivelazione delicata e collegamento automatico | 🟢 Implementato |
-| **Aggiornamenti in-app** | Verifica automatica/manuale delle versioni via GitHub Releases | 🟢 Implementato |
-| **Versioni Linux & macOS** | Paquets `.AppImage` / `.tar.gz` (Linux) et `.dmg` non signé (macOS), VLC requis | 🟡 Sperimentale (non testato) |
-| **Gestione artisti & Discografia** | Vista dedicata per artista con album, singoli e discografia completa | 🟡 Previsto |
-| **Equalizzatore grafico (EQ)** | Preset audio e equalizzatore multibanda parametrico | 🟡 Previsto |
-| **Connettore Google Drive** | Scansione e sincronizzazione di collezioni audio remote via OAuth 2.0 | ⚪ Pianificato |
-| **Connettore Amazon Music** | Scansione e sincronizzazione di collezioni remote via OAuth 2.0 | ⚪ Pianificato |
-| **Connettore Spotify / Deezer** | Importazione di playlist e corrispondenza di tracce | ⚪ Pianificato |
-| **De-duplicazione intelligente** | Rilevamento duplicati (titolo/artista sfocati + impronte acustiche) | ⚪ Pianificato |
+| **Fonti e Libreria** | Dashboard delle fonti con indicatori di salute (fonti offline, errori di scansione, file mancanti), vista globale o per fonte e azioni rapide | 🟢 Implementato |
+| **Editor, riparazione ed esportazione di playlist** | Riorganizzazione, ricollocamento manuale o automatico dei file mancanti, salvataggio in M3U / M3U8 / PLS / XSPF / WPL, raggruppamento per album | 🟢 Implementato |
+| **Strumenti audio** | Equalizzatore grafico a 10 bande con preset, normalizzazione ReplayGain, velocità di riproduzione, scelta dell'uscita audio e timer di spegnimento (motore a buffer continuo) | 🟢 Implementato |
+| **Integrazione Windows ed effetti visivi** | Barra delle applicazioni, area di notifica, guide di aiuto, effetti visivi regolabili con modalità Casuale | 🟢 Implementato |
+| **Aggiornamenti in-app** | Verifica automatica/manuale delle versioni tramite GitHub Releases | 🟢 Implementato |
+| **Versioni Linux e macOS** | Pacchetti `.AppImage` / `.tar.gz` (Linux) e `.dmg` non firmato (macOS), VLC richiesto | 🟡 Sperimentale (non testato) |
+| **Gestione artisti e discografia** | Vista dedicata per artista con album, singoli e discografia completa | 🟡 Previsto |
+| **Connettore Google Drive** | Scansione e sincronizzazione di collezioni audio remote tramite OAuth 2.0 | ⚪ Pianificato |
+| **Connecteur Amazon Music** | Scansione e sincronizzazione di collezioni remote via OAuth 2.0 | ⚪ Pianificato |
+| **Connecteur Spotify / Deezer** | Importazione di playlist e corrispondenza di tracce | ⚪ Pianificato |
+| **De-duplicazione intelligente** | Rilevamento di duplicati (titolo/artista sfocati + impronte acustiche) | ⚪ Pianificato |
 
 > 💡 *Per consultare il dettaglio delle tappe e delle versioni previste, fare riferimento alla [Roadmap (Roadmap)](ROADMAP.it.md).*
 

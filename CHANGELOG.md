@@ -13,9 +13,18 @@ and this project adheres to [Semantic Versioning (SemVer)](https://semver.org/).
 
 ---
 
-## [0.5.0] - 2026-11-15
+## [0.5.0] - 2026-11-18
 
 ### Added
+- **Quick audio tools (⚙ button of the Player):** tabbed window gathering the choice of output device, audio engine and transition mode (Standard, Gapless 0 ms, Crossfade), a **10-band graphical equalizer** with presets (Flat, Rock, Jazz, Classical, Bass boost, Vocal, Electronic, Custom), **ReplayGain normalization**, **playback speed** and a **sleep timer** (15, 30, 45 or 60 minutes, end of the current track or of the queue). Output, equalizer, ReplayGain and speed are only available with the `buffer` engine.
+- **"Up next" bar:** the next track is shown when hovering the Next button and a click jumps to it immediately.
+- **Quick-start guides:** help button on each page (Player, Blind Test, Playlists, Tracks, Duplicates, Folders, Sources & Library, Settings, Log) opening an explanation window.
+- **"Sound" and "Effects" pages in the settings:** normalization and playback speed settings, and choice of the visual effects offered in the Player and the Blind Test.
+- **Visual effects:** new "Warp Pilot" effect and a **Random** ambiance that changes the effect on every track or at an adjustable interval (15 s, 30 s, 1, 2 or 5 minutes), separately for the Player and the Blind Test.
+- **Windows integration:** taskbar integration and notification area icon (show or hide the window, current track, quit).
+- **Clickable scan summary:** the result of a scan links to the items concerned.
+- **Animated Play/Pause button:** bass-reactive halo and smooth transformation between play and pause (blue when stopped, amber when playing).
+- **Left menu width remembered:** it is restored at startup and no longer changes from one page to another; only the user changes it.
 - **"Sources & Library" view:** new dedicated page replacing the old Statistics screen, with a global or per-source view, health indicators (offline sources, scan errors, missing playlist files or entries), and quick actions (edit, rescan, delete, open in library).
 - **Playlist editor and repair:** dedicated window to reorder tracks (move up/down), remove entries, reload from disk, relocate a missing file, or run automatic repair (local search then database with confidence score and proposal preview).
 - **Playlist export / save:** save the current playback queue as `.m3u`, `.m3u8`, `.pls`, `.xspf`, or `.wpl` with immediate database indexing.
@@ -24,8 +33,21 @@ and this project adheres to [Semantic Versioning (SemVer)](https://semver.org/).
 - **Window geometry persistence:** save and restore window size, position, and maximized state on restart.
 
 ### Changed
+- **CUE sheets: continuous chaining of the tracks of a same file (`buffer` engine):** the file is decoded only once for a whole series of contiguous tracks, and the boundaries are exact positions in the PCM buffer computed from the CUE. Fixes the end of the previous track being replayed at the start of the next one (imprecise seek on a variable-bitrate MP3). Crossfade is not applied between two tracks of the same CUE file (already continuous stream).
 - **3-phase scan:** clear separation between inventory, metadata extraction, and playlist analysis with detailed logging and progress tracking.
 - **Visual identity:** new AMSO icon (high-resolution PNG, 7-size ICO, 4-size ICNS).
+- **Faster track tables:** per-field cell display and cached translated labels (about 40% less time per cell on 50,000 rows).
+- **Internal quality:** declarative SQLite schema (`db/schema.py`), table columns factored into `table_settings`, theme colors centralized in `styles.py`, title bar, volume control and dialogs factored, silent `except` blocks narrowed or logged. No visible behavior change.
+
+### Fixed
+- **`buffer` engine — old track replayed on resume:** the `QAudioSink` kept about 185 ms of audio after a pause or a stop, which replayed the end of the old track after a Previous/Next while paused or a double click after stop. The buffer is now purged on load and when the output is reopened.
+- **`buffer` engine — hang at the start of a track:** after a stop, the audio output was reopened cold directly on the first decoded block, which clipped the start of a sustained sound. The output is now opened as soon as playback is requested and plays silence while the first block is decoded: no added latency, audio session still unique.
+- **`buffer` engine — pop on manual track change:** changing track during playback cut the old sound mid-wave. It now ends with a 10 ms micro-fade (output left open) and the next track enters with a fade of the same length. Automatic chaining and the `vlc_direct` engine are unchanged.
+- **Library:** the top bar no longer resizes, the breadcrumb is truncated with "…" and the tree has no horizontal scrolling.
+
+### Tests
+- **TNR dummy output:** `CaptureOutput` follows the `SinkOutput` interface (the TNR no longer detected track ends or transitions).
+- **Pop detection in the TNR:** `tests/tnr/clicks.py` spots abrupt silence edges and measures the amplitude jump at a known cut point, validated on synthetic signals (`tests/test_tnr_clicks.py`).
 
 ## [0.4.1] - 2026-10-29
 

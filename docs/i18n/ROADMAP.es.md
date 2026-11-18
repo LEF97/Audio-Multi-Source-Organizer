@@ -71,12 +71,16 @@ AMSO tiene como vocación convertirse en el **hub musical universal y descentral
 
 ### 🟢 Version 0.5.0 — Sources & Biblioteca, Editor de Listas de Reproducción & Transiciones *(Actual)*
 
-- [x] **Vista « Fuentes y Biblioteca »:** panel unificado con estado de salud de fuentes/listas de reproducción, navegación por fuente y acciones rápidas.
+- [x] **Vista « Fuentes y Biblioteca »:** panel de control unificado con estado de salud de las fuentes/listas de reproducción, navegación por fuente y acciones rápidas.
 - [x] **Editor, reparación y exportación de listas de reproducción:** reorganización, relocalización manual o automática (local + base de datos), y guardado en `.m3u`, `.m3u8`, `.pls`, `.xspf` o `.wpl`.
 - [x] **Listas de reproducción en modo álbum:** agrupación de títulos de una lista de reproducción en carpetas virtuales por álbum en el árbol, con « (álbum desconocido) » para los títulos sin álbum.
-- [x] **Transiciones de portadas, escaneo en 3 fases y geometría de ventana:** 5 efectos de transición, progresión detallada del escaneo y restauración de la ventana.
-- [x] **Nuevo icono AMSO:** icono de alta resolución de múltiples tamaños (PNG, ICO, ICNS).
-- [x] **Crossfade configurable y Enlaces de audio avanzados:** Soporte para transiciones sin interrupción (Gapless 0 ms), fundido cruzado de alta precisión (Crossfade Equal-Power) y modo estándar sin blanco.
+- [x] **Transiciones de portadas, escaneo en 3 fases y geometría de la ventana:** 5 efectos de transición, progresión detallada del escaneo y restauración de la ventana.
+- [x] **Nuevo icono AMSO:** icono de alta resolución multi-tamaños (PNG, ICO, ICNS).
+- [x] **Herramientas de audio:** ecualizador gráfico de 10 bandas con preajustes, normalización ReplayGain, velocidad de reproducción, selección de salida de audio y temporizador de apagado (motor `buffer`).
+- [x] **Enlazado continuo de pistas CUE:** las pistas contiguas de un mismo archivo se decodifican en un solo flujo (motor `buffer`).
+- [x] **Guías de ayuda, páginas Sonido y Efectos, efecto Warp Pilot y modo Aleatorio:** ayuda contextual en cada página, ajustes dedicados de sonido y efectos visuales.
+- [x] **Integración de Windows:** barra de tareas e icono en el área de notificación.
+- [x] **Crossfade configurable y Enlazados de audio avanzados:** Soporte para transiciones sin interrupción (Gapless 0 ms), fundido enlazado de alta precisión (Crossfade Equal-Power) y modo estándar sin blanco.
 
 ---
 
@@ -90,20 +94,14 @@ AMSO tiene como vocación convertirse en el **hub musical universal y descentral
 - [ ] **Conector Amazon Music :** Escaneo, streaming y sincronización de colecciones musicales remotas (OAuth 2.0).
 - [ ] **Coincidencia híbrida inteligente :** Correspondencia entre los títulos de una lista de reproducción remota y los archivos ya presentes localmente (alta fidelidad).
 - [ ] **Vista unificada :** Visualización lado a lado de pistas disponibles localmente y de aquellas disponibles solo en streaming.
-- [ ] **Autenticación segura OAuth 2.0:** Conexión simplificada a través del navegador sin almacenar secretos en texto claro.
-- [ ] **Escaneo remoto de carpetas de Google Drive:** Indexación de archivos de audio presentes en las carpetas configuradas.
+- [ ] **Autenticación segura OAuth 2.0:** Conexión simplificada vía navegador sin almacenar secretos en texto claro.
+- [ ] **Escaneo remoto de carpetas Google Drive:** Indexación de archivos de audio presentes en las carpetas configuradas.
 - [ ] **Reproducción directa en streaming en la nube:** Escucha de pistas remotas con caché local transparente.
 - [ ] **Sincronización bidireccional selectiva:** Descarga local de pistas de la nube o copia de seguridad de pistas locales a Drive.
 - [ ] **Gestión de artistas y discografía asociada:** Vista dedicada por artista con álbumes, sencillos y discografía completa.
-- [ ] **Ecualizador gráfico (EQ):** Preajustes (Rock, Pop, Jazz, Bass Boost) y ecualizador paramétrico multibanda.
-- [ ] **Editor de metadatos en la aplicación:** Modificación directa de las etiquetas ID3 / Vorbis en uno o varios archivos seleccionados.
-- [ ] **Descarga automática de portadas:** Búsqueda en línea (MusicBrainz / Cover Art Archive) de portadas faltantes.
+- [ ] **Editor de metadatos in-app:** Modificación directa de etiquetas ID3 / Vorbis en uno o varios archivos seleccionados.
+- [ ] **Descarga automática de portadas:** Búsqueda en línea (MusicBrainz / Cover Art Archive) de carátulas faltantes.
 - [ ] **Filtros de búsqueda avanzados:** Filtrado combinado por género, año, bitrate y formato sin pérdidas (Lossless).
-
----
-
-### 🔵 Version 0.4.2 — Compatibilidad de red Linux & macOS
-
 - [ ] **Detección de montajes de red (Linux & macOS):** `amso/core/network_paths.py` solo reconoce hoy las rutas UNC y las unidades mapeadas de Windows; reconocer los montajes NFS / SMB / AFP (`/proc/self/mountinfo`, `statfs`) para evitar cualquier sondeo de disco bloqueante al inicio en estos sistemas.
 - [ ] **Validación en Linux y macOS:** motor `buffer`, transiciones y packaging a confirmar en sistemas reales a partir de los comentarios de los probadores.
 

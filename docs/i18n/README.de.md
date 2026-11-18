@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-11-15%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-11-15%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,14 +47,17 @@
 | **Unterstützung von Playlists (M3U, PLS, XSPF, WPL) & CUE-Dateien** | Baumartige Indizierung (🎶), sequenzieller Abspielordner, visuelle Erkennung fehlender Tracks; .cue-Dateien (💿) öffnen sich wie ein virtueller Trackordner mit ihrer Dauer und werden wie echte Tracks abgespielt | 🟢 Implementiert |
 | **Playlist-Manager & Drag-and-Drop** | Virtualisierte Warteschlange, flüssiges Drag & Drop, umkehrbares Zufallsprinzip (shuffle) und Schleifen | 🟢 Implementiert |
 | **Interaktiver „🎲 Blind Test“-Modus** | Immersives Musikspiel mit animiertem Countdown, Sound-Fade, sanfter Enthüllung und automatischer Abfolge | 🟢 Implementiert |
-| **In-App-Updates** | Automatische/Manuelle Versionsprüfung über GitHub Releases | 🟢 Implementiert |
-| **Versions Linux & macOS** | Pakete .AppImage / .tar.gz (Linux) und nicht signiertes .dmg (macOS), VLC erforderlich | 🟡 Experimentell (nicht getestet) |
-| **Künstler- & Diskographieverwaltung** | Dedizierte Ansicht pro Künstler mit Alben, Singles und vollständiger Diskographie | 🟡 Geplant |
-| **Graphischer Equalizer (EQ)** | Audio-Presets und parametrisierter Multiband-Equalizer | 🟡 Geplant |
-| **Google Drive-Konnektor** | Scan und Synchronisierung von entfernten Audio-Sammlungen via OAuth 2.0 | ⚪ Geplant |
-| **Amazon Music-Konnektor** | Scan und Synchronisierung von entfernten Sammlungen via OAuth 2.0 | ⚪ Geplant |
-| **Spotify / Deezer-Konnektor** | Import von Playlists und Titelabgleich | ⚪ Geplant |
-| **Intelligente Duplikaterkennung** | Duplikaterkennung (verschwommene Titel/Künstler + akustische Fingerabdrücke) | ⚪ Geplant |
+| **Quellen & Bibliothek** | Dashboard der Quellen mit Gesundheitsindikatoren (offline Quellen, Scan-Fehler, fehlende Dateien), globale oder nach Quelle Ansicht und schnelle Aktionen | 🟢 Implémenté |
+| **Playlist-Editor, Reparatur & Export** | Neuorganisation, manuelle oder automatische Wiederherstellung fehlender Dateien, Sicherung in M3U / M3U8 / PLS / XSPF / WPL, Gruppierung nach Album | 🟢 Implémenté |
+| **Audio-Tools** | 10-Band-Grafik-Equalizer mit Presets, ReplayGain-Normalisierung, Wiedergabegeschwindigkeit, Auswahl der Audioausgabe und Abschalt-Timer (kontinuierlicher Puffer-Motor) | 🟢 Implémenté |
+| **Windows-Integration & visuelle Effekte** | Taskleiste, Benachrichtigungsbereich, Hilfeführer, einstellbare visuelle Effekte mit Zufallsmodus | 🟢 Implémenté |
+| **In-App-Updates** | Automatische/manuelle Überprüfung der Versionen über GitHub Releases | 🟢 Implémenté |
+| **Linux- & macOS-Versionen** | Pakete `.AppImage` / `.tar.gz` (Linux) und nicht signiertes `.dmg` (macOS), VLC erforderlich | 🟡 Expérimental (non testé) |
+| **Künstler- & Diskographie-Verwaltung** | Dedizierte Ansicht pro Künstler mit Alben, Singles und vollständiger Diskographie | 🟡 Prévu |
+| **Google Drive-Konnektor** | Scan und Synchronisierung externer Audio-Sammlungen über OAuth 2.0 | ⚪ Planifié |
+| **Connecteur Amazon Music** | Scan und Synchronisierung von entfernten Sammlungen via OAuth 2.0 | ⚪ Geplant |
+| **Connecteur Spotify / Deezer** | Import von Playlists und Zuordnung von Tracks | ⚪ Geplant |
+| **Intelligente Duplikatentfernung** | Erkennung von Duplikaten (unscharfe Titel/Künstler + akustische Fingerabdrücke) | ⚪ Geplant |
 
 > 💡 *Um die Details der geplanten Meilensteine und Versionen einzusehen, verweisen Sie auf die [Feuille de route (Roadmap)](ROADMAP.de.md).*
 

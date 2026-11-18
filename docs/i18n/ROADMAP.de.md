@@ -71,12 +71,16 @@ AMSO ist bestrebt, das **universelle und dezentrale Musik-Hub** der Wahl zu werd
 
 ### 🟢 Version 0.5.0 — Quellen & Bibliothek, Playlist-Editor & Übergänge *(Aktuell)*
 
-- [x] **Vue « Quellen & Bibliothek » :** einheitliches Dashboard mit Gesundheitsstatus der Quellen/Playlists, Navigation nach Quelle und Schnellaktionen.
-- [x] **Editor, Reparatur und Export von Playlists :** Neuorganisation, manuelle oder automatische Neupositionierung (lokal + Datenbank) und Speicherung in `.m3u`, `.m3u8`, `.pls`, `.xspf` oder `.wpl`.
-- [x] **Playlists im Album-Modus :** Gruppierung der Titel einer Playlist in virtuelle Albenordner in der Baumstruktur, mit „(unbekanntes Album)“ für Titel ohne Album.
-- [x] **Cover-Übergänge, 3-Phasen-Scan & Fenstergeometrie :** 5 Übergangseffekte, detaillierter Scan-Fortschritt und Fensterwiederherstellung.
-- [x] **Neue AMSO-Ikone :** hochauflösende Multi-Größen-Ikone (PNG, ICO, ICNS).
-- [x] **Parametrisierbarer Crossfade & Erweiterte Audio-Verknüpfungen :** Unterstützung von nahtlosen Übergängen (Gapless 0 ms), hochpräzisem Crossfade (Crossfade Equal-Power) und Standardmodus ohne Weiß.
+- [x] **Ansicht „Quellen & Bibliothek“:** einheitliches Dashboard mit Gesundheitsstatus der Quellen/Playlists, Navigation nach Quelle und Schnellaktionen.
+- [x] **Editor, Reparatur und Export von Playlists:** Neuorganisation, manuelle oder automatische Neulokalisierung (lokal + Datenbank) und Speichern in `.m3u`, `.m3u8`, `.pls`, `.xspf` oder `.wpl`.
+- [x] **Playlists im Album-Modus:** Gruppierung von Titeln einer Playlist in virtuelle Ordner nach Album in der Verzeichnisstruktur, mit „(unbekanntes Album)“ für Titel ohne Album.
+- [x] **Cover-Übergänge, 3-Phasen-Scan & Fenstergeometrie:** 5 Übergangseffekte, detaillierter Scan-Fortschritt und Fensterwiederherstellung.
+- [x] **Neues AMSO-Icon:** hochauflösendes Multi-Größen-Icon (PNG, ICO, ICNS).
+- [x] **Audio-Tools:** 10-Band-Grafik-Equalizer mit Presets, ReplayGain-Normalisierung, Wiedergabegeschwindigkeit, Auswahl der Audioausgabe und Abschalt-Timer (Motor `buffer`).
+- [x] **Kontinuierliches Verknüpfen von CUE-Tracks:** benachbarte Tracks aus derselben Datei werden in einen einzigen Stream dekodiert (Motor `buffer`).
+- [x] **Hilfeführer, Sound- und Effektseiten, Warp Pilot Effekt & Zufallsmodus:** Kontextuelle Hilfe auf jeder Seite, dedizierte Einstellungen für Sound und visuelle Effekte.
+- [x] **Windows-Integration:** Taskleiste und Icon im Benachrichtigungsbereich.
+- [x] **Parametrisierbarer Crossfade & Erweiterte Audio-Verknüpfungen:** Unterstützung für nahtlose Übergänge (Gapless 0 ms), hochpräzisen Crossfade (Crossfade Equal-Power) und Standardmodus ohne Stille.
 
 ---
 
@@ -90,20 +94,14 @@ AMSO ist bestrebt, das **universelle und dezentrale Musik-Hub** der Wahl zu werd
 - [ ] **Amazon Music-Connector :** Scan, Streaming und Synchronisierung entfernter Musiksammlungen (OAuth 2.0).
 - [ ] **Intelligentes Hybrid-Matching :** Abgleich zwischen Titeln einer entfernten Playlist und lokal vorhandenen Dateien (hohe Treue).
 - [ ] **Einheitliche Ansicht :** Nebeneinanderanzeige von lokal verfügbaren und nur im Streaming verfügbaren Tracks.
-- [ ] **Sichere OAuth 2.0 Authentifizierung:** Vereinfachte Verbindung über den Browser ohne Speicherung von Geheimnissen im Klartext.
-- [ ] **Fern-Scan von Google Drive Ordnern:** Indizierung von Audiodateien, die in den konfigurierten Ordnern vorhanden sind.
-- [ ] **Direktes Cloud-Streaming:** Hören von entfernten Titeln mit transparentem lokalem Caching.
-- [ ] **Selektive bidirektionale Synchronisierung:** Lokaler Download von Titeln aus der Cloud oder Backup lokaler Titel zu Drive.
-- [ ] **Künstler- und zugehörige Diskographie-Verwaltung:** Dedizierte Ansicht pro Künstler mit Alben, Singles und vollständiger Diskographie.
-- [ ] **Grafischer Equalizer (EQ):** Presets (Rock, Pop, Jazz, Bass Boost) und multiband-parametrischer Equalizer.
+- [ ] **Sichere OAuth 2.0 Authentifizierung:** Vereinfachte Anmeldung über den Browser ohne Speicherung von Geheimnissen im Klartext.
+- [ ] **Remote-Scan von Google Drive Ordnern:** Indizierung der in den konfigurierten Ordnern vorhandenen Audiodateien.
+- [ ] **Direktes Cloud-Streaming-Abspielen:** Hören von entfernten Tracks mit transparenter lokaler Zwischenspeicherung.
+- [ ] **Selektive bidirektionale Synchronisierung:** Lokaler Download von Cloud-Tracks oder Backup lokaler Tracks nach Drive.
+- [ ] **Verwaltung von Künstlern und zugehöriger Diskografie:** Dedizierte Ansicht pro Künstler mit Alben, Singles und vollständiger Diskografie.
 - [ ] **In-App-Metadaten-Editor:** Direkte Bearbeitung der ID3 / Vorbis Tags an einem oder mehreren ausgewählten Dateien.
-- [ ] **Automatischer Cover-Download:** Online-Suche (MusicBrainz / Cover Art Archive) nach fehlenden Covern.
+- [ ] **Automatischer Download von Covern:** Online-Suche (MusicBrainz / Cover Art Archive) nach fehlenden Covern.
 - [ ] **Erweiterte Suchfilter:** Kombinierte Filterung nach Genre, Jahr, Bitrate und verlustfreiem Format (Lossless).
-
----
-
-### 🔵 Version 0.4.2 — Netzwerkkompatibilität Linux & macOS
-
 - [ ] **Erkennung von Netzwerk-Mounts (Linux & macOS):** `amso/core/network_paths.py` erkennt heute nur UNC-Pfade und gemappte Windows-Laufwerke; Erkennung von NFS / SMB / AFP-Mounts (`/proc/self/mountinfo`, `statfs`) ist erforderlich, um blockierendes Festplatten-Probing beim Start auf diesen Systemen zu vermeiden.
 - [ ] **Validierung unter Linux und macOS:** Motor `buffer`, Übergänge und Packaging müssen anhand des Feedbacks der Tester auf echten Systemen bestätigt werden.
 

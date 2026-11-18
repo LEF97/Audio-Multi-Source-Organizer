@@ -71,11 +71,15 @@ AMSO ha lo scopo di diventare l'hub musicale universale e decentralizzato di rif
 
 ### 🟢 Version 0.5.0 — Sources & Libreria, Editor di Playlist & Transizioni *(Attuale)*
 
-- [x] **Vista "Fonti e Libreria":** dashboard unificato con stato di salute delle fonti/playlist, navigazione per fonte e azioni rapide.
-- [x] **Editor, riparazione ed esportazione di playlist:** riorganizzazione, rilocalizzazione manuale o automatica (locale + database), e salvataggio in `.m3u`, `.m3u8`, `.pls`, `.xspf` o `.wpl`.
-- [x] **Playlist in modalità album:** raggruppamento dei brani di una playlist in cartelle virtuali per album nell'albero, con " (album sconosciuto) " per i brani senza album.
-- [x] **Transizioni copertine, scansione in 3 fasi e geometria della finestra:** 5 effetti di transizione, progressione dettagliata della scansione e ripristino della finestra.
+- [x] **Vista "Sorgenti e Libreria":** dashboard unificato con stato di salute delle sorgenti/playlist, navigazione per sorgente e azioni rapide.
+- [x] **Editor, riparazione ed esportazione delle playlist:** riorganizzazione, rilocazione manuale o automatica (locale + database), e salvataggio in `.m3u`, `.m3u8`, `.pls`, `.xspf` o `.wpl`.
+- [x] **Playlist in modalità album:** raggruppamento dei brani di una playlist in cartelle virtuali per album nella struttura ad albero, con " (album sconosciuto) " per i brani senza album.
+- [x] **Transizioni di copertina, scansione in 3 fasi e geometria della finestra:** 5 effetti di transizione, progressione dettagliata della scansione e ripristino della finestra.
 - [x] **Nuova icona AMSO:** icona ad alta risoluzione multi-dimensioni (PNG, ICO, ICNS).
+- [x] **Strumenti audio:** equalizzatore grafico a 10 bande con preset, normalizzazione ReplayGain, velocità di riproduzione, scelta dell'uscita audio e timer di spegnimento (motore `buffer`).
+- [x] **Collegamento continuo delle tracce CUE:** le tracce contigue di un singolo file vengono decodificate in un unico flusso (motore `buffer`).
+- [x] **Guide di aiuto, pagine Suono ed Effetti, effetto Warp Pilot e modalità Casuale:** aiuto contestuale su ogni pagina, impostazioni dedicate per il suono e gli effetti visivi.
+- [x] **Integrazione Windows:** barra delle applicazioni e icona nell'area di notifica.
 - [x] **Crossfade parametrizzabile e Collegamenti audio avanzati:** Supporto per transizioni senza interruzioni (Gapless 0 ms), dissolvenza incrociata ad alta precisione (Crossfade Equal-Power) e modalità standard senza bianco.
 
 ---
@@ -95,15 +99,9 @@ AMSO ha lo scopo di diventare l'hub musicale universale e decentralizzato di rif
 - [ ] **Riproduzione diretta in streaming cloud:** Ascolto di brani remoti con cache locale trasparente.
 - [ ] **Sincronizzazione bidirezionale selettiva:** Download locale di tracce dal cloud o backup di tracce locali su Drive.
 - [ ] **Gestione artisti e discografia associata:** Visualizzazione dedicata per artista con album, singoli e discografia completa.
-- [ ] **Equalizzatore grafico (EQ):** Preset (Rock, Pop, Jazz, Bass Boost) e equalizzatore parametrico multibanda.
 - [ ] **Editor di metadati in-app:** Modifica diretta dei tag ID3 / Vorbis su un o più file selezionati.
 - [ ] **Download automatico delle copertine:** Ricerca online (MusicBrainz / Cover Art Archive) delle copertine mancanti.
-- [ ] **Filtri di ricerca avanzati :** Filtraggio combinato per genere, anno, bitrate e formato lossless.
-
----
-
-### 🔵 Version 0.4.2 — Compatibilità di rete Linux & macOS
-
+- [ ] **Filtri di ricerca avanzati:** Filtraggio combinato per genere, anno, bitrate e formato Lossless.
 - [ ] **Rilevamento dei mount di rete (Linux e macOS):** `amso/core/network_paths.py` riconosce oggi solo i percorsi UNC e le unità mappate Windows; riconoscere i mount NFS / SMB / AFP (`/proc/self/mountinfo`, `statfs`) per evitare qualsiasi sondaggio disco bloccante all'avvio su questi sistemi.
 - [ ] **Validazione su Linux e macOS:** motore `buffer`, transizioni e packaging da confermare su sistemi reali sulla base dei feedback dei tester.
 

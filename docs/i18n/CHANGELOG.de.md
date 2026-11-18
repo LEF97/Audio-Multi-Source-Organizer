@@ -13,9 +13,19 @@ und dieses Projekt hält sich an die Spezifikation [Semantic Versioning (SemVer)
 
 ---
 
-## [0.5.0] - 2026-11-15
+## [0.5.0] - 2026-11-18
 
 ### Hinzugefügt
+
+- **Schnelle Audio-Tools (⚙-Taste des Players):** Ein Registerkartenfenster, das die Auswahl des Ausgabegeräts, der Audio-Engine und des Übergangsmodus (Standard, Gapless 0 ms, Crossfade), einen **10-Band-Grafikequalizer** mit Voreinstellungen (Flach, Rock, Jazz, Klassik, Verstärkte Bässe, Stimme, Electro, Benutzerdefiniert), die **ReplayGain-Normalisierung**, die **Wiedergabegeschwindigkeit** und einen **Abschalt-Timer** (15, 30, 45 oder 60 Minuten, Ende des aktuellen Titels oder der Warteschlange) zusammenfasst. Ausgang, Equalizer, ReplayGain und Geschwindigkeit sind nur mit der Engine `buffer` verfügbar.
+- **„Nächster“-Leiste:** Der nächste Titel wird angezeigt, wenn man über die „Weiter“-Taste fährt, und ein Klick spielt ihn sofort ab.
+- **Anleitungen:** Eine Hilfe-Taste auf jeder Seite (Player, Blind Test, Playlists, Tracks, Duplikate, Ordner, Quellen & Bibliothek, Einstellungen, Verlauf) öffnet ein Fenster mit Erklärungen.
+- **„Ton“ und „Effekte“ Seiten in den Einstellungen:** Einstellungen für die Normalisierung und die Wiedergabegeschwindigkeit sowie Auswahl der visuellen Effekte, die im Player und im Blind Test angeboten werden.
+- **Visuelle Effekte:** Neuer Effekt „Warp Pilot“ und **Zufällige** Stimmung, die bei jedem Titel oder in einem einstellbaren Intervall (15 s, 30 s, 1, 2 oder 5 Minuten) wechselt, separat für den Player und den Blind Test.
+- **Windows-Integration:** Integration in die Taskleiste und ein Icon im Benachrichtigungsbereich (Fenster anzeigen oder ausblenden, aktueller Titel, beenden).
+- **Klickbarer Scan-Bericht:** Das Ergebnis eines Scans verlinkt zu den betroffenen Elementen.
+- **Animierter Play/Pause-Button:** Bassreaktiver Halo und fließender Übergang zwischen Wiedergabe und Pause (blau bei Pause, bernsteinfarben bei Wiedergabe).
+- **Speichereinstellung der linken Menübreite:** Sie wird beim Start wiederhergestellt und ändert sich nicht mehr von Seite zu Seite; nur der Benutzer kann sie ändern.
 
 - **„Quellen & Bibliothek“-Ansicht:** neue dedizierte Seite, die den alten Statistikbildschirm ersetzt, mit globaler oder quellenweiser Ansicht, Gesundheitsindikatoren (offline Quellen, Scan-Fehler, fehlende Playlist-Dateien oder -Einträge) und Schnellaktionen (bearbeiten, neu scannen, löschen, in der Bibliothek öffnen).
 - **Playlist-Editor und -Reparatur:** dediziertes Fenster zur Neuordnung von Titeln (nach oben/unten verschieben), zum Löschen von Einträgen, zum Neuladen vom Laufwerk, zur Neulokalisierung einer fehlenden Datei oder zum Starten einer automatischen Reparatur (lokale Suche gefolgt von Datenbank mit Vertrauensscore und Vorschau der Vorschläge).
@@ -26,8 +36,24 @@ und dieses Projekt hält sich an die Spezifikation [Semantic Versioning (SemVer)
 
 ### Geändert
 
-- **Scan in 3 Phasen:** klare Trennung des Inventars, der Metadatenextraktion und der Analyse der Playlists mit detaillierter Protokollierung und Fortschritt.
-- **Visuelle Identität:** neues AMSO-Icon (PNG hochauflösend, ICO 7 Größen, ICNS 4 Größen).
+- **CUE-Sheets :** kontinuierliche Abfolge von Tracks aus derselben Datei (Engine `buffer`): Die Datei wird nur einmal für eine gesamte Reihe zusammenhängender Tracks dekodiert, und die Grenzen sind exakte Positionen im PCM-Puffer, berechnet aus dem CUE. Korrigiert das Ende des vorherigen Tracks am Anfang des nächsten (ungenauer Seek bei einem MP3 mit variabler Bitrate). Crossfade wird nicht zwischen zwei Tracks aus derselben CUE-Datei angewendet (der Stream ist bereits kontinuierlich).
+- **3-Phasen-Scan :** klare Trennung von Inventar, Metadaten-Extraktion und Playlist-Analyse mit detaillierter Protokollierung und Fortschrittsanzeige.
+- **Visuelle Identität :** neues AMSO-Icon (PNG hochauflösend, ICO 7 Größen, ICNS 4 Größen).
+- **Schnellere Track-Tabellen :** Anzeige von Zellen pro Feld und zwischengespeicherte übersetzte Bezeichnungen (etwa 40 % weniger Zeit pro Zelle bei 50.000 Zeilen).
+- **Interne Qualität :** deklaratives SQLite-Schema (`db/schema.py`), Tabellenspalten sind in `table_settings` faktorisiert, Themenfarben sind in `styles.py` zentralisiert, Titelzeile, Lautstärkesteuerung und Dialogfelder sind faktorisiert, gezielte oder protokollierte stille `except`. Keine sichtbare Verhaltensänderung.
+
+### Behoben
+
+- **Moteur \`buffer\` — ancien titre rejoué à la reprise :** le \`QAudioSink\` conservait environ 185 ms d'audio après une pause ou un arrêt, ce qui rejouait la fin de l'ancien titre après un Précédent/Suivant en pause ou un double clic après arrêt. Le tampon est maintenant purgé au chargement et à la réouverture de la sortie.
+- **Bibliothèque :** la barre du haut ne se redimensionne plus, le fil d'Ariane est tronqué par « … » et l'arborescence n'a plus de défilement horizontal.
+
+- **Moteur `buffer` — Haken beim Start eines Titels:** Nach einem Stopp wurde der Audio-Output kalt direkt auf den ersten dekodierten Block neu geöffnet, was den Anfang eines gehaltenen Tons (« TU-TUUU ») haken ließ. Der Output ist nun sofort bei der Wiedergabeanforderung geöffnet und spielt während der Dekodierung des ersten Blocks Stille ab: keine zusätzliche Latenz, immer noch eine einzige Audiositzung.
+- **Moteur `buffer` — Pop beim manuellen Titelwechsel:** Den Titelwechsel mitten während der Wiedergabe kappte den alten Ton mitten in der Welle. Er endet nun mit einem Mikro-Fade-out von 10 ms (Output bleibt offen) und der nächste Titel beginnt mit einem Fade-in gleicher Dauer. Die automatische Verknüpfung und der Motor `vlc_direct` wurden nicht geändert.
+
+### Tests
+
+- **Dummy-Ausgabe der TNR:** `CaptureOutput` folgt der Schnittstelle von `SinkOutput` (die TNR detektierte weder das Ende eines Tracks noch einen Übergang).
+- **Detektion von Pops in der TNR:** `tests/tnr/clicks.py` erkennt abrupte Stillekanten und misst den Amplitudensprung an einem bekannten Schnittpunkt, validiert an synthetischen Signalen (`tests/test_tnr_clicks.py`).
 
 ## [0.4.1] - 2026-10-29
 

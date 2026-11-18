@@ -76,6 +76,10 @@ AMSO aims to become the definitive **universal and decentralized music hub**: a 
 - [x] **Playlists in album mode:** grouping a playlist's tracks into virtual folders by album in the tree, with "(unknown album)" for tracks without an album.
 - [x] **Cover transitions, 3-phase scan & window geometry:** 5 transition effects, detailed scan progress, and window state restoration.
 - [x] **New AMSO icon:** high-resolution multi-size icon (PNG, ICO, ICNS).
+- [x] **Audio tools:** 10-band graphical equalizer with presets, ReplayGain normalization, playback speed, audio output choice and sleep timer (`buffer` engine).
+- [x] **Continuous chaining of CUE tracks:** contiguous tracks of a same file are decoded as a single stream (`buffer` engine).
+- [x] **Help guides, Sound and Effects pages, Warp Pilot effect & Random mode:** contextual help on each page, dedicated sound and visual effects settings.
+- [x] **Windows integration:** taskbar and notification area icon.
 - [x] **Configurable crossfade & advanced audio sequencing:** Support for gapless transitions (Gapless 0 ms), high-precision crossfade (Equal-Power Crossfade) and the standard no-gap mode.
 
 ---
@@ -95,15 +99,9 @@ AMSO aims to become the definitive **universal and decentralized music hub**: a 
 - [ ] **Direct cloud streaming playback:** Listening to remote tracks with transparent local caching.
 - [ ] **Selective two-way synchronization:** Local download of tracks from the cloud or backup of local tracks to Drive.
 - [ ] **Artist management and associated discography:** Dedicated view per artist with albums, singles and complete discography.
-- [ ] **Graphical equalizer (EQ):** Presets (Rock, Pop, Jazz, Bass Boost) and multi-band parametric equalizer.
 - [ ] **In-app metadata editor:** Direct editing of ID3 / Vorbis tags on one or several selected files.
 - [ ] **Automatic cover art download:** Online search (MusicBrainz / Cover Art Archive) for missing covers.
 - [ ] **Advanced search filters:** Combined filtering by genre, year, bitrate and lossless format.
-
----
-
-### 🔵 Version 0.4.2 — Linux & macOS Network Compatibility
-
 - [ ] **Network mount detection (Linux & macOS):** `amso/core/network_paths.py` only recognizes UNC paths and mapped Windows drives today; recognize NFS / SMB / AFP mounts (`/proc/self/mountinfo`, `statfs`) to avoid any blocking disk probing at startup on those systems.
 - [ ] **Validation on Linux and macOS:** `buffer` engine, transitions and packaging to be confirmed on real systems based on testers' feedback.
 
