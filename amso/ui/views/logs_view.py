@@ -30,6 +30,21 @@ from amso.core.activity_messages import display_action, display_details, display
 from amso.core.database import ActivityLogRecord, DatabaseManager
 from amso.core.i18n import tr
 from amso.ui.dialogs.log_detail_dialog import LogDetailDialog
+from amso.ui.styles import (
+    COLOR_BG_CARD,
+    COLOR_BG_DARK,
+    COLOR_BORDER,
+    COLOR_BORDER_LIGHT,
+    COLOR_DANGER_SOFT,
+    COLOR_PRIMARY,
+    COLOR_PRIMARY_HOVER,
+    COLOR_SUCCESS,
+    COLOR_TEXT,
+    COLOR_TEXT_BRIGHT,
+    COLOR_TEXT_DIM,
+    COLOR_TEXT_MUTED,
+)
+from amso.ui.widgets.help_guide_popup import HelpButton
 
 __all__ = ["LogsView", "LogDetailDialog"]
 
@@ -45,10 +60,10 @@ class LogsView(QWidget):
 
         # Styles et ressources pré-instanciés pour éviter les allocations répétées dans la boucle
         self._font_action = QFont("Segoe UI", 9, QFont.Weight.DemiBold)
-        self._color_success = QColor("#4ADE80")
+        self._color_success = QColor(COLOR_SUCCESS)
         self._color_warning = QColor("#FBBF24")
         self._color_error = QColor("#F87171")
-        self._color_info = QColor("#38BDF8")
+        self._color_info = QColor(COLOR_PRIMARY_HOVER)
 
         self._init_ui()
 
@@ -58,18 +73,23 @@ class LogsView(QWidget):
         layout.setSpacing(14)
 
         # --- En-tête ---
+        header_row = QHBoxLayout()
         header_layout = QVBoxLayout()
         header_layout.setSpacing(4)
 
         self.lbl_title = QLabel(tr("logs.page_title"))
-        self.lbl_title.setStyleSheet("font-size: 20px; font-weight: 700; color: #F8FAFC;")
+        self.lbl_title.setStyleSheet(f"font-size: 20px; font-weight: 700; color: {COLOR_TEXT_BRIGHT};")
         header_layout.addWidget(self.lbl_title)
 
         self.lbl_desc = QLabel(tr("logs.page_desc"))
-        self.lbl_desc.setStyleSheet("color: #94A3B8; font-size: 13px;")
+        self.lbl_desc.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 13px;")
         header_layout.addWidget(self.lbl_desc)
 
-        layout.addLayout(header_layout)
+        header_row.addLayout(header_layout, 1)
+        self.btn_help = HelpButton("logs.help_title", "logs.help_body", parent=self)
+        header_row.addWidget(self.btn_help, 0, Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
+
+        layout.addLayout(header_row)
 
         # --- Barre d'outils et filtres ---
         toolbar = QHBoxLayout()
@@ -77,7 +97,7 @@ class LogsView(QWidget):
 
         # Filtre de niveau
         self.lbl_lvl = QLabel(tr("logs.filter_level"))
-        self.lbl_lvl.setStyleSheet("color: #94A3B8; font-size: 13px;")
+        self.lbl_lvl.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 13px;")
         toolbar.addWidget(self.lbl_lvl)
 
         self.combo_level = QComboBox()
@@ -87,15 +107,15 @@ class LogsView(QWidget):
         self.combo_level.addItem(tr("logs.filter_warning"), "WARNING")
         self.combo_level.addItem(tr("logs.filter_error"), "ERROR")
         self.combo_level.setStyleSheet(
-            """
-            QComboBox {
-                background-color: #20242D;
-                color: #F8FAFC;
-                border: 1px solid #333846;
+            f"""
+            QComboBox {{
+                background-color: {COLOR_BG_CARD};
+                color: {COLOR_TEXT_BRIGHT};
+                border: 1px solid {COLOR_BORDER_LIGHT};
                 border-radius: 6px;
                 padding: 5px 12px;
                 min-width: 130px;
-            }
+            }}
             """
         )
         self.combo_level.currentIndexChanged.connect(self._on_filter_changed)
@@ -105,18 +125,18 @@ class LogsView(QWidget):
         self.search_edit = QLineEdit()
         self.search_edit.setPlaceholderText(tr("logs.search_placeholder"))
         self.search_edit.setStyleSheet(
-            """
-            QLineEdit {
-                background-color: #20242D;
-                color: #F8FAFC;
-                border: 1px solid #333846;
+            f"""
+            QLineEdit {{
+                background-color: {COLOR_BG_CARD};
+                color: {COLOR_TEXT_BRIGHT};
+                border: 1px solid {COLOR_BORDER_LIGHT};
                 border-radius: 6px;
                 padding: 5px 12px;
                 min-width: 250px;
-            }
-            QLineEdit:focus {
-                border: 1px solid #38BDF8;
-            }
+            }}
+            QLineEdit:focus {{
+                border: 1px solid {COLOR_PRIMARY_HOVER};
+            }}
             """
         )
         self.search_edit.textChanged.connect(self._on_search_changed)
@@ -139,7 +159,7 @@ class LogsView(QWidget):
         # Bouton Vider
         self.btn_clear = QPushButton(tr("logs.btn_clear"))
         self.btn_clear.setStyleSheet(
-            "background-color: #7F1D1D; color: #FCA5A5; border: 1px solid #991B1B; border-radius: 6px; padding: 6px 12px;"
+            f"background-color: #7F1D1D; color: {COLOR_DANGER_SOFT}; border: 1px solid #991B1B; border-radius: 6px; padding: 6px 12px;"
         )
         self.btn_clear.clicked.connect(self._on_clear_logs)
         toolbar.addWidget(self.btn_clear)
@@ -169,32 +189,32 @@ class LogsView(QWidget):
         self.table.setShowGrid(False)
         self.table.verticalHeader().setVisible(False)
         self.table.setStyleSheet(
-            """
-            QTableWidget {
+            f"""
+            QTableWidget {{
                 background-color: #16181F;
                 alternate-background-color: #1B1E26;
-                color: #CBD5E1;
-                border: 1px solid #282C37;
+                color: {COLOR_TEXT};
+                border: 1px solid {COLOR_BORDER};
                 border-radius: 8px;
                 gridline-color: transparent;
-            }
-            QTableWidget::item {
+            }}
+            QTableWidget::item {{
                 padding: 6px 10px;
                 border-bottom: 1px solid #232731;
-            }
-            QTableWidget::item:selected {
-                background-color: #0284C7;
+            }}
+            QTableWidget::item:selected {{
+                background-color: {COLOR_PRIMARY};
                 color: white;
-            }
-            QHeaderView::section {
-                background-color: #1A1D24;
-                color: #94A3B8;
+            }}
+            QHeaderView::section {{
+                background-color: {COLOR_BG_DARK};
+                color: {COLOR_TEXT_MUTED};
                 font-weight: 600;
                 font-size: 12px;
                 border: none;
-                border-bottom: 1px solid #282C37;
+                border-bottom: 1px solid {COLOR_BORDER};
                 padding: 8px 10px;
-            }
+            }}
             """
         )
 
@@ -218,7 +238,7 @@ class LogsView(QWidget):
         # --- Pied de page ---
         footer_layout = QHBoxLayout()
         self.lbl_count = QLabel("")
-        self.lbl_count.setStyleSheet("color: #64748B; font-size: 12px;")
+        self.lbl_count.setStyleSheet(f"color: {COLOR_TEXT_DIM}; font-size: 12px;")
         footer_layout.addWidget(self.lbl_count)
         footer_layout.addStretch()
         layout.addLayout(footer_layout)
@@ -408,6 +428,8 @@ class LogsView(QWidget):
         self.search_edit.setPlaceholderText(tr("logs.search_placeholder"))
         self.btn_refresh.setText(tr("common.refresh"))
         self.btn_export.setText(tr("logs.btn_export"))
+        if hasattr(self, "btn_help"):
+            self.btn_help.retranslate_ui()
         self.btn_clear.setText(tr("logs.btn_clear"))
 
         self.table.setHorizontalHeaderLabels(

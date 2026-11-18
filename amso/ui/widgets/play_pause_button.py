@@ -20,7 +20,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QPushButton, QWidget
 
-from amso.ui.styles import COLOR_PLAY_ACCENT, COLOR_PRIMARY
+from amso.ui.styles import COLOR_PLAY_ACCENT, COLOR_PRIMARY, COLOR_WHITE
 
 _REFERENCE_DIAMETER = 50  # toutes les cotes de dessin sont exprimées pour ce diamètre puis mises à l'échelle
 _HALO_MARGIN = 7  # marge autour du disque pour le halo
@@ -219,7 +219,7 @@ class PlayPauseButton(QPushButton):
         m = self._morph
         shift = _PLAY_OPTICAL_SHIFT * (1.0 - m)
         painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(QColor("#FFFFFF"))
+        painter.setBrush(QColor(COLOR_WHITE))
         for play_quad, pause_quad in zip(_PLAY_QUADS, _PAUSE_QUADS, strict=True):
             polygon = QPolygonF()
             for (px, py), (qx, qy) in zip(play_quad, pause_quad, strict=True):

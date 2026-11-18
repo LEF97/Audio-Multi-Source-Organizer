@@ -19,7 +19,18 @@ from PySide6.QtWidgets import (
 from amso.core.config import get_config_manager
 from amso.core.i18n import tr
 from amso.ui.pages.vlc_status import build_vlc_status
-from amso.ui.styles import settings_radio_qss
+from amso.ui.styles import (
+    COLOR_BG_DEEP,
+    COLOR_BG_SLATE,
+    COLOR_PRIMARY,
+    COLOR_PRIMARY_HOVER,
+    COLOR_TEXT,
+    COLOR_TEXT_BRIGHT,
+    COLOR_TEXT_DIM,
+    COLOR_TEXT_MUTED,
+    crossfade_slider_qss,
+    settings_radio_qss,
+)
 
 if TYPE_CHECKING:
     _MixinBase = QWidget
@@ -45,11 +56,11 @@ class SettingsPlayerEffectsMixin(_MixinBase):
         l_trans.setSpacing(12)
 
         self.lbl_card_transitions_title = QLabel(tr("settings.player_transitions_title"))
-        self.lbl_card_transitions_title.setStyleSheet("color: #F8FAFC; font-size: 14px; font-weight: 700;")
+        self.lbl_card_transitions_title.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-size: 14px; font-weight: 700;")
         l_trans.addWidget(self.lbl_card_transitions_title)
 
         self.lbl_card_transitions_desc = QLabel(tr("settings.player_transitions_desc"))
-        self.lbl_card_transitions_desc.setStyleSheet("color: #94A3B8; font-size: 13px;")
+        self.lbl_card_transitions_desc.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 13px;")
         l_trans.addWidget(self.lbl_card_transitions_desc)
 
         radio_qss = settings_radio_qss()
@@ -65,7 +76,7 @@ class SettingsPlayerEffectsMixin(_MixinBase):
         box_standard.addWidget(self.radio_trans_standard)
 
         self.lbl_trans_standard_hint = QLabel(tr("settings.transition_standard_hint"))
-        self.lbl_trans_standard_hint.setStyleSheet("color: #64748B; font-size: 12px; margin-left: 26px;")
+        self.lbl_trans_standard_hint.setStyleSheet(f"color: {COLOR_TEXT_DIM}; font-size: 12px; margin-left: 26px;")
         self.lbl_trans_standard_hint.setWordWrap(True)
         box_standard.addWidget(self.lbl_trans_standard_hint)
         l_trans.addLayout(box_standard)
@@ -79,7 +90,7 @@ class SettingsPlayerEffectsMixin(_MixinBase):
         box_gapless.addWidget(self.radio_trans_gapless)
 
         self.lbl_trans_gapless_hint = QLabel(tr("settings.transition_gapless_hint"))
-        self.lbl_trans_gapless_hint.setStyleSheet("color: #64748B; font-size: 12px; margin-left: 26px;")
+        self.lbl_trans_gapless_hint.setStyleSheet(f"color: {COLOR_TEXT_DIM}; font-size: 12px; margin-left: 26px;")
         self.lbl_trans_gapless_hint.setWordWrap(True)
         box_gapless.addWidget(self.lbl_trans_gapless_hint)
         l_trans.addLayout(box_gapless)
@@ -93,7 +104,7 @@ class SettingsPlayerEffectsMixin(_MixinBase):
         box_crossfade.addWidget(self.radio_trans_crossfade)
 
         self.lbl_trans_crossfade_hint = QLabel(tr("settings.transition_crossfade_hint"))
-        self.lbl_trans_crossfade_hint.setStyleSheet("color: #64748B; font-size: 12px; margin-left: 26px;")
+        self.lbl_trans_crossfade_hint.setStyleSheet(f"color: {COLOR_TEXT_DIM}; font-size: 12px; margin-left: 26px;")
         self.lbl_trans_crossfade_hint.setWordWrap(True)
         box_crossfade.addWidget(self.lbl_trans_crossfade_hint)
 
@@ -104,7 +115,7 @@ class SettingsPlayerEffectsMixin(_MixinBase):
         h_cf.setSpacing(12)
 
         self.lbl_crossfade_duration = QLabel(tr("settings.crossfade_duration"))
-        self.lbl_crossfade_duration.setStyleSheet("color: #CBD5E1; font-size: 12.5px; font-weight: 500;")
+        self.lbl_crossfade_duration.setStyleSheet(f"color: {COLOR_TEXT}; font-size: 12.5px; font-weight: 500;")
         h_cf.addWidget(self.lbl_crossfade_duration)
 
         self.slider_crossfade = QSlider(Qt.Orientation.Horizontal)
@@ -112,32 +123,13 @@ class SettingsPlayerEffectsMixin(_MixinBase):
         self.slider_crossfade.setSingleStep(1)
         self.slider_crossfade.setPageStep(2)
         self.slider_crossfade.setFixedWidth(200)
-        self.slider_crossfade.setStyleSheet("""
-            QSlider::groove:horizontal {
-                height: 6px;
-                background: #1E293B;
-                border-radius: 3px;
-            }
-            QSlider::sub-page:horizontal {
-                background: #0284C7;
-                border-radius: 3px;
-            }
-            QSlider::handle:horizontal {
-                background: #38BDF8;
-                border: 2px solid #0F172A;
-                width: 16px;
-                margin-top: -5px;
-                margin-bottom: -5px;
-                border-radius: 8px;
-            }
-            QSlider::handle:horizontal:hover {
-                background: #7DD3FC;
-            }
-        """)
+        self.slider_crossfade.setStyleSheet(crossfade_slider_qss())
         h_cf.addWidget(self.slider_crossfade)
 
         self.lbl_crossfade_value = QLabel()
-        self.lbl_crossfade_value.setStyleSheet("color: #38BDF8; font-size: 12.5px; font-weight: 600; min-width: 90px;")
+        self.lbl_crossfade_value.setStyleSheet(
+            f"color: {COLOR_PRIMARY_HOVER}; font-size: 12.5px; font-weight: 600; min-width: 90px;"
+        )
         h_cf.addWidget(self.lbl_crossfade_value)
         h_cf.addStretch()
 
@@ -177,11 +169,11 @@ class SettingsPlayerEffectsMixin(_MixinBase):
         l_eng.setSpacing(12)
 
         self.lbl_card_engine_title = QLabel(tr("settings.player_engine_choice_title"))
-        self.lbl_card_engine_title.setStyleSheet("color: #F8FAFC; font-size: 14px; font-weight: 700;")
+        self.lbl_card_engine_title.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-size: 14px; font-weight: 700;")
         l_eng.addWidget(self.lbl_card_engine_title)
 
         self.lbl_card_engine_desc = QLabel(tr("settings.player_engine_choice_desc"))
-        self.lbl_card_engine_desc.setStyleSheet("color: #94A3B8; font-size: 13px;")
+        self.lbl_card_engine_desc.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 13px;")
         l_eng.addWidget(self.lbl_card_engine_desc)
 
         self.engine_group = QButtonGroup(cast("QObject", self))
@@ -195,7 +187,7 @@ class SettingsPlayerEffectsMixin(_MixinBase):
         box_buffer.addWidget(self.radio_engine_buffer)
 
         self.lbl_engine_buffer_hint = QLabel(tr("settings.player_engine_buffer_hint"))
-        self.lbl_engine_buffer_hint.setStyleSheet("color: #64748B; font-size: 12px; margin-left: 26px;")
+        self.lbl_engine_buffer_hint.setStyleSheet(f"color: {COLOR_TEXT_DIM}; font-size: 12px; margin-left: 26px;")
         self.lbl_engine_buffer_hint.setWordWrap(True)
         box_buffer.addWidget(self.lbl_engine_buffer_hint)
         l_eng.addLayout(box_buffer)
@@ -209,7 +201,7 @@ class SettingsPlayerEffectsMixin(_MixinBase):
         box_vlc.addWidget(self.radio_engine_vlc)
 
         self.lbl_engine_vlc_hint = QLabel(tr("settings.player_engine_vlc_hint"))
-        self.lbl_engine_vlc_hint.setStyleSheet("color: #64748B; font-size: 12px; margin-left: 26px;")
+        self.lbl_engine_vlc_hint.setStyleSheet(f"color: {COLOR_TEXT_DIM}; font-size: 12px; margin-left: 26px;")
         self.lbl_engine_vlc_hint.setWordWrap(True)
         box_vlc.addWidget(self.lbl_engine_vlc_hint)
         box_vlc.addWidget(self._build_vlc_latency_control())
@@ -219,7 +211,7 @@ class SettingsPlayerEffectsMixin(_MixinBase):
         status_html, status_tip = build_vlc_status(getattr(self, "player_service", None))
         self.lbl_vlc_status_val = QLabel(status_html)
         self.lbl_vlc_status_val.setToolTip(status_tip)
-        self.lbl_vlc_status_val.setStyleSheet("font-size: 12.5px; color: #CBD5E1; margin-top: 4px;")
+        self.lbl_vlc_status_val.setStyleSheet(f"font-size: 12.5px; color: {COLOR_TEXT}; margin-top: 4px;")
         l_eng.addWidget(self.lbl_vlc_status_val)
 
         # État initial
@@ -246,7 +238,7 @@ class SettingsPlayerEffectsMixin(_MixinBase):
 
         h_lat = QHBoxLayout()
         self.lbl_vlc_latency = QLabel(tr("settings.player_engine_vlc_latency_label"))
-        self.lbl_vlc_latency.setStyleSheet("color: #CBD5E1; font-size: 12.5px; font-weight: 500;")
+        self.lbl_vlc_latency.setStyleSheet(f"color: {COLOR_TEXT}; font-size: 12.5px; font-weight: 500;")
         h_lat.addWidget(self.lbl_vlc_latency)
 
         self.slider_vlc_latency = QSlider(Qt.Orientation.Horizontal)
@@ -254,27 +246,27 @@ class SettingsPlayerEffectsMixin(_MixinBase):
         self.slider_vlc_latency.setSingleStep(10)
         self.slider_vlc_latency.setPageStep(50)
         self.slider_vlc_latency.setFixedWidth(180)
-        self.slider_vlc_latency.setStyleSheet("""
-            QSlider::groove:horizontal {
+        self.slider_vlc_latency.setStyleSheet(f"""
+            QSlider::groove:horizontal {{
                 height: 6px;
-                background: #1E293B;
+                background: {COLOR_BG_SLATE};
                 border-radius: 3px;
-            }
-            QSlider::sub-page:horizontal {
-                background: #0284C7;
+            }}
+            QSlider::sub-page:horizontal {{
+                background: {COLOR_PRIMARY};
                 border-radius: 3px;
-            }
-            QSlider::handle:horizontal {
-                background: #38BDF8;
-                border: 2px solid #0F172A;
+            }}
+            QSlider::handle:horizontal {{
+                background: {COLOR_PRIMARY_HOVER};
+                border: 2px solid {COLOR_BG_DEEP};
                 width: 16px;
                 margin-top: -5px;
                 margin-bottom: -5px;
                 border-radius: 8px;
-            }
-            QSlider::handle:horizontal:hover {
+            }}
+            QSlider::handle:horizontal:hover {{
                 background: #7DD3FC;
-            }
+            }}
         """)
         h_lat.addWidget(self.slider_vlc_latency)
 
@@ -282,194 +274,17 @@ class SettingsPlayerEffectsMixin(_MixinBase):
         self.slider_vlc_latency.setValue(cur_lat)
 
         self.lbl_vlc_latency_val = QLabel(tr("settings.player_engine_vlc_latency_val", ms=str(cur_lat)))
-        self.lbl_vlc_latency_val.setStyleSheet("color: #38BDF8; font-size: 12.5px; font-weight: 600; min-width: 60px;")
+        self.lbl_vlc_latency_val.setStyleSheet(
+            f"color: {COLOR_PRIMARY_HOVER}; font-size: 12.5px; font-weight: 600; min-width: 60px;"
+        )
         h_lat.addWidget(self.lbl_vlc_latency_val)
         h_lat.addStretch()
         vlc_lat_layout.addLayout(h_lat)
 
         self.lbl_vlc_latency_hint = QLabel(tr("settings.player_engine_vlc_latency_hint"))
-        self.lbl_vlc_latency_hint.setStyleSheet("color: #64748B; font-size: 11.5px;")
+        self.lbl_vlc_latency_hint.setStyleSheet(f"color: {COLOR_TEXT_DIM}; font-size: 11.5px;")
         self.lbl_vlc_latency_hint.setWordWrap(True)
         vlc_lat_layout.addWidget(self.lbl_vlc_latency_hint)
 
         self.slider_vlc_latency.valueChanged.connect(self._on_vlc_latency_slider_changed)
         return self.vlc_latency_container
-
-    def _build_card_effects(self) -> QFrame:
-        """Carte de configuration des effets visuels d'ambiance."""
-        cfg = get_config_manager()
-        radio_qss = settings_radio_qss()
-        card_effects = QFrame()
-        card_effects.setProperty("class", "dashboard-card")
-        l_eff = QVBoxLayout(card_effects)
-        l_eff.setContentsMargins(18, 16, 18, 16)
-        l_eff.setSpacing(12)
-
-        self.lbl_card_effects_title = QLabel(tr("settings.player_effects_title"))
-        self.lbl_card_effects_title.setStyleSheet("color: #F8FAFC; font-size: 14px; font-weight: 700;")
-        l_eff.addWidget(self.lbl_card_effects_title)
-
-        self.lbl_card_effects_desc = QLabel(tr("settings.player_effects_desc"))
-        self.lbl_card_effects_desc.setStyleSheet("color: #94A3B8; font-size: 13px;")
-        l_eff.addWidget(self.lbl_card_effects_desc)
-
-        self.effect_group = QButtonGroup(cast("QObject", self))
-
-        # Effet 1 : Poussière d'étoiles & particules
-        box_eff_part = QVBoxLayout()
-        box_eff_part.setSpacing(3)
-        self.radio_eff_particles = QRadioButton(f"✨ {tr('effects.particles')}")
-        self.radio_eff_particles.setStyleSheet(radio_qss)
-        self.effect_group.addButton(self.radio_eff_particles)
-        box_eff_part.addWidget(self.radio_eff_particles)
-
-        self.lbl_eff_particles_hint = QLabel(tr("effects.particles_hint"))
-        self.lbl_eff_particles_hint.setStyleSheet("color: #64748B; font-size: 12px; margin-left: 26px;")
-        self.lbl_eff_particles_hint.setWordWrap(True)
-        box_eff_part.addWidget(self.lbl_eff_particles_hint)
-        l_eff.addLayout(box_eff_part)
-
-        # Effet 2 : Ondes néon spectrales
-        box_eff_waves = QVBoxLayout()
-        box_eff_waves.setSpacing(3)
-        self.radio_eff_waves = QRadioButton(f"🌊 {tr('effects.waves')}")
-        self.radio_eff_waves.setStyleSheet(radio_qss)
-        self.effect_group.addButton(self.radio_eff_waves)
-        box_eff_waves.addWidget(self.radio_eff_waves)
-
-        self.lbl_eff_waves_hint = QLabel(tr("effects.waves_hint"))
-        self.lbl_eff_waves_hint.setStyleSheet("color: #64748B; font-size: 12px; margin-left: 26px;")
-        self.lbl_eff_waves_hint.setWordWrap(True)
-        box_eff_waves.addWidget(self.lbl_eff_waves_hint)
-        l_eff.addLayout(box_eff_waves)
-
-        # Effet 3 : Pluie de comètes filantes
-        box_eff_stars = QVBoxLayout()
-        box_eff_stars.setSpacing(3)
-        self.radio_eff_stars = QRadioButton(f"☄️ {tr('effects.stars')}")
-        self.radio_eff_stars.setStyleSheet(radio_qss)
-        self.effect_group.addButton(self.radio_eff_stars)
-        box_eff_stars.addWidget(self.radio_eff_stars)
-
-        self.lbl_eff_stars_hint = QLabel(tr("effects.stars_hint"))
-        self.lbl_eff_stars_hint.setStyleSheet("color: #64748B; font-size: 12px; margin-left: 26px;")
-        self.lbl_eff_stars_hint.setWordWrap(True)
-        box_eff_stars.addWidget(self.lbl_eff_stars_hint)
-        l_eff.addLayout(box_eff_stars)
-
-        # Effet 4 : Hyperespace (Voyage spatial 3D)
-        box_eff_warp = QVBoxLayout()
-        box_eff_warp.setSpacing(3)
-        self.radio_eff_warp = QRadioButton(f"🚀 {tr('effects.warp')}")
-        self.radio_eff_warp.setStyleSheet(radio_qss)
-        self.effect_group.addButton(self.radio_eff_warp)
-        box_eff_warp.addWidget(self.radio_eff_warp)
-
-        self.lbl_eff_warp_hint = QLabel(tr("effects.warp_hint"))
-        self.lbl_eff_warp_hint.setStyleSheet("color: #64748B; font-size: 12px; margin-left: 26px;")
-        self.lbl_eff_warp_hint.setWordWrap(True)
-        box_eff_warp.addWidget(self.lbl_eff_warp_hint)
-        l_eff.addLayout(box_eff_warp)
-
-        # Effet 4b : Hyperespace dynamique (Navigation 3D avec changements de trajectoire)
-        box_eff_warp_dyn = QVBoxLayout()
-        box_eff_warp_dyn.setSpacing(3)
-        self.radio_eff_warp_dynamic = QRadioButton(f"🛸 {tr('effects.warp_dynamic')}")
-        self.radio_eff_warp_dynamic.setStyleSheet(radio_qss)
-        self.effect_group.addButton(self.radio_eff_warp_dynamic)
-        box_eff_warp_dyn.addWidget(self.radio_eff_warp_dynamic)
-
-        self.lbl_eff_warp_dynamic_hint = QLabel(tr("effects.warp_dynamic_hint"))
-        self.lbl_eff_warp_dynamic_hint.setStyleSheet("color: #64748B; font-size: 12px; margin-left: 26px;")
-        self.lbl_eff_warp_dynamic_hint.setWordWrap(True)
-        box_eff_warp_dyn.addWidget(self.lbl_eff_warp_dynamic_hint)
-        l_eff.addLayout(box_eff_warp_dyn)
-
-        # Effet 5 : Aurore boréale
-        box_eff_aurora = QVBoxLayout()
-        box_eff_aurora.setSpacing(3)
-        self.radio_eff_aurora = QRadioButton(f"🌌 {tr('effects.aurora')}")
-        self.radio_eff_aurora.setStyleSheet(radio_qss)
-        self.effect_group.addButton(self.radio_eff_aurora)
-        box_eff_aurora.addWidget(self.radio_eff_aurora)
-
-        self.lbl_eff_aurora_hint = QLabel(tr("effects.aurora_hint"))
-        self.lbl_eff_aurora_hint.setStyleSheet("color: #64748B; font-size: 12px; margin-left: 26px;")
-        self.lbl_eff_aurora_hint.setWordWrap(True)
-        box_eff_aurora.addWidget(self.lbl_eff_aurora_hint)
-        l_eff.addLayout(box_eff_aurora)
-
-        # Effet 6 : Barres rétro (Égaliseur de spectre)
-        box_eff_bars = QVBoxLayout()
-        box_eff_bars.setSpacing(3)
-        self.radio_eff_bars = QRadioButton(f"📊 {tr('effects.bars')}")
-        self.radio_eff_bars.setStyleSheet(radio_qss)
-        self.effect_group.addButton(self.radio_eff_bars)
-        box_eff_bars.addWidget(self.radio_eff_bars)
-
-        self.lbl_eff_bars_hint = QLabel(tr("effects.bars_hint"))
-        self.lbl_eff_bars_hint.setStyleSheet("color: #64748B; font-size: 12px; margin-left: 26px;")
-        self.lbl_eff_bars_hint.setWordWrap(True)
-        box_eff_bars.addWidget(self.lbl_eff_bars_hint)
-        l_eff.addLayout(box_eff_bars)
-
-        # Effet 7 : Barres rétro plein écran
-        box_eff_bars_full = QVBoxLayout()
-        box_eff_bars_full.setSpacing(3)
-        self.radio_eff_bars_full = QRadioButton(f"📶 {tr('effects.bars_full')}")
-        self.radio_eff_bars_full.setStyleSheet(radio_qss)
-        self.effect_group.addButton(self.radio_eff_bars_full)
-        box_eff_bars_full.addWidget(self.radio_eff_bars_full)
-
-        self.lbl_eff_bars_full_hint = QLabel(tr("effects.bars_full_hint"))
-        self.lbl_eff_bars_full_hint.setStyleSheet("color: #64748B; font-size: 12px; margin-left: 26px;")
-        self.lbl_eff_bars_full_hint.setWordWrap(True)
-        box_eff_bars_full.addWidget(self.lbl_eff_bars_full_hint)
-        l_eff.addLayout(box_eff_bars_full)
-
-        # Effet 8 : Aucun effet (désactivé)
-        box_eff_none = QVBoxLayout()
-        box_eff_none.setSpacing(3)
-        self.radio_eff_none = QRadioButton(f"🚫 {tr('effects.none')}")
-        self.radio_eff_none.setStyleSheet(radio_qss)
-        self.effect_group.addButton(self.radio_eff_none)
-        box_eff_none.addWidget(self.radio_eff_none)
-
-        self.lbl_eff_none_hint = QLabel(tr("effects.none_hint"))
-        self.lbl_eff_none_hint.setStyleSheet("color: #64748B; font-size: 12px; margin-left: 26px;")
-        self.lbl_eff_none_hint.setWordWrap(True)
-        box_eff_none.addWidget(self.lbl_eff_none_hint)
-        l_eff.addLayout(box_eff_none)
-
-        # État initial selon la configuration
-        cur_eff = cfg.get_visual_effect()
-        if cur_eff == "waves":
-            self.radio_eff_waves.setChecked(True)
-        elif cur_eff == "stars":
-            self.radio_eff_stars.setChecked(True)
-        elif cur_eff == "warp":
-            self.radio_eff_warp.setChecked(True)
-        elif cur_eff == "warp_dynamic":
-            self.radio_eff_warp_dynamic.setChecked(True)
-        elif cur_eff == "aurora":
-            self.radio_eff_aurora.setChecked(True)
-        elif cur_eff == "bars":
-            self.radio_eff_bars.setChecked(True)
-        elif cur_eff == "bars_full":
-            self.radio_eff_bars_full.setChecked(True)
-        elif cur_eff == "none":
-            self.radio_eff_none.setChecked(True)
-        else:
-            self.radio_eff_particles.setChecked(True)
-
-        self.radio_eff_particles.toggled.connect(self._on_visual_effect_changed)
-        self.radio_eff_waves.toggled.connect(self._on_visual_effect_changed)
-        self.radio_eff_stars.toggled.connect(self._on_visual_effect_changed)
-        self.radio_eff_warp.toggled.connect(self._on_visual_effect_changed)
-        self.radio_eff_warp_dynamic.toggled.connect(self._on_visual_effect_changed)
-        self.radio_eff_aurora.toggled.connect(self._on_visual_effect_changed)
-        self.radio_eff_bars.toggled.connect(self._on_visual_effect_changed)
-        self.radio_eff_bars_full.toggled.connect(self._on_visual_effect_changed)
-        self.radio_eff_none.toggled.connect(self._on_visual_effect_changed)
-
-        return card_effects

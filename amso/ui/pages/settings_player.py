@@ -20,6 +20,14 @@ from amso.core.config import get_config_manager
 from amso.core.i18n import tr
 from amso.ui.pages.settings_player_cover import SettingsPlayerCoverMixin
 from amso.ui.pages.settings_player_effects import SettingsPlayerEffectsMixin
+from amso.ui.styles import (
+    COLOR_BG_CARD,
+    COLOR_BORDER_LIGHT,
+    COLOR_PRIMARY_HOVER,
+    COLOR_TEXT,
+    COLOR_TEXT_BRIGHT,
+    COLOR_TEXT_MUTED,
+)
 from amso.ui.widgets.page_header import build_page_top_bar
 
 if TYPE_CHECKING:
@@ -82,26 +90,26 @@ class SettingsPlayerPageMixin(SettingsPlayerEffectsMixin, SettingsPlayerCoverMix
         l_bt.setSpacing(12)
 
         self.lbl_card_bt_title = QLabel("🎭  " + tr("blind_test.settings_title"))
-        self.lbl_card_bt_title.setStyleSheet("color: #F8FAFC; font-size: 14px; font-weight: 700;")
+        self.lbl_card_bt_title.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-size: 14px; font-weight: 700;")
         l_bt.addWidget(self.lbl_card_bt_title)
 
         self.lbl_card_bt_desc = QLabel(tr("settings.blind_test_desc"))
-        self.lbl_card_bt_desc.setStyleSheet("color: #94A3B8; font-size: 13px;")
+        self.lbl_card_bt_desc.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 13px;")
         l_bt.addWidget(self.lbl_card_bt_desc)
 
-        spin_qss = """
-            QSpinBox {
-                background-color: #20242D;
-                color: #F8FAFC;
-                border: 1px solid #333846;
+        spin_qss = f"""
+            QSpinBox {{
+                background-color: {COLOR_BG_CARD};
+                color: {COLOR_TEXT_BRIGHT};
+                border: 1px solid {COLOR_BORDER_LIGHT};
                 border-radius: 6px;
                 padding: 4px 8px;
                 font-size: 12.5px;
                 font-weight: 600;
-            }
-            QSpinBox:focus {
-                border-color: #38BDF8;
-            }
+            }}
+            QSpinBox:focus {{
+                border-color: {COLOR_PRIMARY_HOVER};
+            }}
         """
 
         inputs_layout = QHBoxLayout()
@@ -111,7 +119,7 @@ class SettingsPlayerPageMixin(SettingsPlayerEffectsMixin, SettingsPlayerCoverMix
         cd_box = QHBoxLayout()
         cd_box.setSpacing(8)
         self.lbl_bt_countdown = QLabel(tr("blind_test.countdown_label"))
-        self.lbl_bt_countdown.setStyleSheet("color: #CBD5E1; font-size: 12.5px; font-weight: 500;")
+        self.lbl_bt_countdown.setStyleSheet(f"color: {COLOR_TEXT}; font-size: 12.5px; font-weight: 500;")
         cd_box.addWidget(self.lbl_bt_countdown)
 
         self.spin_bt_countdown = QSpinBox()
@@ -129,7 +137,7 @@ class SettingsPlayerPageMixin(SettingsPlayerEffectsMixin, SettingsPlayerCoverMix
         rev_box = QHBoxLayout()
         rev_box.setSpacing(8)
         self.lbl_bt_reveal = QLabel(tr("blind_test.reveal_label"))
-        self.lbl_bt_reveal.setStyleSheet("color: #CBD5E1; font-size: 12.5px; font-weight: 500;")
+        self.lbl_bt_reveal.setStyleSheet(f"color: {COLOR_TEXT}; font-size: 12.5px; font-weight: 500;")
         rev_box.addWidget(self.lbl_bt_reveal)
 
         self.spin_bt_reveal = QSpinBox()
@@ -147,7 +155,7 @@ class SettingsPlayerPageMixin(SettingsPlayerEffectsMixin, SettingsPlayerCoverMix
         fade_box = QHBoxLayout()
         fade_box.setSpacing(8)
         self.lbl_bt_fade = QLabel(tr("blind_test.fade_label"))
-        self.lbl_bt_fade.setStyleSheet("color: #CBD5E1; font-size: 12.5px; font-weight: 500;")
+        self.lbl_bt_fade.setStyleSheet(f"color: {COLOR_TEXT}; font-size: 12.5px; font-weight: 500;")
         fade_box.addWidget(self.lbl_bt_fade)
 
         self.spin_bt_fade = QSpinBox()
@@ -166,7 +174,9 @@ class SettingsPlayerPageMixin(SettingsPlayerEffectsMixin, SettingsPlayerCoverMix
 
         # Label d'information résumé de la manche
         self.lbl_bt_total = QLabel()
-        self.lbl_bt_total.setStyleSheet("color: #38BDF8; font-size: 12px; font-weight: 500; margin-top: 4px;")
+        self.lbl_bt_total.setStyleSheet(
+            f"color: {COLOR_PRIMARY_HOVER}; font-size: 12px; font-weight: 500; margin-top: 4px;"
+        )
         self._update_blind_test_summary_label()
         l_bt.addWidget(self.lbl_bt_total)
 

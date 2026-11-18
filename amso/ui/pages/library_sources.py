@@ -35,6 +35,7 @@ from amso.ui.styles import (
     COLOR_BG_CARD,
     COLOR_BG_HOVER,
     COLOR_BORDER,
+    COLOR_DANGER_SOFT,
     COLOR_PRIMARY,
     COLOR_PRIMARY_HOVER,
     COLOR_TEXT_BRIGHT,
@@ -175,7 +176,7 @@ class LibrarySourcesPageMixin(LibrarySourcesTreeMixin, _MixinBase):
         sources_header_row.setSpacing(6)
 
         self.lbl_lib_sources_card_title = QLabel(tr("settings.section_sources_title"))
-        self.lbl_lib_sources_card_title.setStyleSheet("color: #F8FAFC; font-size: 14px; font-weight: 700;")
+        self.lbl_lib_sources_card_title.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-size: 14px; font-weight: 700;")
         self.lbl_lib_sources_card_title.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         sources_header_row.addWidget(self.lbl_lib_sources_card_title)
         sources_header_row.addStretch()
@@ -212,7 +213,7 @@ class LibrarySourcesPageMixin(LibrarySourcesTreeMixin, _MixinBase):
         l_sources.addLayout(sources_header_row)
 
         self.lbl_lib_sources_card_desc = QLabel(tr("settings.section_sources_desc"))
-        self.lbl_lib_sources_card_desc.setStyleSheet("color: #94A3B8; font-size: 13px;")
+        self.lbl_lib_sources_card_desc.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 13px;")
         self.lbl_lib_sources_card_desc.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         l_sources.addWidget(self.lbl_lib_sources_card_desc)
 
@@ -394,7 +395,7 @@ class LibrarySourcesPageMixin(LibrarySourcesTreeMixin, _MixinBase):
         self.card_lib_sources_health.setStyleSheet(
             "QFrame#libSourcesHealthCard { background-color: #450A0A; border: 1px solid #991B1B; border-radius: 8px; }"
         )
-        self.lbl_lib_health_title.setStyleSheet("color: #FCA5A5; font-size: 13.5px; font-weight: 700;")
+        self.lbl_lib_health_title.setStyleSheet(f"color: {COLOR_DANGER_SOFT}; font-size: 13.5px; font-weight: 700;")
         self.lbl_lib_health_title.setText(f"⚠️  {tr('library_sources.health_err_title', count=anomaly_count)}")
         self.lbl_lib_health_details.clear()
         self.lbl_lib_health_details.setVisible(False)

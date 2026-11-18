@@ -29,6 +29,7 @@ from amso.core.database import DatabaseManager, PlaylistEntryRecord, PlaylistSum
 from amso.core.i18n import tr
 from amso.core.playlist_parser import parse_playlist_file
 from amso.ui.dialogs.playlist_repair_panel import PlaylistRepairPanel, PlaylistSaveWorker
+from amso.ui.styles import COLOR_DANGER_SOFT, COLOR_TEXT, COLOR_TEXT_BRIGHT, COLOR_TEXT_MUTED
 from amso.ui.theme import DARK_THEME_QSS
 
 logger = logging.getLogger(__name__)
@@ -99,7 +100,7 @@ class PlaylistEditorDialog(QDialog):
         header_row.setSpacing(12)
 
         lbl_name = QLabel(f"📃  {self.playlist.name}")
-        lbl_name.setStyleSheet("color: #F8FAFC; font-size: 16px; font-weight: 700;")
+        lbl_name.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-size: 16px; font-weight: 700;")
         header_row.addWidget(lbl_name)
         header_row.addStretch()
 
@@ -137,12 +138,12 @@ class PlaylistEditorDialog(QDialog):
         layout.addLayout(header_row)
 
         lbl_path = QLabel(self.playlist.file_path)
-        lbl_path.setStyleSheet("color: #94A3B8; font-size: 12px;")
+        lbl_path.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 12px;")
         lbl_path.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         layout.addWidget(lbl_path)
 
         self.lbl_summary = QLabel()
-        self.lbl_summary.setStyleSheet("color: #CBD5E1; font-size: 12.5px; font-weight: 600;")
+        self.lbl_summary.setStyleSheet(f"color: {COLOR_TEXT}; font-size: 12.5px; font-weight: 600;")
         layout.addWidget(self.lbl_summary)
 
         if not self._file_exists:
@@ -154,7 +155,7 @@ class PlaylistEditorDialog(QDialog):
 
             lbl_warn = QLabel(f"⚠️  {tr('playlist_editor.file_missing_notice')}")
             lbl_warn.setWordWrap(True)
-            lbl_warn.setStyleSheet("color: #FCA5A5; border: none; font-size: 12px;")
+            lbl_warn.setStyleSheet(f"color: {COLOR_DANGER_SOFT}; border: none; font-size: 12px;")
             warn_layout.addWidget(lbl_warn, stretch=1)
 
             self.btn_remove_from_library = QPushButton(tr("playlist_editor.btn_remove_from_library"))
@@ -496,7 +497,7 @@ class PlaylistEditorDialog(QDialog):
             dur_item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
 
             if entry.is_missing:
-                err_fg = QColor("#FCA5A5")
+                err_fg = QColor(COLOR_DANGER_SOFT)
                 for cell_item in (title_item, artist_item, path_item):
                     cell_item.setForeground(err_fg)
 

@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 
 from amso.core.config import get_config_manager
 from amso.core.i18n import tr
+from amso.ui.styles import COLOR_PRIMARY_HOVER, COLOR_TEXT, COLOR_TEXT_BRIGHT, COLOR_TEXT_MUTED
 from amso.ui.widgets.page_header import build_page_top_bar
 
 if TYPE_CHECKING:
@@ -75,11 +76,11 @@ class SettingsSoundPageMixin:
         layout.setSpacing(12)
 
         self.lbl_card_sound_proc_title = QLabel(tr("settings.sound_processing_title"))
-        self.lbl_card_sound_proc_title.setStyleSheet("color: #F8FAFC; font-size: 14px; font-weight: 700;")
+        self.lbl_card_sound_proc_title.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-size: 14px; font-weight: 700;")
         layout.addWidget(self.lbl_card_sound_proc_title)
 
         self.lbl_card_sound_proc_desc = QLabel(tr("settings.sound_processing_desc"))
-        self.lbl_card_sound_proc_desc.setStyleSheet("color: #94A3B8; font-size: 13px;")
+        self.lbl_card_sound_proc_desc.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 13px;")
         self.lbl_card_sound_proc_desc.setWordWrap(True)
         layout.addWidget(self.lbl_card_sound_proc_desc)
 
@@ -90,7 +91,7 @@ class SettingsSoundPageMixin:
         speed_row = QHBoxLayout()
         speed_row.setSpacing(12)
         self.lbl_settings_speed = QLabel(tr("audio_tools.playback_speed"))
-        self.lbl_settings_speed.setStyleSheet("color: #CBD5E1; font-size: 12.5px; font-weight: 500;")
+        self.lbl_settings_speed.setStyleSheet(f"color: {COLOR_TEXT}; font-size: 12.5px; font-weight: 500;")
         speed_row.addWidget(self.lbl_settings_speed)
 
         self.slider_settings_speed = QSlider(Qt.Orientation.Horizontal)
@@ -101,7 +102,7 @@ class SettingsSoundPageMixin:
 
         self.lbl_settings_speed_val = QLabel("1.0×")
         self.lbl_settings_speed_val.setMinimumWidth(40)
-        self.lbl_settings_speed_val.setStyleSheet("color: #38BDF8; font-size: 12.5px; font-weight: 600;")
+        self.lbl_settings_speed_val.setStyleSheet(f"color: {COLOR_PRIMARY_HOVER}; font-size: 12.5px; font-weight: 600;")
         speed_row.addWidget(self.lbl_settings_speed_val)
 
         self.btn_settings_speed_reset = QPushButton(tr("audio_tools.speed_reset"))

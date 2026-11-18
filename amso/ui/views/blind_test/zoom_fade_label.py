@@ -15,6 +15,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from amso.ui.styles import COLOR_PRIMARY_HOVER
+
 
 class ZoomFadeLabel(QLabel):
     """QLabel animé effectuant un zoom dynamique et un fondu à chaque changement de valeur."""
@@ -76,7 +78,7 @@ class ZoomFadeLabel(QLabel):
         painter.translate(-w / 2.0, -h / 2.0)
 
         painter.setFont(self.font())
-        painter.setPen(QColor("#38BDF8"))
+        painter.setPen(QColor(COLOR_PRIMARY_HOVER))
         painter.drawText(self.rect(), int(self.alignment()), self.text())
         painter.end()
 

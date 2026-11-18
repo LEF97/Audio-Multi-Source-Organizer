@@ -17,6 +17,7 @@ from PySide6.QtGui import QColor, QFont
 
 from amso.core.database import DatabaseManager, TrackRecord
 from amso.core.i18n import tr
+from amso.ui.styles import COLOR_PRIMARY_HOVER
 
 
 def format_duration(seconds: float | None, *, always_hours: bool = False) -> str:
@@ -102,7 +103,7 @@ class BaseTrackTableModel(QAbstractTableModel):
 
     COLUMNS: list[tuple[str, str, int, bool]] = UNIFIED_TRACK_COLUMNS
 
-    def __init__(self, db: DatabaseManager, parent: QObject | None = None) -> None:
+    def __init__(self, db: DatabaseManager | None, parent: QObject | None = None) -> None:
         super().__init__(parent)
         self.db = db
         self._player_service: Any = None
@@ -151,6 +152,10 @@ class BaseTrackTableModel(QAbstractTableModel):
             )
         return False
 
+    def _is_current_row(self, row: int, track: TrackRecord) -> bool:
+        """Indique si la ligne correspond au morceau actuellement chargé dans le lecteur."""
+        return self._is_current_track(track)
+
     def current_track_row(self) -> int:
         """Retourne l'indice de ligne de la piste en cours de lecture, ou -1 si absente."""
         for row in range(self.rowCount()):
@@ -160,6 +165,8 @@ class BaseTrackTableModel(QAbstractTableModel):
         return -1
 
     def _refresh_sources_cache(self) -> None:
+        if self.db is None:
+            return
         try:
             sources = self.db.get_sources()
             self._sources_cache = {s.id: s.name for s in sources if s.id is not None}
@@ -213,7 +220,7 @@ class BaseTrackTableModel(QAbstractTableModel):
             return None
 
         field = self.COLUMNS[col][1]
-        is_current = self._is_current_track(track)
+        is_current = self._is_current_row(index.row(), track)
 
         if role == Qt.ItemDataRole.DisplayRole:
             return self._display_data(track, field, is_current)
@@ -221,7 +228,7 @@ class BaseTrackTableModel(QAbstractTableModel):
             return self._tooltip_data(track, field)
         if role == Qt.ItemDataRole.ForegroundRole:
             if is_current:
-                return QColor("#38BDF8")
+                return QColor(COLOR_PRIMARY_HOVER)
             if getattr(track, "is_missing", False):
                 return QColor("#F87171")
             return None

@@ -31,10 +31,26 @@ from PySide6.QtWidgets import (
 from amso.core.database import TrackRecord
 from amso.core.i18n import tr
 from amso.ui.models_base import format_duration
-from amso.ui.styles import make_tree_action_button
+from amso.ui.styles import (
+    COLOR_BG_CARD,
+    COLOR_BG_DARK,
+    COLOR_BG_DEEP,
+    COLOR_BORDER,
+    COLOR_BORDER_LIGHT,
+    COLOR_DANGER,
+    COLOR_PRIMARY,
+    COLOR_PRIMARY_DARK,
+    COLOR_PRIMARY_HOVER,
+    COLOR_TEXT_BRIGHT,
+    COLOR_TEXT_DISABLED,
+    COLOR_TEXT_MUTED,
+    COLOR_WHITE,
+    make_tree_action_button,
+)
 from amso.ui.views.cover_helper import get_default_cover_pixmap, load_cover_async, load_folder_cover_async
 from amso.ui.views.playlist_ui_builder import PlaylistHeaderWidget
 from amso.ui.widgets.common import ElidedClickableLabel
+from amso.ui.widgets.help_guide_popup import HelpButton
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +93,7 @@ class FoldersPageMixin(_MixinBase):
         top_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
 
         self.lbl_folders_page_title = QLabel(tr("folders.page_title"))
-        self.lbl_folders_page_title.setStyleSheet("color: #F8FAFC; font-size: 14px; font-weight: 700;")
+        self.lbl_folders_page_title.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-size: 14px; font-weight: 700;")
         top_layout.addWidget(self.lbl_folders_page_title)
 
         # Fil d'Ariane / Chemin sélectionné (cliquable pour ouvrir dans l'Explorateur)
@@ -92,7 +108,7 @@ class FoldersPageMixin(_MixinBase):
         self.lbl_folder_count_badge.setFixedHeight(24)
         self.lbl_folder_count_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_folder_count_badge.setStyleSheet(
-            "background-color: #20242D; color: #94A3B8; font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 12px;"
+            f"background-color: {COLOR_BG_CARD}; color: {COLOR_TEXT_MUTED}; font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 12px;"
         )
         self._update_folder_count_badge(count=0, total_duration_sec=0.0)
         top_layout.addWidget(self.lbl_folder_count_badge)
@@ -112,11 +128,14 @@ class FoldersPageMixin(_MixinBase):
         self.folder_search_edit.textChanged.connect(self._on_folder_search_changed)
         top_layout.addWidget(self.folder_search_edit)
 
+        self.btn_folders_help = HelpButton("folders.help_title", "folders.help_body", parent=top_bar)
+        top_layout.addWidget(self.btn_folders_help)
+
         main_layout.addWidget(top_bar, 0)
 
         # 2. Séparateur horizontal (Splitter gauche / droite)
         splitter = QSplitter(Qt.Orientation.Horizontal)
-        splitter.setStyleSheet("QSplitter::handle { background-color: #282C37; }")
+        splitter.setStyleSheet(f"QSplitter::handle {{ background-color: {COLOR_BORDER}; }}")
 
         # --- Panneau Gauche : Arborescence ---
         left_widget = QWidget()
@@ -128,7 +147,7 @@ class FoldersPageMixin(_MixinBase):
         tree_top_layout.setContentsMargins(0, 0, 0, 0)
         self.lbl_tree_title = QLabel(tr("folders.tree_title"))
         self.lbl_tree_title.setStyleSheet(
-            "color: #94A3B8; font-size: 12px; font-weight: 700; text-transform: uppercase;"
+            f"color: {COLOR_TEXT_MUTED}; font-size: 12px; font-weight: 700; text-transform: uppercase;"
         )
         tree_top_layout.addWidget(self.lbl_tree_title)
         tree_top_layout.addStretch()
@@ -158,7 +177,7 @@ class FoldersPageMixin(_MixinBase):
         self.lbl_folder_selected_cover.setFixedSize(136, 136)
         self.lbl_folder_selected_cover.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_folder_selected_cover.setStyleSheet(
-            "background-color: #0F172A; border: 1px solid #282C37; border-radius: 10px;"
+            f"background-color: {COLOR_BG_DEEP}; border: 1px solid {COLOR_BORDER}; border-radius: 10px;"
         )
         self.lbl_folder_selected_cover.setPixmap(get_default_cover_pixmap(136, 10))
         self._folder_cover_target_path: str | None = None
@@ -204,17 +223,17 @@ class FoldersPageMixin(_MixinBase):
 
         icon_lbl = QLabel("📁")
         icon_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        icon_lbl.setStyleSheet("font-size: 54px; color: #475569;")
+        icon_lbl.setStyleSheet(f"font-size: 54px; color: {COLOR_TEXT_DISABLED};")
         placeholder_layout.addWidget(icon_lbl)
 
         self.lbl_placeholder_title = QLabel(tr("folders.empty_selection_title"))
         self.lbl_placeholder_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.lbl_placeholder_title.setStyleSheet("color: #F8FAFC; font-size: 16px; font-weight: 700;")
+        self.lbl_placeholder_title.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-size: 16px; font-weight: 700;")
         placeholder_layout.addWidget(self.lbl_placeholder_title)
 
         self.lbl_placeholder_desc = QLabel(tr("folders.empty_selection_desc"))
         self.lbl_placeholder_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.lbl_placeholder_desc.setStyleSheet("color: #94A3B8; font-size: 13px; max-width: 420px;")
+        self.lbl_placeholder_desc.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 13px; max-width: 420px;")
         self.lbl_placeholder_desc.setWordWrap(True)
         placeholder_layout.addWidget(self.lbl_placeholder_desc)
 
@@ -240,13 +259,13 @@ class FoldersPageMixin(_MixinBase):
         trash_main_layout.setSpacing(10)
 
         trash_header_frame = QFrame()
-        trash_header_frame.setStyleSheet("""
-            QFrame {
-                background-color: #1A1D24;
-                border: 1px solid #282C37;
+        trash_header_frame.setStyleSheet(f"""
+            QFrame {{
+                background-color: {COLOR_BG_DARK};
+                border: 1px solid {COLOR_BORDER};
                 border-radius: 8px;
                 padding: 8px 12px;
-            }
+            }}
         """)
         trash_header_layout = QHBoxLayout(trash_header_frame)
         trash_header_layout.setContentsMargins(4, 4, 4, 4)
@@ -255,50 +274,50 @@ class FoldersPageMixin(_MixinBase):
         trash_info_layout = QVBoxLayout()
         trash_info_layout.setSpacing(2)
         self.lbl_trash_title = QLabel(tr("trash.banner_title"))
-        self.lbl_trash_title.setStyleSheet("color: #F8FAFC; font-size: 13px; font-weight: 700;")
+        self.lbl_trash_title.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-size: 13px; font-weight: 700;")
         trash_info_layout.addWidget(self.lbl_trash_title)
 
         self.lbl_trash_desc = QLabel(tr("trash.banner_desc"))
-        self.lbl_trash_desc.setStyleSheet("color: #94A3B8; font-size: 11px;")
+        self.lbl_trash_desc.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 11px;")
         self.lbl_trash_desc.setWordWrap(True)
         trash_info_layout.addWidget(self.lbl_trash_desc)
         trash_header_layout.addLayout(trash_info_layout, 1)
 
         self.btn_restore_selected_trash = QPushButton(tr("trash.btn_restore_selected"))
         self.btn_restore_selected_trash.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_restore_selected_trash.setStyleSheet("""
-            QPushButton {
-                background-color: #0284C7;
-                color: #FFFFFF;
-                border: 1px solid #38BDF8;
+        self.btn_restore_selected_trash.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {COLOR_PRIMARY};
+                color: {COLOR_WHITE};
+                border: 1px solid {COLOR_PRIMARY_HOVER};
                 border-radius: 6px;
                 padding: 6px 14px;
                 font-size: 12px;
                 font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #0369A1;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {COLOR_PRIMARY_DARK};
+            }}
         """)
         self.btn_restore_selected_trash.clicked.connect(self._on_restore_selected_trash)
         trash_header_layout.addWidget(self.btn_restore_selected_trash)
 
         self.btn_clear_all_trash = QPushButton(tr("trash.btn_clear_all"))
         self.btn_clear_all_trash.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_clear_all_trash.setStyleSheet("""
-            QPushButton {
-                background-color: #20242D;
+        self.btn_clear_all_trash.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {COLOR_BG_CARD};
                 color: #F87171;
-                border: 1px solid #333846;
+                border: 1px solid {COLOR_BORDER_LIGHT};
                 border-radius: 6px;
                 padding: 6px 14px;
                 font-size: 12px;
-            }
-            QPushButton:hover {
+            }}
+            QPushButton:hover {{
                 background-color: #7F1D1D;
-                color: #FFFFFF;
-                border-color: #EF4444;
-            }
+                color: {COLOR_WHITE};
+                border-color: {COLOR_DANGER};
+            }}
         """)
         self.btn_clear_all_trash.clicked.connect(self._on_clear_all_trash)
         trash_header_layout.addWidget(self.btn_clear_all_trash)

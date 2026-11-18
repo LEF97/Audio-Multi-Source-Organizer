@@ -19,6 +19,15 @@ from PySide6.QtWidgets import (
 
 from amso.core.i18n import tr
 from amso.ui.styles import (
+    COLOR_BG_DEEP,
+    COLOR_PRIMARY,
+    COLOR_PRIMARY_DARK,
+    COLOR_PRIMARY_HOVER,
+    COLOR_TEXT,
+    COLOR_TEXT_BRIGHT,
+    COLOR_TEXT_DIM,
+    COLOR_TEXT_MUTED,
+    COLOR_WHITE,
     seek_slider_qss,
 )
 from amso.ui.widgets.common import ClickableSlider
@@ -55,7 +64,7 @@ class PlayerUiMixin(EffectsViewMixin, _MixinBase):
         top_layout.setSpacing(8)
 
         self.lbl_page_title = QLabel(tr("player.title"))
-        self.lbl_page_title.setStyleSheet("color: #F8FAFC; font-size: 16px; font-weight: 700;")
+        self.lbl_page_title.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-size: 16px; font-weight: 700;")
         top_layout.addWidget(self.lbl_page_title)
 
         top_layout.addSpacing(16)
@@ -128,21 +137,21 @@ class PlayerUiMixin(EffectsViewMixin, _MixinBase):
         info_layout.setSpacing(2)
 
         self.lbl_title = QLabel(tr("player.no_track"))
-        self.lbl_title.setStyleSheet("color: #F8FAFC; font-size: 19px; font-weight: 700;")
+        self.lbl_title.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-size: 19px; font-weight: 700;")
         self.lbl_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_title.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.lbl_title.setWordWrap(True)
         info_layout.addWidget(self.lbl_title)
 
         self.lbl_artist_album = QLabel("")
-        self.lbl_artist_album.setStyleSheet("color: #94A3B8; font-size: 14px;")
+        self.lbl_artist_album.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 14px;")
         self.lbl_artist_album.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_artist_album.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.lbl_artist_album.setWordWrap(True)
         info_layout.addWidget(self.lbl_artist_album)
 
         self.lbl_file_name = QLabel("")
-        self.lbl_file_name.setStyleSheet("color: #64748B; font-size: 12px; margin-top: 1px;")
+        self.lbl_file_name.setStyleSheet(f"color: {COLOR_TEXT_DIM}; font-size: 12px; margin-top: 1px;")
         self.lbl_file_name.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_file_name.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.lbl_file_name.setWordWrap(True)
@@ -150,8 +159,8 @@ class PlayerUiMixin(EffectsViewMixin, _MixinBase):
         info_layout.addWidget(self.lbl_file_name)
 
         self.lbl_badge = QLabel("")
-        self.lbl_badge.setStyleSheet("""
-            color: #38BDF8;
+        self.lbl_badge.setStyleSheet(f"""
+            color: {COLOR_PRIMARY_HOVER};
             font-size: 11px;
             font-weight: 600;
             padding: 2px 10px;
@@ -174,7 +183,7 @@ class PlayerUiMixin(EffectsViewMixin, _MixinBase):
         seek_layout.setSpacing(8)
 
         self.lbl_time_cur = QLabel("00:00")
-        self.lbl_time_cur.setStyleSheet("color: #94A3B8; font-size: 12px; font-family: monospace;")
+        self.lbl_time_cur.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 12px; font-family: monospace;")
         seek_layout.addWidget(self.lbl_time_cur)
 
         self.slider_seek = ClickableSlider(Qt.Orientation.Horizontal)
@@ -185,7 +194,7 @@ class PlayerUiMixin(EffectsViewMixin, _MixinBase):
         seek_layout.addWidget(self.slider_seek, 1)
 
         self.lbl_time_total = QLabel("00:00")
-        self.lbl_time_total.setStyleSheet("color: #94A3B8; font-size: 12px; font-family: monospace;")
+        self.lbl_time_total.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 12px; font-family: monospace;")
         seek_layout.addWidget(self.lbl_time_total)
 
         card_layout.addWidget(seek_container)
@@ -262,13 +271,13 @@ class PlayerUiMixin(EffectsViewMixin, _MixinBase):
 
         self.lbl_empty_title = QLabel(tr("player.empty_title"))
         self.lbl_empty_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.lbl_empty_title.setStyleSheet("color: #F8FAFC; font-size: 18px; font-weight: 700;")
+        self.lbl_empty_title.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-size: 18px; font-weight: 700;")
         self.lbl_empty_title.setWordWrap(True)
         empty_layout.addWidget(self.lbl_empty_title)
 
         self.lbl_empty_desc = QLabel(tr("player.empty_desc"))
         self.lbl_empty_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.lbl_empty_desc.setStyleSheet("color: #94A3B8; font-size: 13px; line-height: 1.5;")
+        self.lbl_empty_desc.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 13px; line-height: 1.5;")
         self.lbl_empty_desc.setWordWrap(True)
         empty_layout.addWidget(self.lbl_empty_desc)
 
@@ -276,24 +285,24 @@ class PlayerUiMixin(EffectsViewMixin, _MixinBase):
 
         self.btn_add_first_folder = QPushButton(tr("player.btn_add_first_folder"))
         self.btn_add_first_folder.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_add_first_folder.setStyleSheet("""
-            QPushButton {
-                background-color: #0284C7;
-                color: #FFFFFF;
-                border: 1px solid #38BDF8;
+        self.btn_add_first_folder.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {COLOR_PRIMARY};
+                color: {COLOR_WHITE};
+                border: 1px solid {COLOR_PRIMARY_HOVER};
                 border-radius: 8px;
                 font-size: 13.5px;
                 font-weight: 600;
                 padding: 10px 22px;
-            }
-            QPushButton:hover {
-                background-color: #38BDF8;
-                color: #0F172A;
-            }
-            QPushButton:pressed {
-                background-color: #0369A1;
-                color: #FFFFFF;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {COLOR_PRIMARY_HOVER};
+                color: {COLOR_BG_DEEP};
+            }}
+            QPushButton:pressed {{
+                background-color: {COLOR_PRIMARY_DARK};
+                color: {COLOR_WHITE};
+            }}
         """)
         self.btn_add_first_folder.clicked.connect(self._on_add_folder_clicked)
         empty_layout.addWidget(self.btn_add_first_folder, 0, Qt.AlignmentFlag.AlignCenter)
@@ -311,21 +320,21 @@ class PlayerUiMixin(EffectsViewMixin, _MixinBase):
         self.up_next_bar.setMaximumWidth(580)
         self.up_next_bar.setFixedHeight(36)
         self.up_next_bar.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.up_next_bar.setStyleSheet("""
-            QPushButton#upNextBar {
+        self.up_next_bar.setStyleSheet(f"""
+            QPushButton#upNextBar {{
                 background-color: rgba(26, 29, 36, 0.85);
                 border: 1px solid rgba(56, 189, 248, 0.22);
                 border-radius: 12px;
-                color: #CBD5E1;
+                color: {COLOR_TEXT};
                 font-size: 12.5px;
                 padding: 0 16px;
                 text-align: center;
-            }
-            QPushButton#upNextBar:hover {
+            }}
+            QPushButton#upNextBar:hover {{
                 background-color: rgba(34, 38, 48, 0.95);
                 border-color: rgba(56, 189, 248, 0.55);
-                color: #F8FAFC;
-            }
+                color: {COLOR_TEXT_BRIGHT};
+            }}
         """)
         self._up_next_opacity = QGraphicsOpacityEffect(self.up_next_bar)
         self._up_next_opacity.setOpacity(0.0)

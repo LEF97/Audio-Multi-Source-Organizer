@@ -28,14 +28,20 @@ from amso.services.player_service import PlayerService
 from amso.ui.models import format_duration
 from amso.ui.styles import (
     COLOR_BG_CARD,
+    COLOR_BG_DARK,
     COLOR_BG_HOVER,
+    COLOR_BG_SLATE,
     COLOR_BORDER,
+    COLOR_BORDER_LIGHT,
+    COLOR_DANGER,
+    COLOR_DANGER_SOFT,
     COLOR_PRIMARY,
     COLOR_PRIMARY_HOVER,
     COLOR_TEXT,
     COLOR_TEXT_BRIGHT,
     COLOR_TEXT_MUTED,
     COLOR_TEXT_SOFT,
+    COLOR_WHITE,
 )
 from amso.ui.table_settings import apply_default_columns
 from amso.ui.views.cover_helper import (
@@ -60,7 +66,7 @@ _SHUFFLE_TRACKS_BTN_QSS = f"""
     QPushButton {{
         background-color: {COLOR_BG_CARD};
         color: {COLOR_PRIMARY_HOVER};
-        border: 1px solid #333846;
+        border: 1px solid {COLOR_BORDER_LIGHT};
         border-radius: 6px;
         padding: 6px 12px;
         font-size: 12px;
@@ -68,7 +74,7 @@ _SHUFFLE_TRACKS_BTN_QSS = f"""
         margin-right: 8px;
     }}
     QPushButton:hover {{
-        background-color: #1E293B;
+        background-color: {COLOR_BG_SLATE};
         border-color: {COLOR_PRIMARY_HOVER};
         color: #7DD3FC;
     }}
@@ -82,8 +88,8 @@ _SHUFFLE_TRACKS_BTN_QSS = f"""
 _CLEAR_PLAYLIST_BTN_QSS = f"""
     QPushButton {{
         background-color: {COLOR_BG_CARD};
-        color: #EF4444;
-        border: 1px solid #333846;
+        color: {COLOR_DANGER};
+        border: 1px solid {COLOR_BORDER_LIGHT};
         border-radius: 6px;
         padding: 6px 12px;
         font-size: 12px;
@@ -91,8 +97,8 @@ _CLEAR_PLAYLIST_BTN_QSS = f"""
     }}
     QPushButton:hover {{
         background-color: #2E1A1A;
-        border-color: #EF4444;
-        color: #FCA5A5;
+        border-color: {COLOR_DANGER};
+        color: {COLOR_DANGER_SOFT};
     }}
 """
 
@@ -195,7 +201,7 @@ class PlaylistHeaderMixin(_MixinBase):
         player_banner.setObjectName("playerBanner")
         player_banner.setStyleSheet(f"""
             QFrame#playerBanner {{
-                background-color: #1A1D24;
+                background-color: {COLOR_BG_DARK};
                 border-bottom: 1px solid {COLOR_BORDER};
                 padding: 10px 16px;
             }}
@@ -336,7 +342,7 @@ class PlaylistHeaderMixin(_MixinBase):
             }}
             QPushButton:pressed {{
                 background-color: {COLOR_PRIMARY};
-                color: #FFFFFF;
+                color: {COLOR_WHITE};
             }}
         """)
 

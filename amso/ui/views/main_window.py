@@ -7,7 +7,7 @@ import subprocess
 import sys
 from typing import Any
 
-from PySide6.QtCore import QCoreApplication, QEventLoop, Qt, QTimer
+from PySide6.QtCore import QCoreApplication, QEvent, QEventLoop, Qt, QTimer
 from PySide6.QtGui import QMoveEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QDialog,
@@ -48,23 +48,30 @@ from amso.ui.pages.retranslate import RetranslateMixin
 from amso.ui.pages.scan_controller import ScanControllerMixin
 from amso.ui.pages.session_state import SessionStateMixin
 from amso.ui.pages.settings_about import SettingsAboutPageMixin
+from amso.ui.pages.settings_effects import SettingsEffectsPageMixin
 from amso.ui.pages.settings_general import SettingsGeneralPageMixin
 from amso.ui.pages.settings_player import SettingsPlayerPageMixin
+from amso.ui.pages.settings_sound import SettingsSoundPageMixin
 from amso.ui.pages.sidebar_layout import SidebarLayoutMixin
 from amso.ui.pages.sources_list import SourcesListMixin
 from amso.ui.pages.table_columns import TableColumnsMixin
+from amso.ui.pages.taskbar_controller import TaskbarAndTrayMixin
 from amso.ui.pages.track_actions import TrackActionsMixin
 from amso.ui.pages.update_controller import UpdateControllerMixin
+from amso.ui.styles import COLOR_TEXT_BRIGHT, COLOR_TEXT_DISABLED, COLOR_TEXT_MUTED
 from amso.ui.theme import DARK_THEME_QSS
 from amso.ui.views.cover_helper import wait_for_cover_workers
 from amso.ui.views.update_banner import UpdateBannerWidget
+from amso.ui.widgets.help_guide_popup import HelpButton
 from amso.ui.workers import ScanWorker
 
 logger = logging.getLogger(__name__)
 
 
 class MainWindow(
+    SettingsSoundPageMixin,
     SettingsPlayerPageMixin,
+    SettingsEffectsPageMixin,
     SettingsAboutPageMixin,
     SettingsGeneralPageMixin,
     LibrarySourcesPageMixin,
@@ -80,6 +87,7 @@ class MainWindow(
     SourcesListMixin,
     NavigationMixin,
     PlaybackSettingsMixin,
+    TaskbarAndTrayMixin,
     TrackActionsMixin,
     QMainWindow,
 ):
@@ -193,6 +201,8 @@ class MainWindow(
         self._restore_active_page()
         clock.mark("restauration page active")
 
+        self._setup_taskbar_and_tray()
+
         # Vérification non-bloquante des mises à jour en tâche de fond (différée de 3,5s)
         self.update_worker: UpdateCheckerWorker | None = None
         QTimer.singleShot(3500, lambda: self._check_for_updates(manual=False))
@@ -205,15 +215,28 @@ class MainWindow(
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         super().resizeEvent(event)
-        if not self.isMaximized() and not self.isMinimized() and not self.isFullScreen():
+        if self._is_window_normal_state():
             self._windowed_size = (self.width(), self.height())
 
     def moveEvent(self, event: QMoveEvent) -> None:
         super().moveEvent(event)
-        if not self.isMaximized() and not self.isMinimized() and not self.isFullScreen():
+        if self._is_window_normal_state():
             self._windowed_pos = (self.x(), self.y())
 
+    def changeEvent(self, event: QEvent) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.WindowStateChange and self._is_window_normal_state():
+            self._windowed_size = (self.width(), self.height())
+            self._windowed_pos = (self.x(), self.y())
+
+    def nativeEvent(self, eventType: Any, message: Any) -> object:
+        """Intercepte les messages Win32 de la barre des tâches (boutons miniature)."""
+        if self._handle_taskbar_native_event(eventType, message):
+            return True, 0
+        return super().nativeEvent(eventType, message)
+
     def closeEvent(self, event) -> None:
+        self._cleanup_taskbar_and_tray()
         SleepInhibitor.release()
         if hasattr(self, "_playlist_save_timer") and self._playlist_save_timer.isActive():
             self._playlist_save_timer.stop()
@@ -312,8 +335,11 @@ class MainWindow(
         top_layout.addStretch()
 
         self.track_count_label = QLabel(tr("topbar.track_count", count="0"))
-        self.track_count_label.setStyleSheet("color: #94A3B8; font-size: 12px; font-weight: 500;")
+        self.track_count_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 12px; font-weight: 500;")
         top_layout.addWidget(self.track_count_label)
+
+        self.btn_tracks_help = HelpButton("tracks.help_title", "tracks.help_body", parent=self.tracks_top_bar)
+        top_layout.addWidget(self.btn_tracks_help)
 
         self.tracks_top_bar.setFixedHeight(50)
         layout.addWidget(self.tracks_top_bar, 0)
@@ -335,14 +361,14 @@ class MainWindow(
 
         empty_icon = QLabel("👥")
         empty_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        empty_icon.setStyleSheet("font-size: 52px; color: #475569;")
+        empty_icon.setStyleSheet(f"font-size: 52px; color: {COLOR_TEXT_DISABLED};")
         empty_layout.addWidget(empty_icon)
 
         self.lbl_tracks_empty_message = QLabel(tr("duplicates.empty_playlist_message"))
         self.lbl_tracks_empty_message.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_tracks_empty_message.setWordWrap(True)
         self.lbl_tracks_empty_message.setStyleSheet(
-            "color: #F8FAFC; font-size: 16px; font-weight: 700; max-width: 520px;"
+            f"color: {COLOR_TEXT_BRIGHT}; font-size: 16px; font-weight: 700; max-width: 520px;"
         )
         empty_layout.addWidget(self.lbl_tracks_empty_message)
 
@@ -361,7 +387,13 @@ class MainWindow(
             self.show_logs_page()
 
     def _on_activity_feed_hover_entered(self) -> None:
-        if hasattr(self, "activity_popover") and self.activity_popover:
+        if (
+            hasattr(self, "activity_popover")
+            and self.activity_popover
+            and hasattr(self, "btn_activity_feed")
+            and self.btn_activity_feed.isVisible()
+            and self.btn_activity_feed.isEnabled()
+        ):
             self.activity_popover.show_above_widget(self.btn_activity_feed)
 
     def _on_activity_feed_hover_left(self) -> None:
@@ -369,7 +401,13 @@ class MainWindow(
             self.activity_popover.schedule_hide()
 
     def _on_activity_feed_clicked(self) -> None:
-        if hasattr(self, "activity_popover") and self.activity_popover:
+        if (
+            hasattr(self, "activity_popover")
+            and self.activity_popover
+            and hasattr(self, "btn_activity_feed")
+            and self.btn_activity_feed.isVisible()
+            and self.btn_activity_feed.isEnabled()
+        ):
             if self.activity_popover.isVisible():
                 self.activity_popover.hide()
             else:

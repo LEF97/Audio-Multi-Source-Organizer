@@ -26,6 +26,7 @@ from amso.core.i18n import tr
 from amso.ui.styles import (
     COLOR_BG_CARD,
     COLOR_BG_HOVER,
+    COLOR_BORDER_LIGHT,
     COLOR_PRIMARY_HOVER,
     COLOR_TEXT_BRIGHT,
     COLOR_TEXT_DIM,
@@ -270,7 +271,7 @@ class BlindTestUiMixin(EffectsViewMixin, _MixinBase):
             QPushButton {{
                 background-color: {COLOR_BG_CARD};
                 color: {COLOR_TEXT_BRIGHT};
-                border: 1px solid #333846;
+                border: 1px solid {COLOR_BORDER_LIGHT};
                 border-radius: 12px;
                 padding: 0 14px;
                 font-size: 13px;
@@ -297,7 +298,7 @@ class BlindTestUiMixin(EffectsViewMixin, _MixinBase):
             QPushButton {{
                 background-color: {COLOR_BG_CARD};
                 color: {COLOR_TEXT_BRIGHT};
-                border: 1px solid #333846;
+                border: 1px solid {COLOR_BORDER_LIGHT};
                 border-radius: 12px;
                 padding: 0 18px;
                 font-size: 13px;
@@ -324,7 +325,7 @@ class BlindTestUiMixin(EffectsViewMixin, _MixinBase):
             QPushButton {{
                 background-color: {COLOR_BG_CARD};
                 color: {COLOR_TEXT_BRIGHT};
-                border: 1px solid #333846;
+                border: 1px solid {COLOR_BORDER_LIGHT};
                 border-radius: 12px;
                 padding: 0 14px;
                 font-size: 13px;

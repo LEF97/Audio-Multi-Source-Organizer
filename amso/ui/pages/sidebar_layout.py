@@ -22,6 +22,14 @@ from PySide6.QtWidgets import (
 )
 
 from amso.core.i18n import tr
+from amso.ui.styles import (
+    COLOR_BG_SLATE,
+    COLOR_BORDER_SLATE,
+    COLOR_PRIMARY,
+    COLOR_PRIMARY_HOVER,
+    COLOR_TEXT_MUTED,
+    COLOR_WHITE,
+)
 from amso.ui.views.activity_feed_popover import ActivityFeedPopover
 from amso.ui.views.blind_test_view import BlindTestView
 from amso.ui.views.logs_view import LogsView
@@ -76,7 +84,7 @@ class SidebarLayoutMixin(_MixinBase):
             self.lbl_logo_icon.setPixmap(scaled_pm)
         else:
             self.lbl_logo_icon.setText("🎵")
-            self.lbl_logo_icon.setStyleSheet("font-size: 48px; color: #38BDF8;")
+            self.lbl_logo_icon.setStyleSheet(f"font-size: 48px; color: {COLOR_PRIMARY_HOVER};")
 
         self.lbl_logo_icon.clicked.connect(self._on_settings_about_clicked)
         logo_layout.addWidget(self.lbl_logo_icon)
@@ -168,6 +176,14 @@ class SidebarLayoutMixin(_MixinBase):
         self.nav_button_group.addButton(self.btn_settings_general)
         self.drawer_settings.add_widget(self.btn_settings_general)
 
+        # 2. Son
+        self.btn_settings_sound = QPushButton(tr("sidebar.nav_settings_sound"))
+        self.btn_settings_sound.setProperty("class", "nav-btn")
+        self.btn_settings_sound.setCheckable(True)
+        self.btn_settings_sound.clicked.connect(self._on_settings_sound_clicked)
+        self.nav_button_group.addButton(self.btn_settings_sound)
+        self.drawer_settings.add_widget(self.btn_settings_sound)
+
         # 2. Lecteur
         self.btn_settings_player = QPushButton(tr("sidebar.nav_settings_player"))
         self.btn_settings_player.setProperty("class", "nav-btn")
@@ -175,6 +191,14 @@ class SidebarLayoutMixin(_MixinBase):
         self.btn_settings_player.clicked.connect(self._on_settings_player_clicked)
         self.nav_button_group.addButton(self.btn_settings_player)
         self.drawer_settings.add_widget(self.btn_settings_player)
+
+        # 2b. Effets
+        self.btn_settings_effects = QPushButton(tr("sidebar.nav_settings_effects"))
+        self.btn_settings_effects.setProperty("class", "nav-btn")
+        self.btn_settings_effects.setCheckable(True)
+        self.btn_settings_effects.clicked.connect(self._on_settings_effects_clicked)
+        self.nav_button_group.addButton(self.btn_settings_effects)
+        self.drawer_settings.add_widget(self.btn_settings_effects)
 
         # 3. Logs
         self.btn_settings_logs = QPushButton(tr("sidebar.nav_settings_logs"))
@@ -221,26 +245,32 @@ class SidebarLayoutMixin(_MixinBase):
 
         # Page 5 : Vue Lecteur audio grand format
         self.page_player = PlayerView(self.player_service, parent=self)
-        self.page_player.effect_changed.connect(self._sync_visual_effect_radio)
         self.page_player.add_folder_requested.connect(self._on_add_local_folder)
         self.stacked_widget.addWidget(self.page_player)
 
         # Page 5b : Vue Blind Test (Intercalée entre Lecteur et Playlist)
         self.page_blind_test = BlindTestView(self.player_service, parent=self)
-        self.page_blind_test.effect_changed.connect(self._sync_visual_effect_radio)
         self.stacked_widget.addWidget(self.page_blind_test)
 
         # Page 6 : Vue Playlist (Mini-lecteur + Tableau de file d'attente)
-        self.page_playlist = PlaylistView(self.player_service, parent=self)
+        self.page_playlist = PlaylistView(self.player_service, parent=self, db=self.db)
         self.stacked_widget.addWidget(self.page_playlist)
 
         # Page 7 : Paramètres > Logs (Journal d'activité et événements)
         self.page_logs = LogsView(self.db, parent=self)
         self.stacked_widget.addWidget(self.page_logs)
 
-        # Page 8 : Paramètres > Lecteur (Options d'alimentation, veille et moteur audio)
+        # Page 8 : Paramètres > Son (moteur audio, transitions, normalisation, vitesse)
+        self.page_settings_sound = self._create_settings_sound_page()
+        self.stacked_widget.addWidget(self.page_settings_sound)
+
+        # Page 9 : Paramètres > Lecteur (pochettes, blind test)
         self.page_settings_player = self._create_settings_player_page()
         self.stacked_widget.addWidget(self.page_settings_player)
+
+        # Page 9b : Paramètres > Effets (effets disponibles et mode aléatoire)
+        self.page_settings_effects = self._create_settings_effects_page()
+        self.stacked_widget.addWidget(self.page_settings_effects)
 
         # Page 9 : Paramètres > À propos (Présentation, crédits et liens de soutien)
         self.page_settings_about = self._create_settings_about_page()
@@ -287,27 +317,30 @@ class SidebarLayoutMixin(_MixinBase):
         self.btn_activity_feed = HoverBadgeButton("⚡ " + tr("status.activity_feed"))
         self.btn_activity_feed.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_activity_feed.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #1E293B;
-                color: #94A3B8;
-                border: 1px solid #334155;
+            f"""
+            QPushButton {{
+                background-color: {COLOR_BG_SLATE};
+                color: {COLOR_TEXT_MUTED};
+                border: 1px solid {COLOR_BORDER_SLATE};
                 border-radius: 6px;
                 padding: 2px 10px;
                 font-size: 11px;
                 font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #0284C7;
-                color: #FFFFFF;
-                border: 1px solid #38BDF8;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {COLOR_PRIMARY};
+                color: {COLOR_WHITE};
+                border: 1px solid {COLOR_PRIMARY_HOVER};
+            }}
             """
         )
         self.btn_activity_feed.hover_entered.connect(self._on_activity_feed_hover_entered)
         self.btn_activity_feed.hover_left.connect(self._on_activity_feed_hover_left)
         self.btn_activity_feed.clicked.connect(self._on_activity_feed_clicked)
         self.status_bar.addPermanentWidget(self.btn_activity_feed)
+        # Fil d'activité et popover associé désactivés dans l'interface
+        self.btn_activity_feed.setVisible(False)
+        self.btn_activity_feed.setEnabled(False)
 
     def _setup_menu_bar(self) -> None:
         """Désactive la barre de menus standard pour une interface épurée et configure le raccourci F1."""

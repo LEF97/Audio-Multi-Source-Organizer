@@ -27,6 +27,7 @@ from PySide6.QtGui import (
 from amso.core.database import TrackRecord
 from amso.core.metadata import extract_cover_art, find_cover_image_in_folder
 from amso.core.network_paths import is_network_path
+from amso.ui.styles import COLOR_BORDER, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_TEXT_BRIGHT
 
 # Cache mémoire pour les pochettes (file_path, size) -> QPixmap
 _COVER_CACHE: dict[tuple[str, int], QPixmap] = {}
@@ -128,18 +129,18 @@ def get_default_cover_pixmap(size: int = 300, radius: int = 12) -> QPixmap:
         painter.drawEllipse(center, r, r)
 
     # Disque central
-    painter.setBrush(QBrush(QColor("#0284C7")))
-    painter.setPen(QPen(QColor("#38BDF8"), 1.5))
+    painter.setBrush(QBrush(QColor(COLOR_PRIMARY)))
+    painter.setPen(QPen(QColor(COLOR_PRIMARY_HOVER), 1.5))
     painter.drawEllipse(center, size * 0.12, size * 0.12)
 
     # Petite note de musique au centre (poids normal pour éviter le faux-gras qui rogne le bord droit de l'emoji)
-    painter.setPen(QColor("#F8FAFC"))
+    painter.setPen(QColor(COLOR_TEXT_BRIGHT))
     font = QFont("Segoe UI", max(7, int(size * 0.13)))
     painter.setFont(font)
     painter.drawText(rect, int(Qt.AlignmentFlag.AlignCenter), "🎵")
 
     # Bordure extérieure
-    painter.setPen(QPen(QColor("#282C37"), 1))
+    painter.setPen(QPen(QColor(COLOR_BORDER), 1))
     painter.setBrush(Qt.BrushStyle.NoBrush)
     painter.drawPath(path)
     painter.end()

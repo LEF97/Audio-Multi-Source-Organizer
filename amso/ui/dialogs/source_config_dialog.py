@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
 
 from amso.core.database import SourceRecord
 from amso.core.i18n import tr
+from amso.ui.styles import COLOR_BG_DARK, COLOR_BORDER, COLOR_TEXT_BRIGHT, COLOR_TEXT_MUTED
 from amso.ui.theme import DARK_THEME_QSS
 
 
@@ -66,7 +67,7 @@ class SourceConfigDialog(QDialog):
         header_lbl = QLabel(
             tr("dialog.source_config_edit_desc") if self.is_edit_mode else tr("dialog.source_config_add_desc")
         )
-        header_lbl.setStyleSheet("color: #94A3B8; font-size: 13px; margin-bottom: 2px;")
+        header_lbl.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 13px; margin-bottom: 2px;")
         header_lbl.setWordWrap(True)
         main_layout.addWidget(header_lbl)
 
@@ -74,7 +75,7 @@ class SourceConfigDialog(QDialog):
         form_frame = QFrame()
         form_frame.setObjectName("sourceConfigFormFrame")
         form_frame.setStyleSheet(
-            "QFrame#sourceConfigFormFrame { background-color: #1A1D24; border: 1px solid #282C37; border-radius: 8px; }"
+            f"QFrame#sourceConfigFormFrame {{ background-color: {COLOR_BG_DARK}; border: 1px solid {COLOR_BORDER}; border-radius: 8px; }}"
         )
         form_layout = QFormLayout(form_frame)
         form_layout.setContentsMargins(18, 18, 18, 18)
@@ -95,7 +96,7 @@ class SourceConfigDialog(QDialog):
         self.edit_name.returnPressed.connect(self._on_save)
 
         lbl_name = QLabel(tr("dialog.source_name"))
-        lbl_name.setStyleSheet("color: #F8FAFC; font-weight: 600; font-size: 13px;")
+        lbl_name.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-weight: 600; font-size: 13px;")
         form_layout.addRow(lbl_name, self.edit_name)
 
         # 2. Emplacement du dossier
@@ -109,7 +110,9 @@ class SourceConfigDialog(QDialog):
         if self.source:
             self.edit_path.setText(self.source.path_or_uri)
             self.edit_path.setReadOnly(True)
-            self.edit_path.setStyleSheet("color: #94A3B8; background-color: #121418; border: 1px solid #282C37;")
+            self.edit_path.setStyleSheet(
+                f"color: {COLOR_TEXT_MUTED}; background-color: #121418; border: 1px solid {COLOR_BORDER};"
+            )
         elif initial_path:
             self.edit_path.setText(initial_path)
 
@@ -124,7 +127,7 @@ class SourceConfigDialog(QDialog):
             path_layout.addWidget(self.btn_browse)
 
         lbl_path = QLabel(tr("dialog.source_path"))
-        lbl_path.setStyleSheet("color: #F8FAFC; font-weight: 600; font-size: 13px;")
+        lbl_path.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-weight: 600; font-size: 13px;")
         form_layout.addRow(lbl_path, path_layout)
 
         # 3. Stratégie de synchronisation
@@ -141,7 +144,7 @@ class SourceConfigDialog(QDialog):
             self.combo_sync_mode.setCurrentIndex(idx)
 
         lbl_mode = QLabel(tr("dialog.sync_mode"))
-        lbl_mode.setStyleSheet("color: #F8FAFC; font-weight: 600; font-size: 13px;")
+        lbl_mode.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-weight: 600; font-size: 13px;")
         form_layout.addRow(lbl_mode, self.combo_sync_mode)
 
         # Info-bulle / conseil sous le mode
@@ -168,12 +171,12 @@ class SourceConfigDialog(QDialog):
         interval_layout.addWidget(self.spin_interval)
 
         lbl_min = QLabel(tr("dialog.sync_interval_unit"))
-        lbl_min.setStyleSheet("color: #94A3B8; font-size: 12.5px;")
+        lbl_min.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 12.5px;")
         interval_layout.addWidget(lbl_min)
         interval_layout.addStretch()
 
         self.lbl_interval_form = QLabel(tr("dialog.sync_interval"))
-        self.lbl_interval_form.setStyleSheet("color: #F8FAFC; font-weight: 600; font-size: 13px;")
+        self.lbl_interval_form.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-weight: 600; font-size: 13px;")
         form_layout.addRow(self.lbl_interval_form, self.interval_container)
 
         # 5. Fréquence d'actualisation en continu (affiché si 'realtime')
@@ -191,12 +194,12 @@ class SourceConfigDialog(QDialog):
         realtime_layout.addWidget(self.spin_realtime)
 
         lbl_sec = QLabel(tr("dialog.sync_realtime_unit"))
-        lbl_sec.setStyleSheet("color: #94A3B8; font-size: 12.5px;")
+        lbl_sec.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 12.5px;")
         realtime_layout.addWidget(lbl_sec)
         realtime_layout.addStretch()
 
         self.lbl_realtime_form = QLabel(tr("dialog.sync_realtime_label"))
-        self.lbl_realtime_form.setStyleSheet("color: #F8FAFC; font-weight: 600; font-size: 13px;")
+        self.lbl_realtime_form.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-weight: 600; font-size: 13px;")
         form_layout.addRow(self.lbl_realtime_form, self.realtime_container)
 
         main_layout.addWidget(form_frame)

@@ -14,6 +14,15 @@ from PySide6.QtWidgets import (
 
 from amso.core.constants import URL_ITCH_IO, URL_KO_FI
 from amso.core.i18n import tr
+from amso.ui.styles import (
+    COLOR_BG_SLATE,
+    COLOR_BORDER_SLATE,
+    COLOR_PRIMARY,
+    COLOR_PRIMARY_DARK,
+    COLOR_PRIMARY_HOVER,
+    COLOR_TEXT_MUTED,
+    COLOR_WHITE,
+)
 
 
 class UpdateBannerWidget(QFrame):
@@ -31,14 +40,14 @@ class UpdateBannerWidget(QFrame):
         self._setup_ui()
 
     def _setup_ui(self) -> None:
-        self.setStyleSheet("""
-            QFrame#updateBannerWidget {
+        self.setStyleSheet(f"""
+            QFrame#updateBannerWidget {{
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
                     stop:0 #0B1E38, stop:0.5 #0F2D54, stop:1 #0B1E38);
-                border-top: 1px solid #0284C7;
-                border-bottom: 1px solid #1E293B;
+                border-top: 1px solid {COLOR_PRIMARY};
+                border-bottom: 1px solid {COLOR_BG_SLATE};
                 padding: 4px 12px;
-            }
+            }}
         """)
 
         layout = QHBoxLayout(self)
@@ -68,20 +77,20 @@ class UpdateBannerWidget(QFrame):
         # Bouton Télécharger
         self.btn_download = QPushButton()
         self.btn_download.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_download.setStyleSheet("""
-            QPushButton {
-                background-color: #0284C7;
-                color: #FFFFFF;
+        self.btn_download.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {COLOR_PRIMARY};
+                color: {COLOR_WHITE};
                 font-size: 11px;
                 font-weight: 700;
                 padding: 5px 12px;
-                border: 1px solid #38BDF8;
+                border: 1px solid {COLOR_PRIMARY_HOVER};
                 border-radius: 6px;
-            }
-            QPushButton:hover {
-                background-color: #0369A1;
+            }}
+            QPushButton:hover {{
+                background-color: {COLOR_PRIMARY_DARK};
                 border: 1px solid #7DD3FC;
-            }
+            }}
         """)
         self.btn_download.clicked.connect(self._on_download_clicked)
         buttons_layout.addWidget(self.btn_download)
@@ -89,20 +98,20 @@ class UpdateBannerWidget(QFrame):
         # Bouton Soutenir / Don
         self.btn_support = QPushButton()
         self.btn_support.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_support.setStyleSheet("""
-            QPushButton {
+        self.btn_support.setStyleSheet(f"""
+            QPushButton {{
                 background-color: #9F1239;
-                color: #FFFFFF;
+                color: {COLOR_WHITE};
                 font-size: 11px;
                 font-weight: 700;
                 padding: 5px 12px;
                 border: 1px solid #F43F5E;
                 border-radius: 6px;
-            }
-            QPushButton:hover {
+            }}
+            QPushButton:hover {{
                 background-color: #BE123C;
                 border: 1px solid #FDA4AF;
-            }
+            }}
         """)
         self.btn_support.clicked.connect(self._on_support_clicked)
         buttons_layout.addWidget(self.btn_support)
@@ -111,20 +120,20 @@ class UpdateBannerWidget(QFrame):
         self.btn_dismiss = QPushButton("✕")
         self.btn_dismiss.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_dismiss.setToolTip(tr("update.btn_dismiss"))
-        self.btn_dismiss.setStyleSheet("""
-            QPushButton {
+        self.btn_dismiss.setStyleSheet(f"""
+            QPushButton {{
                 background: transparent;
-                color: #94A3B8;
+                color: {COLOR_TEXT_MUTED};
                 font-size: 13px;
                 font-weight: 700;
                 padding: 4px 8px;
                 border: none;
                 border-radius: 4px;
-            }
-            QPushButton:hover {
-                color: #FFFFFF;
-                background-color: #334155;
-            }
+            }}
+            QPushButton:hover {{
+                color: {COLOR_WHITE};
+                background-color: {COLOR_BORDER_SLATE};
+            }}
         """)
         self.btn_dismiss.clicked.connect(self.hide)
         buttons_layout.addWidget(self.btn_dismiss)

@@ -23,6 +23,14 @@ from amso.core.database import (
 from amso.core.i18n import tr
 from amso.core.scanner import ScanSummary
 from amso.ui.dialogs.source_config_dialog import SourceConfigDialog
+from amso.ui.styles import (
+    COLOR_BG_SLATE,
+    COLOR_BORDER_SLATE,
+    COLOR_PRIMARY,
+    COLOR_PRIMARY_HOVER,
+    COLOR_TEXT_MUTED,
+    COLOR_WHITE,
+)
 from amso.ui.workers import ScanWorker
 
 logger = logging.getLogger(__name__)
@@ -156,20 +164,20 @@ class ScanControllerMixin(_MixinBase):
         if hasattr(self, "btn_activity_feed") and self.btn_activity_feed:
             self.btn_activity_feed.setText(f"🔄 {source.name}")
             self.btn_activity_feed.setStyleSheet(
-                """
-                QPushButton {
+                f"""
+                QPushButton {{
                     background-color: rgba(2, 132, 199, 0.25);
-                    color: #38BDF8;
-                    border: 1px solid #0284C7;
+                    color: {COLOR_PRIMARY_HOVER};
+                    border: 1px solid {COLOR_PRIMARY};
                     border-radius: 6px;
                     padding: 2px 10px;
                     font-size: 11px;
                     font-weight: 600;
-                }
-                QPushButton:hover {
-                    background-color: #0284C7;
-                    color: #FFFFFF;
-                }
+                }}
+                QPushButton:hover {{
+                    background-color: {COLOR_PRIMARY};
+                    color: {COLOR_WHITE};
+                }}
                 """
             )
         if hasattr(self, "activity_popover") and self.activity_popover:
@@ -401,21 +409,21 @@ class ScanControllerMixin(_MixinBase):
         if hasattr(self, "btn_activity_feed") and self.btn_activity_feed:
             self.btn_activity_feed.setText("⚡ " + tr("status.activity_feed"))
             self.btn_activity_feed.setStyleSheet(
-                """
-                QPushButton {
-                    background-color: #1E293B;
-                    color: #94A3B8;
-                    border: 1px solid #334155;
+                f"""
+                QPushButton {{
+                    background-color: {COLOR_BG_SLATE};
+                    color: {COLOR_TEXT_MUTED};
+                    border: 1px solid {COLOR_BORDER_SLATE};
                     border-radius: 6px;
                     padding: 2px 10px;
                     font-size: 11px;
                     font-weight: 600;
-                }
-                QPushButton:hover {
-                    background-color: #0284C7;
-                    color: #FFFFFF;
-                    border: 1px solid #38BDF8;
-                }
+                }}
+                QPushButton:hover {{
+                    background-color: {COLOR_PRIMARY};
+                    color: {COLOR_WHITE};
+                    border: 1px solid {COLOR_PRIMARY_HOVER};
+                }}
                 """
             )
 

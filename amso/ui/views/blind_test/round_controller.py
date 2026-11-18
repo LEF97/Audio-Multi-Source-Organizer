@@ -11,6 +11,7 @@ from PySide6.QtWidgets import QWidget
 
 from amso.core.database import TrackRecord
 from amso.core.i18n import tr
+from amso.ui.styles import COLOR_PRIMARY_HOVER, COLOR_SUCCESS, COLOR_TEXT_MUTED
 from amso.ui.views.cover_helper import get_default_cover_pixmap, load_cover_async
 
 if TYPE_CHECKING:
@@ -152,8 +153,8 @@ class BlindTestRoundMixin(_MixinBase):
             self._start_fade_in(2.0)
             self.btn_play_pause.setText("⏸")
             self.lbl_status_badge.setText(tr("blind_test.status_searching"))
-            self.lbl_status_badge.setStyleSheet("""
-                color: #38BDF8;
+            self.lbl_status_badge.setStyleSheet(f"""
+                color: {COLOR_PRIMARY_HOVER};
                 font-size: 12px;
                 font-weight: 600;
                 padding: 3px 12px;
@@ -168,8 +169,8 @@ class BlindTestRoundMixin(_MixinBase):
             self._game_timer.stop()
             self.btn_play_pause.setText("▶")
             self.lbl_status_badge.setText(tr("blind_test.status_paused"))
-            self.lbl_status_badge.setStyleSheet("""
-                color: #94A3B8;
+            self.lbl_status_badge.setStyleSheet(f"""
+                color: {COLOR_TEXT_MUTED};
                 font-size: 12px;
                 font-weight: 600;
                 padding: 3px 12px;
@@ -219,8 +220,8 @@ class BlindTestRoundMixin(_MixinBase):
             self._start_fade_in(2.0)
             self.btn_play_pause.setText("⏸")
             self.lbl_status_badge.setText(tr("blind_test.status_searching"))
-            self.lbl_status_badge.setStyleSheet("""
-                color: #38BDF8;
+            self.lbl_status_badge.setStyleSheet(f"""
+                color: {COLOR_PRIMARY_HOVER};
                 font-size: 12px;
                 font-weight: 600;
                 padding: 3px 12px;
@@ -238,8 +239,8 @@ class BlindTestRoundMixin(_MixinBase):
             self._game_timer.stop()
             self.btn_play_pause.setText("▶")
             self.lbl_status_badge.setText(tr("blind_test.status_paused"))
-            self.lbl_status_badge.setStyleSheet("""
-                color: #94A3B8;
+            self.lbl_status_badge.setStyleSheet(f"""
+                color: {COLOR_TEXT_MUTED};
                 font-size: 12px;
                 font-weight: 600;
                 padding: 3px 12px;
@@ -272,8 +273,8 @@ class BlindTestRoundMixin(_MixinBase):
         if self._state == "countdown":
             if self.lbl_status_badge.text() == tr("blind_test.status_paused"):
                 self.lbl_status_badge.setText(tr("blind_test.status_searching"))
-                self.lbl_status_badge.setStyleSheet("""
-                    color: #38BDF8;
+                self.lbl_status_badge.setStyleSheet(f"""
+                    color: {COLOR_PRIMARY_HOVER};
                     font-size: 12px;
                     font-weight: 600;
                     padding: 3px 12px;
@@ -366,8 +367,8 @@ class BlindTestRoundMixin(_MixinBase):
                 self.lbl_file_name.setVisible(False)
 
         self.lbl_status_badge.setText(tr("blind_test.status_revealed", remain=self._reveal_remain))
-        self.lbl_status_badge.setStyleSheet("""
-            color: #4ADE80;
+        self.lbl_status_badge.setStyleSheet(f"""
+            color: {COLOR_SUCCESS};
             font-size: 12px;
             font-weight: 600;
             padding: 3px 12px;

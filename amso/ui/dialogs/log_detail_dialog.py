@@ -15,6 +15,17 @@ from PySide6.QtWidgets import (
 from amso.core.activity_messages import display_action, display_details, display_level
 from amso.core.database import ActivityLogRecord
 from amso.core.i18n import tr
+from amso.ui.styles import (
+    COLOR_BG_DARK,
+    COLOR_BORDER_LIGHT,
+    COLOR_PRIMARY,
+    COLOR_PRIMARY_DARK,
+    COLOR_PRIMARY_HOVER,
+    COLOR_SUCCESS,
+    COLOR_TEXT,
+    COLOR_TEXT_BRIGHT,
+    COLOR_TEXT_SOFT,
+)
 
 
 class LogDetailDialog(QDialog):
@@ -26,35 +37,35 @@ class LogDetailDialog(QDialog):
         self.setMinimumSize(560, 420)
         self.setSizeGripEnabled(True)
         self.setStyleSheet(
-            """
-            QDialog {
+            f"""
+            QDialog {{
                 background-color: #121418;
-                color: #E2E8F0;
-            }
-            QLabel {
-                color: #CBD5E1;
+                color: {COLOR_TEXT_SOFT};
+            }}
+            QLabel {{
+                color: {COLOR_TEXT};
                 font-size: 13px;
-            }
-            QTextEdit {
-                background-color: #1A1D24;
-                border: 1px solid #333846;
+            }}
+            QTextEdit {{
+                background-color: {COLOR_BG_DARK};
+                border: 1px solid {COLOR_BORDER_LIGHT};
                 border-radius: 6px;
-                color: #F8FAFC;
+                color: {COLOR_TEXT_BRIGHT};
                 font-family: "Consolas", monospace;
                 font-size: 12px;
                 padding: 8px;
-            }
-            QPushButton {
-                background-color: #0284C7;
+            }}
+            QPushButton {{
+                background-color: {COLOR_PRIMARY};
                 color: white;
                 border: none;
                 border-radius: 6px;
                 padding: 6px 16px;
                 font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #0369A1;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {COLOR_PRIMARY_DARK};
+            }}
             """
         )
 
@@ -64,7 +75,7 @@ class LogDetailDialog(QDialog):
 
         # En-tête
         header = QLabel(f"<b>{display_action(record)}</b>")
-        header.setStyleSheet("font-size: 16px; color: #38BDF8;")
+        header.setStyleSheet(f"font-size: 16px; color: {COLOR_PRIMARY_HOVER};")
         layout.addWidget(header)
 
         # Métadonnées
@@ -72,9 +83,13 @@ class LogDetailDialog(QDialog):
         meta_grid.setSpacing(6)
 
         lvl_color = (
-            "#4ADE80"
+            COLOR_SUCCESS
             if record.level == "SUCCESS"
-            else ("#FBBF24" if record.level == "WARNING" else ("#F87171" if record.level == "ERROR" else "#38BDF8"))
+            else (
+                "#FBBF24"
+                if record.level == "WARNING"
+                else ("#F87171" if record.level == "ERROR" else COLOR_PRIMARY_HOVER)
+            )
         )
         lbl_lvl = QLabel(
             f"<b>{tr('logs.col_level')} :</b> <span style='color: {lvl_color}; font-weight: bold;'>{display_level(record.level)}</span>"

@@ -27,12 +27,17 @@ from amso.core.database import DatabaseManager, SourceRecord
 from amso.core.i18n import tr
 from amso.core.scheduler import SyncScheduler
 from amso.ui.styles import (
+    COLOR_BG_DEEP,
+    COLOR_BG_SLATE,
+    COLOR_BORDER_SLATE,
     COLOR_PRIMARY,
     COLOR_PRIMARY_HOVER,
+    COLOR_SUCCESS,
     COLOR_TEXT,
     COLOR_TEXT_BRIGHT,
     COLOR_TEXT_MUTED,
     COLOR_TEXT_SOFT,
+    COLOR_WHITE,
 )
 
 
@@ -84,8 +89,8 @@ class ActivityFeedPopover(QFrame):
         self.card.setStyleSheet(
             f"""
             QFrame#activityCard {{
-                background-color: #0F172A;
-                border: 1px solid #334155;
+                background-color: {COLOR_BG_DEEP};
+                border: 1px solid {COLOR_BORDER_SLATE};
                 border-radius: 12px;
             }}
             QLabel {{
@@ -136,7 +141,9 @@ class ActivityFeedPopover(QFrame):
         sec_current_layout.addWidget(self.lbl_cur_title)
 
         self.cur_box = QFrame()
-        self.cur_box.setStyleSheet("background-color: #1E293B; border: 1px solid #334155; border-radius: 8px;")
+        self.cur_box.setStyleSheet(
+            f"background-color: {COLOR_BG_SLATE}; border: 1px solid {COLOR_BORDER_SLATE}; border-radius: 8px;"
+        )
         cur_box_layout = QVBoxLayout(self.cur_box)
         cur_box_layout.setContentsMargins(10, 8, 10, 8)
         cur_box_layout.setSpacing(4)
@@ -154,9 +161,9 @@ class ActivityFeedPopover(QFrame):
         self.cur_progress.setStyleSheet(
             f"""
             QProgressBar {{
-                border: 1px solid #334155;
+                border: 1px solid {COLOR_BORDER_SLATE};
                 border-radius: 4px;
-                background-color: #0F172A;
+                background-color: {COLOR_BG_DEEP};
                 text-align: center;
                 height: 10px;
                 font-size: 9px;
@@ -237,9 +244,9 @@ class ActivityFeedPopover(QFrame):
         self.btn_view_logs.setStyleSheet(
             f"""
             QPushButton {{
-                background-color: #1E293B;
+                background-color: {COLOR_BG_SLATE};
                 color: {COLOR_PRIMARY_HOVER};
-                border: 1px solid #334155;
+                border: 1px solid {COLOR_BORDER_SLATE};
                 border-radius: 6px;
                 padding: 6px 12px;
                 font-size: 12px;
@@ -248,7 +255,7 @@ class ActivityFeedPopover(QFrame):
             }}
             QPushButton:hover {{
                 background-color: {COLOR_PRIMARY};
-                color: #FFFFFF;
+                color: {COLOR_WHITE};
                 border: 1px solid {COLOR_PRIMARY_HOVER};
             }}
             """
@@ -263,7 +270,7 @@ class ActivityFeedPopover(QFrame):
         sep = QFrame()
         sep.setFrameShape(QFrame.Shape.HLine)
         sep.setFrameShadow(QFrame.Shadow.Sunken)
-        sep.setStyleSheet("background-color: #1E293B; max-height: 1px; border: none;")
+        sep.setStyleSheet(f"background-color: {COLOR_BG_SLATE}; max-height: 1px; border: none;")
         return sep
 
     def update_progress(self, message: str, pct: int | None = None) -> None:
@@ -349,7 +356,7 @@ class ActivityFeedPopover(QFrame):
                 for log in recent_logs:
                     ts = (log.timestamp or "").split()[-1] if log.timestamp else ""
                     if log.level == "SUCCESS":
-                        icon = "<span style='color: #4ADE80;'>✓</span>"
+                        icon = f"<span style='color: {COLOR_SUCCESS};'>✓</span>"
                     elif log.level == "WARNING":
                         icon = "<span style='color: #FBBF24;'>⚠</span>"
                     elif log.level == "ERROR":

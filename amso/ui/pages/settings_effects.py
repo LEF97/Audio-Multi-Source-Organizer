@@ -25,7 +25,16 @@ from PySide6.QtWidgets import (
 
 from amso.core.config import VISUAL_EFFECT_IDS, get_config_manager
 from amso.core.i18n import tr
-from amso.ui.styles import effects_combo_qss, tree_action_button_qss
+from amso.ui.styles import (
+    COLOR_BG_CARD,
+    COLOR_TEXT,
+    COLOR_TEXT_BRIGHT,
+    COLOR_TEXT_DIM,
+    COLOR_TEXT_MUTED,
+    COLOR_TEXT_SOFT,
+    effects_combo_qss,
+    tree_action_button_qss,
+)
 from amso.ui.widgets.effects_combo import EFFECT_CATALOG
 from amso.ui.widgets.page_header import build_page_top_bar
 
@@ -100,7 +109,9 @@ class SettingsEffectsPageMixin(_MixinBase):
         header_row = QHBoxLayout()
         header_row.setSpacing(12)
         self.lbl_card_effects_table_title = QLabel(tr("settings.effects_table_title"))
-        self.lbl_card_effects_table_title.setStyleSheet("color: #F8FAFC; font-size: 14px; font-weight: 700;")
+        self.lbl_card_effects_table_title.setStyleSheet(
+            f"color: {COLOR_TEXT_BRIGHT}; font-size: 14px; font-weight: 700;"
+        )
         self.lbl_card_effects_table_title.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         header_row.addWidget(self.lbl_card_effects_table_title)
         header_row.addStretch()
@@ -113,7 +124,7 @@ class SettingsEffectsPageMixin(_MixinBase):
         layout.addLayout(header_row)
 
         self.lbl_card_effects_table_desc = QLabel(tr("settings.effects_table_desc"))
-        self.lbl_card_effects_table_desc.setStyleSheet("color: #94A3B8; font-size: 13px;")
+        self.lbl_card_effects_table_desc.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 13px;")
         self.lbl_card_effects_table_desc.setWordWrap(True)
         self.lbl_card_effects_table_desc.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         layout.addWidget(self.lbl_card_effects_table_desc)
@@ -135,26 +146,26 @@ class SettingsEffectsPageMixin(_MixinBase):
         table.setShowGrid(False)
         table.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         table.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        table.setStyleSheet("""
-            QTableWidget {
+        table.setStyleSheet(f"""
+            QTableWidget {{
                 background-color: #161922;
                 alternate-background-color: #1B1F2A;
                 border: 1px solid #2A303E;
                 border-radius: 8px;
-                color: #E2E8F0;
-            }
-            QHeaderView::section {
-                background-color: #20242D;
-                color: #CBD5E1;
+                color: {COLOR_TEXT_SOFT};
+            }}
+            QHeaderView::section {{
+                background-color: {COLOR_BG_CARD};
+                color: {COLOR_TEXT};
                 font-size: 12.5px;
                 font-weight: 700;
                 padding: 8px 12px;
                 border: none;
                 border-bottom: 1px solid #2A303E;
-            }
-            QTableWidget::item {
+            }}
+            QTableWidget::item {{
                 border-bottom: 1px solid #222734;
-            }
+            }}
         """)
 
         header = table.horizontalHeader()
@@ -179,9 +190,11 @@ class SettingsEffectsPageMixin(_MixinBase):
             desc_layout.setSpacing(2)
 
             lbl_title = QLabel(f"{emoji}  {tr(title_key)}")
-            lbl_title.setStyleSheet("color: #F8FAFC; font-size: 13px; font-weight: 600; background: transparent;")
+            lbl_title.setStyleSheet(
+                f"color: {COLOR_TEXT_BRIGHT}; font-size: 13px; font-weight: 600; background: transparent;"
+            )
             lbl_hint = QLabel(tr(hint_key))
-            lbl_hint.setStyleSheet("color: #64748B; font-size: 11.5px; background: transparent;")
+            lbl_hint.setStyleSheet(f"color: {COLOR_TEXT_DIM}; font-size: 11.5px; background: transparent;")
             lbl_hint.setWordWrap(True)
             desc_layout.addWidget(lbl_title)
             desc_layout.addWidget(lbl_hint)
@@ -232,11 +245,13 @@ class SettingsEffectsPageMixin(_MixinBase):
         layout.setSpacing(10)
 
         self.lbl_card_effects_random_title = QLabel(f"🎲  {tr('settings.effects_random_title')}")
-        self.lbl_card_effects_random_title.setStyleSheet("color: #F8FAFC; font-size: 14px; font-weight: 700;")
+        self.lbl_card_effects_random_title.setStyleSheet(
+            f"color: {COLOR_TEXT_BRIGHT}; font-size: 14px; font-weight: 700;"
+        )
         layout.addWidget(self.lbl_card_effects_random_title)
 
         self.lbl_card_effects_random_desc = QLabel(tr("settings.effects_random_desc"))
-        self.lbl_card_effects_random_desc.setStyleSheet("color: #94A3B8; font-size: 13px;")
+        self.lbl_card_effects_random_desc.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 13px;")
         self.lbl_card_effects_random_desc.setWordWrap(True)
         layout.addWidget(self.lbl_card_effects_random_desc)
 
@@ -245,7 +260,7 @@ class SettingsEffectsPageMixin(_MixinBase):
         grid.setVerticalSpacing(10)
 
         self.lbl_effects_random_player = QLabel(tr("settings.effects_random_player_label"))
-        self.lbl_effects_random_player.setStyleSheet("color: #CBD5E1; font-size: 13px; font-weight: 500;")
+        self.lbl_effects_random_player.setStyleSheet(f"color: {COLOR_TEXT}; font-size: 13px; font-weight: 500;")
         grid.addWidget(self.lbl_effects_random_player, 0, 0)
 
         self.combo_effects_random_player = self._make_random_interval_combo(
@@ -255,7 +270,7 @@ class SettingsEffectsPageMixin(_MixinBase):
         grid.addWidget(self.combo_effects_random_player, 0, 1)
 
         self.lbl_effects_random_blind_test = QLabel(tr("settings.effects_random_blind_test_label"))
-        self.lbl_effects_random_blind_test.setStyleSheet("color: #CBD5E1; font-size: 13px; font-weight: 500;")
+        self.lbl_effects_random_blind_test.setStyleSheet(f"color: {COLOR_TEXT}; font-size: 13px; font-weight: 500;")
         grid.addWidget(self.lbl_effects_random_blind_test, 1, 0)
 
         self.combo_effects_random_blind_test = self._make_random_interval_combo(

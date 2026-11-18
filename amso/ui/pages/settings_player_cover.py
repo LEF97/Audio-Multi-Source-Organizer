@@ -9,7 +9,7 @@ from PySide6.QtWidgets import QButtonGroup, QFrame, QLabel, QRadioButton, QVBoxL
 
 from amso.core.config import COVER_TRANSITION_MODES, get_config_manager
 from amso.core.i18n import tr
-from amso.ui.styles import settings_radio_qss
+from amso.ui.styles import COLOR_TEXT_BRIGHT, COLOR_TEXT_DIM, COLOR_TEXT_MUTED, settings_radio_qss
 
 if TYPE_CHECKING:
     _MixinBase = QWidget
@@ -36,11 +36,11 @@ class SettingsPlayerCoverMixin(_MixinBase):
         layout.setSpacing(12)
 
         self.lbl_card_cover_trans_title = QLabel(tr("settings.cover_transition_title"))
-        self.lbl_card_cover_trans_title.setStyleSheet("color: #F8FAFC; font-size: 14px; font-weight: 700;")
+        self.lbl_card_cover_trans_title.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-size: 14px; font-weight: 700;")
         layout.addWidget(self.lbl_card_cover_trans_title)
 
         self.lbl_card_cover_trans_desc = QLabel(tr("settings.cover_transition_desc"))
-        self.lbl_card_cover_trans_desc.setStyleSheet("color: #94A3B8; font-size: 13px;")
+        self.lbl_card_cover_trans_desc.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 13px;")
         self.lbl_card_cover_trans_desc.setWordWrap(True)
         layout.addWidget(self.lbl_card_cover_trans_desc)
 
@@ -58,7 +58,7 @@ class SettingsPlayerCoverMixin(_MixinBase):
             box.addWidget(radio)
 
             hint = QLabel(tr(f"settings.cover_transition_{mode}_hint"))
-            hint.setStyleSheet("color: #64748B; font-size: 12px; margin-left: 26px;")
+            hint.setStyleSheet(f"color: {COLOR_TEXT_DIM}; font-size: 12px; margin-left: 26px;")
             hint.setWordWrap(True)
             box.addWidget(hint)
 

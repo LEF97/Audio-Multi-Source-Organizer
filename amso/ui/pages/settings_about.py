@@ -27,8 +27,11 @@ from amso.core.constants import (
 )
 from amso.core.i18n import tr
 from amso.ui.styles import (
+    COLOR_BG_SLATE,
     COLOR_BORDER,
+    COLOR_BORDER_SLATE,
     COLOR_PRIMARY,
+    COLOR_PRIMARY_DARK,
     COLOR_PRIMARY_HOVER,
     COLOR_TEXT,
     COLOR_TEXT_BRIGHT,
@@ -36,6 +39,7 @@ from amso.ui.styles import (
     COLOR_TEXT_DISABLED,
     COLOR_TEXT_MUTED,
     COLOR_TEXT_SOFT,
+    COLOR_WHITE,
 )
 from amso.ui.theme import get_app_logo_pixmap
 from amso.ui.views.visual_effects import VisualEffectWidget
@@ -146,9 +150,9 @@ class SettingsAboutPageMixin:
         title_row.addWidget(acronym_lbl)
 
         ver_badge = QLabel(f"v{__version__}")
-        ver_badge.setStyleSheet("""
-            background-color: #0369A1;
-            color: #FFFFFF;
+        ver_badge.setStyleSheet(f"""
+            background-color: {COLOR_PRIMARY_DARK};
+            color: {COLOR_WHITE};
             padding: 2px 10px;
             border-radius: 10px;
             font-size: 11px;
@@ -213,18 +217,18 @@ class SettingsAboutPageMixin:
         self.btn_check_updates_about.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_check_updates_about.setStyleSheet(f"""
             QPushButton {{
-                background-color: #1E293B;
+                background-color: {COLOR_BG_SLATE};
                 color: {COLOR_TEXT_SOFT};
                 font-size: 12px;
                 font-weight: 600;
                 padding: 7px 16px;
-                border: 1px solid #334155;
+                border: 1px solid {COLOR_BORDER_SLATE};
                 border-radius: 6px;
             }}
             QPushButton:hover {{
-                background-color: #334155;
+                background-color: {COLOR_BORDER_SLATE};
                 border-color: {COLOR_TEXT_DISABLED};
-                color: #FFFFFF;
+                color: {COLOR_WHITE};
             }}
         """)
         self.btn_check_updates_about.clicked.connect(lambda: self._check_for_updates(manual=True))
@@ -239,7 +243,7 @@ class SettingsAboutPageMixin:
         self.btn_update_download.setStyleSheet(f"""
             QPushButton {{
                 background-color: {COLOR_PRIMARY};
-                color: #FFFFFF;
+                color: {COLOR_WHITE};
                 font-size: 12px;
                 font-weight: 700;
                 padding: 7px 14px;
@@ -247,7 +251,7 @@ class SettingsAboutPageMixin:
                 border-radius: 6px;
             }}
             QPushButton:hover {{
-                background-color: #0369A1;
+                background-color: {COLOR_PRIMARY_DARK};
                 border-color: #7DD3FC;
             }}
         """)
@@ -277,22 +281,22 @@ class SettingsAboutPageMixin:
         # Bouton Ko-fi
         self.btn_about_kofi = QPushButton(tr("dialog.about_btn_kofi"))
         self.btn_about_kofi.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_about_kofi.setStyleSheet("""
-            QPushButton {
+        self.btn_about_kofi.setStyleSheet(f"""
+            QPushButton {{
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
                     stop:0 #FF5E5B, stop:1 #D9413E);
-                color: #FFFFFF;
+                color: {COLOR_WHITE};
                 font-size: 13px;
                 font-weight: 700;
                 padding: 10px 22px;
                 border: 1px solid #FFA4A2;
                 border-radius: 8px;
-            }
-            QPushButton:hover {
+            }}
+            QPushButton:hover {{
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
                     stop:0 #FF7673, stop:1 #FF5E5B);
-                border-color: #FFFFFF;
-            }
+                border-color: {COLOR_WHITE};
+            }}
         """)
         self.btn_about_kofi.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(URL_KO_FI)))
         donate_row.addWidget(self.btn_about_kofi)
@@ -300,22 +304,22 @@ class SettingsAboutPageMixin:
         # Bouton GitHub Sponsors
         self.btn_about_sponsors = QPushButton(tr("dialog.about_btn_sponsors"))
         self.btn_about_sponsors.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_about_sponsors.setStyleSheet("""
-            QPushButton {
+        self.btn_about_sponsors.setStyleSheet(f"""
+            QPushButton {{
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
                     stop:0 #EA4AAA, stop:1 #C5288B);
-                color: #FFFFFF;
+                color: {COLOR_WHITE};
                 font-size: 13px;
                 font-weight: 700;
                 padding: 10px 22px;
                 border: 1px solid #F9A8D4;
                 border-radius: 8px;
-            }
-            QPushButton:hover {
+            }}
+            QPushButton:hover {{
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
                     stop:0 #F062BA, stop:1 #EA4AAA);
-                border-color: #FFFFFF;
-            }
+                border-color: {COLOR_WHITE};
+            }}
         """)
         self.btn_about_sponsors.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(URL_GITHUB_SPONSORS)))
         donate_row.addWidget(self.btn_about_sponsors)

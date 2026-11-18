@@ -46,6 +46,7 @@ from amso.core.playlist_repair import (
     find_local_repair_proposals,
     find_most_effective_folder,
 )
+from amso.ui.styles import COLOR_DANGER_SOFT, COLOR_SUCCESS, COLOR_TEXT, COLOR_TEXT_DIM
 
 logger = logging.getLogger(__name__)
 
@@ -256,7 +257,7 @@ class PlaylistRepairPanel(QWidget):
         top_bar.setSpacing(8)
 
         self.lbl_status = QLabel()
-        self.lbl_status.setStyleSheet("color: #CBD5E1; font-size: 12.5px; font-weight: 600;")
+        self.lbl_status.setStyleSheet(f"color: {COLOR_TEXT}; font-size: 12.5px; font-weight: 600;")
         top_bar.addWidget(self.lbl_status)
 
         self.progress_bar = QProgressBar()
@@ -339,7 +340,7 @@ class PlaylistRepairPanel(QWidget):
         self.radio_exact_100 = QRadioButton(tr("playlist_editor.repair_mode_exact_100", matched=0, total=0))
         self.radio_exact_100.setEnabled(False)
 
-        radio_qss = "QRadioButton { color: #CBD5E1; font-size: 12px; } QRadioButton:disabled { color: #64748B; }"
+        radio_qss = f"QRadioButton {{ color: {COLOR_TEXT}; font-size: 12px; }} QRadioButton:disabled {{ color: {COLOR_TEXT_DIM}; }}"
         for idx, rb in enumerate((self.radio_playlist_dir, self.radio_best_dir, self.radio_exact_100)):
             rb.setStyleSheet(radio_qss)
             self._mode_group.addButton(rb, idx)
@@ -554,7 +555,7 @@ class PlaylistRepairPanel(QWidget):
             dur_str = _format_duration_short(entry.duration_seconds)
             missing_text = f"{orig_label}  ({dur_str})" if dur_str != "-" else orig_label
             missing_item = QTableWidgetItem(missing_text)
-            missing_item.setForeground(QColor("#FCA5A5"))
+            missing_item.setForeground(QColor(COLOR_DANGER_SOFT))
             full_missing = entry.resolved_path or orig_label
             missing_item.setToolTip(f"{entry.title or '-'} — {entry.artist or '-'}\n{full_missing}")
             self.table.setItem(row, 2, missing_item)
@@ -562,7 +563,7 @@ class PlaylistRepairPanel(QWidget):
             combo: QComboBox | None = None
             if not prop.candidates:
                 none_item = QTableWidgetItem(tr("playlist_editor.repair_no_match"))
-                none_item.setForeground(QColor("#64748B"))
+                none_item.setForeground(QColor(COLOR_TEXT_DIM))
                 self.table.setItem(row, 3, none_item)
             elif len(prop.candidates) == 1:
                 cand = prop.candidates[0]
@@ -667,10 +668,10 @@ class PlaylistRepairPanel(QWidget):
     def _set_confidence_cell(self, row: int, cand: RepairCandidate | None) -> None:
         if cand is None:
             item = QTableWidgetItem("-")
-            item.setForeground(QColor("#64748B"))
+            item.setForeground(QColor(COLOR_TEXT_DIM))
         else:
             item = QTableWidgetItem(f"{cand.score} %")
-            item.setForeground(QColor("#4ADE80") if cand.score >= AUTO_CHECK_SCORE else QColor("#FBBF24"))
+            item.setForeground(QColor(COLOR_SUCCESS) if cand.score >= AUTO_CHECK_SCORE else QColor("#FBBF24"))
         item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
         self.table.setItem(row, 4, item)
 
