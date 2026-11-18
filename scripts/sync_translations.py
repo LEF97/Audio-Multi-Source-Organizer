@@ -183,8 +183,12 @@ NON_LATIN_LANGS = frozenset({"ar", "be", "bg", "el", "he", "ja", "ko", "ru", "sr
 NON_LATIN_FORCED_KEYS = frozenset({"sidebar.nav_library_sources", "unit.seconds_short"})
 
 
+# Clés traduites par l'assistant (libellés courts très visibles) : Ollama les rend mal hors contexte, on ne les écrase pas
+ASSISTANT_KEY_PREFIXES = ("sidebar.",)
+
+
 def needs_retranslation(key: str, val: str, ref_val: str, target_lang: str, en_val: str = "") -> bool:
-    if target_lang == "fr":
+    if target_lang == "fr" or key.startswith(ASSISTANT_KEY_PREFIXES):
         return False
     if target_lang in NON_LATIN_LANGS and key in NON_LATIN_FORCED_KEYS and val == ref_val:
         return True
