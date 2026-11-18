@@ -36,7 +36,7 @@ main.py                       point d'entrée (AppUserModelID Windows, option --
 amso/
 ├── core/                     logique métier pure, ZÉRO dépendance Qt
 │   ├── database.py           DatabaseManager (assemble les mixins) + schéma / migrations
-│   ├── db/                   models, sources_repo, tracks_repo, curation_repo, playlists_repo, activity_repo, library_queries, paths
+│   ├── db/                   models, schema (DDL + colonnes ajoutées ADDED_COLUMNS), sources_repo, tracks_repo, curation_repo, playlists_repo, activity_repo, library_queries, paths
 │   ├── activity_messages.py  messages du journal d'activité en clé + paramètres (colonne `i18n`), traduits à l'affichage
 │   ├── scanner.py            parcours récursif multithread
 │   ├── metadata.py           tags (mutagen), formats, pochettes embarquées
