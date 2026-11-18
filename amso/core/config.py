@@ -88,6 +88,11 @@ KEY_WINDOW_HEIGHT = "window_height"
 KEY_WINDOW_X = "window_x"
 KEY_WINDOW_Y = "window_y"
 KEY_WINDOW_MAXIMIZED = "window_maximized"
+KEY_SIDEBAR_WIDTH = "sidebar_width"
+DEFAULT_SIDEBAR_WIDTH = 240
+# Bornes alignées sur min-width / max-width de QFrame#sidebarFrame (qss_base.py)
+MIN_SIDEBAR_WIDTH = 170
+MAX_SIDEBAR_WIDTH = 320
 DEFAULT_WINDOW_WIDTH = 1200
 DEFAULT_WINDOW_HEIGHT = 780
 MIN_WINDOW_WIDTH = 950
@@ -579,6 +584,23 @@ class ConfigManager:
             return (int(raw_x), int(raw_y))
         except (ValueError, TypeError):
             return None
+
+    def get_sidebar_width(self) -> int:
+        """Largeur du menu de gauche choisie par l'utilisateur (défaut si absente ou invalide)."""
+        raw = self.get(SECTION_UI, KEY_SIDEBAR_WIDTH)
+        try:
+            width = int(raw) if raw is not None else DEFAULT_SIDEBAR_WIDTH
+        except (ValueError, TypeError):
+            return DEFAULT_SIDEBAR_WIDTH
+        return max(MIN_SIDEBAR_WIDTH, min(MAX_SIDEBAR_WIDTH, width))
+
+    def set_sidebar_width(self, width: int) -> None:
+        """Persiste la largeur du menu de gauche."""
+        if not self._config.has_section(SECTION_UI):
+            self._config.add_section(SECTION_UI)
+        self._config.set(SECTION_UI, KEY_SIDEBAR_WIDTH, str(max(MIN_SIDEBAR_WIDTH, min(MAX_SIDEBAR_WIDTH, int(width)))))
+        if self._batch_depth == 0:
+            self.save()
 
     def get_window_maximized(self) -> bool:
         """Retourne True si la fenêtre était agrandie lors de la dernière fermeture."""

@@ -306,9 +306,9 @@ class MainWindow(
         right_panel = self._create_right_panel()
         splitter.addWidget(right_panel)
 
-        # Ratios de largeur du splitter (240px / reste)
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
+        self._setup_sidebar_width(splitter, sidebar)
 
         # 3. Bannière discrète de mise à jour (placée juste au-dessus de la barre d'état)
         self.update_banner = UpdateBannerWidget(central_widget)

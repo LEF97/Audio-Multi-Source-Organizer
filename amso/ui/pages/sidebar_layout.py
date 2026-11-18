@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QEvent, QObject, Qt, QTimer
 from PySide6.QtGui import QAction, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QButtonGroup,
@@ -15,12 +15,15 @@ from PySide6.QtWidgets import (
     QProgressBar,
     QPushButton,
     QScrollArea,
+    QSizePolicy,
+    QSplitter,
     QStackedWidget,
     QStatusBar,
     QVBoxLayout,
     QWidget,
 )
 
+from amso.core.config import MIN_SIDEBAR_WIDTH, get_config_manager
 from amso.core.i18n import tr
 from amso.ui.styles import (
     COLOR_BG_SLATE,
@@ -51,6 +54,52 @@ class SidebarLayoutMixin(_MixinBase):
     if TYPE_CHECKING:
         # Les attributs/méthodes de MainWindow sont résolus dynamiquement (typage uniquement)
         def __getattr__(self, name: str) -> Any: ...
+
+    def _setup_sidebar_width(self, splitter: QSplitter, sidebar: QWidget) -> None:
+        """Restaure la largeur sauvegardée et la verrouille : seul un glissement du séparateur la modifie."""
+        self._sidebar_width = get_config_manager().get_sidebar_width()
+        self._sidebar_splitter = splitter
+        self._sidebar_dragging = False
+        splitter.setChildrenCollapsible(False)
+        # Le minimumSizeHint du panneau droit change selon la page affichée et repoussait le séparateur :
+        # on l'ignore (la largeur minimale de la fenêtre garantit déjà un espace suffisant).
+        right_panel = splitter.widget(1)
+        if right_panel is not None:
+            right_panel.setSizePolicy(QSizePolicy.Policy.Ignored, right_panel.sizePolicy().verticalPolicy())
+        splitter.setSizes([self._sidebar_width, max(1, self.width() - self._sidebar_width)])
+        handle = splitter.handle(1)
+        handle.installEventFilter(self._sidebar_filter(handle))
+        sidebar.installEventFilter(self._sidebar_filter(sidebar))
+        splitter.splitterMoved.connect(self._on_sidebar_splitter_moved)
+
+    def _sidebar_filter(self, parent: QWidget) -> QObject:
+        window = self
+
+        class _Filter(QObject):
+            # Le sizeHint du menu varie avec la page active (texte en gras) : le splitter
+            # élargissait alors le menu tout seul ; on rétablit la largeur choisie.
+            def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+                kind = event.type()
+                if kind == QEvent.Type.MouseButtonPress:
+                    window._sidebar_dragging = True
+                elif kind == QEvent.Type.MouseButtonRelease:
+                    window._sidebar_dragging = False
+                elif kind == QEvent.Type.Resize and not window._sidebar_dragging:
+                    QTimer.singleShot(0, window._enforce_sidebar_width)
+                return False
+
+        return _Filter(parent)
+
+    def _enforce_sidebar_width(self) -> None:
+        splitter = self._sidebar_splitter
+        current = splitter.sizes()
+        if self._sidebar_dragging or len(current) < 2 or current[0] == self._sidebar_width:
+            return
+        splitter.setSizes([self._sidebar_width, max(1, sum(current) - self._sidebar_width)])
+
+    def _on_sidebar_splitter_moved(self, _pos: int, _index: int) -> None:
+        self._sidebar_width = max(MIN_SIDEBAR_WIDTH, self._sidebar_splitter.sizes()[0])
+        get_config_manager().set_sidebar_width(self._sidebar_width)
 
     def _create_sidebar(self) -> QWidget:
         frame = QFrame()
