@@ -15,6 +15,9 @@ COLOR_BORDER = "#282C37"
 COLOR_TEXT = "#CBD5E1"
 COLOR_TEXT_BRIGHT = "#F8FAFC"
 COLOR_TEXT_MUTED = "#94A3B8"
+COLOR_TEXT_DIM = "#64748B"
+COLOR_TEXT_SOFT = "#E2E8F0"
+COLOR_TEXT_DISABLED = "#475569"
 
 
 def icon_button_qss(radius: int = 6, font_size: int = 14) -> str:
@@ -116,6 +119,42 @@ def seek_slider_qss(groove_height: int = 6, handle_size: int = 14) -> str:
 def volume_label_qss(min_width: int = 38) -> str:
     """QSS du label de volume en pourcentage."""
     return f"color: {COLOR_TEXT_MUTED}; font-size: 12px; min-width: {min_width}px;"
+
+
+def crossfade_slider_qss() -> str:
+    """QSS du curseur de durée du fondu (états actif et désactivé)."""
+    return f"""
+        QSlider::groove:horizontal {{
+            height: 6px;
+            background: #1E293B;
+            border-radius: 3px;
+        }}
+        QSlider::sub-page:horizontal {{
+            background: {COLOR_PRIMARY};
+            border-radius: 3px;
+        }}
+        QSlider::handle:horizontal {{
+            background: {COLOR_PRIMARY_HOVER};
+            border: 2px solid #0F172A;
+            width: 16px;
+            margin-top: -5px;
+            margin-bottom: -5px;
+            border-radius: 8px;
+        }}
+        QSlider::handle:horizontal:hover {{
+            background: #7DD3FC;
+        }}
+        QSlider::groove:horizontal:disabled {{
+            background: #1E293B;
+        }}
+        QSlider::sub-page:horizontal:disabled {{
+            background: #334155;
+        }}
+        QSlider::handle:horizontal:disabled {{
+            background: {COLOR_TEXT_DISABLED};
+            border: 2px solid #1E293B;
+        }}
+    """
 
 
 def effects_combo_qss() -> str:

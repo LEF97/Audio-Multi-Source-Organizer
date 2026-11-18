@@ -26,6 +26,18 @@ from amso.core.i18n import tr
 from amso.core.playlist_exporter import export_playlist, index_exported_playlist_in_db
 from amso.services.player_service import PlayerService
 from amso.ui.models import format_duration
+from amso.ui.styles import (
+    COLOR_BG_CARD,
+    COLOR_BG_HOVER,
+    COLOR_BORDER,
+    COLOR_PRIMARY,
+    COLOR_PRIMARY_HOVER,
+    COLOR_TEXT,
+    COLOR_TEXT_BRIGHT,
+    COLOR_TEXT_MUTED,
+    COLOR_TEXT_SOFT,
+)
+from amso.ui.table_settings import apply_default_columns
 from amso.ui.views.cover_helper import (
     get_default_cover_pixmap,
     get_track_cover_hash,
@@ -34,6 +46,7 @@ from amso.ui.views.cover_helper import (
 )
 from amso.ui.widgets.common import ClickableSlider
 from amso.ui.widgets.cover_transition_label import CoverTransitionLabel
+from amso.ui.widgets.help_guide_popup import HelpButton
 from amso.ui.widgets.play_pause_button import PlayPauseButton
 from amso.ui.widgets.playlist_table_view import PlaylistTableView
 from amso.ui.widgets.transport_mixin import TransportViewMixin
@@ -43,82 +56,82 @@ if TYPE_CHECKING:
 else:
     _MixinBase = object
 
-_SHUFFLE_TRACKS_BTN_QSS = """
-    QPushButton {
-        background-color: #20242D;
-        color: #38BDF8;
+_SHUFFLE_TRACKS_BTN_QSS = f"""
+    QPushButton {{
+        background-color: {COLOR_BG_CARD};
+        color: {COLOR_PRIMARY_HOVER};
         border: 1px solid #333846;
         border-radius: 6px;
         padding: 6px 12px;
         font-size: 12px;
         font-weight: 500;
         margin-right: 8px;
-    }
-    QPushButton:hover {
+    }}
+    QPushButton:hover {{
         background-color: #1E293B;
-        border-color: #38BDF8;
+        border-color: {COLOR_PRIMARY_HOVER};
         color: #7DD3FC;
-    }
-    QPushButton:disabled {
+    }}
+    QPushButton:disabled {{
         background-color: #161920;
         border-color: #262B37;
         color: #4B5563;
-    }
+    }}
 """
 
-_CLEAR_PLAYLIST_BTN_QSS = """
-    QPushButton {
-        background-color: #20242D;
+_CLEAR_PLAYLIST_BTN_QSS = f"""
+    QPushButton {{
+        background-color: {COLOR_BG_CARD};
         color: #EF4444;
         border: 1px solid #333846;
         border-radius: 6px;
         padding: 6px 12px;
         font-size: 12px;
         font-weight: 500;
-    }
-    QPushButton:hover {
+    }}
+    QPushButton:hover {{
         background-color: #2E1A1A;
         border-color: #EF4444;
         color: #FCA5A5;
-    }
+    }}
 """
 
-_VOLUME_SLIDER_QSS = """
-    QSlider::groove:horizontal {
+_VOLUME_SLIDER_QSS = f"""
+    QSlider::groove:horizontal {{
         height: 4px;
-        background-color: #282C37;
+        background-color: {COLOR_BORDER};
         border-radius: 2px;
-    }
-    QSlider::sub-page:horizontal {
-        background-color: #38BDF8;
+    }}
+    QSlider::sub-page:horizontal {{
+        background-color: {COLOR_PRIMARY_HOVER};
         border-radius: 2px;
-    }
-    QSlider::handle:horizontal {
-        background-color: #E2E8F0;
+    }}
+    QSlider::handle:horizontal {{
+        background-color: {COLOR_TEXT_SOFT};
         width: 10px;
         height: 10px;
         margin: -3px 0;
         border-radius: 5px;
-    }
+    }}
 """
 
-_SEEK_SLIDER_QSS = """
-    QSlider::groove:horizontal {
+_SEEK_SLIDER_QSS = f"""
+    QSlider::groove:horizontal {{
         height: 5px;
-        background-color: #282C37;
+        background-color: {COLOR_BORDER};
         border-radius: 2px;
-    }
-    QSlider::sub-page:horizontal {
-        background-color: #0284C7;
+    }}
+    QSlider::sub-page:horizontal {{
+        background-color: {COLOR_PRIMARY};
         border-radius: 2px;
-    }
-    QSlider::handle:horizontal {
-        background-color: #F8FAFC;
+    }}
+    QSlider::handle:horizontal {{
+        background-color: {COLOR_TEXT_BRIGHT};
         width: 12px;
         height: 12px;
         margin: -3px 0;
         border-radius: 6px;
-    }
+    }}
 """
 
 
@@ -143,13 +156,15 @@ class PlaylistHeaderMixin(_MixinBase):
         top_layout.setContentsMargins(20, 12, 20, 12)
 
         self.lbl_page_title = QLabel(tr(self._header_title_key))
-        self.lbl_page_title.setStyleSheet("color: #F8FAFC; font-size: 16px; font-weight: 700;")
+        self.lbl_page_title.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-size: 16px; font-weight: 700;")
         top_layout.addWidget(self.lbl_page_title)
 
         top_layout.addStretch()
 
         self.lbl_playlist_stats = QLabel("")
-        self.lbl_playlist_stats.setStyleSheet("color: #94A3B8; font-size: 13px; font-weight: 500; margin-right: 12px;")
+        self.lbl_playlist_stats.setStyleSheet(
+            f"color: {COLOR_TEXT_MUTED}; font-size: 13px; font-weight: 500; margin-right: 12px;"
+        )
         top_layout.addWidget(self.lbl_playlist_stats)
 
         self.btn_save_playlist = QPushButton(tr("playlist.btn_save"))
@@ -170,17 +185,20 @@ class PlaylistHeaderMixin(_MixinBase):
         self.btn_clear_playlist.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_clear_playlist.setStyleSheet(_CLEAR_PLAYLIST_BTN_QSS)
         top_layout.addWidget(self.btn_clear_playlist)
+
+        self.btn_help = HelpButton("playlist.help_title", "playlist.help_body", parent=top_bar)
+        top_layout.addWidget(self.btn_help)
         return top_bar
 
     def _build_player_banner(self) -> QFrame:
         player_banner = QFrame()
         player_banner.setObjectName("playerBanner")
-        player_banner.setStyleSheet("""
-            QFrame#playerBanner {
+        player_banner.setStyleSheet(f"""
+            QFrame#playerBanner {{
                 background-color: #1A1D24;
-                border-bottom: 1px solid #282C37;
+                border-bottom: 1px solid {COLOR_BORDER};
                 padding: 10px 16px;
-            }
+            }}
         """)
         banner_layout = QVBoxLayout(player_banner)
         banner_layout.setContentsMargins(16, 10, 16, 10)
@@ -204,11 +222,11 @@ class PlaylistHeaderMixin(_MixinBase):
         track_info_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
 
         self.lbl_track_title = QLabel(tr("player.no_track"))
-        self.lbl_track_title.setStyleSheet("color: #F8FAFC; font-size: 14px; font-weight: 700;")
+        self.lbl_track_title.setStyleSheet(f"color: {COLOR_TEXT_BRIGHT}; font-size: 14px; font-weight: 700;")
         track_info_layout.addWidget(self.lbl_track_title)
 
         self.lbl_track_artist = QLabel("")
-        self.lbl_track_artist.setStyleSheet("color: #94A3B8; font-size: 12px;")
+        self.lbl_track_artist.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 12px;")
         track_info_layout.addWidget(self.lbl_track_artist)
 
         top_row.addLayout(track_info_layout, 1)
@@ -286,7 +304,7 @@ class PlaylistHeaderMixin(_MixinBase):
         seek_row.setContentsMargins(4, 0, 4, 0)
 
         self.lbl_time_cur = QLabel("00:00")
-        self.lbl_time_cur.setStyleSheet("color: #94A3B8; font-size: 11px; font-family: monospace;")
+        self.lbl_time_cur.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 11px; font-family: monospace;")
         seek_row.addWidget(self.lbl_time_cur)
 
         self.slider_seek = ClickableSlider(Qt.Orientation.Horizontal)
@@ -297,27 +315,27 @@ class PlaylistHeaderMixin(_MixinBase):
         seek_row.addWidget(self.slider_seek, 1)
 
         self.lbl_time_total = QLabel("00:00")
-        self.lbl_time_total.setStyleSheet("color: #94A3B8; font-size: 11px; font-family: monospace;")
+        self.lbl_time_total.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 11px; font-family: monospace;")
         seek_row.addWidget(self.lbl_time_total)
         return seek_row
 
     def _style_mini_button(self, btn: QPushButton, font_size: int = 19) -> None:
         btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: #20242D;
-                color: #CBD5E1;
-                border: 1px solid #282C37;
+                background-color: {COLOR_BG_CARD};
+                color: {COLOR_TEXT};
+                border: 1px solid {COLOR_BORDER};
                 border-radius: 4px;
                 font-size: {font_size}px;
                 padding: 0px;
             }}
             QPushButton:hover {{
-                background-color: #2B303C;
-                color: #F8FAFC;
-                border-color: #38BDF8;
+                background-color: {COLOR_BG_HOVER};
+                color: {COLOR_TEXT_BRIGHT};
+                border-color: {COLOR_PRIMARY_HOVER};
             }}
             QPushButton:pressed {{
-                background-color: #0284C7;
+                background-color: {COLOR_PRIMARY};
                 color: #FFFFFF;
             }}
         """)
@@ -558,8 +576,7 @@ class PlaylistUiMixin(PlaylistHeaderMixin):
             header.setSectionResizeMode(idx, QHeaderView.ResizeMode.Interactive)
 
         if not self.restore_table_state():
-            for idx, col_def in enumerate(self.playlist_model.COLUMNS):
-                header.resizeSection(idx, col_def[1])
+            apply_default_columns(self.table_view, self.playlist_model)
 
         header.sectionResized.connect(lambda *_: self.save_table_state())
         header.sectionMoved.connect(lambda *_: self.save_table_state())

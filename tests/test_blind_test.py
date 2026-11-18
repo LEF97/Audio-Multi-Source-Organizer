@@ -240,8 +240,8 @@ def test_player_view_volume_in_top_bar_and_no_blind_test(qapp: QApplication):
     assert pview.slider_volume.value() == 75
 
     # Le volume doit être enfant de top_bar
-    assert pview.slider_volume.parent() == pview.top_bar
-    assert pview.btn_mute.parent() == pview.top_bar
+    assert pview.top_bar.isAncestorOf(pview.slider_volume)
+    assert pview.top_bar.isAncestorOf(pview.btn_mute)
 
     # 2. Le bloc paramètres du blind test ne doit plus être présent sur PlayerView
     assert not hasattr(pview, "card_blind_test")
@@ -395,8 +395,8 @@ def test_blind_test_top_bar_volume(qapp: QApplication):
     assert hasattr(view, "lbl_volume")
     assert view.slider_volume.value() == 65
     # Contrôle de volume dans la top_bar et non dans la carte
-    assert view.slider_volume.parent() == view.top_bar
-    assert view.btn_mute.parent() == view.top_bar
+    assert view.top_bar.isAncestorOf(view.slider_volume)
+    assert view.top_bar.isAncestorOf(view.btn_mute)
 
 
 def test_blind_test_no_autoplay_on_entry_and_start_at_zero(qapp: QApplication, sample_track: TrackRecord):

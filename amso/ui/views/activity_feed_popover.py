@@ -26,6 +26,14 @@ from amso.core.activity_messages import display_action
 from amso.core.database import DatabaseManager, SourceRecord
 from amso.core.i18n import tr
 from amso.core.scheduler import SyncScheduler
+from amso.ui.styles import (
+    COLOR_PRIMARY,
+    COLOR_PRIMARY_HOVER,
+    COLOR_TEXT,
+    COLOR_TEXT_BRIGHT,
+    COLOR_TEXT_MUTED,
+    COLOR_TEXT_SOFT,
+)
 
 
 class ActivityFeedPopover(QFrame):
@@ -74,16 +82,16 @@ class ActivityFeedPopover(QFrame):
         self.card = QFrame(self)
         self.card.setObjectName("activityCard")
         self.card.setStyleSheet(
-            """
-            QFrame#activityCard {
+            f"""
+            QFrame#activityCard {{
                 background-color: #0F172A;
                 border: 1px solid #334155;
                 border-radius: 12px;
-            }
-            QLabel {
-                color: #E2E8F0;
+            }}
+            QLabel {{
+                color: {COLOR_TEXT_SOFT};
                 font-family: "Segoe UI", -apple-system, sans-serif;
-            }
+            }}
             """
         )
 
@@ -102,7 +110,7 @@ class ActivityFeedPopover(QFrame):
         header_layout.setSpacing(8)
 
         self.lbl_title = QLabel(tr("feed.title"))
-        self.lbl_title.setStyleSheet("font-size: 14px; font-weight: 700; color: #38BDF8;")
+        self.lbl_title.setStyleSheet(f"font-size: 14px; font-weight: 700; color: {COLOR_PRIMARY_HOVER};")
         header_layout.addWidget(self.lbl_title)
 
         header_layout.addStretch()
@@ -123,7 +131,7 @@ class ActivityFeedPopover(QFrame):
 
         self.lbl_cur_title = QLabel(f"<b>{tr('feed.current_action')}</b>")
         self.lbl_cur_title.setStyleSheet(
-            "font-size: 12px; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.5px;"
+            f"font-size: 12px; color: {COLOR_TEXT_MUTED}; text-transform: uppercase; letter-spacing: 0.5px;"
         )
         sec_current_layout.addWidget(self.lbl_cur_title)
 
@@ -134,30 +142,30 @@ class ActivityFeedPopover(QFrame):
         cur_box_layout.setSpacing(4)
 
         self.lbl_cur_source = QLabel("")
-        self.lbl_cur_source.setStyleSheet("font-size: 13px; font-weight: 600; color: #F8FAFC;")
+        self.lbl_cur_source.setStyleSheet(f"font-size: 13px; font-weight: 600; color: {COLOR_TEXT_BRIGHT};")
         cur_box_layout.addWidget(self.lbl_cur_source)
 
         self.lbl_cur_detail = QLabel("")
-        self.lbl_cur_detail.setStyleSheet("font-size: 11px; color: #94A3B8;")
+        self.lbl_cur_detail.setStyleSheet(f"font-size: 11px; color: {COLOR_TEXT_MUTED};")
         self.lbl_cur_detail.setWordWrap(True)
         cur_box_layout.addWidget(self.lbl_cur_detail)
 
         self.cur_progress = QProgressBar()
         self.cur_progress.setStyleSheet(
-            """
-            QProgressBar {
+            f"""
+            QProgressBar {{
                 border: 1px solid #334155;
                 border-radius: 4px;
                 background-color: #0F172A;
                 text-align: center;
                 height: 10px;
                 font-size: 9px;
-                color: #CBD5E1;
-            }
-            QProgressBar::chunk {
-                background-color: #0284C7;
+                color: {COLOR_TEXT};
+            }}
+            QProgressBar::chunk {{
+                background-color: {COLOR_PRIMARY};
                 border-radius: 3px;
-            }
+            }}
             """
         )
         self.cur_progress.setFixedHeight(10)
@@ -174,12 +182,12 @@ class ActivityFeedPopover(QFrame):
 
         self.lbl_queue_title = QLabel(f"<b>{tr('feed.queue')}</b>")
         self.lbl_queue_title.setStyleSheet(
-            "font-size: 12px; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.5px;"
+            f"font-size: 12px; color: {COLOR_TEXT_MUTED}; text-transform: uppercase; letter-spacing: 0.5px;"
         )
         sec_queue_layout.addWidget(self.lbl_queue_title)
 
         self.lbl_queue_content = QLabel("")
-        self.lbl_queue_content.setStyleSheet("font-size: 12px; color: #CBD5E1; padding-left: 4px;")
+        self.lbl_queue_content.setStyleSheet(f"font-size: 12px; color: {COLOR_TEXT}; padding-left: 4px;")
         self.lbl_queue_content.setWordWrap(True)
         sec_queue_layout.addWidget(self.lbl_queue_content)
         self.card_layout.addWidget(self.sec_queue)
@@ -192,12 +200,12 @@ class ActivityFeedPopover(QFrame):
 
         self.lbl_up_title = QLabel(f"<b>{tr('feed.upcoming')}</b>")
         self.lbl_up_title.setStyleSheet(
-            "font-size: 12px; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.5px;"
+            f"font-size: 12px; color: {COLOR_TEXT_MUTED}; text-transform: uppercase; letter-spacing: 0.5px;"
         )
         sec_upcoming_layout.addWidget(self.lbl_up_title)
 
         self.lbl_upcoming_content = QLabel("")
-        self.lbl_upcoming_content.setStyleSheet("font-size: 12px; color: #CBD5E1; padding-left: 4px;")
+        self.lbl_upcoming_content.setStyleSheet(f"font-size: 12px; color: {COLOR_TEXT}; padding-left: 4px;")
         self.lbl_upcoming_content.setWordWrap(True)
         sec_upcoming_layout.addWidget(self.lbl_upcoming_content)
         self.card_layout.addWidget(self.sec_upcoming)
@@ -210,12 +218,12 @@ class ActivityFeedPopover(QFrame):
 
         self.lbl_rec_title = QLabel(f"<b>{tr('feed.recent_activity')}</b>")
         self.lbl_rec_title.setStyleSheet(
-            "font-size: 12px; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.5px;"
+            f"font-size: 12px; color: {COLOR_TEXT_MUTED}; text-transform: uppercase; letter-spacing: 0.5px;"
         )
         sec_recent_layout.addWidget(self.lbl_rec_title)
 
         self.lbl_recent_content = QLabel("")
-        self.lbl_recent_content.setStyleSheet("font-size: 11px; color: #94A3B8; padding-left: 4px;")
+        self.lbl_recent_content.setStyleSheet(f"font-size: 11px; color: {COLOR_TEXT_MUTED}; padding-left: 4px;")
         self.lbl_recent_content.setWordWrap(True)
         sec_recent_layout.addWidget(self.lbl_recent_content)
         self.card_layout.addWidget(self.sec_recent)
@@ -227,22 +235,22 @@ class ActivityFeedPopover(QFrame):
         self.btn_view_logs = QPushButton(tr("feed.btn_view_logs"))
         self.btn_view_logs.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_view_logs.setStyleSheet(
-            """
-            QPushButton {
+            f"""
+            QPushButton {{
                 background-color: #1E293B;
-                color: #38BDF8;
+                color: {COLOR_PRIMARY_HOVER};
                 border: 1px solid #334155;
                 border-radius: 6px;
                 padding: 6px 12px;
                 font-size: 12px;
                 font-weight: 600;
                 text-align: center;
-            }
-            QPushButton:hover {
-                background-color: #0284C7;
+            }}
+            QPushButton:hover {{
+                background-color: {COLOR_PRIMARY};
                 color: #FFFFFF;
-                border: 1px solid #38BDF8;
-            }
+                border: 1px solid {COLOR_PRIMARY_HOVER};
+            }}
             """
         )
         self.btn_view_logs.clicked.connect(self._on_open_logs)
@@ -347,7 +355,7 @@ class ActivityFeedPopover(QFrame):
                     elif log.level == "ERROR":
                         icon = "<span style='color: #F87171;'>✕</span>"
                     else:
-                        icon = "<span style='color: #38BDF8;'>ℹ</span>"
+                        icon = f"<span style='color: {COLOR_PRIMARY_HOVER};'>ℹ</span>"
 
                     summary = display_action(log)
                     if log.items_added or log.items_updated or log.items_deleted:
