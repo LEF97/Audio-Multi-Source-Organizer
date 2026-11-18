@@ -20,6 +20,21 @@ if TYPE_CHECKING:
 else:
     _MixinBase = object
 
+# Widget de page (attribut de MainWindow) -> identifiant de page active
+_PAGE_IDS: tuple[tuple[str, str], ...] = (
+    ("page_player", "player"),
+    ("page_blind_test", "blind_test"),
+    ("page_playlist", "playlist"),
+    ("page_folders", "folders"),
+    ("page_settings", "settings_general"),
+    ("page_library_sources", "library_sources"),
+    ("page_settings_sound", "settings_sound"),
+    ("page_settings_player", "settings_player"),
+    ("page_settings_effects", "settings_effects"),
+    ("page_logs", "logs"),
+    ("page_settings_about", "settings_about"),
+)
+
 
 class NavigationMixin(_MixinBase):
     """Navigation entre les pages et changement de page courante (mixin de MainWindow)."""
@@ -28,18 +43,21 @@ class NavigationMixin(_MixinBase):
         # Les attributs/méthodes de MainWindow sont résolus dynamiquement (typage uniquement)
         def __getattr__(self, name: str) -> Any: ...
 
+    def _stop_exclusive_mode_playback(self) -> None:
+        """Quitter le Blind Test coupe la lecture et neutralise le préchargement (invariant des deux moteurs)."""
+        self.player_service.pause()
+        self.player_service._reset_standby_player()
+
     def _switch_to_page(self, page_name: str, target: Any) -> None:
         """Bascule vers la page cible en sécurisant l'arrêt des modes exclusifs (ex: Blind Test)."""
         if getattr(self, "_current_active_page", None) == "blind_test" and page_name != "blind_test":
-            if hasattr(self, "player_service") and self.player_service:
-                self.player_service.pause()
-                if hasattr(self.player_service, "_reset_standby_player"):
-                    self.player_service._reset_standby_player()
+            self._stop_exclusive_mode_playback()
         self._current_active_page = page_name
         if isinstance(target, int):
             self.stacked_widget.setCurrentIndex(target)
         else:
             self.stacked_widget.setCurrentWidget(target)
+        self._sync_taskbar_and_tray()
 
     def _on_player_nav_clicked(self) -> None:
         """Active la page du grand Lecteur audio."""
@@ -61,6 +79,8 @@ class NavigationMixin(_MixinBase):
 
     def _on_all_tracks_clicked(self) -> None:
         self._switch_to_page("tracks", 0)
+        if hasattr(self, "btn_tracks_help"):
+            self.btn_tracks_help.set_keys("tracks.help_title", "tracks.help_body")
         if hasattr(self, "tracks_top_bar"):
             self.tracks_top_bar.setVisible(True)
         if hasattr(self, "tracks_stack"):
@@ -91,14 +111,15 @@ class NavigationMixin(_MixinBase):
                         )
                     ),
                 )
-            if hasattr(self, "scroll_folder_table_to_current_track"):
-                self.scroll_folder_table_to_current_track()
-                QTimer.singleShot(60, self.scroll_folder_table_to_current_track)
+            self.scroll_folder_table_to_current_track()
+            QTimer.singleShot(60, self.scroll_folder_table_to_current_track)
 
     def _on_duplicates_clicked(self) -> None:
         """Affiche les morceaux en doublon détectés dans la liste de lecture active."""
         self._switch_to_page("duplicates", 0)
-        playlist = list(self.player_service.playlist) if hasattr(self, "player_service") and self.player_service else []
+        if hasattr(self, "btn_tracks_help"):
+            self.btn_tracks_help.set_keys("duplicates.help_title", "duplicates.help_body")
+        playlist = list(self.player_service.playlist)
         if not playlist:
             self.table_model.set_tracks([])
             if hasattr(self, "tracks_top_bar"):
@@ -138,42 +159,33 @@ class NavigationMixin(_MixinBase):
         elif self.tree_library_sources.topLevelItemCount() == 0:
             self._refresh_library_sources_tree()
 
+    def _on_settings_sound_clicked(self) -> None:
+        """Bascule sur la page Paramètres > Son."""
+        self._switch_to_page("settings_sound", self.page_settings_sound)
+        self._sync_sound_processing_controls()
+
     def _on_settings_player_clicked(self) -> None:
         """Bascule sur la page Paramètres > Lecteur."""
         self._switch_to_page("settings_player", self.page_settings_player)
+
+    def _on_settings_effects_clicked(self) -> None:
+        """Bascule sur la page Paramètres > Effets."""
+        self._switch_to_page("settings_effects", self.page_settings_effects)
 
     def _on_current_page_changed(self, index: int) -> None:
         """Appelé lors du basculement d'onglet pour adapter l'inhibition de veille de l'écran et la page active."""
         prev_page = getattr(self, "_current_active_page", None)
         self._update_sleep_inhibition()
-        if hasattr(self, "stacked_widget"):
-            curr_widget = self.stacked_widget.currentWidget()
-            if prev_page == "blind_test" and curr_widget != getattr(self, "page_blind_test", None):
-                if hasattr(self, "player_service") and self.player_service and self.player_service.is_playing:
-                    self.player_service.pause()
-                    if hasattr(self.player_service, "_reset_standby_player"):
-                        self.player_service._reset_standby_player()
-            if curr_widget == getattr(self, "page_player", None):
-                self._current_active_page = "player"
-            elif curr_widget == getattr(self, "page_blind_test", None):
-                self._current_active_page = "blind_test"
-            elif curr_widget == getattr(self, "page_playlist", None):
-                self._current_active_page = "playlist"
-            elif curr_widget == getattr(self, "page_folders", None):
-                self._current_active_page = "folders"
-            elif curr_widget == getattr(self, "page_settings", None):
-                self._current_active_page = "settings_general"
-            elif curr_widget == getattr(self, "page_library_sources", None):
-                self._current_active_page = "library_sources"
-            elif curr_widget == getattr(self, "page_settings_player", None):
-                self._current_active_page = "settings_player"
-            elif curr_widget == getattr(self, "page_logs", None):
-                self._current_active_page = "logs"
-            elif curr_widget == getattr(self, "page_settings_about", None):
-                self._current_active_page = "settings_about"
-            elif curr_widget == getattr(self, "page_tracks", None):
-                if getattr(self, "_current_active_page", None) != "duplicates":
-                    self._current_active_page = "tracks"
+        curr_widget = self.stacked_widget.currentWidget()
+        if prev_page == "blind_test" and curr_widget is not self.page_blind_test and self.player_service.is_playing:
+            self._stop_exclusive_mode_playback()
+        for attr, page_id in _PAGE_IDS:
+            if curr_widget is getattr(self, attr, None):
+                self._current_active_page = page_id
+                return
+        # La page Morceaux sert aussi à l'affichage des doublons : conserver ce mode s'il est actif
+        if curr_widget is getattr(self, "page_tracks", None) and prev_page != "duplicates":
+            self._current_active_page = "tracks"
 
     def _on_settings_logs_clicked(self) -> None:
         """Bascule sur la page Paramètres > Logs."""
