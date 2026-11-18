@@ -331,6 +331,10 @@ class PlayerTransitionsMixin(_MixinBase):
         )
         if use_buffer:
             limit_decode_lead(self._engine, self._decoder)
+            # Tant que play_track() n'a pas démarré sur le premier bloc décodé, l'engine est à 0 ms :
+            # ne pas écraser la position restaurée affichée par l'interface.
+            if not self._engine.is_playing:
+                return
             self._engine.poll_progress()
             current_ms = self._engine.current_time_ms
             total_ms = self._engine.total_duration_ms
@@ -378,6 +382,8 @@ class PlayerTransitionsMixin(_MixinBase):
         if self._pending_seek_ms > 0:
             target_ms = self._pending_seek_ms
             self._pending_seek_ms = 0
+            self._vlc_seek_hold_ms = target_ms
+            self._vlc_seek_hold_deadline = time.monotonic() + 1.5
             try:
                 self._media_player.set_time(target_ms)
             except Exception:
@@ -404,6 +410,13 @@ class PlayerTransitionsMixin(_MixinBase):
 
         current_ms = max(0, self._media_player.get_time())
         total_ms = max(0, self._media_player.get_length())
+        hold_ms = getattr(self, "_vlc_seek_hold_ms", 0)
+        if hold_ms > 0:
+            if abs(current_ms - hold_ms) <= 1500 or time.monotonic() >= getattr(self, "_vlc_seek_hold_deadline", 0.0):
+                self._vlc_seek_hold_ms = 0
+            else:
+                # LibVLC exécute set_time() de façon asynchrone : éviter d'émettre 0 ms pendant le recalage.
+                return
         self._current_time_ms = current_ms
         if total_ms > 0:
             self._total_time_ms = total_ms

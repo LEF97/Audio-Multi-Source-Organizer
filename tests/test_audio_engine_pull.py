@@ -97,7 +97,7 @@ class _CountingOutput:
     def __init__(self) -> None:
         self.starts = 0
 
-    def start(self, paused: bool = False) -> None:
+    def start(self, paused: bool = False, drain_ms: int = 0) -> None:
         self.starts += 1
 
     def suspend(self) -> None:

@@ -50,6 +50,7 @@ class AsyncAudioDecoder(QObject):
         self._has_emitted_ready: bool = False
         self._is_finished: bool = False
         self._throttled: bool = False
+        self._rate: float = 1.0
         self._duration_ms: int = 0
         self._min_initial_bytes: int = int(0.2 * SAMPLE_RATE * BYTES_PER_FRAME)  # 200ms
         self._on_play_cb: Any = None
@@ -210,11 +211,22 @@ class AsyncAudioDecoder(QObject):
 
             self._player.set_media(media)
             self._player.play()
+            if abs(self._rate - 1.0) > 1e-3:
+                self._player.set_rate(self._rate)
             self._monitor_timer.start()
             logger.debug("Décodage amem lancé pour : %s (offset: %d ms)", file_path, start_offset_ms)
         except Exception as exc:
             logger.error("Échec du lancement du décodage pour %s : %s", file_path, exc)
             self.error_occurred.emit(file_path, str(exc))
+
+    def set_rate(self, rate: float) -> None:
+        """Définit la vitesse de décodage LibVLC (0.5x à 2.0x)."""
+        self._rate = max(0.5, min(2.0, float(rate)))
+        if self._player:
+            try:
+                self._player.set_rate(self._rate)
+            except Exception as exc:
+                logger.debug("Erreur set_rate décodeur : %s", exc)
 
     def seek_ms(self, target_ms: int) -> None:
         """Repositionne la tête de décodage à la position souhaitée."""

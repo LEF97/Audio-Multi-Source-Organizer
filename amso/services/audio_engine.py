@@ -17,7 +17,9 @@ import threading
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtMultimedia import QAudioFormat
 
+from amso.core.dsp_equalizer import Equalizer10Band
 from amso.core.pcm_mixer import StreamingCrossfade, bytes_to_ms, linear_fade, ms_to_bytes
+from amso.core.replaygain import apply_gain_pcm, replaygain_db_to_linear
 from amso.services.audio_output import SinkOutput
 from amso.services.cue_continuation import CueContinuation
 
@@ -41,10 +43,12 @@ class ContinuousAudioEngine(QObject):
     track_finished = Signal()  # émis quand la piste active atteint son terme
     crossfade_mixed = Signal()  # émis quand la zone de fondu est entièrement mixée dans le tampon
     cue_track_advanced = Signal(int)  # nombre de pistes CUE franchies dans le flux continu
+    output_devices_changed = Signal()
     error_occurred = Signal(str)
 
-    def __init__(self, parent: QObject | None = None) -> None:
+    def __init__(self, parent: QObject | None = None, device_id: str = "auto") -> None:
         super().__init__(parent)
+        self._device_id: str = device_id or "auto"
         self._format = QAudioFormat()
         self._format.setSampleRate(SAMPLE_RATE)
         self._format.setChannelCount(CHANNELS)
@@ -77,20 +81,37 @@ class ContinuousAudioEngine(QObject):
         self._xfade_end_offset: int | None = None  # fin de la zone mixée dans le tampon, une fois le mixage terminé
         self._xfade_mixed_ms: float = 0.0
         self._cue = CueContinuation()
+        self._eq = Equalizer10Band()
+        self._replaygain_enabled: bool = False
+        self._track_gain_linear: float = 1.0
+        self._playback_rate: float = 1.0
 
         self._lock = threading.Lock()
         self._init_sink()
 
     def _init_sink(self) -> bool:
         """Initialise la sortie audio unique (thread audio dédié)."""
-        output = SinkOutput(self._format, BUFFER_SIZE_SINK, 0.0 if self._is_muted else self._volume, self.read_pcm)
+        output = SinkOutput(
+            self._format,
+            BUFFER_SIZE_SINK,
+            0.0 if self._is_muted else self._volume,
+            self.read_pcm,
+            device_id=self._device_id,
+        )
         if not output.available:
             output.shutdown()
             self._output = None
             return False
+        output.devices_changed.connect(self.output_devices_changed)
         self._output = output
         self._output_started = False
         return True
+
+    def set_output_device(self, device_id: str) -> None:
+        """Change le périphérique de sortie audio à chaud ('auto' ou id hex)."""
+        self._device_id = device_id or "auto"
+        if self._output is not None:
+            self._output.set_device(self._device_id)
 
     @property
     def is_available(self) -> bool:
@@ -117,9 +138,29 @@ class ContinuousAudioEngine(QObject):
         padded = wanted - len(chunk)
         if chunk:
             self._has_served_data = True
+            if self._replaygain_enabled:
+                chunk = apply_gain_pcm(chunk, self._track_gain_linear)
+            chunk = self._eq.process_pcm(chunk)
         elif padded and self._has_served_data:
             self._starved_bytes += padded
         return (chunk + bytes(padded) if padded else chunk), padded
+
+    def set_equalizer(self, enabled: bool, gains: list[float]) -> None:
+        """Configure l'égaliseur logiciel 10 bandes (moteur buffer uniquement)."""
+        self._eq.set_gains(gains)
+        self._eq.set_enabled(enabled)
+
+    def set_replaygain_enabled(self, enabled: bool) -> None:
+        """Active ou désactive l'application du gain ReplayGain sur le flux PCM."""
+        self._replaygain_enabled = bool(enabled)
+
+    def set_track_gain_db(self, gain_db: float) -> None:
+        """Définit le gain ReplayGain (en dB) de la piste en cours."""
+        self._track_gain_linear = replaygain_db_to_linear(gain_db)
+
+    def set_playback_rate(self, rate: float) -> None:
+        """Met à jour le facteur d'échelle de la position temporelle selon la vitesse."""
+        self._playback_rate = max(0.5, min(2.0, float(rate)))
 
     def shutdown(self) -> None:
         """Arrête le thread audio (fermeture de l'application)."""
@@ -136,7 +177,9 @@ class ContinuousAudioEngine(QObject):
 
     @property
     def current_time_ms(self) -> int:
-        return self._base_offset_ms + int((self._play_offset / BYTES_PER_FRAME) / (SAMPLE_RATE / 1000.0))
+        return self._base_offset_ms + int(
+            (self._play_offset / BYTES_PER_FRAME) / (SAMPLE_RATE / 1000.0) * self._playback_rate
+        )
 
     @property
     def total_duration_ms(self) -> int:

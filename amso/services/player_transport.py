@@ -107,6 +107,7 @@ class PlayerTransportMixin(_MixinBase):
         self._is_paused_requested = True
         self._current_index = index
         self._pending_seek_ms = max(0, seek_ms)
+        self._vlc_seek_hold_ms = 0
         self._current_time_ms = max(0, seek_ms)
         track = self._playlist[index]
         file_path = track.source_path
@@ -180,6 +181,7 @@ class PlayerTransportMixin(_MixinBase):
         try:
             seek_ms = self._pending_seek_ms if resume_pending else 0
             self._pending_seek_ms = 0
+            self._vlc_seek_hold_ms = 0
             self._reset_standby_player()
             self._current_index = index
             track = self._playlist[index]
@@ -402,6 +404,7 @@ class PlayerTransportMixin(_MixinBase):
         self._volume_enforce_ticks = 0
         self._timer.stop()
         self._pending_seek_ms = 0
+        self._vlc_seek_hold_ms = 0
         self._current_time_ms = 0
         self.state_changed.emit("stopped")
         self.position_changed.emit(0, 0, 0.0)
@@ -560,6 +563,8 @@ class PlayerTransportMixin(_MixinBase):
 
         state = self._media_player.get_state() if self._media_player else None
         if state in (vlc.State.Playing, vlc.State.Paused):
+            self._vlc_seek_hold_ms = ms
+            self._vlc_seek_hold_deadline = time.monotonic() + 1.5
             try:
                 self._media_player.set_time(ms)
             except Exception:

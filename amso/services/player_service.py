@@ -17,14 +17,18 @@ from PySide6.QtCore import QObject, QTimer, Signal
 from amso.core.config import get_config_manager
 from amso.core.database import TrackRecord
 from amso.core.i18n import tr
+from amso.core.network_paths import is_network_path
+from amso.core.replaygain import read_replaygain_db
 from amso.services.audio_decoder import AsyncAudioDecoder
 from amso.services.audio_engine import ContinuousAudioEngine
+from amso.services.audio_output import list_audio_output_devices
 from amso.services.player_queue import PlayerQueueMixin
 from amso.services.player_transitions import PlayerTransitionsMixin
 from amso.services.player_transport import PlayerTransportMixin
 from amso.services.player_types import RepeatMode  # noqa: F401  (réexporté)
 from amso.services.player_vlc_transitions import PlayerVlcTransitionsMixin
 from amso.services.player_volume import PlayerVolumeMixin
+from amso.services.sleep_timer import SleepTimerController
 from amso.services.vlc_binding import vlc
 from amso.services.vlc_downloader import setup_vlc_environment
 from amso.services.windows_audio import ensure_windows_audio_session_active
@@ -65,6 +69,9 @@ class PlayerService(
     playlist_updated = Signal()  # notification de modification de la liste
     shuffle_changed = Signal(bool)  # état aléatoire actif ou inactif
     repeat_changed = Signal(int)  # RepeatMode (0, 1, 2)
+    audio_output_changed = Signal(str)  # device_id ('auto' ou hex)
+    audio_outputs_changed = Signal()  # liste des périphériques système modifiée
+    sleep_timer_changed = Signal(str, int)  # (mode, remaining_seconds)
     error_occurred = Signal(str)  # message d'erreur utilisateur
 
     def __init__(self, parent: QObject | None = None) -> None:
@@ -88,6 +95,8 @@ class PlayerService(
         self._volume_enforce_ticks: int = 0
         self._is_seeking: bool = False
         self._pending_seek_ms: int = 0
+        self._vlc_seek_hold_ms: int = 0
+        self._vlc_seek_hold_deadline: float = 0.0
         self._current_time_ms: int = 0
         self._total_time_ms: int = 0
         self._is_paused_requested: bool = False
@@ -112,13 +121,21 @@ class PlayerService(
         self._init_vlc()
 
         # Initialisation du moteur de streaming continu WASAPI
-        self._engine = ContinuousAudioEngine(self)
+        self._engine = ContinuousAudioEngine(self, device_id=cfg.get_audio_output_device())
         self._decoder = AsyncAudioDecoder(vlc_instance=self._vlc_instance, parent=self)
         self._engine.set_volume(self._volume)
         self._engine.set_muted(self._is_muted)
+        self._engine.set_equalizer(cfg.get_eq_enabled(), cfg.get_eq_bands())
+        self._engine.set_replaygain_enabled(cfg.get_replaygain_enabled())
+        self._playback_rate: float = 1.0
+        self._sleep_timer = SleepTimerController(self)
+        self._sleep_timer.changed.connect(self.sleep_timer_changed)
+        self._sleep_timer.triggered.connect(self.pause)
+        self.track_changed.connect(self._on_track_changed_for_gain)
         self._engine.track_finished.connect(self._on_engine_track_finished)
         self._engine.crossfade_mixed.connect(self._promote_standby_decoder)
         self._engine.cue_track_advanced.connect(self._on_cue_track_advanced)
+        self._engine.output_devices_changed.connect(self.audio_outputs_changed)
         self._decoder.ready_to_play.connect(self._on_decoder_ready_to_play)
         self._decoder.chunk_decoded.connect(self._on_decoder_chunk_decoded)
         self._decoder.decoding_finished.connect(self._on_decoder_finished)
@@ -228,11 +245,21 @@ class PlayerService(
 
     def _on_engine_track_finished(self) -> None:
         """Appelé lorsque le flux audio de la piste courante est entièrement diffusé."""
+        queue_ended = self._repeat_mode == 0 and self._current_index >= len(self._playlist) - 1
+        if self._sleep_timer.on_track_finished(queue_ended):
+            return
         self._advancing_after_track_end = True
         try:
             self.next()
         finally:
             self._advancing_after_track_end = False
+
+    def _on_track_changed_for_gain(self, track: TrackRecord | None) -> None:
+        if track is None or not track.source_path or not get_config_manager().get_replaygain_enabled():
+            self._engine.set_track_gain_db(0.0)
+            return
+        gain_db = 0.0 if is_network_path(track.source_path) else read_replaygain_db(track.source_path)
+        self._engine.set_track_gain_db(gain_db)
 
     def _enforce_volume(self) -> None:
         """Applique sans délai le volume nominal vers le lecteur principal s'il n'est pas en fondu."""
@@ -339,10 +366,66 @@ class PlayerService(
     def is_vlc_available(self) -> bool:
         return vlc.available and self._media_player is not None
 
+    def audio_output_devices(self) -> list[tuple[str, str]]:
+        """Retourne les sorties audio disponibles sous forme [(id_hex, libellé)]."""
+        return list_audio_output_devices()
+
+    def current_audio_output_device(self) -> str:
+        """Retourne l'identifiant du périphérique de sortie configuré ('auto' ou id hex)."""
+        return get_config_manager().get_audio_output_device()
+
+    def set_audio_output_device(self, device_id: str) -> None:
+        """Sélectionne et applique à chaud le périphérique de sortie du moteur buffer."""
+        normalized = (device_id or "auto").strip() or "auto"
+        get_config_manager().set_audio_output_device(normalized)
+        self._engine.set_output_device(normalized)
+        self.audio_output_changed.emit(normalized)
+
+    def set_equalizer(self, enabled: bool, preset: str, bands: list[float]) -> None:
+        """Persiste et applique les réglages de l'égaliseur 10 bandes."""
+        cfg = get_config_manager()
+        cfg.set_eq_enabled(enabled)
+        cfg.set_eq_preset(preset)
+        cfg.set_eq_bands(bands)
+        self._engine.set_equalizer(enabled, bands)
+
+    def set_replaygain_enabled(self, enabled: bool) -> None:
+        """Active ou désactive la normalisation ReplayGain (moteur buffer)."""
+        get_config_manager().set_replaygain_enabled(enabled)
+        self._engine.set_replaygain_enabled(enabled)
+        self._on_track_changed_for_gain(self.current_track)
+
+    def playback_rate(self) -> float:
+        return self._playback_rate
+
+    def set_playback_rate(self, rate: float) -> None:
+        """Modifie la vitesse de lecture (0.5x à 2.0x) en moteur buffer."""
+        clamped = max(0.5, min(2.0, float(rate)))
+        self._playback_rate = clamped
+        self._decoder.set_rate(clamped)
+        if self._standby_decoder is not None:
+            self._standby_decoder.set_rate(clamped)
+        self._engine.set_playback_rate(clamped)
+
+    def sleep_timer_state(self) -> tuple[str, int]:
+        return self._sleep_timer.mode, self._sleep_timer.remaining_seconds
+
+    def set_sleep_timer(self, mode: str) -> None:
+        """Configure la minuterie d'arrêt ('off', '15m', '30m', '45m', '60m', 'end_of_track', 'end_of_queue')."""
+        self._sleep_timer.set_mode(mode)
+
     @property
     def current_track(self) -> TrackRecord | None:
         if 0 <= self._current_index < len(self._playlist):
             return self._playlist[self._current_index]
+        return None
+
+    @property
+    def next_track(self) -> TrackRecord | None:
+        """Retourne la prochaine piste selon la file d'attente et le mode de répétition."""
+        next_idx = self.get_next_index()
+        if next_idx is not None and 0 <= next_idx < len(self._playlist):
+            return self._playlist[next_idx]
         return None
 
     @property
