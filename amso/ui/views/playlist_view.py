@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 
-from PySide6.QtCore import QPoint, Qt, QTimer
+from PySide6.QtCore import QPoint, QTimer
 from PySide6.QtGui import QAction, QCursor, QShowEvent
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -16,11 +16,18 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from amso.core.database import TrackRecord
+from amso.core.database import DatabaseManager, TrackRecord
 from amso.core.i18n import tr
 from amso.services.player_service import PlayerService
 from amso.ui.models import PlaylistTableModel
-from amso.ui.table_settings import app_settings
+from amso.ui.table_settings import (
+    build_columns_menu,
+    reset_default_columns,
+    restore_table_header_state,
+    save_table_header_state,
+    show_all_columns,
+    toggle_table_column,
+)
 from amso.ui.views.playlist_ui_builder import PlaylistHeaderWidget, PlaylistUiMixin
 from amso.ui.widgets.playlist_table_view import PlaylistTableView
 from amso.ui.widgets.transport_mixin import TransportViewMixin
@@ -38,10 +45,17 @@ class PlaylistView(PlaylistUiMixin, TransportViewMixin, QWidget):
     _transport_cover_size = 56
     _transport_cover_radius = 8
 
-    def __init__(self, player_service: PlayerService, parent: QWidget | None = None) -> None:
+    _TABLE_STORAGE_KEY = "playlist"
+
+    def __init__(
+        self,
+        player_service: PlayerService,
+        parent: QWidget | None = None,
+        db: DatabaseManager | None = None,
+    ) -> None:
         super().__init__(parent)
         self.player = player_service
-        self.playlist_model = PlaylistTableModel(self.player, parent=self)
+        self.playlist_model = PlaylistTableModel(self.player, parent=self, db=db)
 
         self._setup_ui()
         self._connect_signals()
@@ -60,69 +74,31 @@ class PlaylistView(PlaylistUiMixin, TransportViewMixin, QWidget):
 
     def _on_header_context_menu(self, pos: QPoint) -> None:
         header = self.table_view.horizontalHeader()
-        menu = QMenu(self)
-        menu.setStyleSheet(
-            "QMenu { background-color: #1A1D24; color: #E2E8F0; border: 1px solid #282C37; padding: 4px; }"
-            "QMenu::item:selected { background-color: #0284C7; }"
+        menu = build_columns_menu(
+            self,
+            self.table_view,
+            self.playlist_model,
+            self._TABLE_STORAGE_KEY,
+            skip_headers=("", "#"),
         )
-
-        act_show_all = QAction(tr("table.menu_show_all"), menu)
-        act_show_all.triggered.connect(self._show_all_columns)
-        menu.addAction(act_show_all)
-
-        act_reset = QAction(tr("table.menu_reset_columns"), menu)
-        act_reset.triggered.connect(self._reset_default_columns)
-        menu.addAction(act_reset)
-
-        menu.addSeparator()
-
-        title_act = QAction(f"— {tr('table.menu_columns')} —", menu)
-        title_act.setEnabled(False)
-        menu.addAction(title_act)
-
-        for col_idx in range(self.playlist_model.columnCount()):
-            col_name = self.playlist_model.headerData(col_idx, Qt.Orientation.Horizontal, Qt.ItemDataRole.DisplayRole)
-            if not col_name or col_name.strip() in ("", "#"):
-                continue
-            act = QAction(col_name, menu)
-            act.setCheckable(True)
-            act.setChecked(not self.table_view.isColumnHidden(col_idx))
-            act.toggled.connect(lambda checked, c=col_idx: self._toggle_column(c, checked))
-            menu.addAction(act)
-
         menu.exec(header.mapToGlobal(pos))
 
     def _toggle_column(self, col_idx: int, visible: bool) -> None:
-        self.table_view.setColumnHidden(col_idx, not visible)
-        self.save_table_state()
+        toggle_table_column(self.table_view, col_idx, visible, self._TABLE_STORAGE_KEY)
 
     def _show_all_columns(self) -> None:
-        for c in range(self.playlist_model.columnCount()):
-            self.table_view.setColumnHidden(c, False)
-        self.save_table_state()
+        show_all_columns(self.table_view, self._TABLE_STORAGE_KEY)
 
     def _reset_default_columns(self) -> None:
-        header = self.table_view.horizontalHeader()
-        for idx, col_def in enumerate(self.playlist_model.COLUMNS):
-            self.table_view.setColumnHidden(idx, False)
-            header.resizeSection(idx, col_def[1])
-            visual_idx = header.visualIndex(idx)
-            if visual_idx != idx:
-                header.moveSection(visual_idx, idx)
-        self.save_table_state()
+        reset_default_columns(self.table_view, self._TABLE_STORAGE_KEY)
 
     def save_table_state(self) -> None:
         """Sauvegarde la configuration des colonnes du tableau de playlist (largeurs, ordre, masquage)."""
-        settings = app_settings()
-        settings.setValue("header_state_playlist", self.table_view.horizontalHeader().saveState())
+        save_table_header_state(self.table_view, self._TABLE_STORAGE_KEY)
 
     def restore_table_state(self) -> bool:
         """Restaure la configuration des colonnes du tableau de playlist."""
-        settings = app_settings()
-        state = settings.value("header_state_playlist")
-        if state is not None:
-            return bool(self.table_view.horizontalHeader().restoreState(state))
-        return False
+        return restore_table_header_state(self.table_view, self._TABLE_STORAGE_KEY)
 
     def _on_table_double_clicked(self, index) -> None:
         if index.isValid():
@@ -191,5 +167,7 @@ class PlaylistView(PlaylistUiMixin, TransportViewMixin, QWidget):
     def retranslate_ui(self) -> None:
         """Met à jour l'ensemble des textes, infobulles et en-têtes selon la langue active."""
         self.retranslate_header_ui()
+        if hasattr(self, "btn_help"):
+            self.btn_help.retranslate_ui()
         if hasattr(self, "playlist_model"):
             self.playlist_model.notify_language_changed()

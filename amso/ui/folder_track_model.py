@@ -13,6 +13,7 @@ class FolderTrackTableModel(BaseTrackTableModel):
 
     def __init__(self, db: DatabaseManager, parent: QObject | None = None) -> None:
         super().__init__(db, parent)
+        self.db: DatabaseManager = db
         self._all_tracks: list[TrackRecord] = []
         self._displayed_tracks: list[TrackRecord] = []
         self._current_folder_path: str | None = None

@@ -33,6 +33,7 @@ class TrackTableModel(BaseTrackTableModel):
 
     def __init__(self, db: DatabaseManager, parent: QObject | None = None, defer_loading: bool = False) -> None:
         super().__init__(db, parent)
+        self.db: DatabaseManager = db
         # Au démarrage, la configuration de la vue (tri, état des colonnes) déclenche plusieurs rechargements de
         # toute la bibliothèque (~1 s chacun pour 50 000 pistes) pour une page qui n'est pas encore affichée.
         # Tant que defer_loading est vrai, seul le premier set_filter() (affichage de la page) charge les données.

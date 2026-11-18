@@ -6,7 +6,6 @@ import logging
 from typing import TYPE_CHECKING, Any, cast
 
 from PySide6.QtCore import QAbstractTableModel, QPoint, Qt
-from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QHeaderView,
@@ -16,8 +15,15 @@ from PySide6.QtWidgets import (
     QTableView,
 )
 
-from amso.core.i18n import tr
-from amso.ui.table_settings import app_settings
+from amso.ui.table_settings import (
+    apply_default_columns,
+    build_columns_menu,
+    reset_default_columns,
+    restore_table_header_state,
+    save_table_header_state,
+    show_all_columns,
+    toggle_table_column,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -71,10 +77,7 @@ class TableColumnsMixin(_MixinBase):
 
         # Restauration de l'état (largeurs, ordre, masquage) ou application des valeurs par défaut
         if not self._restore_table_header_state(table_view, storage_key):
-            columns = getattr(model, "COLUMNS", [])
-            for col_idx, col_def in enumerate(columns):
-                header.resizeSection(col_idx, col_def[2])
-                table_view.setColumnHidden(col_idx, not col_def[3])
+            apply_default_columns(table_view, model)
 
         header.sectionResized.connect(lambda *_: self._save_table_header_state(table_view, storage_key))
         header.sectionMoved.connect(lambda *_: self._save_table_header_state(table_view, storage_key))
@@ -108,100 +111,22 @@ class TableColumnsMixin(_MixinBase):
         model: QAbstractTableModel,
         storage_key: str,
     ) -> QMenu:
-        menu = QMenu(self)
-        menu.setStyleSheet(
-            "QMenu { background-color: #1A1D24; color: #E2E8F0; border: 1px solid #282C37; padding: 4px; }"
-            "QMenu::item:selected { background-color: #0284C7; }"
-        )
-
-        act_show_all = QAction(tr("table.menu_show_all"), menu)
-        act_show_all.triggered.connect(lambda: self._show_all_columns(table_view, storage_key))
-        menu.addAction(act_show_all)
-
-        act_reset = QAction(tr("table.menu_reset_columns"), menu)
-        act_reset.triggered.connect(lambda: self._reset_default_columns(table_view, storage_key))
-        menu.addAction(act_reset)
-
-        menu.addSeparator()
-
-        title_act = QAction(f"— {tr('table.menu_columns')} —", menu)
-        title_act.setEnabled(False)
-        menu.addAction(title_act)
-
-        for col_idx in range(model.columnCount()):
-            col_name = model.headerData(col_idx, Qt.Orientation.Horizontal, Qt.ItemDataRole.DisplayRole)
-            if not col_name or not str(col_name).strip():
-                continue
-            act = QAction(col_name, menu)
-            act.setCheckable(True)
-            act.setChecked(not table_view.isColumnHidden(col_idx))
-            act.toggled.connect(
-                lambda checked, c=col_idx, tv=table_view, sk=storage_key: self._toggle_table_column(tv, c, checked, sk)
-            )
-            menu.addAction(act)
-
-        return menu
+        return build_columns_menu(self, table_view, model, storage_key)
 
     def _toggle_table_column(self, table_view: QTableView, col_idx: int, visible: bool, storage_key: str) -> None:
-        table_view.setColumnHidden(col_idx, not visible)
-        self._save_table_header_state(table_view, storage_key)
+        toggle_table_column(table_view, col_idx, visible, storage_key)
 
     def _show_all_columns(self, table_view: QTableView, storage_key: str) -> None:
-        for c in range(table_view.model().columnCount()):
-            table_view.setColumnHidden(c, False)
-        self._save_table_header_state(table_view, storage_key)
+        show_all_columns(table_view, storage_key)
 
     def _reset_default_columns(self, table_view: QTableView, storage_key: str) -> None:
-        model = cast(Any, table_view.model())
-        header = table_view.horizontalHeader()
-        columns = getattr(model, "COLUMNS", [])
-        for c in range(model.columnCount()):
-            if c < len(columns):
-                col_def = columns[c]
-                table_view.setColumnHidden(c, not col_def[3])
-                header.resizeSection(c, col_def[2])
-            visual_idx = header.visualIndex(c)
-            if visual_idx != c:
-                header.moveSection(visual_idx, c)
-        self._save_table_header_state(table_view, storage_key)
+        reset_default_columns(table_view, storage_key)
 
     def _save_table_header_state(self, table_view: QTableView, storage_key: str) -> None:
-        settings = app_settings()
-        settings.setValue(f"header_state_{storage_key}", table_view.horizontalHeader().saveState())
-        model = cast(Any, table_view.model())
-        if hasattr(model, "_current_sort_col"):
-            settings.setValue(f"sort_col_{storage_key}", model._current_sort_col)
-            order_val = (
-                model._current_sort_order.value
-                if hasattr(model._current_sort_order, "value")
-                else int(model._current_sort_order)
-            )
-            settings.setValue(f"sort_order_{storage_key}", order_val)
+        save_table_header_state(table_view, storage_key)
 
     def _restore_table_header_state(self, table_view: QTableView, storage_key: str) -> bool:
-        settings = app_settings()
-        state = settings.value(f"header_state_{storage_key}")
-        restored = False
-        if state is not None:
-            restored = bool(table_view.horizontalHeader().restoreState(state))
-
-        model = cast(Any, table_view.model())
-        if hasattr(model, "_current_sort_col"):
-            saved_sort_col = settings.value(f"sort_col_{storage_key}")
-            saved_sort_order = settings.value(f"sort_order_{storage_key}")
-            if saved_sort_col is not None and saved_sort_order is not None:
-                try:
-                    col = int(saved_sort_col)
-                    order = Qt.SortOrder(int(saved_sort_order))
-                    columns = getattr(model, "COLUMNS", [])
-                    is_playing_col = 0 <= col < len(columns) and columns[col][1] == "is_playing"
-                    if 0 <= col < model.columnCount() and not is_playing_col:
-                        model._current_sort_col = col
-                        model._current_sort_order = order
-                        table_view.horizontalHeader().setSortIndicator(col, order)
-                except Exception:
-                    pass
-        return restored
+        return restore_table_header_state(table_view, storage_key)
 
     # -------------------------------------------------------------------------
     # Pages du QStackedWidget
