@@ -70,7 +70,8 @@ class CaptureOutput:
             self.output.extend(data)
 
     # Interface de SinkOutput
-    def start(self, paused: bool = False) -> None:
+    def start(self, paused: bool = False, drain_ms: int = 0) -> None:
+        # drain_ms purge le tampon matériel résiduel du QAudioSink : la capture n'en a pas, il est ignoré.
         with self._lock:
             self.start_count += 1
             self._running = True
@@ -94,6 +95,10 @@ class CaptureOutput:
         with self._lock:
             self._suspended = False
             self._last = time.monotonic()
+
+    def flush_suspended(self) -> None:
+        # Le QAudioSink suspendu garde quelques centaines de ms de l'ancien titre ; la capture ne retient rien.
+        return None
 
     def set_volume(self, volume: float) -> None:
         return None
