@@ -44,7 +44,26 @@ KEY_REPEAT_MODE = "repeat_mode"
 KEY_VOLUME = "volume"
 KEY_MUTED = "muted"
 KEY_VISUAL_EFFECT = "visual_effect"
+KEY_BLIND_TEST_VISUAL_EFFECT = "blind_test_visual_effect"
+KEY_ENABLED_EFFECTS_PLAYER = "enabled_effects_player"
+KEY_ENABLED_EFFECTS_BLIND_TEST = "enabled_effects_blind_test"
+KEY_VISUAL_EFFECT_RANDOM_INTERVAL = "visual_effect_random_interval"
+KEY_BLIND_TEST_VISUAL_EFFECT_RANDOM_INTERVAL = "blind_test_visual_effect_random_interval"
 KEY_POSITION_MS = "position_ms"
+
+VISUAL_EFFECT_IDS = (
+    "none",
+    "particles",
+    "waves",
+    "stars",
+    "warp",
+    "warp_dynamic",
+    "aurora",
+    "bars",
+    "bars_full",
+)
+VALID_VISUAL_EFFECTS = set(VISUAL_EFFECT_IDS) | {"random"}
+RANDOM_EFFECT_INTERVALS = ("track", "15", "30", "60", "120", "300")
 KEY_BLIND_TEST_COUNTDOWN = "blind_test_countdown"
 KEY_BLIND_TEST_REVEAL = "blind_test_reveal"
 KEY_BLIND_TEST_FADE = "blind_test_fade"
@@ -53,6 +72,11 @@ KEY_FADE_IN_TRACK_DURATION = "fade_in_track_duration"
 KEY_FADE_IN_RESUME_ENABLED = "fade_in_resume_enabled"
 KEY_FADE_IN_RESUME_DURATION = "fade_in_resume_duration"
 KEY_AUDIO_ENGINE = "audio_engine"
+KEY_AUDIO_OUTPUT_DEVICE = "audio_output_device"
+KEY_EQ_ENABLED = "eq_enabled"
+KEY_EQ_PRESET = "eq_preset"
+KEY_EQ_BANDS = "eq_bands"
+KEY_REPLAYGAIN_ENABLED = "replaygain_enabled"
 KEY_VLC_GAPLESS_LATENCY = "vlc_gapless_latency_ms"
 KEY_COVER_TRANSITION = "cover_transition"
 
@@ -85,6 +109,9 @@ def get_config_path() -> Path:
 
     cfg_file = get_default_data_dir() / CONFIG_FILENAME
     return cfg_file
+
+
+_INT64_MAX = 2**63 - 1
 
 
 class ConfigManager:
@@ -176,6 +203,28 @@ class ConfigManager:
         if self._batch_depth == 0:
             self.save()
 
+    def _get_bool(self, section: str, key: str, default: bool) -> bool:
+        val = self.get(section, key)
+        if val is None:
+            return default
+        return val.lower() in ("true", "1", "yes", "on")
+
+    def _set_bool(self, section: str, key: str, value: bool) -> None:
+        self.set(section, key, "true" if value else "false")
+
+    def _get_int(self, section: str, key: str, default: int, lo: int, hi: int) -> int:
+        """Entier borné à [lo, hi] ; `default` si la valeur est absente ou illisible."""
+        try:
+            return max(lo, min(hi, int(self.get(section, key, str(default)))))
+        except ValueError:
+            return default
+
+    def _get_float(self, section: str, key: str, default: float, lo: float, hi: float) -> float:
+        try:
+            return max(lo, min(hi, float(self.get(section, key, str(default)))))
+        except ValueError:
+            return default
+
     def get_language(self) -> str | None:
         """Retourne la langue configurée ou None si non définie."""
         lang = self.get(SECTION_GENERAL, KEY_LANGUAGE)
@@ -199,6 +248,7 @@ class ConfigManager:
             "settings_general",
             "library_sources",
             "settings_player",
+            "settings_effects",
             "logs",
         }
         return val if val in valid_pages else default
@@ -249,13 +299,61 @@ class ConfigManager:
         val = "vlc_direct" if engine == "vlc_direct" else "buffer"
         self.set(SECTION_PLAYER, KEY_AUDIO_ENGINE, val)
 
+    def get_audio_output_device(self) -> str:
+        """Retourne l'identifiant du périphérique de sortie audio ('auto' par défaut)."""
+        val = self.get(SECTION_PLAYER, KEY_AUDIO_OUTPUT_DEVICE, "auto")
+        return str(val).strip() or "auto"
+
+    def set_audio_output_device(self, device_id: str) -> None:
+        """Persiste l'identifiant du périphérique de sortie audio ('auto' ou id hex)."""
+        self.set(SECTION_PLAYER, KEY_AUDIO_OUTPUT_DEVICE, (device_id or "auto").strip() or "auto")
+
+    def get_eq_enabled(self) -> bool:
+        """Retourne True si l'égaliseur logiciel est activé."""
+        return self._get_bool(SECTION_PLAYER, KEY_EQ_ENABLED, False)
+
+    def set_eq_enabled(self, enabled: bool) -> None:
+        """Persiste l'activation de l'égaliseur logiciel."""
+        self._set_bool(SECTION_PLAYER, KEY_EQ_ENABLED, enabled)
+
+    def get_eq_preset(self) -> str:
+        """Retourne le nom du préset d'égaliseur actif ('flat' par défaut)."""
+        val = self.get(SECTION_PLAYER, KEY_EQ_PRESET, "flat")
+        return str(val).strip() or "flat"
+
+    def set_eq_preset(self, preset: str) -> None:
+        """Persiste le préset d'égaliseur actif."""
+        self.set(SECTION_PLAYER, KEY_EQ_PRESET, (preset or "flat").strip() or "flat")
+
+    def get_eq_bands(self) -> list[float]:
+        """Retourne les 10 gains d'égaliseur en dB (0.0 par défaut)."""
+        raw = str(self.get(SECTION_PLAYER, KEY_EQ_BANDS, ""))
+        if not raw.strip():
+            return [0.0] * 10
+        parts = raw.split(",")
+        if len(parts) != 10:
+            return [0.0] * 10
+        try:
+            return [max(-12.0, min(12.0, float(p))) for p in parts]
+        except ValueError:
+            return [0.0] * 10
+
+    def set_eq_bands(self, bands: list[float]) -> None:
+        """Persiste les 10 gains d'égaliseur en dB."""
+        clamped = [f"{max(-12.0, min(12.0, float(g))):.1f}" for g in (bands[:10] + [0.0] * 10)[:10]]
+        self.set(SECTION_PLAYER, KEY_EQ_BANDS, ",".join(clamped))
+
+    def get_replaygain_enabled(self) -> bool:
+        """Retourne True si la normalisation ReplayGain est activée."""
+        return self._get_bool(SECTION_PLAYER, KEY_REPLAYGAIN_ENABLED, False)
+
+    def set_replaygain_enabled(self, enabled: bool) -> None:
+        """Persiste l'activation de la normalisation ReplayGain."""
+        self._set_bool(SECTION_PLAYER, KEY_REPLAYGAIN_ENABLED, enabled)
+
     def get_vlc_gapless_latency(self) -> int:
         """Retourne la latence DirectSound/LibVLC en ms pour le gapless 0 (défaut : 250)."""
-        val = self.get(SECTION_PLAYER, KEY_VLC_GAPLESS_LATENCY, "250")
-        try:
-            return max(0, min(2000, int(val)))
-        except (ValueError, TypeError):
-            return 250
+        return self._get_int(SECTION_PLAYER, KEY_VLC_GAPLESS_LATENCY, 250, 0, 2000)
 
     def set_vlc_gapless_latency(self, latency_ms: int) -> None:
         """Définit la latence DirectSound/LibVLC en ms (entre 0 et 2000 ms)."""
@@ -274,11 +372,7 @@ class ConfigManager:
 
     def get_crossfade_duration(self) -> int:
         """Retourne la durée du fondu enchaîné en secondes (1 à 20, défaut 3)."""
-        val = self.get(SECTION_PLAYER, KEY_CROSSFADE_SECONDS, "3")
-        try:
-            return max(1, min(20, int(val)))
-        except Exception:
-            return 3
+        return self._get_int(SECTION_PLAYER, KEY_CROSSFADE_SECONDS, 3, 1, 20)
 
     def set_crossfade_duration(self, seconds: int) -> None:
         """Définit la durée du fondu enchaîné en secondes (1 à 20)."""
@@ -286,19 +380,17 @@ class ConfigManager:
 
     def get_player_shuffle(self) -> bool:
         """Retourne True si la lecture aléatoire était activée (False par défaut)."""
-        val = self.get(SECTION_PLAYER, KEY_SHUFFLE, "false")
-        return str(val).lower() in ("true", "1", "yes", "on")
+        return self._get_bool(SECTION_PLAYER, KEY_SHUFFLE, False)
 
     def set_player_shuffle(self, enabled: bool) -> None:
         """Définit l'état de la lecture aléatoire."""
-        self.set(SECTION_PLAYER, KEY_SHUFFLE, "true" if enabled else "false")
+        self._set_bool(SECTION_PLAYER, KEY_SHUFFLE, enabled)
 
     def get_player_repeat_mode(self) -> int:
         """Retourne le mode de boucle (0=OFF, 1=ALL, 2=ONE). 0 par défaut."""
-        val = self.get(SECTION_PLAYER, KEY_REPEAT_MODE, "0")
         try:
-            return int(val) % 3
-        except Exception:
+            return int(self.get(SECTION_PLAYER, KEY_REPEAT_MODE, "0")) % 3
+        except ValueError:
             return 0
 
     def set_player_repeat_mode(self, mode: int) -> None:
@@ -307,11 +399,7 @@ class ConfigManager:
 
     def get_player_volume(self) -> int:
         """Retourne le volume sonore sauvegardé (0 à 100). 80 par défaut."""
-        val = self.get(SECTION_PLAYER, KEY_VOLUME, "80")
-        try:
-            return max(0, min(100, int(val)))
-        except Exception:
-            return 80
+        return self._get_int(SECTION_PLAYER, KEY_VOLUME, 80, 0, 100)
 
     def set_player_volume(self, volume: int) -> None:
         """Définit le volume sonore."""
@@ -319,24 +407,70 @@ class ConfigManager:
 
     def get_player_muted(self) -> bool:
         """Retourne True si le son était en sourdine (False par défaut)."""
-        val = self.get(SECTION_PLAYER, KEY_MUTED, "false")
-        return str(val).lower() in ("true", "1", "yes", "on")
+        return self._get_bool(SECTION_PLAYER, KEY_MUTED, False)
 
     def set_player_muted(self, muted: bool) -> None:
         """Définit l'état de la sourdine."""
-        self.set(SECTION_PLAYER, KEY_MUTED, "true" if muted else "false")
+        self._set_bool(SECTION_PLAYER, KEY_MUTED, muted)
 
     def get_visual_effect(self) -> str:
-        """Retourne l'effet visuel configuré pour le lecteur ('none', 'particles', 'waves', 'stars', 'warp', 'warp_dynamic', 'aurora', 'bars', 'bars_full'). 'particles' par défaut."""
+        """Retourne l'effet visuel configuré pour le lecteur ('particles' par défaut)."""
         val = self.get(SECTION_PLAYER, KEY_VISUAL_EFFECT, "particles")
-        valid = {"none", "particles", "waves", "stars", "warp", "warp_dynamic", "aurora", "bars", "bars_full"}
-        return val if val in valid else "particles"
+        return val if val in VALID_VISUAL_EFFECTS else "particles"
 
     def set_visual_effect(self, effect: str) -> None:
         """Définit l'effet visuel configuré pour le lecteur."""
-        valid = {"none", "particles", "waves", "stars", "warp", "warp_dynamic", "aurora", "bars", "bars_full"}
-        if effect in valid:
+        if effect in VALID_VISUAL_EFFECTS:
             self.set(SECTION_PLAYER, KEY_VISUAL_EFFECT, effect)
+
+    def get_blind_test_visual_effect(self) -> str:
+        """Retourne l'effet visuel configuré pour le Blind Test."""
+        val = self.get(SECTION_PLAYER, KEY_BLIND_TEST_VISUAL_EFFECT)
+        if val in VALID_VISUAL_EFFECTS:
+            return str(val)
+        return self.get_visual_effect()
+
+    def set_blind_test_visual_effect(self, effect: str) -> None:
+        """Définit l'effet visuel configuré pour le Blind Test."""
+        if effect in VALID_VISUAL_EFFECTS:
+            self.set(SECTION_PLAYER, KEY_BLIND_TEST_VISUAL_EFFECT, effect)
+
+    def get_enabled_effects(self, context: str) -> list[str]:
+        """Retourne la liste ordonnée des effets activés pour 'player' ou 'blind_test'."""
+        key = KEY_ENABLED_EFFECTS_BLIND_TEST if context == "blind_test" else KEY_ENABLED_EFFECTS_PLAYER
+        raw = self.get(SECTION_PLAYER, key)
+        if raw is None or not str(raw).strip():
+            return list(VISUAL_EFFECT_IDS)
+        selected = {item.strip() for item in str(raw).split(",") if item.strip()}
+        filtered = [eff for eff in VISUAL_EFFECT_IDS if eff in selected]
+        return filtered if filtered else list(VISUAL_EFFECT_IDS)
+
+    def set_enabled_effects(self, context: str, effects: list[str]) -> None:
+        """Persiste la liste des effets activés pour 'player' ou 'blind_test'."""
+        key = KEY_ENABLED_EFFECTS_BLIND_TEST if context == "blind_test" else KEY_ENABLED_EFFECTS_PLAYER
+        selected = set(effects)
+        ordered = [eff for eff in VISUAL_EFFECT_IDS if eff in selected]
+        if not ordered:
+            ordered = ["none"]
+        self.set(SECTION_PLAYER, key, ",".join(ordered))
+
+    def get_visual_effect_random_interval(self, context: str = "player") -> str:
+        """Retourne la fréquence du mode aléatoire ('track', '15', '30', '60', '120', '300') par contexte."""
+        if context == "blind_test":
+            val = self.get(SECTION_PLAYER, KEY_BLIND_TEST_VISUAL_EFFECT_RANDOM_INTERVAL, "track")
+            return val if val in RANDOM_EFFECT_INTERVALS else "track"
+        val = self.get(SECTION_PLAYER, KEY_VISUAL_EFFECT_RANDOM_INTERVAL, "30")
+        return val if val in RANDOM_EFFECT_INTERVALS else "30"
+
+    def set_visual_effect_random_interval(self, interval: str, context: str = "player") -> None:
+        """Persiste la fréquence de changement du mode aléatoire pour un contexte."""
+        if interval in RANDOM_EFFECT_INTERVALS:
+            key = (
+                KEY_BLIND_TEST_VISUAL_EFFECT_RANDOM_INTERVAL
+                if context == "blind_test"
+                else KEY_VISUAL_EFFECT_RANDOM_INTERVAL
+            )
+            self.set(SECTION_PLAYER, key, interval)
 
     def get_cover_transition(self) -> str:
         """Retourne l'effet de transition de pochette configuré ('fade', 'slide', 'zoom', 'flip', 'none')."""
@@ -350,11 +484,7 @@ class ConfigManager:
 
     def get_player_position_ms(self) -> int:
         """Retourne la dernière position temporelle de lecture sauvegardée en ms (0 par défaut)."""
-        val = self.get(SECTION_PLAYER, KEY_POSITION_MS, "0")
-        try:
-            return max(0, int(val))
-        except Exception:
-            return 0
+        return self._get_int(SECTION_PLAYER, KEY_POSITION_MS, 0, 0, _INT64_MAX)
 
     def set_player_position_ms(self, pos_ms: int) -> None:
         """Définit la dernière position temporelle de lecture en ms."""
@@ -362,11 +492,7 @@ class ConfigManager:
 
     def get_blind_test_countdown(self) -> int:
         """Retourne la durée en secondes du décompte Blind Test (20s par défaut)."""
-        val = self.get(SECTION_PLAYER, KEY_BLIND_TEST_COUNTDOWN, "20")
-        try:
-            return max(5, min(120, int(val)))
-        except Exception:
-            return 20
+        return self._get_int(SECTION_PLAYER, KEY_BLIND_TEST_COUNTDOWN, 20, 5, 120)
 
     def set_blind_test_countdown(self, seconds: int) -> None:
         """Définit la durée du décompte Blind Test en secondes."""
@@ -374,11 +500,7 @@ class ConfigManager:
 
     def get_blind_test_reveal(self) -> int:
         """Retourne la durée en secondes de la découverte Blind Test (10s par défaut)."""
-        val = self.get(SECTION_PLAYER, KEY_BLIND_TEST_REVEAL, "10")
-        try:
-            return max(3, min(60, int(val)))
-        except Exception:
-            return 10
+        return self._get_int(SECTION_PLAYER, KEY_BLIND_TEST_REVEAL, 10, 3, 60)
 
     def set_blind_test_reveal(self, seconds: int) -> None:
         """Définit la durée de la découverte Blind Test en secondes."""
@@ -386,11 +508,7 @@ class ConfigManager:
 
     def get_blind_test_fade(self) -> int:
         """Retourne la durée en secondes du fondu sonore de fin de manche Blind Test (2s par défaut)."""
-        val = self.get(SECTION_PLAYER, KEY_BLIND_TEST_FADE, "2")
-        try:
-            return max(0, min(10, int(val)))
-        except Exception:
-            return 2
+        return self._get_int(SECTION_PLAYER, KEY_BLIND_TEST_FADE, 2, 0, 10)
 
     def set_blind_test_fade(self, seconds: int) -> None:
         """Définit la durée du fondu sonore Blind Test en secondes (0 à 10s)."""
@@ -398,20 +516,15 @@ class ConfigManager:
 
     def get_fade_in_track_enabled(self) -> bool:
         """Retourne True si le fondu est activé au lancement d'une piste (False par défaut)."""
-        val = self.get(SECTION_PLAYER, KEY_FADE_IN_TRACK_ENABLED, "false")
-        return str(val).lower() in ("true", "1", "yes", "on")
+        return self._get_bool(SECTION_PLAYER, KEY_FADE_IN_TRACK_ENABLED, False)
 
     def set_fade_in_track_enabled(self, enabled: bool) -> None:
         """Active ou désactive le fondu au lancement d'une piste."""
-        self.set(SECTION_PLAYER, KEY_FADE_IN_TRACK_ENABLED, "true" if enabled else "false")
+        self._set_bool(SECTION_PLAYER, KEY_FADE_IN_TRACK_ENABLED, enabled)
 
     def get_fade_in_track_duration(self) -> float:
         """Retourne la durée du fondu au lancement d'une piste en secondes (0.1 à 5.0, défaut 1.0)."""
-        val = self.get(SECTION_PLAYER, KEY_FADE_IN_TRACK_DURATION, "1.0")
-        try:
-            return max(0.1, min(5.0, float(val)))
-        except Exception:
-            return 1.0
+        return self._get_float(SECTION_PLAYER, KEY_FADE_IN_TRACK_DURATION, 1.0, 0.1, 5.0)
 
     def set_fade_in_track_duration(self, seconds: float) -> None:
         """Définit la durée du fondu au lancement d'une piste en secondes."""
@@ -419,20 +532,15 @@ class ConfigManager:
 
     def get_fade_in_resume_enabled(self) -> bool:
         """Retourne True si le fondu est activé à la reprise après pause (True par défaut)."""
-        val = self.get(SECTION_PLAYER, KEY_FADE_IN_RESUME_ENABLED, "true")
-        return str(val).lower() in ("true", "1", "yes", "on")
+        return self._get_bool(SECTION_PLAYER, KEY_FADE_IN_RESUME_ENABLED, True)
 
     def set_fade_in_resume_enabled(self, enabled: bool) -> None:
         """Active ou désactive le fondu à la reprise de lecture."""
-        self.set(SECTION_PLAYER, KEY_FADE_IN_RESUME_ENABLED, "true" if enabled else "false")
+        self._set_bool(SECTION_PLAYER, KEY_FADE_IN_RESUME_ENABLED, enabled)
 
     def get_fade_in_resume_duration(self) -> float:
         """Retourne la durée du fondu à la reprise de lecture en secondes (0.1 à 5.0, défaut 1.0)."""
-        val = self.get(SECTION_PLAYER, KEY_FADE_IN_RESUME_DURATION, "1.0")
-        try:
-            return max(0.1, min(5.0, float(val)))
-        except Exception:
-            return 1.0
+        return self._get_float(SECTION_PLAYER, KEY_FADE_IN_RESUME_DURATION, 1.0, 0.1, 5.0)
 
     def set_fade_in_resume_duration(self, seconds: float) -> None:
         """Définit la durée du fondu à la reprise de lecture en secondes."""
@@ -474,8 +582,7 @@ class ConfigManager:
 
     def get_window_maximized(self) -> bool:
         """Retourne True si la fenêtre était agrandie lors de la dernière fermeture."""
-        val = self.get(SECTION_UI, KEY_WINDOW_MAXIMIZED, "false")
-        return str(val).lower() in ("true", "1", "yes", "on")
+        return self._get_bool(SECTION_UI, KEY_WINDOW_MAXIMIZED, False)
 
     def set_window_state(
         self,
