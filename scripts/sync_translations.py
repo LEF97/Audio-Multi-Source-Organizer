@@ -171,10 +171,28 @@ def is_invalid_translation(val: str, ref_val: str) -> bool:
     return has_source_leak(val, ref_val) or placeholders(val) != placeholders(ref_val)
 
 
-def needs_retranslation(key: str, val: str, ref_val: str, target_lang: str) -> bool:
+def is_english_fallback(key: str, val: str, ref_val: str, en_val: str, target_lang: str) -> bool:
+    """Vrai si la valeur est le repli anglais laissé par un lot Ollama en échec (une phrase, pas un terme court)."""
+    if target_lang == "en" or key.startswith("unit."):
+        return False
+    return val == en_val != ref_val and len(val) >= 12
+
+
+# Termes identiques au français dans les langues à alphabet latin, mais pas dans les autres écritures
+NON_LATIN_LANGS = frozenset({"ar", "be", "bg", "el", "he", "ja", "ko", "ru", "sr", "zh_cn", "zh_tw"})
+NON_LATIN_FORCED_KEYS = frozenset({"sidebar.nav_library_sources", "unit.seconds_short"})
+
+
+def needs_retranslation(key: str, val: str, ref_val: str, target_lang: str, en_val: str = "") -> bool:
     if target_lang == "fr":
         return False
-    return is_untranslated(key, val, ref_val, target_lang) or is_invalid_translation(val, ref_val)
+    if target_lang in NON_LATIN_LANGS and key in NON_LATIN_FORCED_KEYS and val == ref_val:
+        return True
+    return (
+        is_untranslated(key, val, ref_val, target_lang)
+        or is_invalid_translation(val, ref_val)
+        or is_english_fallback(key, val, ref_val, en_val, target_lang)
+    )
 
 
 def translate_batch_with_ollama(
@@ -202,7 +220,8 @@ def translate_batch_with_ollama(
         headers={"Content-Type": "application/json"},
     )
     try:
-        with urllib.request.urlopen(req, timeout=60) as res:
+        # Les guides d'aide (HTML long) dépassent 60 s ou sont tronqués dans un lot de 25 clés
+        with urllib.request.urlopen(req, timeout=180) as res:
             data = json.loads(res.read().decode("utf-8"))
             resp_text = data.get("response", "").strip()
             parsed = json.loads(resp_text)
@@ -284,7 +303,7 @@ def sync_locales(
         untranslated_keys = [
             k for k in ref_keys
             if k in target_data
-            and (k in forced_keys or needs_retranslation(k, target_data[k], ref_data[k], target_lang))
+            and (k in forced_keys or needs_retranslation(k, target_data[k], ref_data[k], target_lang, en_data.get(k, "")))
         ]
 
         log(f"\n[{target_lang}] Analyse de {target_path.name} ({LANG_NAMES.get(target_lang, target_lang)}) :")
@@ -325,6 +344,9 @@ def sync_locales(
                         f"    -> Lot {batch_num}/{total_batches} ({len(chunk_keys)} clés en cours via {ollama_model})..."
                     )
                     batch_res = translate_batch_with_ollama(chunk_dict, target_lang, ollama_model)
+                    # Lot en échec ou tronqué : sans nouvel essai clé par clé, le repli anglais resterait affiché
+                    for k in [k for k in chunk_keys if not batch_res.get(k)]:
+                        batch_res.update(translate_batch_with_ollama({k: chunk_dict[k]}, target_lang, ollama_model))
                     # Le modèle double parfois le texte français d'une transcription : un nouvel essai clé par clé suffit
                     for k in [k for k, v in batch_res.items() if k in chunk_dict and is_invalid_translation(v, chunk_dict[k])]:
                         retry = translate_batch_with_ollama({k: chunk_dict[k]}, target_lang, ollama_model)
