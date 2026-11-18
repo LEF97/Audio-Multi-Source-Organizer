@@ -28,6 +28,7 @@ from amso.core.constants import (
 from amso.core.i18n import tr
 from amso.ui.theme import get_app_logo_pixmap
 from amso.ui.views.visual_effects import VisualEffectWidget
+from amso.ui.widgets.page_header import build_page_top_bar
 
 if TYPE_CHECKING:
     from amso.services.player_service import PlayerService
@@ -54,17 +55,11 @@ class SettingsAboutPageMixin:
         main_layout.setSpacing(0)
 
         # En-tête de page standardisé
-        top_bar = QFrame()
-        top_bar.setObjectName("topBarFrame")
-        top_bar.setFixedHeight(50)
-        top_bar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        top_layout = QHBoxLayout(top_bar)
-        top_layout.setContentsMargins(20, 12, 20, 12)
-
-        self.lbl_settings_about_page_title = QLabel(tr("settings.about_page_title"))
-        self.lbl_settings_about_page_title.setStyleSheet("color: #F8FAFC; font-size: 16px; font-weight: 700;")
-        top_layout.addWidget(self.lbl_settings_about_page_title)
-        top_layout.addStretch()
+        top_bar, self.lbl_settings_about_page_title, self.btn_settings_about_help = build_page_top_bar(
+            tr("settings.about_page_title"),
+            "settings.about_help_title",
+            "settings.about_help_body",
+        )
         main_layout.addWidget(top_bar, 0)
 
         scroll = QScrollArea()

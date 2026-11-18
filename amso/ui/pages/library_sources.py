@@ -41,6 +41,7 @@ from amso.ui.styles import (
     COLOR_TEXT_MUTED,
     make_tree_action_button,
 )
+from amso.ui.widgets.page_header import build_page_top_bar
 
 logger = logging.getLogger(__name__)
 
@@ -108,17 +109,11 @@ class LibrarySourcesPageMixin(LibrarySourcesTreeMixin, _MixinBase):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        top_bar = QFrame()
-        top_bar.setObjectName("topBarFrame")
-        top_bar.setFixedHeight(50)
-        top_bar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        top_layout = QHBoxLayout(top_bar)
-        top_layout.setContentsMargins(20, 12, 20, 12)
-
-        self.lbl_library_sources_page_title = QLabel(tr("settings.page_sources_title"))
-        self.lbl_library_sources_page_title.setStyleSheet("color: #F8FAFC; font-size: 16px; font-weight: 700;")
-        top_layout.addWidget(self.lbl_library_sources_page_title)
-        top_layout.addStretch()
+        top_bar, self.lbl_library_sources_page_title, self.btn_sources_help = build_page_top_bar(
+            tr("settings.page_sources_title"),
+            "library_sources.help_title",
+            "library_sources.help_body",
+        )
         main_layout.addWidget(top_bar, 0)
 
         scroll = QScrollArea()

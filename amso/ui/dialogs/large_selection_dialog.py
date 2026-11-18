@@ -6,7 +6,6 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QDialog,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -17,10 +16,10 @@ from PySide6.QtWidgets import (
 
 from amso.core.database import TrackRecord
 from amso.core.i18n import tr
-from amso.ui.theme import DARK_THEME_QSS
+from amso.ui.dialogs.base_dialog import AmsoDialog
 
 
-class LargeSelectionDialog(QDialog):
+class LargeSelectionDialog(AmsoDialog):
     """Dialogue modal proposant les choix de chargement pour les très grandes listes (> 1000 morceaux)."""
 
     def __init__(
@@ -30,17 +29,11 @@ class LargeSelectionDialog(QDialog):
         folder_track_count: int = 0,
         parent: QWidget | None = None,
     ) -> None:
-        super().__init__(parent)
+        super().__init__(tr("dialog.large_selection_title"), 560, parent)
         self.track = track
         self.total_count = total_count
         self.folder_track_count = folder_track_count
         self._choice: str = "cancel"
-
-        self.setWindowTitle(tr("dialog.large_selection_title"))
-        self.setMinimumWidth(560)
-        self.setSizeGripEnabled(True)
-        self.setModal(True)
-        self.setStyleSheet(DARK_THEME_QSS)
 
         self._setup_ui()
 

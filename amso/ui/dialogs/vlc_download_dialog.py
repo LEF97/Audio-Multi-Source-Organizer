@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
-    QDialog,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -17,22 +16,16 @@ from PySide6.QtWidgets import (
 from amso.core.i18n import tr
 from amso.services.player_service import PlayerService
 from amso.services.vlc_downloader import VlcDownloadWorker
-from amso.ui.theme import DARK_THEME_QSS
+from amso.ui.dialogs.base_dialog import AmsoDialog
 
 
-class VlcDownloadDialog(QDialog):
+class VlcDownloadDialog(AmsoDialog):
     """Dialogue guidant le téléchargement automatique et transparent des composants VLC."""
 
     def __init__(self, player_service: PlayerService, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
+        super().__init__(tr("dialog.vlc_title"), 520, parent)
         self.player_service = player_service
         self.worker: VlcDownloadWorker | None = None
-
-        self.setWindowTitle(tr("dialog.vlc_title"))
-        self.setMinimumWidth(520)
-        self.setSizeGripEnabled(True)
-        self.setModal(True)
-        self.setStyleSheet(DARK_THEME_QSS)
 
         self._setup_ui()
 

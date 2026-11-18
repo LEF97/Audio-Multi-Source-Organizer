@@ -5,7 +5,6 @@ from __future__ import annotations
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
-    QDialog,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -22,20 +21,15 @@ from amso.core.constants import (
     URL_KO_FI,
 )
 from amso.core.i18n import tr
-from amso.ui.theme import DARK_THEME_QSS, get_app_logo_pixmap
+from amso.ui.dialogs.base_dialog import AmsoDialog
+from amso.ui.theme import get_app_logo_pixmap
 
 
-class AboutDialog(QDialog):
+class AboutDialog(AmsoDialog):
     """Boîte de dialogue présentant le projet AMSO, sa version, ses crédits et ses liens de soutien."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-
-        self.setWindowTitle(tr("dialog.about_title"))
-        self.setMinimumWidth(560)
-        self.setSizeGripEnabled(True)
-        self.setModal(True)
-        self.setStyleSheet(DARK_THEME_QSS)
+        super().__init__(tr("dialog.about_title"), 560, parent)
 
         self._init_ui()
 

@@ -23,11 +23,12 @@ from PySide6.QtWidgets import (
 )
 
 from amso.core.i18n import tr
-from amso.ui.styles import style_icon_button, volume_label_qss, volume_slider_qss
+from amso.ui.styles import style_icon_button
 from amso.ui.views.blind_test.zoom_fade_label import ZoomFadeLabel
-from amso.ui.widgets.common import ClickableSlider
 from amso.ui.widgets.effects_view_mixin import EffectsViewMixin
+from amso.ui.widgets.help_guide_popup import HelpButton
 from amso.ui.widgets.play_pause_button import PlayPauseButton
+from amso.ui.widgets.volume_control import VolumeControl
 
 if TYPE_CHECKING:
     _MixinBase = QWidget
@@ -62,32 +63,22 @@ class BlindTestUiMixin(EffectsViewMixin, _MixinBase):
         top_layout.addSpacing(16)
 
         # Contrôle du volume sonore intégré dans la barre supérieure
-        self.btn_mute = QPushButton("🔊")
-        self.btn_mute.setFixedSize(30, 30)
-        self.btn_mute.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._style_icon_button(self.btn_mute, font_size=13)
+        volume_control = VolumeControl(self.player.volume, self)
+        self.btn_mute = volume_control.btn_mute
+        self.slider_volume = volume_control.slider
+        self.lbl_volume = volume_control.lbl_percent
         self.btn_mute.clicked.connect(self._toggle_mute)
-        top_layout.addWidget(self.btn_mute)
-
-        self.slider_volume = ClickableSlider(Qt.Orientation.Horizontal)
-        self.slider_volume.setRange(0, 100)
-        self.slider_volume.setValue(self.player.volume)
-        self.slider_volume.setFixedWidth(120)
-        self.slider_volume.setFixedHeight(22)
-        self.slider_volume.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.slider_volume.setStyleSheet(volume_slider_qss(groove_height=5, handle_size=12))
         self.slider_volume.valueChanged.connect(self._on_volume_changed)
-        top_layout.addWidget(self.slider_volume)
-
-        self.lbl_volume = QLabel(f"{self.player.volume}%")
-        self.lbl_volume.setStyleSheet(volume_label_qss(min_width=38))
-        top_layout.addWidget(self.lbl_volume)
+        top_layout.addWidget(volume_control)
 
         top_layout.addStretch()
 
         self.lbl_effect_badge, self.combo_effect = self._create_effects_combo()
         top_layout.addWidget(self.lbl_effect_badge)
         top_layout.addWidget(self.combo_effect)
+
+        self.btn_help = HelpButton("blind_test.help_title", "blind_test.help_body", parent=self)
+        top_layout.addWidget(self.btn_help)
         layout.addWidget(top_bar)
 
         # Sous-barre de progression globale de la session Blind Test

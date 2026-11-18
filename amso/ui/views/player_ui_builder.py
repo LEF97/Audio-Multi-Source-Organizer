@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QFrame,
+    QGraphicsOpacityEffect,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -19,13 +20,13 @@ from PySide6.QtWidgets import (
 from amso.core.i18n import tr
 from amso.ui.styles import (
     seek_slider_qss,
-    volume_label_qss,
-    volume_slider_qss,
 )
 from amso.ui.widgets.common import ClickableSlider
 from amso.ui.widgets.cover_transition_label import CoverTransitionLabel
 from amso.ui.widgets.effects_view_mixin import EffectsViewMixin
+from amso.ui.widgets.help_guide_popup import create_help_button
 from amso.ui.widgets.play_pause_button import PlayPauseButton
+from amso.ui.widgets.volume_control import VolumeControl
 
 if TYPE_CHECKING:
     _MixinBase = QWidget
@@ -60,30 +61,20 @@ class PlayerUiMixin(EffectsViewMixin, _MixinBase):
         top_layout.addSpacing(16)
 
         # Contrôle du volume sonore intégré dans la barre supérieure
-        self.btn_mute = QPushButton("🔊")
-        self.btn_mute.setFixedSize(30, 30)
-        self.btn_mute.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._style_transport_button(self.btn_mute, font_size=13)
-        top_layout.addWidget(self.btn_mute)
-
-        self.slider_volume = ClickableSlider(Qt.Orientation.Horizontal)
-        self.slider_volume.setRange(0, 100)
-        self.slider_volume.setValue(self.player.volume)
-        self.slider_volume.setFixedWidth(120)
-        self.slider_volume.setFixedHeight(22)
-        self.slider_volume.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.slider_volume.setStyleSheet(volume_slider_qss(groove_height=5, handle_size=12))
-        top_layout.addWidget(self.slider_volume)
-
-        self.lbl_volume = QLabel(f"{self.player.volume}%")
-        self.lbl_volume.setStyleSheet(volume_label_qss(min_width=38))
-        top_layout.addWidget(self.lbl_volume)
+        volume_control = VolumeControl(self.player.volume, self)
+        self.btn_mute = volume_control.btn_mute
+        self.slider_volume = volume_control.slider
+        self.lbl_volume = volume_control.lbl_percent
+        top_layout.addWidget(volume_control)
 
         top_layout.addStretch()
 
         self.lbl_effect_badge, self.combo_effect = self._create_effects_combo()
         top_layout.addWidget(self.lbl_effect_badge)
         top_layout.addWidget(self.combo_effect)
+
+        self.btn_help = create_help_button("player.btn_help", self)
+        top_layout.addWidget(self.btn_help)
         layout.addWidget(top_bar)
 
         # Toile d'effet visuel dynamique en fond
@@ -311,7 +302,46 @@ class PlayerUiMixin(EffectsViewMixin, _MixinBase):
         card_layout.addWidget(self.empty_container)
 
         center_layout.addWidget(self.card)
+        center_layout.addSpacing(10)
+
+        # Mini-barre "À suivre" sous la carte (apparition progressive en fin de piste ou au survol de Suivant)
+        self.up_next_bar = QPushButton("")
+        self.up_next_bar.setObjectName("upNextBar")
+        self.up_next_bar.setMinimumWidth(500)
+        self.up_next_bar.setMaximumWidth(580)
+        self.up_next_bar.setFixedHeight(36)
+        self.up_next_bar.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.up_next_bar.setStyleSheet("""
+            QPushButton#upNextBar {
+                background-color: rgba(26, 29, 36, 0.85);
+                border: 1px solid rgba(56, 189, 248, 0.22);
+                border-radius: 12px;
+                color: #CBD5E1;
+                font-size: 12.5px;
+                padding: 0 16px;
+                text-align: center;
+            }
+            QPushButton#upNextBar:hover {
+                background-color: rgba(34, 38, 48, 0.95);
+                border-color: rgba(56, 189, 248, 0.55);
+                color: #F8FAFC;
+            }
+        """)
+        self._up_next_opacity = QGraphicsOpacityEffect(self.up_next_bar)
+        self._up_next_opacity.setOpacity(0.0)
+        self.up_next_bar.setGraphicsEffect(self._up_next_opacity)
+        self.up_next_bar.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        center_layout.addWidget(self.up_next_bar)
+
         scroll.setWidget(center_container)
         layout.addWidget(scroll, 1)
+
+        # Bouton flottant d'outils audio en bas à droite (au-dessus du fil d'activité)
+        self.btn_audio_tools = QPushButton("⚙", self)
+        self.btn_audio_tools.setFixedSize(36, 36)
+        self.btn_audio_tools.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_audio_tools.setToolTip(tr("player.btn_audio_tools"))
+        self._style_transport_button(self.btn_audio_tools)
+        self.btn_audio_tools.raise_()
 
         self._populate_effects_combo()

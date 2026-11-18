@@ -7,7 +7,7 @@ import os
 from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import QPoint, Qt
-from PySide6.QtGui import QAction, QCursor
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QDialog,
     QMainWindow,
@@ -22,6 +22,7 @@ from amso.core.database import (
 )
 from amso.core.i18n import tr
 from amso.ui.dialogs.delete_track_dialog import DeleteTrackDialog, send_file_to_trash
+from amso.ui.pages.track_context_menu import show_track_context_menu
 
 logger = logging.getLogger(__name__)
 
@@ -198,42 +199,9 @@ class FoldersTrashMixin(_MixinBase):
         self.status_label.setText(f"♻️ {tr('trash.restore_success', count=restored_count)}")
 
     def _on_folder_table_context_menu(self, pos: QPoint) -> None:
-        index = self.folder_table_view.indexAt(pos)
-        menu = QMenu(self)
-
-        if index.isValid():
-            selected_tracks = self._get_selected_tracks(self.folder_table_view, self.folder_table_model, index.row())
-            if selected_tracks:
-                act_next = QAction(tr("context_menu.play_next"), self)
-                act_next.triggered.connect(lambda: self._insert_next_with_vlc_check(selected_tracks))
-                menu.addAction(act_next)
-
-                act_add = QAction(tr("context_menu.add_to_playlist"), self)
-                act_add.triggered.connect(lambda: self._append_tracks_with_vlc_check(selected_tracks))
-                menu.addAction(act_add)
-
-                menu.addSeparator()
-
-            track = self.folder_table_model.get_track_at(index.row())
-            if track:
-                action_open_dir = QAction(tr("context_menu.open_file_location"), self)
-                action_open_dir.triggered.connect(lambda: self._open_file_location(track.source_path))
-                menu.addAction(action_open_dir)
-
-                menu.addSeparator()
-
-                action_del = QAction(tr("context_menu.delete_track"), self)
-                action_del.triggered.connect(lambda: self._delete_track_from_folder_view(track))
-                menu.addAction(action_del)
-
-                menu.addSeparator()
-
-        # Personnalisation des colonnes accessible directement depuis le tableau
-        cols_submenu = self._build_columns_menu(self.folder_table_view, self.folder_table_model, "folders")
-        cols_submenu.setTitle("⚙️  " + tr("table.menu_columns"))
-        menu.addMenu(cols_submenu)
-
-        menu.exec(QCursor.pos())
+        show_track_context_menu(
+            self, self.folder_table_view, self.folder_table_model, pos, "folders", self._delete_track_from_folder_view
+        )
 
     def _delete_track_from_folder_view(self, track: TrackRecord) -> None:
         if track.id is None:

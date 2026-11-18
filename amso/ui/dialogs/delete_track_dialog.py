@@ -12,7 +12,6 @@ import sys
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QDialog,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -23,7 +22,7 @@ from PySide6.QtWidgets import (
 
 from amso.core.database import TrackRecord
 from amso.core.i18n import tr
-from amso.ui.theme import DARK_THEME_QSS
+from amso.ui.dialogs.base_dialog import AmsoDialog
 
 logger = logging.getLogger(__name__)
 
@@ -84,19 +83,13 @@ def send_file_to_trash(path: str) -> bool:
         return False
 
 
-class DeleteTrackDialog(QDialog):
+class DeleteTrackDialog(AmsoDialog):
     """Dialogue modal proposant les deux modes de suppression d'un morceau."""
 
     def __init__(self, track: TrackRecord, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
+        super().__init__(tr("dialog.delete_confirm_title"), 540, parent)
         self.track = track
         self._action: str | None = None  # "ignore", "trash", ou None
-
-        self.setWindowTitle(tr("dialog.delete_confirm_title"))
-        self.setMinimumWidth(540)
-        self.setSizeGripEnabled(True)
-        self.setModal(True)
-        self.setStyleSheet(DARK_THEME_QSS)
 
         self._setup_ui()
 
