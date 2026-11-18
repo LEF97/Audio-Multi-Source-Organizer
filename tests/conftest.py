@@ -100,3 +100,27 @@ def no_automatic_update_check(monkeypatch: pytest.MonkeyPatch) -> None:
             original(self, manual=True)
 
     monkeypatch.setattr(UpdateControllerMixin, "_check_for_updates", check_only_when_manual)
+
+
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    """Détruit fenêtres et threads Qt avant la sortie de l'interpréteur.
+
+    Sous Python 3.11 (CI Linux et Windows), les objets Qt encore vivants à la fermeture sont détruits dans un ordre
+    arbitraire et le processus plante (segfault) alors que tous les tests ont réussi.
+    """
+    import gc
+
+    from PySide6.QtCore import QCoreApplication, QEvent, QThreadPool
+    from PySide6.QtWidgets import QApplication
+
+    app = QApplication.instance()
+    if app is None:
+        return
+    for widget in app.topLevelWidgets():
+        widget.close()
+        widget.deleteLater()
+    QThreadPool.globalInstance().waitForDone(5000)
+    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+    app.processEvents()
+    gc.collect()
+    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
