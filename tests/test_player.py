@@ -2213,6 +2213,8 @@ def test_buffer_engine_seek_in_memory_vs_redecode(
     player._playlist = list(sample_tracks)
     player._current_index = 0
     monkeypatch.setattr(get_config_manager(), "get_audio_engine", lambda: "buffer")
+    # Un runner de CI n'a pas de carte son : sans sortie, le moteur se déclare indisponible et seek_ms bascule sur VLC
+    monkeypatch.setattr(type(player._engine), "is_available", True)
 
     # Mode buffer en cours de lecture
     with patch.object(PlayerService, "is_playing", new_callable=PropertyMock) as mock_playing:

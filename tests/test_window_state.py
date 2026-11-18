@@ -176,6 +176,7 @@ def test_config_batch_writes_once(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
     assert save_calls == 1
 
 
+@pytest.mark.skipif(sys.platform != "win32", reason="simule la séquence Win32 via ctypes.windll")
 def test_main_window_preserves_windowed_geometry_when_win32_zoomed_before_state_change(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
