@@ -6,6 +6,7 @@ pour garantir la compatibilité ascendante.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Sequence
 
 from PySide6.QtCore import QModelIndex, QObject, QPersistentModelIndex, Qt
@@ -20,6 +21,8 @@ from amso.ui.models_base import (
     format_quality,
 )
 from amso.ui.playlist_table_model import PlaylistTableModel
+
+logger = logging.getLogger(__name__)
 
 
 class TrackTableModel(BaseTrackTableModel):
@@ -111,8 +114,9 @@ class TrackTableModel(BaseTrackTableModel):
             reverse = direction == "DESC"
             try:
                 tracks.sort(key=lambda t: (getattr(t, col, None) is None, getattr(t, col, "")), reverse=reverse)
-            except Exception:
-                pass
+            except TypeError:
+                # Colonne aux types mélangés (int/str) : l'ordre de la base est conservé.
+                logger.debug("Tri impossible sur la colonne %s", col, exc_info=True)
         else:
             tracks, _ = self.db.get_tracks(
                 limit=self.MAX_LOADED_TRACKS,

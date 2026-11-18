@@ -153,7 +153,8 @@ class DatabaseManager(
                 if conn is not None:
                     try:
                         conn.close()
-                    except Exception:
+                    except sqlite3.Error:
+                        # Connexion à moitié ouverte abandonnée avant un nouvel essai : son échec de fermeture est sans effet.
                         pass
                     conn = None
                 if attempt == 4:
@@ -169,13 +170,15 @@ class DatabaseManager(
         except Exception:
             try:
                 conn.rollback()
-            except Exception:
+            except sqlite3.Error:
+                # L'exception d'origine est relancée juste après : un échec du rollback ne doit pas la masquer.
                 pass
             raise
         finally:
             try:
                 conn.close()
-            except Exception:
+            except sqlite3.Error:
+                # Fermeture à chaque requête (chemin fréquent, pas de log) : une connexion déjà invalide n'a rien à libérer.
                 pass
 
     def init_schema(self) -> None:

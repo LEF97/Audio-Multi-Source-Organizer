@@ -8,7 +8,9 @@ l'intégralité des champs de la table SQLite 'tracks'.
 
 from __future__ import annotations
 
+import logging
 import os
+import sqlite3
 from collections.abc import Callable
 from datetime import datetime
 from operator import attrgetter
@@ -20,6 +22,8 @@ from PySide6.QtGui import QColor, QFont
 from amso.core.database import DatabaseManager, TrackRecord
 from amso.core.i18n import tr
 from amso.ui.styles import COLOR_PRIMARY_HOVER
+
+logger = logging.getLogger(__name__)
 
 
 def format_duration(seconds: float | None, *, always_hours: bool = False) -> str:
@@ -174,8 +178,9 @@ class BaseTrackTableModel(QAbstractTableModel):
         try:
             sources = self.db.get_sources()
             self._sources_cache = {s.id: s.name for s in sources if s.id is not None}
-        except Exception:
-            pass
+        except sqlite3.Error:
+            # Base verrouillée par un scan : l'ancien cache des noms de sources reste utilisé.
+            logger.debug("Cache des sources non rafraîchi", exc_info=True)
 
     def columnCount(self, parent: QModelIndex | QPersistentModelIndex = QModelIndex()) -> int:
         if parent.isValid():

@@ -307,7 +307,8 @@ class TrackRecord:
         st = data.get("source_type", "local")
         try:
             source_type = SourceType(st)
-        except Exception:
+        except ValueError:
+            # Type de source inconnu (base écrite par une autre version) : repli sur LOCAL.
             source_type = SourceType.LOCAL
         return cls(
             id=data.get("id"),
@@ -370,7 +371,8 @@ class PlaylistRecord:
         st = row["source_type"] if "source_type" in keys and row["source_type"] else "local"
         try:
             source_type = SourceType(st)
-        except Exception:
+        except ValueError:
+            # Type de source inconnu (base écrite par une autre version) : repli sur LOCAL.
             source_type = SourceType.LOCAL
         return cls(
             id=row["id"],

@@ -7,6 +7,7 @@ planifiées et les dernières opérations terminées avec lien vers les logs.
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from PySide6.QtCore import QPoint, Qt, QTimer, Signal
@@ -39,6 +40,8 @@ from amso.ui.styles import (
     COLOR_TEXT_SOFT,
     COLOR_WHITE,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class ActivityFeedPopover(QFrame):
@@ -375,6 +378,8 @@ class ActivityFeedPopover(QFrame):
             else:
                 self.lbl_recent_content.setText(f"<span style='color: #64748B;'>{tr('feed.no_recent_activity')}</span>")
         except Exception:
+            # Journal illisible (base verrouillée, ligne mal formée) : l'encart affiche « aucune activité ».
+            logger.debug("Activité récente illisible", exc_info=True)
             self.lbl_recent_content.setText(f"<span style='color: #64748B;'>{tr('feed.no_recent_activity')}</span>")
 
         self.adjustSize()

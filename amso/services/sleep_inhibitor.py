@@ -57,8 +57,9 @@ class SleepInhibitor:
         if cls._timer:
             try:
                 cls._timer.stop()
-            except Exception:
-                pass
+            except RuntimeError:
+                # QTimer déjà détruit côté C++ à la fermeture de l'application.
+                logger.debug("Minuterie anti-veille déjà libérée", exc_info=True)
             cls._timer = None
 
         cls._is_inhibited = False

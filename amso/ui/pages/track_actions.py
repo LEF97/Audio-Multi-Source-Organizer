@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+import sqlite3
 import subprocess
 import sys
 from typing import TYPE_CHECKING, Any
@@ -190,7 +191,9 @@ class TrackActionsMixin(_MixinBase):
                         source_id=clicked_track.source_id,
                         recursive=False,
                     )
-                except Exception:
+                except sqlite3.Error:
+                    # Base verrouillée par un scan : le titre est lu seul, sans le reste du dossier.
+                    logger.debug("Comptage des titres du dossier impossible", exc_info=True)
                     folder_count = 0
 
             dialog = LargeSelectionDialog(

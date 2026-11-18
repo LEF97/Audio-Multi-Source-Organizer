@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import sqlite3
 import threading
 import time
 from pathlib import Path
@@ -335,8 +336,9 @@ class SessionStateMixin(_MixinBase):
                         for trk in self.db.get_tracks_by_ids(track_ids):
                             if trk.id is not None:
                                 db_tracks[trk.id] = trk
-                    except Exception:
-                        pass
+                    except sqlite3.Error:
+                        # Base indisponible au démarrage : la playlist est restaurée sans les fiches à jour.
+                        logger.debug("Pistes de la playlist restaurée illisibles", exc_info=True)
 
                 for t_dict in raw_tracks:
                     tid = t_dict.get("id")

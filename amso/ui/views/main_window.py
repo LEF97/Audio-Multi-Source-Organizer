@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import sqlite3
 import subprocess
 import sys
 from typing import Any
@@ -280,8 +281,9 @@ class MainWindow(
         if hasattr(self, "db") and self.db:
             try:
                 self.db.close()
-            except Exception:
-                pass
+            except sqlite3.Error:
+                # Fermeture de l'application : une base déjà invalide n'a rien à libérer.
+                logger.debug("Fermeture de la base impossible", exc_info=True)
         super().closeEvent(event)
 
     def _setup_ui(self) -> None:

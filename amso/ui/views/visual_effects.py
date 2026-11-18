@@ -13,6 +13,7 @@ Optimisé pour de hautes performances (30 FPS, pause automatique hors écran).
 
 from __future__ import annotations
 
+import logging
 import math
 import random
 
@@ -25,6 +26,8 @@ from PySide6.QtWidgets import QWidget
 from amso.ui.views.effects.bars import SpectrumBarsMixin
 from amso.ui.views.effects.effect_types import Comet, Particle, WarpStar
 from amso.ui.views.effects.painters import EffectPaintersMixin
+
+logger = logging.getLogger(__name__)
 
 
 class VisualEffectWidget(EffectPaintersMixin, SpectrumBarsMixin, QWidget):
@@ -173,7 +176,8 @@ class VisualEffectWidget(EffectPaintersMixin, SpectrumBarsMixin, QWidget):
             else:
                 svc.stop()
         except Exception:
-            pass
+            # Service de spectre indisponible (pas de loopback WASAPI) : l'effet tourne en mode simulé.
+            logger.debug("Service de spectre non piloté", exc_info=True)
 
     def set_playback_state(self, state: str) -> None:
         """Adapte la réactivité et la vitesse de l'animation à l'état de lecture."""

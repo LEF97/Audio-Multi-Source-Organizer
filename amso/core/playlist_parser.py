@@ -153,7 +153,7 @@ def parse_pls_content(content: str, playlist_dir: Path) -> list[ParsedPlaylistEn
     parser = configparser.ConfigParser(interpolation=None)
     try:
         parser.read_string(content)
-    except Exception:
+    except configparser.Error:
         # Fallback analyse ligne par ligne si non-conforme
         pass
 

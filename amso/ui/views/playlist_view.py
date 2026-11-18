@@ -6,6 +6,8 @@ et un tableau détaillé de la file d'attente en dessous.
 
 from __future__ import annotations
 
+import logging
+
 from PySide6.QtCore import QPoint, Qt, QTimer
 from PySide6.QtGui import QAction, QCursor, QShowEvent
 from PySide6.QtWidgets import (
@@ -22,6 +24,8 @@ from amso.ui.table_settings import app_settings
 from amso.ui.views.playlist_ui_builder import PlaylistHeaderWidget, PlaylistUiMixin
 from amso.ui.widgets.playlist_table_view import PlaylistTableView
 from amso.ui.widgets.transport_mixin import TransportViewMixin
+
+logger = logging.getLogger(__name__)
 
 __all__ = ["PlaylistHeaderWidget", "PlaylistTableView", "PlaylistView"]
 
@@ -169,8 +173,9 @@ class PlaylistView(PlaylistUiMixin, TransportViewMixin, QWidget):
             if 0 <= curr_idx < self.playlist_model.rowCount():
                 model_idx = self.playlist_model.index(curr_idx, 0)
                 self.table_view.scrollTo(model_idx, QAbstractItemView.ScrollHint.PositionAtCenter)
-        except Exception:
-            pass
+        except RuntimeError:
+            # Appel différé (singleShot) : la vue ou son modèle peut avoir été détruit entre-temps.
+            logger.debug("Défilement vers la piste courante impossible", exc_info=True)
 
     def showEvent(self, event: QShowEvent) -> None:
         """Centre automatiquement la vue sur le titre en cours de lecture lorsqu'on accède à la page."""

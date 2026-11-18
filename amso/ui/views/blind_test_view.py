@@ -174,7 +174,8 @@ class BlindTestView(BlindTestUiMixin, BlindTestRoundMixin, BlindTestFadesMixin, 
 
         try:
             super().hideEvent(event)
-        except Exception:
+        except RuntimeError:
+            # Vue en cours de destruction à la fermeture : l'objet C++ parent peut déjà être libéré.
             pass
 
     def resizeEvent(self, event: QResizeEvent) -> None:

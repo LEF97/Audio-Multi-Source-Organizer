@@ -115,7 +115,8 @@ class SyncScheduler(QObject):
                 if last_dt.tzinfo is None:
                     last_dt = last_dt.replace(tzinfo=UTC)
                 elapsed = (now - last_dt).total_seconds()
-            except Exception:
+            except (ValueError, TypeError):
+                # Date de dernier scan absente ou illisible : source traitée comme jamais scannée (timer fréquent, pas de log).
                 elapsed = 999999.0
 
             # Cas 2 : Mode intervalle (ex: toutes les N minutes)
@@ -229,7 +230,8 @@ class SyncScheduler(QObject):
                         if last_dt.tzinfo is None:
                             last_dt = last_dt.replace(tzinfo=UTC)
                         elapsed = (now - last_dt).total_seconds()
-                    except Exception:
+                    except (ValueError, TypeError):
+                        # Date de dernier scan absente ou illisible : aucun délai écoulé affiché (rafraîchi souvent, pas de log).
                         elapsed = 0.0
                 remaining = max(0, int(interval_sec - elapsed))
                 upcoming.append(

@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 import re
 from collections import deque
 from pathlib import Path
 
 import mutagen
+
+logger = logging.getLogger(__name__)
 
 SUPPORTED_IMAGE_EXTENSIONS = (
     ".png",
@@ -180,7 +183,8 @@ def extract_cover_art(file_path: str | Path) -> bytes | None:
     """
     try:
         path = Path(file_path).resolve()
-    except Exception:
+    except (OSError, RuntimeError, ValueError):
+        # Chemin invalide (octet nul, boucle de liens symboliques) : pas de pochette.
         return None
 
     # Si on passe directement un dossier
@@ -236,7 +240,8 @@ def extract_cover_art(file_path: str | Path) -> bytes | None:
                         if isinstance(raw, (bytes, bytearray)) and len(raw) > 0:
                             return bytes(raw)
     except Exception:
-        pass
+        # mutagen lève des erreurs hétérogènes sur un fichier corrompu : repli sur la recherche dans le dossier.
+        logger.debug("Pochette embarquée illisible : %s", path, exc_info=True)
 
     # 2. Fallback automatique : recherche dans le dossier du fichier audio
     parent = path.parent

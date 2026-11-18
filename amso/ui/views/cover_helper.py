@@ -6,6 +6,7 @@ chargement asynchrone (aucun gel de l'interface lors de la lecture d'un morceau)
 
 from __future__ import annotations
 
+import logging
 import os
 import zlib
 from collections.abc import Callable, Sequence
@@ -28,6 +29,8 @@ from amso.core.database import TrackRecord
 from amso.core.metadata import extract_cover_art, find_cover_image_in_folder
 from amso.core.network_paths import is_network_path
 from amso.ui.styles import COLOR_BORDER, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_TEXT_BRIGHT
+
+logger = logging.getLogger(__name__)
 
 # Cache mémoire pour les pochettes (file_path, size) -> QPixmap
 _COVER_CACHE: dict[tuple[str, int], QPixmap] = {}
@@ -224,6 +227,8 @@ def get_cover_pixmap(
         try:
             raw_data = extract_cover_art(target_path)
         except Exception:
+            # Une pochette illisible ne doit pas interrompre l'affichage de la vue.
+            logger.debug("Pochette illisible : %s", target_path, exc_info=True)
             raw_data = None
 
         if (
@@ -237,6 +242,8 @@ def get_cover_pixmap(
             try:
                 raw_data = extract_cover_art(track.folder_path)
             except Exception:
+                # Une pochette illisible ne doit pas interrompre l'affichage de la vue.
+                logger.debug("Pochette de dossier illisible : %s", track.folder_path, exc_info=True)
                 raw_data = None
 
     pix = _render_cover(raw_data, size, radius)
@@ -279,6 +286,8 @@ class CoverWorker(QThread):
                 try:
                     raw_bytes = find_cover_image_in_folder(Path(self.target_path), recursive=True)
                 except Exception:
+                    # Dossier réseau inaccessible ou fichier illisible : le worker rend une pochette vide.
+                    logger.debug("Recherche de pochette impossible : %s", self.target_path, exc_info=True)
                     raw_bytes = None
             if not raw_bytes:
                 for track_path in self.fallback_track_paths:
@@ -286,6 +295,8 @@ class CoverWorker(QThread):
                         try:
                             raw_bytes = extract_cover_art(track_path)
                         except Exception:
+                            # Dossier réseau inaccessible ou fichier illisible : le worker rend une pochette vide.
+                            logger.debug("Pochette illisible : %s", track_path, exc_info=True)
                             raw_bytes = None
                         if raw_bytes:
                             break
@@ -294,6 +305,8 @@ class CoverWorker(QThread):
                 try:
                     raw_bytes = extract_cover_art(self.target_path)
                 except Exception:
+                    # Dossier réseau inaccessible ou fichier illisible : le worker rend une pochette vide.
+                    logger.debug("Pochette illisible : %s", self.target_path, exc_info=True)
                     raw_bytes = None
 
             if (
@@ -305,6 +318,8 @@ class CoverWorker(QThread):
                 try:
                     raw_bytes = extract_cover_art(self.folder_path)
                 except Exception:
+                    # Dossier réseau inaccessible ou fichier illisible : le worker rend une pochette vide.
+                    logger.debug("Pochette de dossier illisible : %s", self.folder_path, exc_info=True)
                     raw_bytes = None
 
         self.cover_ready.emit(self.target_path, self.size, self.radius, raw_bytes)
@@ -376,7 +391,8 @@ def _load_path_cover_async(
                 try:
                     cb(p, pix)
                 except Exception:
-                    pass
+                    # Le callback peut viser un widget détruit entre le lancement du worker et son retour.
+                    logger.debug("Callback de pochette en échec", exc_info=True)
 
     def _on_thread_finished() -> None:
         if worker in _ACTIVE_COVER_WORKERS:

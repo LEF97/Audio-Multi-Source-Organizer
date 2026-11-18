@@ -34,8 +34,9 @@ class PlayerVolumeMixin(_MixinBase):
             self._apply_player_volume(self._volume)
         try:
             get_config_manager().set_player_volume(self._volume)
-        except Exception:
-            pass
+        except OSError:
+            # config.ini verrouillé (antivirus, synchro cloud) : le volume reste appliqué, seule sa persistance échoue.
+            logger.debug("Sauvegarde du volume impossible", exc_info=True)
         self.volume_changed.emit(self._volume, self._is_muted)
 
     def audio_set_temporary_volume(self, volume: int) -> None:
@@ -73,8 +74,9 @@ class PlayerVolumeMixin(_MixinBase):
                 pass
         try:
             get_config_manager().set_player_muted(self._is_muted)
-        except Exception:
-            pass
+        except OSError:
+            # config.ini verrouillé : la sourdine reste appliquée, seule sa persistance échoue.
+            logger.debug("Sauvegarde de la sourdine impossible", exc_info=True)
         self.volume_changed.emit(self._volume, self._is_muted)
 
     def _apply_player_volume(self, target: int) -> None:
