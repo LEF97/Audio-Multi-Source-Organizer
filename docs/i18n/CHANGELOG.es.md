@@ -13,6 +13,14 @@ y este proyecto se adhiere a la especificación [Semantic Versioning (SemVer)](h
 
 ---
 
+## [0.6.0-dev] - En curso
+
+### Añadido
+
+- _Nada por ahora._
+
+---
+
 ## [0.5.0] - 2026-11-18
 
 ### Añadido

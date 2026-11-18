@@ -15,9 +15,9 @@ Distribution : GitHub Releases + itch.io (Butler, « Pay What You Want »), dons
 | 0.1–0.3 | scanner local multithread, tags, lecteur VLC, playlists M3U/PLS/XSPF/WPL, Blind Test, corbeille, mises à jour in-app, effets visuels | publiées |
 | 0.4.0 | refonte modulaire + quality gate, 43 langues, moteur audio `buffer` (QAudioSink), crossfade/gapless, feuilles CUE | publiée |
 | 0.4.1 | correctifs audio (crossfade au fil du décodage, Blind Test en mode `buffer`, pause `vlc_direct`), TNR des transitions, paquets Linux/macOS expérimentaux | publiée |
-| **0.5.0-dev** | connecteur Google Drive (OAuth2, scan distant, streaming avec cache) ; reportés de 0.4.x : artistes/discographie, égaliseur, éditeur de tags, pochettes en ligne, filtres avancés, mode album des playlists | **en cours** (branche `develop`) |
-| 0.6.0 | Spotify / Deezer / Amazon Music, matching hybride, vue unifiée | planifié |
-| 1.0.0 | dédoublonnage par empreinte acoustique, packaging signé, doc complète | planifié |
+| 0.5.0 | vue Sources & Bibliothèque, éditeur/réparation/export de playlists, mode album, outils audio (égaliseur 10 bandes, ReplayGain, vitesse, sortie, minuterie), pistes CUE contiguës, guides d'aide, intégration Windows, menu de gauche traduit par l'assistant | publiée (tag `v0.5.0`, 2026-11-18) |
+| **0.6.0-dev** | cycle en cours (branche `develop`), contenu à définir ; chantiers candidats listés dans le jalon x.0.0 de `ROADMAP.fr.md` (connecteurs Google Drive / Spotify / Amazon Music, artistes, éditeur de tags, pochettes en ligne, filtres avancés) | **en cours** |
+| x.0.0 | dédoublonnage par empreinte acoustique, packaging signé, doc complète, connecteurs de sources | planifié |
 
 Idée validée, non planifiée : serveur web embarqué (FastAPI/uvicorn) + client Android → `docs/plan_serveur_web_android.md`.
 Détail des jalons : `ROADMAP.fr.md` ; historique : `CHANGELOG.fr.md`.

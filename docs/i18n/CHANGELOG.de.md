@@ -13,6 +13,14 @@ und dieses Projekt hält sich an die Spezifikation [Semantic Versioning (SemVer)
 
 ---
 
+## [0.6.0-dev] - In Bearbeitung
+
+### Hinzugefügt
+
+- _Nichts für den Moment._
+
+---
+
 ## [0.5.0] - 2026-11-18
 
 ### Hinzugefügt

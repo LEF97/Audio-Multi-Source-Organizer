@@ -13,6 +13,14 @@ e questo progetto aderisce alla specifica [Semantic Versioning (SemVer)](https:/
 
 ---
 
+## [0.6.0-dev] - In corso
+
+### Aggiunto
+
+- _Niente per il momento._
+
+---
+
 ## [0.5.0] - 2026-11-18
 
 ### Aggiunto
