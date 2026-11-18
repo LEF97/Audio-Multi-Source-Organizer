@@ -9,7 +9,9 @@ l'intégralité des champs de la table SQLite 'tracks'.
 from __future__ import annotations
 
 import os
+from collections.abc import Callable
 from datetime import datetime
+from operator import attrgetter
 from typing import Any
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, QObject, QPersistentModelIndex, Qt
@@ -108,6 +110,8 @@ class BaseTrackTableModel(QAbstractTableModel):
         self.db = db
         self._player_service: Any = None
         self._sources_cache: dict[int, str] = {}
+        self._label_cache: dict[str, str] = {}
+        self._quality_cache: dict[tuple[int, str | None, int | None], str] = {}
         self._current_sort_col = 1
         self._current_sort_order = Qt.SortOrder.AscendingOrder
         self._refresh_sources_cache()
@@ -194,6 +198,8 @@ class BaseTrackTableModel(QAbstractTableModel):
 
     def notify_language_changed(self) -> None:
         """Notifie la vue du changement de langue pour réactualiser en-têtes et données."""
+        self._label_cache.clear()
+        self._quality_cache.clear()
         self.headerDataChanged.emit(Qt.Orientation.Horizontal, 0, len(self.COLUMNS) - 1)
         r_cnt = self.rowCount()
         if r_cnt > 0:
@@ -220,116 +226,56 @@ class BaseTrackTableModel(QAbstractTableModel):
             return None
 
         field = self.COLUMNS[col][1]
-        is_current = self._is_current_row(index.row(), track)
+        row = index.row()
 
+        # _is_current_row normalise des chemins : on ne l'évalue que pour les rôles qui en dépendent.
         if role == Qt.ItemDataRole.DisplayRole:
-            return self._display_data(track, field, is_current)
+            return self._display_data(row, track, field)
         if role == Qt.ItemDataRole.ToolTipRole:
             return self._tooltip_data(track, field)
         if role == Qt.ItemDataRole.ForegroundRole:
-            if is_current:
+            if self._is_current_row(row, track):
                 return QColor(COLOR_PRIMARY_HOVER)
             if getattr(track, "is_missing", False):
                 return QColor("#F87171")
             return None
         if role == Qt.ItemDataRole.FontRole:
-            if is_current:
+            if self._is_current_row(row, track):
                 font = QFont()
                 font.setBold(True)
                 return font
             return None
         if role == Qt.ItemDataRole.TextAlignmentRole:
-            return self._alignment_data(field)
+            return _ALIGNMENTS.get(field, _ALIGN_LEFT)
         if role == Qt.ItemDataRole.UserRole:
             return track
         return None
 
-    def _display_data(self, track: TrackRecord, field: str, is_current: bool) -> Any:
-        if field == "is_playing":
-            if is_current:
-                is_playing = bool(self._player_service and getattr(self._player_service, "is_playing", False))
-                if is_playing:
-                    return "▶"
-                return "⏹" if getattr(self._player_service, "is_stopped", False) else "⏸"
-            return ""
-        if field == "file_name":
-            prefix = "⚠️ " if getattr(track, "is_missing", False) else ""
-            fn = track.file_name or (track.source_path.rsplit("/", 1)[-1] if track.source_path else "--")
-            return f"{prefix}{fn}"
-        if field == "title":
-            prefix = "⚠️ " if getattr(track, "is_missing", False) else ""
-            return prefix + (track.title or tr("track.untitled"))
-        if field == "artist":
-            return track.artist or tr("track.unknown_artist")
-        if field == "album_artist":
-            return track.album_artist or "--"
-        if field == "album":
-            return track.album or "--"
-        if field == "genre":
-            return track.genre or "--"
-        if field == "year":
-            return str(track.year) if track.year else ""
-        if field == "track_number":
-            return str(track.track_number) if track.track_number else ""
-        if field == "disc_number":
-            return str(track.disc_number) if track.disc_number else ""
-        if field == "duration_seconds":
-            return format_duration(track.duration_seconds)
-        if field == "format":
-            return (track.format or "").upper()
-        if field == "bitrate":
-            return f"{track.bitrate} kbps" if track.bitrate else "--"
-        if field == "sample_rate":
-            return f"{track.sample_rate / 1000:.1f} kHz" if track.sample_rate else "--"
-        return self._display_extended_data(track, field)
+    def _display_data(self, row: int, track: TrackRecord, field: str) -> Any:
+        formatter = _DISPLAY_FORMATTERS.get(field)
+        return formatter(self, row, track) if formatter is not None else None
 
-    def _display_extended_data(self, track: TrackRecord, field: str) -> Any:
-        if field == "channels":
-            if track.channels == 2:
-                return tr("table.channels_stereo")
-            if track.channels == 1:
-                return tr("table.channels_mono")
-            return f"{track.channels} ch" if track.channels else "--"
-        if field == "quality_score":
-            return format_quality(track.quality_score, track.format, track.bitrate)
-        if field == "file_size":
-            return format_file_size(track.file_size)
-        if field == "source_id":
-            if track.source_id in self._sources_cache:
-                return self._sources_cache[track.source_id]
-            return f"#{track.source_id}" if track.source_id else "--"
-        if field == "source_type":
-            st = track.source_type.value if hasattr(track.source_type, "value") else str(track.source_type)
-            return st.capitalize()
-        if field in {"folder_name", "folder_path", "source_path", "isrc"}:
-            return getattr(track, field, None) or "--"
-        if field == "file_mtime":
-            if track.file_mtime:
-                try:
-                    return datetime.fromtimestamp(track.file_mtime).strftime("%Y-%m-%d %H:%M")
-                except Exception:
-                    return str(track.file_mtime)
-            return "--"
-        if field in {"created_at", "updated_at"}:
-            val = getattr(track, field, None)
-            return val[:16] if val and len(val) >= 16 else (val or "--")
-        if field == "file_hash":
-            return (
-                (track.file_hash[:10] + "...")
-                if track.file_hash and len(track.file_hash) > 10
-                else (track.file_hash or "--")
-            )
-        if field == "audio_fingerprint":
-            return (
-                (track.audio_fingerprint[:12] + "...")
-                if track.audio_fingerprint and len(track.audio_fingerprint) > 12
-                else (track.audio_fingerprint or "--")
-            )
-        if field == "duplicate_cluster_id":
-            return f"#{track.duplicate_cluster_id}" if track.duplicate_cluster_id else "--"
-        if field == "id":
-            return str(track.id) if track.id is not None else ""
-        return None
+    def _label(self, key: str) -> str:
+        """tr() mémorisé : les libellés fixes (« Artiste inconnu »…) sont demandés à chaque cellule peinte."""
+        label = self._label_cache.get(key)
+        if label is None:
+            label = self._label_cache[key] = tr(key)
+        return label
+
+    def _quality_label(self, track: TrackRecord) -> str:
+        # Peu de combinaisons distinctes (score, format, débit) : on évite tr() + format() par cellule.
+        key = (track.quality_score, track.format, track.bitrate)
+        label = self._quality_cache.get(key)
+        if label is None:
+            label = self._quality_cache[key] = format_quality(*key)
+        return label
+
+    def _playback_icon(self, row: int, track: TrackRecord) -> str:
+        if not self._is_current_row(row, track):
+            return ""
+        if self._player_service and getattr(self._player_service, "is_playing", False):
+            return "▶"
+        return "⏹" if getattr(self._player_service, "is_stopped", False) else "⏸"
 
     def _tooltip_data(self, track: TrackRecord, field: str) -> Any:
         if getattr(track, "is_missing", False):
@@ -342,18 +288,131 @@ class BaseTrackTableModel(QAbstractTableModel):
             return track.audio_fingerprint or ""
         return None
 
-    def _alignment_data(self, field: str) -> int:
-        if field in {
-            "year",
-            "track_number",
-            "disc_number",
-            "duration_seconds",
-            "bitrate",
-            "sample_rate",
-            "file_size",
-            "id",
-        }:
-            return int(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-        if field in {"is_playing", "format", "channels", "quality_score", "source_type", "duplicate_cluster_id"}:
-            return int(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter)
-        return int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+
+# --- Formateurs d'affichage (DisplayRole), indexés par champ : un accès dict par cellule peinte ---
+
+CellFormatter = Callable[[BaseTrackTableModel, int, TrackRecord], Any]
+
+
+def _attr_or(name: str, fallback: str) -> CellFormatter:
+    getter = attrgetter(name)
+    return lambda _m, _r, t: getter(t) or fallback
+
+
+def _attr_str_or_empty(name: str) -> CellFormatter:
+    getter = attrgetter(name)
+
+    def fmt(_m: BaseTrackTableModel, _r: int, t: TrackRecord) -> str:
+        value = getter(t)
+        return str(value) if value else ""
+
+    return fmt
+
+
+def _attr_truncated(name: str, length: int) -> CellFormatter:
+    getter = attrgetter(name)
+
+    def fmt(_m: BaseTrackTableModel, _r: int, t: TrackRecord) -> str:
+        value = getter(t)
+        return (value[:length] + "...") if value and len(value) > length else (value or "--")
+
+    return fmt
+
+
+def _attr_timestamp(name: str) -> CellFormatter:
+    getter = attrgetter(name)
+
+    def fmt(_m: BaseTrackTableModel, _r: int, t: TrackRecord) -> str:
+        value = getter(t)
+        return value[:16] if value and len(value) >= 16 else (value or "--")
+
+    return fmt
+
+
+def _fmt_file_name(_m: BaseTrackTableModel, _r: int, t: TrackRecord) -> str:
+    prefix = "⚠️ " if getattr(t, "is_missing", False) else ""
+    fn = t.file_name or (t.source_path.rsplit("/", 1)[-1] if t.source_path else "--")
+    return f"{prefix}{fn}"
+
+
+def _fmt_title(m: BaseTrackTableModel, _r: int, t: TrackRecord) -> str:
+    prefix = "⚠️ " if getattr(t, "is_missing", False) else ""
+    return prefix + (t.title or m._label("track.untitled"))
+
+
+def _fmt_channels(m: BaseTrackTableModel, _r: int, t: TrackRecord) -> str:
+    if t.channels == 2:
+        return m._label("table.channels_stereo")
+    if t.channels == 1:
+        return m._label("table.channels_mono")
+    return f"{t.channels} ch" if t.channels else "--"
+
+
+def _fmt_source_id(m: BaseTrackTableModel, _r: int, t: TrackRecord) -> str:
+    name = m._sources_cache.get(t.source_id) if t.source_id is not None else None
+    if name is not None:
+        return name
+    return f"#{t.source_id}" if t.source_id else "--"
+
+
+def _fmt_source_type(_m: BaseTrackTableModel, _r: int, t: TrackRecord) -> str:
+    st = t.source_type.value if hasattr(t.source_type, "value") else str(t.source_type)
+    return st.capitalize()
+
+
+def _fmt_file_mtime(_m: BaseTrackTableModel, _r: int, t: TrackRecord) -> str:
+    if not t.file_mtime:
+        return "--"
+    try:
+        return datetime.fromtimestamp(t.file_mtime).strftime("%Y-%m-%d %H:%M")
+    except (OSError, OverflowError, ValueError):
+        # Horodatage hors plage de la plateforme (Windows refuse les valeurs négatives) : valeur brute.
+        return str(t.file_mtime)
+
+
+_DISPLAY_FORMATTERS: dict[str, CellFormatter] = {
+    "is_playing": lambda m, r, t: m._playback_icon(r, t),
+    "file_name": _fmt_file_name,
+    "title": _fmt_title,
+    "artist": lambda m, _r, t: t.artist or m._label("track.unknown_artist"),
+    "album_artist": _attr_or("album_artist", "--"),
+    "album": _attr_or("album", "--"),
+    "genre": _attr_or("genre", "--"),
+    "year": _attr_str_or_empty("year"),
+    "track_number": _attr_str_or_empty("track_number"),
+    "disc_number": _attr_str_or_empty("disc_number"),
+    "duration_seconds": lambda _m, _r, t: format_duration(t.duration_seconds),
+    "format": lambda _m, _r, t: (t.format or "").upper(),
+    "bitrate": lambda _m, _r, t: f"{t.bitrate} kbps" if t.bitrate else "--",
+    "sample_rate": lambda _m, _r, t: f"{t.sample_rate / 1000:.1f} kHz" if t.sample_rate else "--",
+    "channels": _fmt_channels,
+    "quality_score": lambda m, _r, t: m._quality_label(t),
+    "file_size": lambda _m, _r, t: format_file_size(t.file_size),
+    "source_id": _fmt_source_id,
+    "source_type": _fmt_source_type,
+    "folder_name": _attr_or("folder_name", "--"),
+    "folder_path": _attr_or("folder_path", "--"),
+    "source_path": _attr_or("source_path", "--"),
+    "isrc": _attr_or("isrc", "--"),
+    "file_mtime": _fmt_file_mtime,
+    "created_at": _attr_timestamp("created_at"),
+    "updated_at": _attr_timestamp("updated_at"),
+    "file_hash": _attr_truncated("file_hash", 10),
+    "audio_fingerprint": _attr_truncated("audio_fingerprint", 12),
+    "duplicate_cluster_id": lambda _m, _r, t: f"#{t.duplicate_cluster_id}" if t.duplicate_cluster_id else "--",
+    "id": lambda _m, _r, t: str(t.id) if t.id is not None else "",
+}
+
+_ALIGN_LEFT = int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+_ALIGN_RIGHT = int(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+_ALIGN_CENTER = int(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter)
+_ALIGNMENTS: dict[str, int] = {
+    **dict.fromkeys(
+        ("year", "track_number", "disc_number", "duration_seconds", "bitrate", "sample_rate", "file_size", "id"),
+        _ALIGN_RIGHT,
+    ),
+    **dict.fromkeys(
+        ("is_playing", "format", "channels", "quality_score", "source_type", "duplicate_cluster_id"),
+        _ALIGN_CENTER,
+    ),
+}
