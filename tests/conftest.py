@@ -1,6 +1,7 @@
 """Configuration globale pytest pour AMSO."""
 
 import os
+import sys
 
 # Forcer Qt en mode offscreen pour tous les tests headless (CI Linux / macOS / Windows)
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -18,6 +19,9 @@ os.environ.setdefault("AMSO_DATA_DIR", str(_isolated_test_dir))
 os.environ.setdefault("AMSO_CONFIG_PATH", str(_isolated_test_dir / "config.ini"))
 os.environ.setdefault("AMSO_PLAYLIST_PATH", str(_isolated_test_dir / "saved_playlist.json"))
 os.environ.setdefault("AMSO_DB_PATH", str(_isolated_test_dir / "isolated_test.db"))
+
+
+_EXIT_STATUS = pytest.StashKey[int]()
 
 
 @pytest.fixture(autouse=True)
@@ -103,24 +107,19 @@ def no_automatic_update_check(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
-    """Détruit fenêtres et threads Qt avant la sortie de l'interpréteur.
+    session.config.stash[_EXIT_STATUS] = int(exitstatus)
 
-    Sous Python 3.11 (CI Linux et Windows), les objets Qt encore vivants à la fermeture sont détruits dans un ordre
-    arbitraire et le processus plante (segfault) alors que tous les tests ont réussi.
+
+def pytest_unconfigure(config: pytest.Config) -> None:
+    """En CI, quitte sans exécuter la fermeture de l'interpréteur.
+
+    Les objets Qt encore vivants (fenêtres de test, threads audio) sont détruits dans un ordre arbitraire à la
+    fermeture ; le processus plante (segfault, abort) alors que tous les tests ont réussi. Le rapport est déjà imprimé
+    à ce stade : on le vide puis on rend le code de sortie de pytest tel quel.
     """
-    import gc
-
-    from PySide6.QtCore import QCoreApplication, QEvent, QThreadPool
-    from PySide6.QtWidgets import QApplication
-
-    app = QApplication.instance()
-    if app is None:
+    status = config.stash.get(_EXIT_STATUS, None)
+    if status is None or not os.environ.get("CI"):
         return
-    for widget in app.topLevelWidgets():
-        widget.close()
-        widget.deleteLater()
-    QThreadPool.globalInstance().waitForDone(5000)
-    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
-    app.processEvents()
-    gc.collect()
-    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(status)
