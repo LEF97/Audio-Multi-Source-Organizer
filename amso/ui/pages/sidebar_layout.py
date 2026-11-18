@@ -97,6 +97,8 @@ class SidebarLayoutMixin(_MixinBase):
         # Zone défilante pour contenir l'ensemble des tiroirs confortablement
         sidebar_scroll = QScrollArea()
         sidebar_scroll.setWidgetResizable(True)
+        # La largeur du menu se règle via le séparateur vertical : pas de barre horizontale.
+        sidebar_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         sidebar_scroll.setStyleSheet("background: transparent; border: none;")
 
         sidebar_container = QWidget()

@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import ctypes
 import json
 import logging
 import sqlite3
+import sys
 import threading
 import time
 from pathlib import Path
@@ -87,6 +89,11 @@ class SessionStateMixin(_MixinBase):
                 getattr(self, "drawer_settings", None),
                 self._on_settings_general_clicked,
             ),
+            "settings_sound": (
+                getattr(self, "btn_settings_sound", None),
+                getattr(self, "drawer_settings", None),
+                self._on_settings_sound_clicked,
+            ),
             "library_sources": (
                 getattr(self, "btn_library_sources", None),
                 getattr(self, "drawer_library_mgmt", None),
@@ -96,6 +103,11 @@ class SessionStateMixin(_MixinBase):
                 getattr(self, "btn_settings_player", None),
                 getattr(self, "drawer_settings", None),
                 self._on_settings_player_clicked,
+            ),
+            "settings_effects": (
+                getattr(self, "btn_settings_effects", None),
+                getattr(self, "drawer_settings", None),
+                self._on_settings_effects_clicked,
             ),
             "logs": (
                 getattr(self, "btn_settings_logs", None),
@@ -178,6 +190,23 @@ class SessionStateMixin(_MixinBase):
             self.showMaximized()
         else:
             self.show()
+
+    def _is_window_normal_state(self) -> bool:
+        """Indique si la fenêtre est en mode fenêtré normal (ni agrandie, ni réduite, ni plein écran)."""
+        if self.isMaximized() or self.isMinimized() or self.isFullScreen():
+            return False
+        if self.windowState() & (
+            Qt.WindowState.WindowMaximized | Qt.WindowState.WindowMinimized | Qt.WindowState.WindowFullScreen
+        ):
+            return False
+        if sys.platform == "win32":
+            hwnd = self.internalWinId()
+            if hwnd:
+                # Sous Windows, WM_SIZE/WM_MOVE arrivent avant WindowStateChange lors d'un SC_MAXIMIZE/SC_MINIMIZE
+                user32 = ctypes.windll.user32
+                if user32.IsZoomed(int(hwnd)) or user32.IsIconic(int(hwnd)):
+                    return False
+        return True
 
     def _capture_window_state(self) -> tuple[int, int, bool, int | None, int | None]:
         """Capture en mémoire la taille, la position fenêtrée et l'état agrandi avant masquage."""

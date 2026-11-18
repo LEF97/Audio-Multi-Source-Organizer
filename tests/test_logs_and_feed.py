@@ -222,6 +222,13 @@ def test_main_window_logs_integration(temp_db: DatabaseManager, qapp):
     assert hasattr(window, "page_logs")
     assert hasattr(window, "btn_activity_feed")
     assert hasattr(window, "activity_popover")
+    assert not window.btn_activity_feed.isVisible()
+    assert not window.btn_activity_feed.isEnabled()
+
+    # Le fil d'activité étant désactivé, son popover ne doit jamais s'afficher
+    window._on_activity_feed_hover_entered()
+    window._on_activity_feed_clicked()
+    assert not window.activity_popover.isVisible()
 
     # 2. Navigation vers la page Logs
     window.show_logs_page()

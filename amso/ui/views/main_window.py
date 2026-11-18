@@ -385,7 +385,12 @@ class MainWindow(
     def _on_status_label_clicked(self) -> None:
         """Ouvre les logs lorsqu'on clique sur un avertissement ou une erreur dans la barre d'état."""
         text = self.status_label.text()
-        if getattr(self, "_status_is_alert", False) or "⚠️" in text or "❌" in text:
+        if (
+            getattr(self, "_status_is_alert", False)
+            or getattr(self, "_status_opens_logs", False)
+            or "⚠️" in text
+            or "❌" in text
+        ):
             self.show_logs_page()
 
     def _on_activity_feed_hover_entered(self) -> None:

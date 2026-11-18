@@ -341,8 +341,8 @@ def test_main_window_folder_navigation(qapp: QApplication, db: DatabaseManager):
     assert folders_page is not None
     # Vérifier que les colonnes de l'arborescence et du tableau sont interactives (permettent la réduction)
     assert window.folder_tree.header().stretchLastSection() is False
-    assert window.folder_tree.header().sectionResizeMode(0) == QHeaderView.ResizeMode.Interactive
-    assert window.folder_tree.header().sectionResizeMode(1) == QHeaderView.ResizeMode.Interactive
+    assert window.folder_tree.header().sectionResizeMode(0) == QHeaderView.ResizeMode.Stretch
+    assert window.folder_tree.header().sectionResizeMode(1) == QHeaderView.ResizeMode.Fixed
 
     # 7. Vérification que les colonnes sont déplaçables et masquables
     assert window.table_view.horizontalHeader().sectionsMovable() is True
@@ -495,13 +495,14 @@ def test_effects_combo_and_styles(qapp: QApplication) -> None:
 
     # Effets disponibles
     effects = get_available_effects()
-    assert len(effects) == 9
-    assert effects[0][0] == "particles"
+    assert len(effects) == 10
+    assert effects[0][0] == "none"
+    assert effects[-1][0] == "random"
 
     # Peuplement de la combo
     combo = QComboBox()
     populate_effects_combo(combo, current_effect="warp")
-    assert combo.count() == 9
+    assert combo.count() == 10
     assert combo.currentData() == "warp"
 
     # QSS sliders et labels
@@ -793,7 +794,7 @@ def test_playlist_table_model_refreshes_play_icon_on_state_changed(qapp: QApplic
 
     player = _DummyPlayer()
     model = PlaylistTableModel(player)
-    assert PlaylistTableModel.COLUMNS[0][1] == 30
+    assert PlaylistTableModel.COLUMNS[0][2] == 30
     assert FolderTrackTableModel.COLUMNS[0][2] == 30
 
     changes: list[tuple[int, int]] = []
@@ -1281,3 +1282,71 @@ def test_folders_page_displays_cover_for_playlist_only_folder(
     default_pix = cover_helper.get_default_cover_pixmap(136, 10)
     assert window.lbl_folder_selected_cover.pixmap().toImage() != default_pix.toImage()
     window.close()
+
+
+def test_playlist_table_model_exposes_all_unified_columns(qapp: QApplication, db: DatabaseManager) -> None:
+    """Vérifie que PlaylistTableModel expose tous les champs de UNIFIED_TRACK_COLUMNS en plus de '#'."""
+    from amso.services.player_service import PlayerService
+    from amso.ui.models import UNIFIED_TRACK_COLUMNS, PlaylistTableModel
+
+    player = PlayerService()
+    tracks, _ = db.get_tracks()
+    player.play_tracks(tracks, start_index=0)
+
+    model = PlaylistTableModel(player, db=db)
+    expected_fields = {col[1] for col in UNIFIED_TRACK_COLUMNS} | {"playlist_order"}
+    actual_fields = {col[1] for col in model.COLUMNS}
+    assert actual_fields == expected_fields
+
+    # Colonnes visibles par défaut dans la playlist
+    default_visible = {col[1] for col in model.COLUMNS if col[3]}
+    assert default_visible == {"is_playing", "playlist_order", "title", "artist", "album", "duration_seconds", "format"}
+
+    # Vérification du formatage d'une colonne étendue (ex: bitrate)
+    bitrate_col = next(i for i, col in enumerate(model.COLUMNS) if col[1] == "bitrate")
+    val = model.data(model.index(0, bitrate_col), Qt.ItemDataRole.DisplayRole)
+    assert isinstance(val, str) and len(val) > 0
+
+
+def test_playlist_columns_menu_and_independent_persistence_on_close(qapp: QApplication, db: DatabaseManager) -> None:
+    """Vérifie le menu colonnes de la playlist et la persistance indépendante à la fermeture."""
+    from amso.ui.table_settings import build_columns_menu
+
+    win1 = MainWindow(db=db)
+    pl_view = win1.page_playlist
+
+    menu = build_columns_menu(
+        pl_view,
+        pl_view.table_view,
+        pl_view.playlist_model,
+        pl_view._TABLE_STORAGE_KEY,
+        skip_headers=("", "#"),
+    )
+    action_texts = [a.text() for a in menu.actions() if a.isCheckable()]
+    # Toutes les colonnes nommées de la bibliothèque (29 champs) doivent être présentes
+    assert len(action_texts) == 29
+
+    # Modifier des colonnes différentes sur chaque écran
+    bitrate_col_pl = next(i for i, c in enumerate(pl_view.playlist_model.COLUMNS) if c[1] == "bitrate")
+    genre_col_lib = next(i for i, c in enumerate(win1.table_model.COLUMNS) if c[1] == "genre")
+    year_col_fld = next(i for i, c in enumerate(win1.folder_table_model.COLUMNS) if c[1] == "year")
+
+    pl_view._toggle_column(bitrate_col_pl, True)
+    win1._toggle_table_column(win1.table_view, genre_col_lib, False, "all_tracks")
+    win1._toggle_table_column(win1.folder_table_view, year_col_fld, False, "folders")
+
+    win1.close()
+
+    # Réouverture : chaque écran retrouve ses propres colonnes actives indépendamment
+    db2 = DatabaseManager(db_path=db.db_path)
+    win2 = MainWindow(db=db2)
+    assert not win2.page_playlist.table_view.isColumnHidden(bitrate_col_pl)
+    assert win2.table_view.isColumnHidden(genre_col_lib)
+    assert not win2.page_playlist.table_view.isColumnHidden(
+        next(i for i, c in enumerate(win2.page_playlist.playlist_model.COLUMNS) if c[1] == "title")
+    )
+    assert win2.folder_table_view.isColumnHidden(year_col_fld)
+    # 'bitrate' reste visible par défaut dans la bibliothèque même si modifié dans la playlist
+    bitrate_col_lib = next(i for i, c in enumerate(win2.table_model.COLUMNS) if c[1] == "bitrate")
+    assert not win2.table_view.isColumnHidden(bitrate_col_lib)
+    win2.close()

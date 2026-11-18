@@ -353,9 +353,8 @@ def test_main_window_blind_test_integration(qapp: QApplication, tmp_path: Path):
     assert window._current_active_page == "blind_test"
 
     # 4. Synchronisation des effets visuels
-    window.set_visual_effect("waves")
+    window.page_blind_test.set_effect_type("waves")
     assert window.page_blind_test.current_effect == "waves"
-    assert window.page_player.current_effect == "waves"
 
     # 5. Retranscription de langue
     window.retranslate_ui()
@@ -666,8 +665,9 @@ def test_blind_test_effects_harmonization_and_spectrum(qapp: QApplication, sampl
     assert view.combo_effect.maximumWidth() == 250
     assert view.combo_effect.view().minimumWidth() == 260
 
-    # 2. Vérification de la liste ordonnée des 9 effets avec émojis
+    # 2. Vérification de la liste ordonnée des 10 entrées avec émojis
     expected_keys = [
+        "none",
         "particles",
         "waves",
         "stars",
@@ -676,9 +676,9 @@ def test_blind_test_effects_harmonization_and_spectrum(qapp: QApplication, sampl
         "aurora",
         "bars",
         "bars_full",
-        "none",
+        "random",
     ]
-    assert view.combo_effect.count() == 9
+    assert view.combo_effect.count() == 10
     for i, expected_key in enumerate(expected_keys):
         assert view.combo_effect.itemData(i) == expected_key
         # Présence d'un émoji au début de chaque libellé

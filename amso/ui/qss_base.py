@@ -254,6 +254,10 @@ QProgressBar::chunk {
     border-radius: 3px;
 }
 
+QStatusBar QLabel {
+    color: #CBD5E1;
+}
+
 QStatusBar QProgressBar {
     max-width: 220px;
 }

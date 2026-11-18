@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import ctypes
+import sys
 from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-from PySide6.QtCore import QPoint, QRect, QSize, Qt
+from PySide6.QtCore import QEvent, QPoint, QRect, QSize, Qt
 from PySide6.QtGui import QGuiApplication, QMoveEvent, QResizeEvent
 from PySide6.QtWidgets import QApplication
 
@@ -172,3 +174,44 @@ def test_config_batch_writes_once(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
         assert save_calls == 0
 
     assert save_calls == 1
+
+
+def test_main_window_preserves_windowed_geometry_when_win32_zoomed_before_state_change(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    app = QApplication.instance() or QApplication([])
+    assert app is not None
+    cfg_path = tmp_path / "config.ini"
+    monkeypatch.setenv("AMSO_CONFIG_PATH", str(cfg_path))
+
+    window = MainWindow(db=DatabaseManager(db_path=":memory:"))
+    window.resize(1040, 680)
+    window.resizeEvent(QResizeEvent(QSize(1040, 680), QSize(1200, 780)))
+    window.move(140, 90)
+    window.moveEvent(QMoveEvent(QPoint(140, 90), QPoint(0, 0)))
+    assert window._windowed_size == (1040, 680)
+    assert window._windowed_pos == (140, 90)
+
+    # Simuler la séquence Win32 SC_MAXIMIZE : WM_SIZE/WM_MOVE arrivent avant WindowStateChange
+    monkeypatch.setattr(sys, "platform", "win32")
+    monkeypatch.setattr(window, "internalWinId", lambda: 12345)
+    monkeypatch.setattr(ctypes.windll.user32, "IsZoomed", lambda _hwnd: 1)
+    monkeypatch.setattr(ctypes.windll.user32, "IsIconic", lambda _hwnd: 0)
+
+    window.resize(2560, 1369)
+    window.resizeEvent(QResizeEvent(QSize(2560, 1369), QSize(1040, 680)))
+    window.move(0, -8)
+    window.moveEvent(QMoveEvent(QPoint(0, -8), QPoint(140, 90)))
+
+    assert window._windowed_size == (1040, 680)
+    assert window._windowed_pos == (140, 90)
+
+    # Retour à l'état normal via WindowStateChange
+    monkeypatch.setattr(ctypes.windll.user32, "IsZoomed", lambda _hwnd: 0)
+    window.resize(1040, 680)
+    window.move(140, 90)
+    window.changeEvent(QEvent(QEvent.Type.WindowStateChange))
+    assert window._windowed_size == (1040, 680)
+    assert window._windowed_pos == (140, 90)
+
+    window.close()

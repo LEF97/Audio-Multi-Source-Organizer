@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from PySide6.QtCore import Qt, QThread
+from PySide6.QtCore import Qt, QThread, QTimer
 from PySide6.QtWidgets import (
     QDialog,
     QFileDialog,
@@ -153,6 +153,7 @@ class ScanControllerMixin(_MixinBase):
             self.scheduler.notify_scan_started(source.id)
 
         self._status_is_alert = False
+        self._status_opens_logs = False
         self.status_label.setCursor(Qt.CursorShape.ArrowCursor)
         self.status_label.setToolTip("")
         self.progress_bar.setVisible(True)
@@ -463,12 +464,31 @@ class ScanControllerMixin(_MixinBase):
                     unchanged=summary.unchanged,
                 )
             )
+            self._show_status_until_timeout()
 
         if hasattr(self, "activity_popover") and self.activity_popover:
             self.activity_popover.update_progress("", pct=None)
 
         if hasattr(self, "page_logs") and self.page_logs:
             self.page_logs.mark_dirty()
+
+    def _show_status_until_timeout(self, delay_ms: int = 8000) -> None:
+        """Garde le bilan du scan cliquable (vers les logs), puis vide la barre d'état."""
+        self._status_opens_logs = True
+        self.status_label.setToolTip(tr("status.click_to_view_logs"))
+        self.status_label.setCursor(Qt.CursorShape.PointingHandCursor)
+        text = self.status_label.text()
+
+        def _clear() -> None:
+            # Un autre message a pu remplacer le bilan entre-temps : ne pas l'effacer.
+            if self.status_label.text() != text:
+                return
+            self._status_opens_logs = False
+            self.status_label.setText("")
+            self.status_label.setToolTip("")
+            self.status_label.setCursor(Qt.CursorShape.ArrowCursor)
+
+        QTimer.singleShot(delay_ms, _clear)
 
     def _on_scan_error(self, err_msg: str) -> None:
         self.progress_bar.setVisible(False)
