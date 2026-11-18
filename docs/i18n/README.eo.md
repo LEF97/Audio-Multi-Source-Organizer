@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,14 +47,17 @@
 | **Subteno de plejlistoj (M3U, PLS, XSPF, WPL) & CUE-foliaj** | Arbara indeksado (🎶), sekvenca ordono de aŭskultado, vizuala lokado de mankantaj trakoj; la `.cue` dosieroj (💿) forigas kiel dosiero de virtualaj trakoj kun ilia daŭro kaj ludas kiel veraj trakoj | 🟢 Implimentita |
 | **Plejlist-administrado kaj Drag-&Drop** | Virtualigita ventoj, flua drag & drop, reversaj kaj cikliĝaj aleĝoj (shuffle) | 🟢 Implimentita |
 | **Interagativa « 🎲 Blind Test » modo** | Immergeva muzika ludo kun animata kontaŭo, son-fondu, milda rivelado kaj aŭtomatika enĉeno | 🟢 Implimentita |
-| **Aŭordigoj en la apliko** | Automata/manuala verigo de versioj tra GitHub Releases | 🟢 Implementita |
-| **Versioj por Linux & macOS** | Paĉoj `.AppImage` / `.tar.gz` (Linux) kaj ne-signita `.dmg` (macOS), VLC necesa | 🟡 Eksperimenta (ne testita) |
-| **Administrado de artistoj & Diskografio** | Dedikita vido por artisto kun albumoj, singloj kaj kompleta diskografio | 🟡 Planita |
-| **Grafika egalizilo (EQ)** | Audio presetoj kaj parametra multbanda egalizilo | 🟡 Planita |
-| **Konekto por Google Drive** | Skano kaj sinkronigo de malproksimaj audio-kolekcioj tra OAuth 2.0 | ⚪ Planigita |
-| **Konekto por Amazon Music** | Skano kaj sinkronigo de malproksimaj kolecioj tra OAuth 2.0 | ⚪ Planigita |
-| **Konekto por Spotify / Deezer** | Importado de plejlistoj kaj korespondado de trakoj | ⚪ Planigita |
-| **Inteligenta duplikado-elimino** | Detekto de duplikoj (titolo/artisto flusitaj + akustikaj prientoj) | ⚪ Planigita |
+| **Fontoj & Biblioteko** | Tableau de bord des sources avec indicateurs de santé (sources hors ligne, erreurs de scan, fichiers manquants), vue globale ou par source et actions rapides | 🟢 Implémenté |
+| **Redaktado, riparado & ekspor de plejlistoj** | Réorganisation, relocalisation manuelle ou automatique des fichiers manquants, sauvegarde en M3U / M3U8 / PLS / XSPF / WPL, regroupement par album | 🟢 Implémenté |
+| **Audio iloj** | Égaliseur graphique 10 bandes avec presets, normalisation ReplayGain, vitesse de lecture, choix de la sortie audio et minuterie d'arrêt (moteur à tampon continu) | 🟢 Implémenté |
+| **Integrado Windows & efektoj vizualoj** | Barre des tâches, zone de notification, guides d'aide, effets visuels réglables avec mode Aléatoire | 🟢 Implémenté |
+| **Mavajorigo in-app** | Vérification automatique/manuelle des versions via GitHub Releases | 🟢 Implémenté |
+| **Versioj Linux & macOS** | Paquets `.AppImage` / `.tar.gz` (Linux) et `.dmg` non signé (macOS), VLC requis | 🟡 Expérimental (non testé) |
+| **Administrado de artistoj & Diskografio** | Vue dédiée par artiste avec albums, singles et discographie complète | 🟡 Prévu |
+| **Connecteur Google Drive** | Scan et synchronisation de collections audio distantes via OAuth 2.0 | ⚪ Planifié |
+| **Connecteur Amazon Music** | Skano kaj sinkronigo de malproksimaj kolektoj per OAuth 2.0 | ⚪ Planigita |
+| **Connecteur Spotify / Deezer** | Importado de plejlistoj kaj kongruado de trakoj | ⚪ Planigita |
+| **Inteligenta duplikado-elimino** | Detekto de duplikoj (titolo/artisto malklarigitaj + akustikaj prientoj) | ⚪ Planigita |
 
 > 💡 *Por konsulti la detalo de la milestonoj kaj planitaj versioj, atentuoksu la [Milestonaj paŝoj (Roadmap)](../../ROADMAP.md).*
 

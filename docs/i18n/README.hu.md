@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,14 +47,17 @@
 | **Playlist támogatás (M3U, PLS, XSPF, WPL) és CUE lapok** | Önváló indexelés (🎶), sorrendi hallgatási sorrend, hiányzó dalok vizuális azonosítása; a .cue fájlok (💿) virtuális dalok mappájaként nyílnak, időtartalmukkal, és való dalokként játszhatók | 🟢 Megvalósítva |
 | **Playlist Kezelő & Húzás-Dobozás** | Virtualizált sorbaépítés, zökkenőmentes drag & drop, visszafordítható véletlenszerű (shuffle) és ciklusok | 🟢 Megvalósítva |
 | **Interaktív „🎲 Blind Test” mód** | Immerziós zenei játék animált számlálóval, hangfade-vel, puha felfedezéssel és automatikus átmenettel | 🟢 Megvalósítva |
-| **Alkalmazásbelüli frissítések** | Automatikus/manuális verzióellenőrzés a GitHub Releases-en keresztül | 🟢 Megvalósítva |
+| **Források és Könyvtár** | Források táblázata egészségügyi indikátorokkal (offline források, szkennelési hiba, hiányzó fájlok), globális vagy forrás szerint nézet és gyors műveletek | 🟢 Megvalósítva |
+| **Lélista szerkesztése, javítása és exportálása** | Hiányzó fájlok újrarendelése, kézi vagy automatikus elhelyezése, biztonsági mentés M3U / M3U8 / PLS / XSPF / WPL formátumban, album szerint csoportosítás | 🟢 Megvalósítva |
+| **Hangelés eszközök** | 10 sávos grafikus égalizer előállíttal, ReplayGain normalizáció, lejátszási sebesség, hangkimenet kiválasztása és kikapcsoló időzítő (folyamatos tampon motor) | 🟢 Megvalósítva |
+| **Windows integráció és vizuális effektusok** | Felület sáv, értesítési zóna, útmutatók, állítható vizuális effektusok véletlenszerű módokkal | 🟢 Megvalósítva |
+| **Alkalmazásbelüli frissítések** | Automatikus/kézi verzióellenőrzés GitHub Releases-en keresztül | 🟢 Megvalósítva |
 | **Linux és macOS verziók** | `.AppImage` / `.tar.gz` csomagok (Linux) és nem aláírt `.dmg` (macOS), VLC szükséges | 🟡 Eksperimentális (nem tesztelt) |
-| **Artistok és diskográfia kezelése** | Dedikált nézet művősök számára albumokkal, singlekkel és teljes diskográfíával | 🟡 Tervezett |
-| **Grafikus égalizer (EQ)** | Hangszín alapok és paraméteres többbandás égalizer | 🟡 Tervezett |
-| **Google Drive kapcsolat** | Táv hangszíngyűjtemények szkennelése és szinkronizálása OAuth 2.0 segítségével | ⚪ Tervezett |
-| **Amazon Music kapcsolat** | Táv gyűjtemények szkennelése és szinkronizálása OAuth 2.0 segítségével | ⚪ Tervezett |
-| **Spotify / Deezer kapcsolat** | Playlistek importálása és dalek eşleştirése | ⚪ Tervezett |
-| **Okos duplikátkezelés** | Duplikatok detektálása (cím/művész borús + hangajomlatok) | ⚪ Tervezett |
+| **Artistok és Diszkográfia kezelése** | Dedikált nézet művészごとに albumokkal, single-ekkel és teljes diszkográfiával | 🟡 Tervezett |
+| **Google Drive kapcsolat** | Scan és szinkronizáció távoli hangzászlopalmazokkal OAuth 2.0-on keresztül | ⚪ Tervezett |
+| **Connecteur Amazon Music** | Távollasztások szkennelése és szinkronizációja OAuth 2.0 segítségével | ⚪ Tervezett |
+| **Connecteur Spotify / Deezer** | Léistályok importálása és dalok eşleştirése | ⚪ Tervezett |
+| **Okos duplikátumeltávolítás** | Duplikátumok felismerése (homályos cím/alkuvány + hangajomlatok) | ⚪ Tervezett |
 
 > 💡 *A tervezett mérföldkövei és verziók részletes áttekintéséhez, kérjük, tekintse meg a [Feuille de route (Roadmap)](../../ROADMAP.md).*
 

@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,14 +47,17 @@
 | **플레이리스트 지원 (M3U, PLS, XSPF, WPL) 및 CUE 시트** | 트리 인덱싱 (🎶), 순차 청취 순서, 누락된 트랙 시각적 식별; `.cue` 파일 (💿)은 길이와 함께 가상 트랙 폴더처럼 열리고 실제 트랙처럼 재생됩니다. | 🟢 Implémenté |
 | **플레이리스트 관리자 및 드래그 앤 드롭** | 가상 대기열, 부드러운 드래그 앤 드롭, 되돌릴 수 있는 무작위(shuffle) 및 루프 | 🟢 Implémenté |
 | **« 🎲 블라인드 테스트 » 인터랙티브 모드** | 애니메이션 카운트다운, 사운드 페이드, 부드러운 공개 및 자동 연결이 있는 몰입형 음악 게임 | 🟢 Implémenté |
+| **소스 및 라이브러리** | 상태 표시기(오프라인 소스, 스캔 오류, 누락된 파일)가 있는 소스 대시보드, 전체 보기 또는 소스별 보기 및 빠른 작업 | 🟢 구현됨 |
+| **플레이리스트 편집, 복구 및 내보내기** | 누락된 파일 재구성, 수동 또는 자동 재배치, M3U / M3U8 / PLS / XSPF / WPL로 백업, 앨범별 그룹화 | 🟢 구현됨 |
+| **오디오 도구** | 프리셋이 있는 10밴드 그래픽 이퀄라이저, ReplayGain 정규화, 재생 속도, 오디오 출력 선택 및 종료 타이머(지속 버퍼 엔진) | 🟢 구현됨 |
+| **Windows 통합 및 시각 효과** | 작업 표시줄, 알림 영역, 도움말 가이드, 무작위 모드를 포함한 조정 가능한 시각 효과 | 🟢 구현됨 |
 | **인앱 업데이트** | GitHub Releases를 통한 자동/수동 버전 확인 | 🟢 구현됨 |
 | **Linux 및 macOS 버전** | 패키지 `.AppImage` / `.tar.gz` (Linux) 및 서명되지 않은 `.dmg` (macOS), VLC 필요 | 🟡 실험적 (테스트되지 않음) |
 | **아티스트 및 디스코그래피 관리** | 앨범, 싱글 및 전체 디스코그래피가 포함된 아티스트 전용 보기 | 🟡 예정 |
-| **그래픽 이퀄라이저 (EQ)** | 오디오 프리셋 및 파라메트릭 멀티밴드 이퀄라이저 | 🟡 예정 |
 | **Google Drive 커넥터** | OAuth 2.0을 통한 원격 오디오 컬렉션 스캔 및 동기화 | ⚪ 계획됨 |
 | **Amazon Music 커넥터** | OAuth 2.0을 통한 원격 컬렉션 스캔 및 동기화 | ⚪ 계획됨 |
 | **Spotify / Deezer 커넥터** | 플레이리스트 가져오기 및 트랙 매칭 | ⚪ 계획됨 |
-| **스마트 중복 제거** | 중복 감지 (제목/아티스트 흐림 + 음향 지문) | ⚪ 계획됨 |
+| **지능형 중복 제거** | 중복 감지 (제목/아티스트 흐릿화 + 음향 지문) | ⚪ 계획됨 |
 
 > 💡 *계획된 마일스톤 및 버전에 대한 자세한 내용은 [로드맵 (Roadmap)](../../ROADMAP.md)을 참조하십시오.*
 

@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,14 +47,17 @@
 | **Tugitus Playlistidele (M3U, PLS, XSPF, WPL) & CUE-lehtletile** | Arvoomstruktuuriline indekseerimine (🎶), loetlemine järjepikut, puuduvate numbrite visuaalne tuvastamine; `.cue` failid (💿) avanevad nagu virtuaalne numbrite kausta oma kestusega ja toituvad nagu tõelised numbrid | 🟢 Implementeeritud |
 | **Playlista haldaja & Vedamine-asetamine** | Virtuaalne ootamisosa, sujuv vedamine-asetamine, vastutav (shuffle) ja tsüklid | 🟢 Implementeeritud |
 | **Interaktiivne „🎲 Blind Test“ režiim** | Immersiivne muusikaline mäng animatiivse arvutusega, kõlajärgemusega, pehme avaldamisega ja automaatse tellitumega | 🟢 Implementeeritud |
-| **Kasutaja-liidese uuendused** | Versioonide automaatne/manuaalne kontroll GitHub Releases kaudu | 🟢 Implementeeritud |
-| **Linuxi ja macOS versioonid** | Paquets .AppImage / .tar.gz (Linux) ja .dmg mitte-allkirjastatud (macOS), VLC vajalik | 🟡 Eksperimentaals (testitud pole) |
-| **Kunstnikute ja diskograafia haldamine** | Kunstnikile pühendatud vaade albumite, singlite ja täieliku diskograafiaga | 🟡 Planeeritud |
-| **Graafiline ekvailaator (EQ)** | Audio eelregiistrid ja parametriline hulkbåndse ekvailaator | 🟡 Planeeritud |
-| **Google Drive ühendus** | Kaug audio kogumiste skaneerimine ja sünkroonimine OAuth 2.0 kaudu | ⚪ Planeeritud |
-| **Amazon Music ühendus** | Kaug kogumiste skaneerimine ja sünkroonimine OAuth 2.0 kaudu | ⚪ Planeeritud |
-| **Spotify / Deezer ühendus** | Playlista impordimine ja loogade vastavus | ⚪ Planeeritud |
-| **Nutekorduvuse vältimine** | Duplikaatide tuvastamine (peen/kunstnik + akustilised jäljed) | ⚪ Planeeritud |
+| **Allikad & Biblioteek** | Allikate paneel terviseindikaatoritega (offline allikad, skannimisvead, puuduvad failid), globaalne või allika-sada, ja kiired tegevused | 🟢 Implamenteeritud |
+| **Playlista redigeerimine, parandamine & eksportimine** | Uusrangustus, puuduvate failide käsitsi või automaatne paigutamine, salvestamine M3U / M3U8 / PLS / XSPF / WPL formaatides, rühmitamine albumi järgi | 🟢 Implamenteeritud |
+| **Audio tööriistad** | 10-ribase graafiline ekvailaator presetidega, ReplayGain normaliseerimine, toitumine kiirus, audio väljundvalimine ja peatuse ajastuse (pidev tamponmootor) | 🟢 Implamenteeritud |
+| **Windows integreerimine & visuaalsed efektid** | Tegevuskumbar, teate område, abimehed, reguleeritavad visuaalsed efektid Random-režiimiga | 🟢 Implamenteeritud |
+| **Appi sisemised uuendused** | Versioonide automaatne/käsitsi kontroll GitHub Releases kaudu | 🟢 Implamenteeritud |
+| **Linux & macOS versioonid** | Paigutused `.AppImage` / `.tar.gz` (Linux) ja mitte-allkirjastatud `.dmg` (macOS), vajalik on VLC | 🟡 Eksperimentaalsel (testimata) |
+| **Kunstnike haldamine & Diskograafia** | Kunstnike jaoks pühendatud vaade albumite, singlide ja täieliku diskograafiaga | 🟡 Planeeritud |
+| **Google Drive ühendaja** | Skannimine ja kaug audio kogumikute sünkroonimine OAuth 2.0 kaudu | ⚪ Planeeritud |
+| **Connecteur Amazon Music** | Kaugkogumiku skaneerimine ja sünkroniseerimine OAuth 2.0 kaudu | ⚪ Planeeritud |
+| **Connecteur Spotify / Deezer** | Playlistade importimine ja loogade vastavus | ⚪ Planeeritud |
+| **Nutelainen duplikaatide eemaldamine** | Duplikaatide tuvastamine (pead/kunstnik + akustilised jäljed) | ⚪ Planeeritud |
 
 > 💡 *Et vaadata planeeritud etappide ja versioonide üksikasju, viitugege [Teekart (Roadmap)](../../ROADMAP.md).*
 

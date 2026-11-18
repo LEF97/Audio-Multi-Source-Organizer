@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,14 +47,17 @@
 | **播放列表支持 (M3U, PLS, XSPF, WPL) & CUE 文件** | 树形索引 (🎶)，顺序播放，缺失曲目可视化定位；`.cue` 文件 (💿) 像一个包含其持续时间和可作为真实曲目播放的虚拟曲目文件夹打开 | 🟢 已实现 |
 | **播放列表管理器和拖放** | 虚拟播放队列，流畅的 drag & drop，可逆随机播放 (shuffle) 和循环 | 🟢 已实现 |
 | **互动模式 « 🎲 Blind Test »** | 沉浸式音乐游戏，包含动画倒计时、音频淡出、平滑揭示和自动衔接 | 🟢 已实现 |
-| **应用内更新** | 通过 GitHub Releases 进行自动/手动版本检查 | 🟢 已实现 |
-| **Linux 和 macOS 版本** | Paquets `.AppImage` / `.tar.gz` (Linux) et `.dmg` non signé (macOS), VLC requis | 🟡 实验性 (未测试) |
-| **艺术家和唱片目录管理** | 艺术家专用视图，包含专辑、单曲和完整唱片目录 | 🟡 计划中 |
-| **图形均衡器 (EQ)** | 音频预设和参数多频带均衡器 | 🟡 计划中 |
-| **Google Drive 连接器** | 通过 OAuth 2.0 扫描和同步远程音频收藏 | ⚪ 已计划 |
-| **Amazon Music 连接器** | 通过 OAuth 2.0 扫描和同步远程收藏 | ⚪ 已计划 |
-| **Spotify / Deezer 连接器** | 导入播放列表和匹配曲目 | ⚪ 已计划 |
-| **智能去重** | 重复内容检测（模糊标题/艺术家 + 声学指纹） | ⚪ 已计划 |
+| **源和资料库** | 包含健康指标的源仪表板（离线源、扫描错误、文件丢失），全局或按源视图和快速操作 | 🟢 Implémenté |
+| **播放列表编辑器、修复和导出** | 重新组织、手动或自动重新定位丢失文件，保存为 M3U / M3U8 / PLS / XSPF / WPL，按专辑分组 | 🟢 Implémenté |
+| **音频工具** | 带预设的 10 段图形均衡器，ReplayGain 归一化，播放速度，音频输出选择和停止计时器（连续缓冲引擎） | 🟢 Implémenté |
+| **Windows 集成和视觉效果** | 任务栏、通知区域、帮助指南、可调节的视觉效果和随机模式 | 🟢 Implémenté |
+| **应用内更新** | 通过 GitHub Releases 自动/手动检查版本 | 🟢 Implémenté |
+| **Linux 和 macOS 版本** | `.AppImage` / `.tar.gz` (Linux) 和未签名 `.dmg` (macOS) 包，需要 VLC | 🟡 Expérimental (non testé) |
+| **艺术家和唱片目录管理** | 艺术家专用视图，包含专辑、单曲和完整的唱片目录 | 🟡 Prévu |
+| **Google Drive 连接器** | 通过 OAuth 2.0 扫描和同步远程音频收藏 | ⚪ Planifié |
+| **Connecteur Amazon Music** | 通过 OAuth 2.0 对远程收藏进行扫描和同步 | ⚪ 计划中 |
+| **Connecteur Spotify / Deezer** | 导入播放列表和匹配曲目 | ⚪ 计划中 |
+| **智能去重** | 检测重复项（模糊的标题/艺术家 + 声纹） | ⚪ 计划中 |
 
 > 💡 *要查看计划的里程碑和版本详情，请参阅 [路线图 (Roadmap)](../../ROADMAP.md)。*
 

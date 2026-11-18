@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,13 +47,16 @@
 | **Støtte for spillelister (M3U, PLS, XSPF, WPL) & CUE-ark** | Trestrukturert indeksering (🎶), sekvensiell avspillingsrekkefølge, visuell lokalisering av manglende spor; `.cue`-filer (💿) åpnes som en virtuell spormappe med varighet og spilles av som ekte spor | 🟢 Implémenté |
 | **Spillelistehåndterer & Dra-og-slipp** | Virtualisert kø, jevn dra-og-slipp, reversibel tilfeldig (shuffle) og looper | 🟢 Implémenté |
 | **Interaktiv « 🎲 Blind Test »-modus** | Immersivt musikalsk spill med animert nedtelling, lydfade, myk avsløring og automatisk overgang | 🟢 Implémenté |
-| **Oppdateringer i appen** | Automatisk/manuel versjonskontroll via GitHub Releases | 🟢 Implementert |
-| **Linux- og macOS-versjoner** | Paquets `.AppImage` / `.tar.gz` (Linux) og `.dmg` usignert (macOS), VLC kreves | 🟡 Eksperimentelt (ikke testet) |
-| **Artist- og diskografihåndtering** | Dedikert visning per artist med album, singler og komplett diskografi | 🟡 Planlagt |
-| **Grafisk equalizer (EQ)** | Lydpresets og parametrisk flerbånds-equalizer | 🟡 Planlagt |
+| **Kilder & Bibliotek** | Dashboard for kilder med helseindikatorer (offline kilder, skannefeil, manglende filer), globalt eller per kilde visning og raske handlinger | 🟢 Implementert |
+| **Redigerer, reparasjon & eksport av spillelister** | Omorganisering, manuell eller automatisk relokalisering av manglende filer, sikkerhetskopiering i M3U / M3U8 / PLS / XSPF / WPL, gruppering etter album | 🟢 Implementert |
+| **Lydverktøy** | 10-bånds grafisk equalizer med forhåndsinnstillinger, ReplayGain-normalisering, avspillingshastighet, valg av lydutgang og stopptimer (kontinuerlig buffer-motor) | 🟢 Implementert |
+| **Windows-integrasjon & visuelle effekter** | Oppgavelinje, varslingsområde, hjelpegivende veiledninger, justerbare visuelle effekter med Tilfeldig-modus | 🟢 Implementert |
+| **Oppdateringer i appen** | Automatisk/manuell versjonskontroll via GitHub Releases | 🟢 Implementert |
+| **Linux & macOS-versjoner** | Pakker `.AppImage` / `.tar.gz` (Linux) og usignert `.dmg` (macOS), VLC kreves | 🟡 Eksperimentelt (ikke testet) |
+| **Artist- og diskografistyring** | Dedikert visning per artist med album, singler og komplett diskografi | 🟡 Planlagt |
 | **Google Drive-kobling** | Skanning og synkronisering av eksterne lydsamlinger via OAuth 2.0 | ⚪ Planlagt |
-| **Amazon Music-kobling** | Skanning og synkronisering av eksterne samlinger via OAuth 2.0 | ⚪ Planlagt |
-| **Spotify / Deezer-kobling** | Import av spillelister og spor-matching | ⚪ Planlagt |
+| **Connecteur Amazon Music** | Skanning og synkronisering av fjerne samlinger via OAuth 2.0 | ⚪ Planlagt |
+| **Connecteur Spotify / Deezer** | Import av spillelister og sporkorrespondanse | ⚪ Planlagt |
 | **Intelligent duplikatfjerning** | Deteksjon av duplikater (tittel/artist + akustiske fingeravtrykk) | ⚪ Planlagt |
 
 > 💡 *For å se detaljene for de planlagte milepælene og versjonene, se [Veikart (Roadmap)](../../ROADMAP.md).*

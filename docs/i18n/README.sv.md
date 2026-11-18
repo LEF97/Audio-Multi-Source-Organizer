@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,14 +47,17 @@
 | **Stöd för spellistor (M3U, PLS, XSPF, WPL) & CUE-ark** | Trädstrukturindeksering (🎶), sekventiell lyssningsordning, visuell identifiering av saknade spår; `.cue`-filer (💿) öppnas som en virtuell spårkatalog med deras varaktighet och spelas som riktiga spår | 🟢 Implémenté |
 | **Spellistthanterare & Drag-and-drop** | Virtualiserad kö, smidigt drag & drop, reversibel slumpmässighet (shuffle) och loopar | 🟢 Implémenté |
 | **Interaktivt "🎲 Blind Test"-läge** | Immersivt musikspel med animerad nedräkning, ljudfade, mjuk avslöjande och automatisk övergång | 🟢 Implémenté |
-| **In-app uppdateringar** | Automatisk/manuell versionskontroll via GitHub Releases | 🟢 Implementerat |
-| **Versioner för Linux & macOS** | Paketet .AppImage / .tar.gz (Linux) och icke-signerat .dmg (macOS), VLC krävs | 🟡 Experimentellt (inte testat) |
-| **Hantering av artister & Discografi** | Dedikerad vy per artist med album, singlar och komplett discografi | 🟡 Planerat |
-| **Grafisk equalizer (EQ)** | Audio-presets och parametrisk multiband-equalizer | 🟡 Planerat |
+| **Källor & Bibliotek** | Dashboard för källor med hälsokontroller (offline källor, skannfel, saknade filer), global vy eller per källa och snabba åtgärder | 🟢 Implementerat |
+| **Redigerare, reparation & export av spellistor** | Omorganisering, manuell eller automatisk återlokalisering av saknade filer, backup i M3U / M3U8 / PLS / XSPF / WPL, gruppering per album | 🟢 Implementerat |
+| **Ljudverktyg** | 10-bands grafisk equalizer med förinställningar, ReplayGain normalisering, uppspelningshastighet, val av ljudutgång och avstängningstimern (kontinuerlig buffertmotor) | 🟢 Implementerat |
+| **Windows-integration & visuella effekter** | Uppgiftsfält, meddelandecenter, hjälteguider, anpassningsbara visuella effekter med Slumpmässigt läge | 🟢 Implementerat |
+| **Uppdateringar i appen** | Automatisk/manuell versionskontroll via GitHub Releases | 🟢 Implementerat |
+| **Linux & macOS-versioner** | Paket `.AppImage` / `.tar.gz` (Linux) och osignerade `.dmg` (macOS), VLC krävs | 🟡 Experimentellt (inte testat) |
+| **Artisthantering & Discografi** | Dedikerad vy per artist med album, singlar och komplett discografi | 🟡 Planerat |
 | **Google Drive-anslutning** | Skanning och synkronisering av avlägsna ljudsamlingar via OAuth 2.0 | ⚪ Planerat |
-| **Amazon Music-anslutning** | Skanning och synkronisering av avlägsna samlingar via OAuth 2.0 | ⚪ Planerat |
-| **Spotify / Deezer-anslutning** | Import av spellistor och spårmatchning | ⚪ Planerat |
-| **Intelligent dubblettkontroll** | Detektering av dubbletter (låt/artist + akustiska fingeravtryck) | ⚪ Planerat |
+| **Connecteur Amazon Music** | Skanning och synkronisering av fjärrkollektioner via OAuth 2.0 | ⚪ Planerat |
+| **Connecteur Spotify / Deezer** | Import av spellistor och spårmatchning | ⚪ Planerat |
+| **Intelligent dubblettkontroll** | Upptäckt av dubletter (oskarp titel/artist + akustiska fingeravtryck) | ⚪ Planerat |
 
 > 💡 *För att se detaljer om de planerade milstolparna och versionerna, hänvisa till [Karta (Roadmap)](../../ROADMAP.md).*
 

@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,14 +47,17 @@
 | **Playlist Desteği (M3U, PLS, XSPF, WPL) & CUE dosyaları** | Ağaç yapısı indeksleme (🎶), sıralı dinleme sırası, eksik parçaların görsel tespiti; `.cue` dosyaları (💿) süresiyle birlikte sanal bir parça klasörü gibi açılır ve gerçek parçalar gibi çalınır | 🟢 Uygulanmış |
 | **Çalma Listesi Yöneticisi & Sürükle-Bırak** | Sanallaştırılmış kuyruk, akıcı sürükle-bırak, geri alınabilir rastgele (shuffle) ve döngüler | 🟢 Uygulanmış |
 | **Etkileşimli "🎲 Kör Test" Modu** | Animasyonlu sayaç, ses geçişi, yumuşak ortaya çıkarma ve otomatik sıralama içeren sürükleyici müzik oyunu | 🟢 Uygulanmış |
-| **Uygulama içi güncellemeler** | GitHub Releases üzerinden otomatik/manuel sürüm kontrolü | 🟢 Uygulandı |
+| **Kaynaklar ve Kütüphane** | Kaynakların sağlık göstergeleriyle kontrol paneli (çevrimdışı kaynaklar, tarama hataları, eksik dosyalar), genel veya kaynak bazlı görünüm ve hızlı eylemler | 🟢 Uygulanmış |
+| **Çalma listesi düzenleme, onarım ve dışa aktarma** | Eksik dosyaların yeniden düzenlenmesi, manuel veya otomatik yeniden konumlandırılması, M3U / M3U8 / PLS / XSPF / WPL formatlarında yedekleme, albüme göre gruplama | 🟢 Uygulanmış |
+| **Ses araçları** | Ön ayarlı 10 bantlı grafik ekolayzır, ReplayGain normalizasyonu, çalma hızı, ses çıkışı seçimi ve kapanma zamanlayıcısı (sürekli tampon motoru) | 🟢 Uygulanmış |
+| **Windows entegrasyonu ve görsel efektler** | Görev çubuğu, bildirim alanı, yardım kılavuzları, Rastgele mod ile ayarlanabilir görsel efektler | 🟢 Uygulanmış |
+| **Uygulama içi güncellemeler** | GitHub Releases üzerinden otomatik/manuel sürüm kontrolü | 🟢 Uygulanmış |
 | **Linux ve macOS Sürümleri** | `.AppImage` / `.tar.gz` (Linux) ve imzalanmamış `.dmg` (macOS) paketleri, VLC gerekli | 🟡 Deneysel (test edilmedi) |
-| **Sanatçı ve Diskografi Yönetimi** | Albümler, single'lar ve tam diskografi ile sanatçıya özel görünüm | 🟡 Planlanıyor |
-| **Grafik Ekolayzır (EQ)** | Ses ön ayarları ve parametrik çok bantlı ekolayzır | 🟡 Planlanıyor |
-| **Google Drive Bağlayıcısı** | OAuth 2.0 üzerinden uzaktaki ses koleksiyonlarının taranması ve senkronizasyonu | ⚪ Planlandı |
-| **Amazon Music Bağlayıcısı** | OAuth 2.0 üzerinden uzaktaki koleksiyonların taranması ve senkronizasyonu | ⚪ Planlandı |
-| **Spotify / Deezer Bağlayıcısı** | Çalma listelerinin içe aktarılması ve parça eşleştirme | ⚪ Planlandı |
-| **Akıllı Yinelenme Kaldırma** | Dublikat algılama (başlık/sanatçı bulanık + akustik parmak izleri) | ⚪ Planlandı |
+| **Sanatçı Yönetimi ve Diskografi** | Albümler, single'lar ve tam diskografi ile sanatçıya özel görünüm | 🟡 Planlanıyor |
+| **Google Drive Bağlayıcısı** | OAuth 2.0 üzerinden uzaktaki ses koleksiyonlarının taranması ve senkronizasyonu | ⚪ Planlanıyor |
+| **Amazon Music Bağlayıcı** | OAuth 2.0 aracılığıyla uzak koleksiyon taraması ve senkronizasyonu | ⚪ Planlanmış |
+| **Spotify / Deezer Bağlayıcı** | Çalma listelerinin içe aktarılması ve parça eşleştirme | ⚪ Planlanmış |
+| **Akıllı Yinelenme Kaldırma** | Yinelenenlerin tespiti (bulanık başlık/sanatçı + akustik parmak izleri) | ⚪ Planlanmış |
 
 > 💡 *Planlanan kilometre taşları ve sürümlerin ayrıntılarını görmek için, [Yol Haritası (Roadmap)](../../ROADMAP.md)'e bakın.*
 

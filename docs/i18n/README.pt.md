@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,11 +47,14 @@
 | **Suporte a Playlists (M3U, PLS, XSPF, WPL) & folhas CUE** | Indexação em árvore (🎶), ordem de escuta sequencial, localização visual de faixas ausentes; os arquivos `.cue` (💿) abrem como uma pasta de faixas virtuais com sua duração e são reproduzidos como faixas reais | 🟢 Implementado |
 | **Gerenciador de Playlist & Arrastar-Soltar** | Fila de reprodução virtualizada, drag & drop fluido, aleatório (shuffle) reversível e loops | 🟢 Implementado |
 | **Modo interativo « 🎲 Blind Test »** | Jogo musical imersivo com contagem regressiva animada, fade sonoro, revelação suave e sequência automática | 🟢 Implementado |
-| **Atualizações no aplicativo** | Verificação automática/manual de versões via GitHub Releases | 🟢 Implementado |
-| **Versões Linux & macOS** | Pacotes `.AppImage` / `.tar.gz` (Linux) e `.dmg` não assinado (macOS), VLC necessário | 🟡 Experimental (não testado) |
-| **Gerenciamento de artistas & Discografia** | Visualização dedicada por artista com álbuns, singles e discografia completa | 🟡 Planejado |
-| **Equalizador gráfico (EQ)** | Presets de áudio e equalizador multibanda paramétrico | 🟡 Planejado |
-| **Conector Google Drive** | Scan e sincronização de coleções de áudio remotas via OAuth 2.0 | ⚪ Planejado |
+| **Fontes & Biblioteca** | Painel de controle das fontes com indicadores de saúde (fontes offline, erros de scan, arquivos ausentes), visão global ou por fonte e ações rápidas | 🟢 Implémenté |
+| **Editor, reparo & exportação de playlists** | Reorganização, relocalização manual ou automática de arquivos ausentes, backup em M3U / M3U8 / PLS / XSPF / WPL, agrupamento por álbum | 🟢 Implémenté |
+| **Ferramentas de áudio** | Equalizador gráfico de 10 bandas com presets, normalização ReplayGain, velocidade de reprodução, escolha da saída de áudio e temporizador de parada (motor de buffer contínuo) | 🟢 Implémenté |
+| **Integração Windows & efeitos visuais** | Barra de tarefas, área de notificação, guias de ajuda, efeitos visuais ajustáveis com modo Aleatório | 🟢 Implémenté |
+| **Atualizações no aplicativo** | Verificação automática/manual de versões via GitHub Releases | 🟢 Implémenté |
+| **Versões Linux & macOS** | Pacotes `.AppImage` / `.tar.gz` (Linux) e `.dmg` não assinado (macOS), VLC requerido | 🟡 Expérimental (non testé) |
+| **Gerenciamento de artistas & Discografia** | Visão dedicada por artista com álbuns, singles e discografia completa | 🟡 Prévu |
+| **Conector Google Drive** | Scan e sincronização de coleções de áudio remotas via OAuth 2.0 | ⚪ Planifié |
 | **Conector Amazon Music** | Scan e sincronização de coleções remotas via OAuth 2.0 | ⚪ Planejado |
 | **Conector Spotify / Deezer** | Importação de playlists e correspondência de faixas | ⚪ Planejado |
 | **Desduplicação inteligente** | Detecção de duplicatas (título/artista desfocados + impressões acústicas) | ⚪ Planejado |

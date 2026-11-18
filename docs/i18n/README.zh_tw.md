@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,14 +47,17 @@
 | **支援播放清單 (M3U, PLS, XSPF, WPL) & CUE 檔案** | 樹狀索引 (🎶)，順序播放，視覺化標記缺失曲目；`.cue` 檔案 (💿) 會像一個虛擬曲目資料夾一樣打開，顯示其時長，並像真實曲目一樣播放 | 🟢 已實作 |
 | **播放清單管理器與拖放** | 虛擬佇列，流暢的拖放，可反轉的隨機播放 (shuffle) 和循環播放 | 🟢 已實作 |
 | **互動式「🎲 盲測」模式** | 沉浸式的音樂遊戲，配有動畫計時器、音效淡入淡出、柔和揭示和自動銜接 | 🟢 已實作 |
-| **應用程式內更新** | 透過 GitHub Releases 的自動/手動版本檢查 | 🟢 已實作 |
-| **Linux 和 macOS 版本** | `.AppImage` / `.tar.gz` 套件 (Linux) 和未簽署的 `.dmg` (macOS)，需要 VLC | 🟡 實驗性 (未測試) |
-| **藝人與唱片目錄管理** | 每個藝人專屬頁面，包含專輯、單曲和完整的唱片目錄 | 🟡 規劃中 |
-| **圖形均衡器 (EQ)** | 音訊預設和參數化多頻帶均衡器 | 🟡 規劃中 |
+| **來源與資料庫** | 包含健康指示器（離線來源、掃描錯誤、缺少檔案）的來源儀表板，可查看整體或單一來源，並提供快速操作 | 🟢 已實作 |
+| **播放清單編輯、修復與匯出** | 重新組織、手動或自動重新定位缺少檔案、備份為 M3U / M3U8 / PLS / XSPF / WPL，按專輯分組 | 🟢 已實作 |
+| **音訊工具** | 帶預設值的 10 波段圖形均衡器、ReplayGain 正規化、播放速度、音訊輸出選擇和關機定時器（連續緩衝引擎） | 🟢 已實作 |
+| **Windows 整合與視覺效果** | 任務欄、通知區域、幫助指南、可調整的視覺效果和隨機模式 | 🟢 已實作 |
+| **應用程式內更新** | 透過 GitHub Releases 自動/手動檢查版本 | 🟢 已實作 |
+| **Linux 與 macOS 版本** | `.AppImage` / `.tar.gz` (Linux) 和未簽名 `.dmg` (macOS) 套件，需要 VLC | 🟡 實驗性（未測試） |
+| **藝人與唱片目錄管理** | 專門的藝人頁面，包含專輯、單曲和完整的唱片目錄 | 🟡 規劃中 |
 | **Google Drive 連接器** | 透過 OAuth 2.0 掃描和同步遠端音訊收藏 | ⚪ 計劃中 |
-| **Amazon Music 連接器** | 透過 OAuth 2.0 掃描和同步遠端收藏 | ⚪ 計劃中 |
-| **Spotify / Deezer 連接器** | 匯入播放清單和曲目匹配 | ⚪ 計劃中 |
-| **智慧去重** | 偵測重複（模糊的標題/藝人 + 音訊指紋） | ⚪ 計劃中 |
+| **Connecteur Amazon Music** | 透過 OAuth 2.0 掃描和同步遠端收藏 | ⚪ 計劃中 |
+| **Connecteur Spotify / Deezer** | 匯入播放清單和曲目匹配 | ⚪ 計劃中 |
+| **智慧去重** | 偵測重複項（模糊的標題/藝術家 + 聲學指紋） | ⚪ 計劃中 |
 
 > 💡 *如需查閱預計的里程碑和版本詳情，請參閱 [路線圖 (Roadmap)](../../ROADMAP.md)。*
 

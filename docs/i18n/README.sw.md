@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,14 +47,17 @@
 | **Usaidizi wa Playlists (M3U, PLS, XSPF, WPL) & karatasi za CUE** | Uorodheshaji wa mti (🎶), mpangilio wa kusikiliza kwa mpangilio, kutambua kwa macho sehemu zinazokosekana; faili za `.cue` (💿) zinafunguliwa kama folda ya sehemu za kiakili na muda wake na zinausikilizwa kama sehemu halisi | 🟢 Implemented |
 | **Msimamizi wa Playlist & Kushusha-Kushika** | Orodha ya kusubiri ya kubadilishwa, kishusha-kushika laini, nasibu (shuffle) kurevesha na mizunguko | 🟢 Implemented |
 | **Hali ya « 🎲 Blind Test » ya mwingiliano** | Mchezo wa muziki wenye kuingiza kwa kuhesabu kwa uhai, kupungua kwa sauti, kufichuliwa kwa upole na muunganiko wa kiotomatiki | 🟢 Implemented |
-| **Sasisho za ndani** | Uhakiki wa matoleo kiotomatiki/kwa mikono kupitia GitHub Releases | 🟢 Imetekelezwa |
-| **Matoleo ya Linux & macOS** | Paquets `.AppImage` / `.tar.gz` (Linux) et `.dmg` non signé (macOS), VLC requis | 🟡 Ya majaribio (hayajaribiwa) |
-| **Usimamizi wa wasanii & Discografia** | Mtazamo maalum kwa msanii na albamu, singles, na discografia kamili | 🟡 Kimepangwa |
-| **Msawazi wa picha (EQ)** | Mapendekezo ya sauti na msawazi wa band za nyingi wa kimaelezo | 🟡 Kimepangwa |
-| **Kiunganishi cha Google Drive** | Skanning na ulinganishaji wa makusanyiko ya sauti ya mbali kupitia OAuth 2.0 | ⚪ Kimepangwa |
-| **Kiunganishi cha Amazon Music** | Skanning na ulinganishaji wa makusanyiko ya sauti ya mbali kupitia OAuth 2.0 | ⚪ Kimepangwa |
-| **Kiunganishi cha Spotify / Deezer** | Kuingiza playlists na kupanga nyimbo | ⚪ Kimepangwa |
-| **Kuondoa nakala kwa akili** | Kugundua nakala (kichwa/msanii kidogo + alama za sauti) | ⚪ Kimepangwa |
+| **Vyanzo na Maktaba** | Dashibodi ya vyanzo na viashiria vya afya (vyanzo visiyo mtandaoni, makosa ya skani, faili zilizoondoka), mtazamo wa jumla au kwa chanzo na vitendo vya haraka | 🟢 Imetekelezwa |
+| **Hariri, ukarabati & uwasilishaji wa orodha za nyimbo (playlists)** | Uopangaji upya, uhamisho wa mikono au kiotomatiki wa faili zilizoondoka, kuhifadhi kwa M3U / M3U8 / PLS / XSPF / WPL, kukusanya kwa albamu | 🟢 Imetekelezwa |
+| **Zana za sauti** | Kifaa cha kusawazisha grafiki cha bandari 10 na mipangilio, urekebishaji wa ReplayGain, kasi ya kucheza, uchaguzi wa matokeo ya sauti na saa ya kuzima (sehemu ya pembejeo ya mara kwa mara) | 🟢 Imetekelezwa |
+| **Uunganishaji wa Windows na athari za kuona** | Ukuta wa kazi, eneo la arifa, mwongozo wa msaada, athari za kuona zinazoweza kurekebishwa na hali ya Kirobotiki | 🟢 Imetekelezwa |
+| **Sasisho ndani ya programu** | Uhakiki wa kiwango cha kiotomatiki/kwa mikono kupitia GitHub Releases | 🟢 Imetekelezwa |
+| **Vipindi vya Linux na macOS** | Vikundi vya `.AppImage` / `.tar.gz` (Linux) na `.dmg` visivyosainiwa (macOS), VLC inahitajika | 🟡 Expérimental (non testé) |
+| **Usimamizi wa wasanii na Biografia ya muziki** | Mtazamo maalum kwa msanii na albamu, single na biografia kamili ya muziki | 🟡 Prévu |
+| **Kiunganishi cha Google Drive** | Skani na ulinganisho wa makusanyiko ya sauti ya mbali kupitia OAuth 2.0 | ⚪ Planifié |
+| **Connecteur Amazon Music** | Scan na ulinganishaji wa makusanyiko ya mbali kupitia OAuth 2.0 | ⚪ Iliyopangwa |
+| **Connecteur Spotify / Deezer** | Kuingiza orodha za nyimbo na kupanga nyimbo | ⚪ Iliyopangwa |
+| **Kuondoa kurudiwa kwa data kwa akili** | Kugundua kurudiwa kwa data (kichwa/mwenyeji wa wimbo + alama za sauti) | ⚪ Iliyopangwa |
 
 > 💡 *Ili kuona undani wa hatua na matoleo yanayopangwa, tazama [Feuille de route (Roadmap)](../../ROADMAP.md).*
 

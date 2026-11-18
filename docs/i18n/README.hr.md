@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,14 +47,17 @@
 | **Podrška za playliste (M3U, PLS, XSPF, WPL) & CUE listice** | Stablo indeksiranje (🎶), sekvencijalni red slušanja, vizualno lociranje nedostajućih pjesama; datoteke `.cue` (💿) otvaraju se kao direktorij virtualnih staza sa njihovom tra점으로 i reprodukuju se kao prave staze | 🟢 Implemenirano |
 | **Upravitelj playlista i povlačenje/pusti** | Virtualizirani red, glatko drag & drop, obrnuti (shuffle) i petlje | 🟢 Implemenirano |
 | **Interaktivni način rada « 🎲 Blind Test »** | Imurzivna glazbena igra sa animiranim brojačem, zvučnim fondu, blagim otkrivanjem i automatskim povezivanjem | 🟢 Implemenirano |
-| **Ažuriranja u aplikaciji** | Automatska/ručna provjera verzija putem GitHub Releases | 🟢 Implementirano |
-| **Verzije za Linux i macOS** | Paketi `.AppImage` / `.tar.gz` (Linux) i neoznačeno `.dmg` (macOS), potreban VLC | 🟡 Eksperimentalno (nije testirano) |
-| **Upravljanje izvođačima i diskografijom** | Posvećeni pregled po izvođaču s albumima, singlovima i kompletnom diskografijom | 🟡 Planirano |
-| **Grafički ekvalizator (EQ)** | Audio predpostavke i parametrični multiband ekvalizator | 🟡 Planirano |
+| **Izvori & Biblioteka** | Kontrolna tabla izvora s indikatorima zdravlja (izvori van mreže, greške skeniranja, nedostajući fajlovi), globalni pregled ili po izvoru i brze akcije | 🟢 Implementirano |
+| **Uređivač, popravak & izvoz playlisti** | Reorganizacija, ručno ili automatsko prelociranje nedostajućih fajlova, sigurnosno kopiranje u M3U / M3U8 / PLS / XSPF / WPL, grupiranje po albumu | 🟢 Implementirano |
+| **Audio alati** | Grafički ekvalizator od 10 traka s predpostavkama, normalizacija ReplayGain, brzina reprodukcije, izbor audio izlaza i tajmer za zaustavljanje (motor s kontinuiranim bufferom) | 🟢 Implementirano |
+| **Integracija za Windows & vizualni efekti** | Traka zadataka, zona obavijesti, vodiči za pomoć, podesivi vizualni efekti srežim način | 🟢 Implementirano |
+| **Ažuriranja unutar aplikacije** | Automatska/ručna provjera verzija putem GitHub Releases | 🟢 Implementirano |
+| **Verzije za Linux i macOS** | Paketi `.AppImage` / `.tar.gz` (Linux) i neoznačeni `.dmg` (macOS), potreban je VLC | 🟡 Eksperimentalno (nije testirano) |
+| **Upravljanje izvođačima & Diskografija** | Posveđeni pregled po izvođaču s albumima, singlovima i kompletnom diskografijom | 🟡 Planirano |
 | **Konektor Google Drive** | Skeniranje i sinhronizacija udaljenih audio kolekcija putem OAuth 2.0 | ⚪ Planirano |
-| **Konektor Amazon Music** | Skeniranje i sinhronizacija udaljenih kolekcija putem OAuth 2.0 | ⚪ Planirano |
-| **Konektor Spotify / Deezer** | Uvoz playlista i podudarnost pjesama | ⚪ Planirano |
-| **Inteligentno uklanjanje duplikata** | Detekcija duplikata (zamagljeno naslov/izvođač + akustični otisci) | ⚪ Planirano |
+| **Amazon Music Konektor** | Skeniranje i sinhronizacija udaljenih kolekcija putem OAuth 2.0 | ⚪ Planirano |
+| **Spotify / Deezer Konektor** | Uvoz plejlista i podudarnost pjesama | ⚪ Planirano |
+| **Pametno uklanjanje duplikata** | Detekcija duplikata (zamagljeno naslov/umjetnik + akustični otisci) | ⚪ Planirano |
 
 > 💡 *Za pregled detalja planiranih prekretnica i verzija, pogledajte [Mapu puta (Roadmap)](../../ROADMAP.md).*
 

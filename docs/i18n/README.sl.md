@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,14 +47,17 @@
 | **Podpora za spletne liste (M3U, PLS, XSPF, WPL) in CUE listine** | Drevočno indeksiranje (🎶), sekvenčni red slušanja, vizualno zaznavanje manjših delov; datoteke `.cue` (💿) se odpirajo kot virtualna zbirka sledilnikov z njihov trajanje in se spigajo kot pravi sledilniki | 🟢 Implementirano |
 | **Upravitelj spletne liste in Drag & Drop** | Virtualiziran zavajalnik, tekoč drag & drop, obratna nasumična (shuffle) in zanki | 🟢 Implementirano |
 | **Interaktivni način « 🎲 Blind Test »** | Immerzivna glasbena igra z animiranojo številčnico, zvokom prehodom, nežno razkritjem in avtomatskim povezovanjem | 🟢 Implementirano |
-| **Znotrajne nadgradnje** | Avtomatsko/ručno preverjanje različic preko GitHub Releases | 🟢 Implementirano |
-| **Različice za Linux in macOS** | Paketi .AppImage / .tar.gz (Linux) in nepodpisano .dmg (macOS), potreben je VLC | 🟡 Eksperimentalno (ni testirano) |
-| **Upravljanje umetnikov in diskografije** | Dedicirana razglednica po umetniku z albumi, singliji in celotno diskografijo | 🟡 Predvideno |
-| **Grafični ekvalizator (EQ)** | Audio prednastavitve in parametrični multiband ekvalizator | 🟡 Predvideno |
-| **Konektor Google Drive** | Skeniranje in sinhronizacija oddaljenih audio zbiramščin preko OAuth 2.0 | ⚪ Planirano |
-| **Konektor Amazon Music** | Skeniranje in sinhronizacija oddaljenih zbiramščin preko OAuth 2.0 | ⚪ Planirano |
-| **Konektor Spotify / Deezer** | Importiranje seznamov predvsem in poravnavanje tokov | ⚪ Planirano |
-| **Pametno odstranjevanje duplikatov** | Detekcija duplikatov (naslov/umetnik + akustični prajevzi) | ⚪ Planirano |
+| **Izvori & Knjižnica** | Nadzorne ploščico izvorov z indikatorji zdravja (offline izvori, napake pri skeniranju, manjših datotek), splošni pogled ali po izvoru in hitre akcije | 🟢 Implémenté |
+| **Editor, popravilo in izvoz seznamov igranja** | Ponovno organiziranje, ročno ali avtomatsko prelocitev manjših datotek, varnostno kopiranje v M3U / M3U8 / PLS / XSPF / WPL, skupinanje po albumu | 🟢 Implémenté |
+| **Avdio orodja** | Grafični ekvalizator 10 vijakov z prednastavitvami, normalizacija ReplayGain, hitrost spravodila, izbira avdio izхода in časovna napomba za zaustitev (motor s stalnim predpomnikovanjem) | 🟢 Implémenté |
+| **Integracija za Windows in vizualni učinki** | Nadpisna vrstica, območje obvestil, vodniki za pomoč, prilagodljivi vizualni učinki z načinom Nakljajno | 🟢 Implémenté |
+| **Posodobitve znotraj aplikacije** | Avtomatska/ročna preverjanje različic preko GitHub Releases | 🟢 Implémenté |
+| **Različice za Linux in macOS** | Paketi `.AppImage` / `.tar.gz` (Linux) in nesplošni `.dmg` (macOS), zahteva se VLC | 🟡 Expérimental (non testé) |
+| **Upravljanje umetnikov & Diskografija** | Dediciran pogled po umetniku z albumi, singlji in celotno diskografijo | 🟡 Prévu |
+| **Konektor Google Drive** | Skeniranje in sinhronizacija oddaljnih avdio zbirke z uporabo OAuth 2.0 | ⚪ Planifié |
+| **Connecteur Amazon Music** | Skeniranje in sinhronizacija oddaljenih zbiramščin preko OAuth 2.0 | ⚪ Planirano |
+| **Connecteur Spotify / Deezer** | Importiranje seznamov predvajanja in ujemanje tokov | ⚪ Planirano |
+| **Dédoublonnage intelligent** | Odkrivanje duplikatov (zamagljeno naslov/umetnik + akustični prajmi) | ⚪ Planirano |
 
 > 💡 *Za pregled podrobnosti predvidenih miljakov in verzij, se poskusite na [Mapa poti (Roadmap)](../../ROADMAP.md).*
 

@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,14 +47,17 @@
 | **Podpora playlistů (M3U, PLS, XSPF, WPL) a CUE souborů** | Strojové indexování (🎶), sekvenční pořadí poslechu, vizuální lokalizace chybějících skladeb; soubory `.cue` (💿) se otevírají jako složka virtuálních skladeb se svou délkou a přehrávají se jako skutečné sklady | 🟢 Implementováno |
 | **Správce playlistů a přetahování (Drag & Drop)** | Virtualizovaná fronta, plynulý drag & drop, zvratné náhodné (shuffle) a smyčky | 🟢 Implementováno |
 | **Interaktivní režim „🎲 Blind Test“** | Imersivní hudební hra s animovaným počítáním, zvukovým fade, jemným odhalováním a automatickým přechodem | 🟢 Implementováno |
-| **Aktualizace v aplikaci** | Automatické/ruční ověření verzí přes GitHub Releases | 🟢 Implementováno |
-| **Verze pro Linux a macOS** | Balíčky .AppImage / .tar.gz (Linux) a neověřené .dmg (macOS), vyžaduje VLC | 🟡 Experimentální (netestováno) |
-| **Správa umělců a diskografie** | Vyklená sekce pro umělce s albumy, singly a kompletní diskografií | 🟡 Plánováno |
-| **Grafický ekvalizátor (EQ)** | Audio přednastavení a parametryický multibándový ekvalizátor | 🟡 Plánováno |
+| **Zdroje a knihovna** | Dashboard zdrojů s indikátory zdraví (offline zdroje, chyby skenování, chybějící soubory), globální nebo podle zdroje pohled a rychlé akce | 🟢 Implementováno |
+| **Editor, opravy a export playlistů** | Rekonfigurace, ruční nebo automatické přesouvání chybějících souborů, zálohování do M3U / M3U8 / PLS / XSPF / WPL, shlukování podle alba | 🟢 Implementováno |
+| **Audio nástroje** | Grafický ekvalizér 10 pásm s přednastavením, normalizace ReplayGain, rychlost přehrávání, výběr audio výstupu a časovač vypnutí (neustálý bufferový motor) | 🟢 Implementováno |
+| **Integrace Windows a vizuální efekty** | Panel úloh, oblast oznámení, průvodce, ovladatelné vizuální efekty s režimem Náhodně | 🟢 Implementováno |
+| **Aktualizace v aplikaci** | Automatická/ruční kontrola verzí přes GitHub Releases | 🟢 Implementováno |
+| **Verze pro Linux a macOS** | Balíčky `.AppImage` / `.tar.gz` (Linux) a neověřené `.dmg` (macOS), vyžaduje VLC | 🟡 Experimentální (neotestováno) |
+| **Správa nghệstitelů a diskografie** | Vězeně věnovaný jednotlivému nghệstiteli s alby, singly a kompletní diskografii | 🟡 Plánováno |
 | **Konektor Google Drive** | Skenování a synchronizace vzdálených audio kolekcí přes OAuth 2.0 | ⚪ Plánováno |
-| **Konektor Amazon Music** | Skenování a synchronizace vzdálených kolekcí přes OAuth 2.0 | ⚪ Plánováno |
-| **Konektor Spotify / Deezer** | Importování playlistů a shoda skladeb | ⚪ Plánováno |
-| **Inteligentní odstraňování duplicit** | Detekce duplicit (rozmazané titulky/umělství + akustické otisky) | ⚪ Plánováno |
+| **Connecteur Amazon Music** | Skenování a synchronizace vzdálených kolekcí pomocí OAuth 2.0 | ⚪ Plánováno |
+| **Connecteur Spotify / Deezer** | Importace playlistů a přiřazování skladeb | ⚪ Plánováno |
+| **Inteligentní odstraňování duplicit** | Detekce duplicit (rozmazané název/umělec + akustické otisky) | ⚪ Plánováno |
 
 > 💡 *Pro zobrazení podrobností plánovaných milníků a verzí se podívejte na [Feuille de route (Roadmap)](../../ROADMAP.md).*
 

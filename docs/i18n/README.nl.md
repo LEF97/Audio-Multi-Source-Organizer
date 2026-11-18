@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="../../screenshots/2026-10-29%20v0.4.1.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio avec l'ambiance visuelle Hyperespace (champ d'étoiles 3D)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
-</p>
-
-<p align="center">
-  <img src="../../screenshots/2026-10-25%20v0.4.0.png" alt="Audio Multi-Source Organizer (AMSO) - Liste de lecture d'une feuille CUE (pistes virtuelles)" width="850">
+  <img src="../../screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,13 +47,16 @@
 | **Ondersteuning van afspeellijsten (M3U, PLS, XSPF, WPL) & CUE-bestanden** | Boomindexering (🎶), sequentiële luistervolgorde, visuele detectie van ontbrekende nummers; `.cue` bestanden (💿) openen als een virtuele trackmap met hun duur en spelen af als echte tracks | 🟢 Implémenté |
 | **Afspeellijstbeheer & Drag-and-Drop** | Gevirtualiseerde wachtrij, vloeiende drag & drop, omkeerbare willekeur (shuffle) en loops | 🟢 Implémenté |
 | **Interactieve "🎲 Blind Test" modus** | Immersief muzikaal spel met geanimeerde aftelling, geluidsfade, zachte onthulling en automatische overgang | 🟢 Implémenté |
-| **In-app updates** | Automatische/handmatige versiecontrole via GitHub Releases | 🟢 Geïmplementeerd |
-| **Versies Linux & macOS** | Paquets `.AppImage` / `.tar.gz` (Linux) en `.dmg` niet-ondertekend (macOS), VLC vereist | 🟡 Experimenteel (niet getest) |
-| **Beheer van artiesten & discografie** | Specifieke weergave per artiest met albums, singles en volledige discografie | 🟡 Gepland |
-| **Grafische equalizer (EQ)** | Audio presets en parametrische multiband equalizer | 🟡 Gepland |
-| **Google Drive Connector** | Scannen en synchroniseren van externe audio collecties via OAuth 2.0 | ⚪ Gepland |
+| **Bronnen & Bibliotheek** | Dashboard van bronnen met gezondheidsindicatoren (offline bronnen, scanfouten, ontbrekende bestanden), overzicht of per bron en snelle acties | 🟢 Implémenté |
+| **Editor, reparatie & export van afspeellijsten** | Herorganisatie, handmatige of automatische herlocatie van ontbrekende bestanden, back-up in M3U / M3U8 / PLS / XSPF / WPL, groepering per album | 🟢 Implémenté |
+| **Audio-instrumenten** | 10-band grafische equalizer met presets, ReplayGain normalisatie, afspeelsnelheid, keuze van audio-uitvoer en uitschakeltimer (continue buffer-engine) | 🟢 Implémenté |
+| **Windows-integratie & visuele effecten** | Taakbalk, notificatiegebied, hulpgidsen, aanpasbare visuele effecten met Willekeurige modus | 🟢 Implémenté |
+| **In-app updates** | Automatische/handmatige versiecontrole via GitHub Releases | 🟢 Implémenté |
+| **Linux & macOS Versies** | Pakketten `.AppImage` / `.tar.gz` (Linux) en onondertekend `.dmg` (macOS), VLC vereist | 🟡 Experimenteel (niet getest) |
+| **Beheer van artiesten & Discografie** | Specifieke weergave per artiest met albums, singles en volledige discografie | 🟡 Gepland |
+| **Google Drive Connector** | Scannen en synchroniseren van externe audio-collecties via OAuth 2.0 | ⚪ Gepland |
 | **Amazon Music Connector** | Scannen en synchroniseren van externe collecties via OAuth 2.0 | ⚪ Gepland |
-| **Spotify / Deezer Connector** | Importeren van afspeellijsten en trackmatching | ⚪ Gepland |
+| **Spotify / Deezer Connector** | Importeren van afspeellijsten en overeenkomst van nummers | ⚪ Gepland |
 | **Slim dedupliceren** | Detectie van duplicaten (vage titel/artiest + akoestische vingerafdrukken) | ⚪ Gepland |
 
 > 💡 *Om de details van de geplande mijlpalen en versies te bekijken, raadpleeg de [Feuille de route (Roadmap)](../../ROADMAP.md).*
