@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (
 from amso.core.activity_messages import display_action
 from amso.core.database import DatabaseManager, SourceRecord
 from amso.core.i18n import tr
-from amso.core.scheduler import SyncScheduler
+from amso.services.scheduler import SyncScheduler
 from amso.ui.styles import (
     COLOR_BG_DEEP,
     COLOR_BG_SLATE,

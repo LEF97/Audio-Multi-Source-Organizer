@@ -10,7 +10,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
 from amso.core.database import DatabaseManager, SourceType
-from amso.core.scheduler import SyncScheduler
+from amso.services.scheduler import SyncScheduler
 from amso.ui.views.activity_feed_popover import ActivityFeedPopover
 from amso.ui.views.logs_view import LogsView
 from amso.ui.views.main_window import MainWindow

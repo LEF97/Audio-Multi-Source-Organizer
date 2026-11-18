@@ -48,7 +48,6 @@ amso/
 │   ├── replaygain.py         lecture des tags ReplayGain et normalisation PCM Int16
 │   ├── cue_parser.py         feuilles CUE : pistes virtuelles (début/fin dans un fichier audio)
 │   ├── cover_art.py          pochettes
-│   ├── scheduler.py          synchronisation automatique planifiée
 │   ├── network_paths.py      détection UNC / lecteur réseau (sans E/S) : jamais de exists()/isdir() réseau sur le thread UI
 │   ├── startup_timing.py     chronométrage des étapes de démarrage → `%APPDATA%/AMSO/startup.log`
 │   ├── config.py             préférences persistantes (config.ini)
@@ -67,6 +66,7 @@ amso/
 │   ├── audio_output.py       SinkOutput : QAudioSink en mode pull dans son propre QThread (indépendant du thread UI)
 │   ├── audio_decoder.py      décodeur PCM (amem)
 │   ├── audio_spectrum.py     analyse du spectre
+│   ├── scheduler.py          synchronisation automatique planifiée (QTimer, QFileSystemWatcher) ; `core/scheduler.py` = simple réexport
 │   ├── sleep_timer.py        minuterie d'arrêt de lecture (délai, fin de piste/file)
 │   ├── vlc_binding.py, vlc_downloader.py   liaison et auto-installation de VLC
 │   ├── vlc_info.py           version et provenance de la libvlc chargée, téléchargement réservé à Windows, ~/Applications/VLC.app (macOS)

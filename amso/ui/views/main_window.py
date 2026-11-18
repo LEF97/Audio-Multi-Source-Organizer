@@ -30,9 +30,9 @@ from amso.core.database import (
     get_default_data_dir,
 )
 from amso.core.i18n import get_i18n, tr
-from amso.core.scheduler import SyncScheduler
 from amso.core.startup_timing import get_startup_clock
 from amso.services.player_service import PlayerService
+from amso.services.scheduler import SyncScheduler
 from amso.services.sleep_inhibitor import SleepInhibitor
 from amso.services.update_checker import UpdateCheckerWorker
 from amso.services.vlc_info import supports_vlc_download

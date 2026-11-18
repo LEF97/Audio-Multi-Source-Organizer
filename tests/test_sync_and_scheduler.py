@@ -15,7 +15,7 @@ from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 
 from amso.core.database import DatabaseManager, SourceRecord, SourceType
 from amso.core.i18n import get_i18n
-from amso.core.scheduler import SyncScheduler
+from amso.services.scheduler import SyncScheduler
 from amso.ui.dialogs.source_config_dialog import SourceConfigDialog
 from amso.ui.views.main_window import MainWindow
 
