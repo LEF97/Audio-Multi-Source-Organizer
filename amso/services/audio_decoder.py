@@ -234,7 +234,8 @@ class AsyncAudioDecoder(QObject):
             try:
                 self._player.stop()
             except Exception:
-                pass
+                # Lecteur VLC interne du décodeur déjà libéré : l'arrêt du décodage doit aboutir quand même.
+                logger.debug("Arrêt du lecteur de décodage en échec", exc_info=True)
         self._current_path = ""
         self._accumulated_pcm.clear()
         self._has_emitted_ready = False

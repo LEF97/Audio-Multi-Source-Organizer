@@ -163,6 +163,7 @@ class PlayerService(
             self._media_player.audio_set_volume(0)
             self._last_set_volume = 0
         except Exception:
+            # Moteur vlc_direct figé : lecteur VLC déjà libéré ou sans média, l'échec est sans effet sur la lecture.
             pass
 
         self._playback_fade_in_timer.start(40)
@@ -189,6 +190,7 @@ class PlayerService(
             self._media_player.audio_set_volume(curr_vol)
             self._last_set_volume = curr_vol
         except Exception:
+            # Moteur vlc_direct figé, timer de 40 ms : un échec libvlc ponctuel se corrige au tick suivant.
             pass
 
         if progress >= 1.0:
@@ -240,6 +242,7 @@ class PlayerService(
                 self._last_set_volume = target
                 self._media_player.audio_set_volume(target)
             except Exception:
+                # Moteur vlc_direct figé : lecteur VLC déjà libéré ou sans média, l'échec est sans effet sur la lecture.
                 pass
 
     def _apply_vlc_audio_output(self, player_obj: Any) -> None:
@@ -251,6 +254,7 @@ class PlayerService(
             target = b"directsound" if cfg.get_transition_mode() == "crossfade" else b"mmdevice"
             player_obj.audio_output_set(target)
         except Exception:
+            # Sortie imposée indisponible (pilote absent) : VLC garde sa sortie par défaut.
             pass
 
     def _init_vlc(self) -> bool:
@@ -274,6 +278,7 @@ class PlayerService(
             try:
                 self._vlc_instance = vlc.Instance(*vlc_args)
             except Exception:
+                # Options VLC refusées par une libvlc ancienne : instance minimale.
                 self._vlc_instance = vlc.Instance("--no-xlib", "--no-video", "--quiet")
             if self._vlc_instance is None:
                 raise RuntimeError(tr("player.err_vlc_instance"))
@@ -288,6 +293,7 @@ class PlayerService(
                 if self._standby_player is not None:
                     self._apply_vlc_audio_output(self._standby_player)
             except Exception:
+                # Lecteur standby non créé : les transitions vlc_direct se replient sur l'enchaînement standard.
                 self._standby_player = None
             return True
         except Exception as exc:
@@ -401,6 +407,7 @@ class PlayerService(
                 if t > 0:
                     return t
             except Exception:
+                # Lecteur VLC libéré pendant un rechargement : la dernière position connue est rendue.
                 pass
         if self._pending_seek_ms > 0:
             return self._pending_seek_ms
@@ -427,6 +434,7 @@ class PlayerService(
                 if length_ms > 0:
                     return length_ms
             except Exception:
+                # Lecteur VLC libéré pendant un rechargement : la durée connue est rendue.
                 pass
         if self.current_track and self.current_track.duration_seconds:
             return int(self.current_track.duration_seconds * 1000)
@@ -460,6 +468,7 @@ class PlayerService(
             try:
                 self._standby_decoder.stop()
             except Exception:
+                # Décodeur standby déjà arrêté : la remise à zéro commune aux deux moteurs doit aboutir.
                 pass
             self._standby_decoder = None
         if hasattr(self, "_standby_pcm"):
@@ -471,12 +480,14 @@ class PlayerService(
                 self._media_player.stop()
                 self._media_player.set_media(None)
             except Exception:
+                # Moteur vlc_direct figé : lecteur VLC déjà libéré ou sans média, l'échec est sans effet sur la lecture.
                 pass
         if self._standby_player:
             try:
                 self._standby_player.stop()
                 self._standby_player.set_media(None)
             except Exception:
+                # Moteur vlc_direct figé : lecteur VLC déjà libéré ou sans média, l'échec est sans effet sur la lecture.
                 pass
 
         self._reset_standby_player()

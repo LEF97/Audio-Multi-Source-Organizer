@@ -57,11 +57,13 @@ class PlayerTransportMixin(_MixinBase):
                 self._standby_player.stop()
                 self._standby_player.audio_set_volume(0)
             except Exception:
+                # Moteur vlc_direct figé : lecteur VLC déjà libéré ou sans média, l'échec est sans effet sur la lecture.
                 pass
         if getattr(self, "_standby_decoder", None):
             try:
                 self._standby_decoder.stop()
             except Exception:
+                # Décodeur standby déjà arrêté : la réinitialisation commune aux deux moteurs doit aboutir.
                 pass
             self._standby_decoder = None
         if hasattr(self, "_standby_pcm"):
@@ -82,6 +84,7 @@ class PlayerTransportMixin(_MixinBase):
             try:
                 self._media_player.audio_set_volume(self._volume)
             except Exception:
+                # Moteur vlc_direct figé : lecteur VLC déjà libéré ou sans média, l'échec est sans effet sur la lecture.
                 pass
 
     def load_index(self, index: int, seek_ms: int = 0, announce_track: bool = True) -> None:
@@ -98,6 +101,7 @@ class PlayerTransportMixin(_MixinBase):
             try:
                 self._media_player.stop()
             except Exception:
+                # Moteur vlc_direct figé : lecteur VLC déjà libéré ou sans média, l'échec est sans effet sur la lecture.
                 pass
 
         self._is_paused_requested = True
@@ -113,6 +117,7 @@ class PlayerTransportMixin(_MixinBase):
                 try:
                     self._media_player.stop()
                 except Exception:
+                    # Lecteur VLC inutilisé en mode buffer : seul son arrêt est tenté, l'échec est sans effet.
                     pass
             # Sortie conservée : la fermer puis la rouvrir à froid à la reprise accroche le début du son (tick),
             # comme pour le double clic (cf. play_index). Le sink reste suspendu tant que le titre est en pause.
@@ -198,6 +203,7 @@ class PlayerTransportMixin(_MixinBase):
                     try:
                         self._media_player.stop()
                     except Exception:
+                        # Lecteur VLC inutilisé en mode buffer : seul son arrêt est tenté, l'échec est sans effet.
                         pass
                 advancing = getattr(self, "_advancing_after_track_end", False)
                 # Changement manuel en pleine lecture : micro-fondu et sortie ouverte, pour ne pas couper en pleine onde.
@@ -283,6 +289,7 @@ class PlayerTransportMixin(_MixinBase):
             try:
                 self._media_player.audio_set_volume(0)
             except Exception:
+                # Moteur vlc_direct figé : lecteur VLC déjà libéré ou sans média, l'échec est sans effet sur la lecture.
                 pass
             self._media_player.pause()
             if self._is_crossfading:
@@ -290,6 +297,7 @@ class PlayerTransportMixin(_MixinBase):
                     try:
                         self._standby_player.pause()
                     except Exception:
+                        # Moteur vlc_direct figé : lecteur VLC déjà libéré ou sans média, l'échec est sans effet sur la lecture.
                         pass
                 if hasattr(self, "_fade_timer") and self._fade_timer.isActive():
                     self._fade_timer.stop()
@@ -329,6 +337,7 @@ class PlayerTransportMixin(_MixinBase):
             try:
                 self._standby_player.play()
             except Exception:
+                # Moteur vlc_direct figé : lecteur VLC déjà libéré ou sans média, l'échec est sans effet sur la lecture.
                 pass
             if hasattr(self, "_fade_timer") and not self._fade_timer.isActive():
                 self._fade_start_time = time.time() - self._fade_paused_elapsed
@@ -369,6 +378,7 @@ class PlayerTransportMixin(_MixinBase):
             try:
                 self._media_player.set_pause(1)
             except Exception:
+                # Certaines libvlc n'exposent pas set_pause : repli sur la bascule pause() (état Playing vérifié en amont).
                 self._media_player.pause()
         self._is_paused_requested = True
         self.state_changed.emit("paused")
@@ -386,6 +396,7 @@ class PlayerTransportMixin(_MixinBase):
                 if hasattr(self._media_player, "stop"):
                     self._media_player.stop()
             except Exception:
+                # Moteur vlc_direct figé : lecteur VLC déjà libéré ou sans média, l'échec est sans effet sur la lecture.
                 pass
         self._reset_standby_player()
         self._volume_enforce_ticks = 0
@@ -492,6 +503,7 @@ class PlayerTransportMixin(_MixinBase):
                 try:
                     self._media_player.audio_set_volume(self._volume)
                 except Exception:
+                    # Moteur vlc_direct figé : lecteur VLC déjà libéré ou sans média, l'échec est sans effet sur la lecture.
                     pass
 
     def seek_ratio(self, ratio: float) -> None:
@@ -551,6 +563,7 @@ class PlayerTransportMixin(_MixinBase):
             try:
                 self._media_player.set_time(ms)
             except Exception:
+                # Moteur vlc_direct figé : lecteur VLC déjà libéré ou sans média, l'échec est sans effet sur la lecture.
                 pass
         elif state == vlc.State.Ended:
             if self._is_paused_requested or not self.is_playing:

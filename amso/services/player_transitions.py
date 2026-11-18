@@ -102,6 +102,7 @@ class PlayerTransitionsMixin(_MixinBase):
             try:
                 media.parse_with_options(vlc.MediaParseFlag.local, 0)
             except Exception:
+                # Analyse anticipée facultative : le média reste lisible sans elle.
                 pass
             self._standby_player.set_media(media)
             if get_config_manager().get_transition_mode() == "crossfade":
@@ -129,7 +130,8 @@ class PlayerTransitionsMixin(_MixinBase):
             ):
                 try:
                     sig.disconnect(slot)
-                except Exception:
+                except RuntimeError:
+                    # PySide6 < 6.5 lève RuntimeError sur un slot non connecté (les versions récentes émettent un avertissement).
                     pass
             self._decoder.ready_to_play.connect(self._on_decoder_ready_to_play)
             self._decoder.chunk_decoded.connect(self._on_decoder_chunk_decoded)
@@ -142,7 +144,8 @@ class PlayerTransitionsMixin(_MixinBase):
                 ):
                     try:
                         sig.disconnect(slot)
-                    except Exception:
+                    except RuntimeError:
+                        # PySide6 < 6.5 lève RuntimeError sur un slot non connecté (les versions récentes émettent un avertissement).
                         pass
                 old.stop()
         if hasattr(self, "_standby_pcm"):
@@ -351,6 +354,7 @@ class PlayerTransitionsMixin(_MixinBase):
                 try:
                     self._media_player.set_pause(1)
                 except Exception:
+                    # Certaines libvlc n'exposent pas set_pause : repli sur la bascule pause() (état Playing vérifié).
                     self._media_player.pause()
                 self._is_paused_requested = False
                 self.state_changed.emit("paused")
@@ -377,6 +381,7 @@ class PlayerTransitionsMixin(_MixinBase):
             try:
                 self._media_player.set_time(target_ms)
             except Exception:
+                # Moteur vlc_direct figé, appelé à chaque tick : un échec libvlc ponctuel se corrige au passage suivant.
                 pass
 
         if not self._is_crossfading and not self._is_temporary_volume and not self._is_fading_in:
@@ -386,6 +391,7 @@ class PlayerTransitionsMixin(_MixinBase):
                 try:
                     self._media_player.audio_set_volume(target_vol)
                 except Exception:
+                    # Moteur vlc_direct figé, appelé à chaque tick : un échec libvlc ponctuel se corrige au passage suivant.
                     pass
             else:
                 try:
@@ -393,6 +399,7 @@ class PlayerTransitionsMixin(_MixinBase):
                     if curr_vol != -1 and abs(curr_vol - target_vol) > 2:
                         self._media_player.audio_set_volume(target_vol)
                 except Exception:
+                    # Moteur vlc_direct figé, appelé à chaque tick : un échec libvlc ponctuel se corrige au passage suivant.
                     pass
 
         current_ms = max(0, self._media_player.get_time())

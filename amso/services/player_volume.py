@@ -71,6 +71,7 @@ class PlayerVolumeMixin(_MixinBase):
             try:
                 self._standby_player.audio_set_volume(0)
             except Exception:
+                # Moteur vlc_direct figé : lecteur VLC déjà libéré ou sans média, l'échec est sans effet sur la lecture.
                 pass
         try:
             get_config_manager().set_player_muted(self._is_muted)
@@ -86,4 +87,5 @@ class PlayerVolumeMixin(_MixinBase):
             try:
                 self._media_player.audio_set_volume(target)
             except Exception:
+                # Moteur vlc_direct figé : lecteur VLC déjà libéré ou sans média, l'échec est sans effet sur la lecture.
                 pass
