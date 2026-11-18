@@ -24,11 +24,11 @@
 ---
 
 <p align="center">
-  <img src="screenshots/2026-11-15%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Audio player v0.5.0" width="850">
+  <img src="screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Audio player v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="screenshots/2026-11-15%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Sources and library management" width="850">
+  <img src="screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Sources and library management" width="850">
 </p>
 
 <p align="center">

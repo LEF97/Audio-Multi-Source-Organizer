@@ -76,6 +76,10 @@ AMSO a pour vocation de devenir le **hub musical universel et décentralisé** d
 - [x] **Playlists en mode album :** regroupement des titres d'une playlist en dossiers virtuels par album dans l'arborescence, avec « (album inconnu) » pour les titres sans album.
 - [x] **Transitions de pochettes, scan en 3 phases & géométrie de fenêtre :** 5 effets de transition, progression détaillée du scan et restauration de la fenêtre.
 - [x] **Nouvelle icône AMSO :** icône haute résolution multi-tailles (PNG, ICO, ICNS).
+- [x] **Outils audio :** égaliseur graphique 10 bandes avec presets, normalisation ReplayGain, vitesse de lecture, choix de la sortie audio et minuterie d'arrêt (moteur `buffer`).
+- [x] **Enchaînement continu des pistes CUE :** les pistes contiguës d'un même fichier sont décodées en un seul flux (moteur `buffer`).
+- [x] **Guides d'aide, pages Son et Effets, effet Warp Pilot & mode Aléatoire :** aide contextuelle sur chaque page, réglages dédiés du son et des effets visuels.
+- [x] **Intégration Windows :** barre des tâches et icône dans la zone de notification.
 - [x] **Crossfade paramétrable & Enchaînements audio avancés :** Prise en charge des transitions sans coupure (Gapless 0 ms), du fondu enchaîné haute précision (Crossfade Equal-Power) et du mode standard sans blanc.
 
 ---
@@ -95,15 +99,9 @@ AMSO a pour vocation de devenir le **hub musical universel et décentralisé** d
 - [ ] **Lecture directe en streaming cloud :** Écoute des morceaux distants avec mise en cache locale transparente.
 - [ ] **Synchronisation bidirectionnelle sélective :** Téléchargement local de pistes du cloud ou sauvegarde de pistes locales vers Drive.
 - [ ] **Gestion des artistes et discographie associée :** Vue dédiée par artiste avec albums, singles et discographie complète.
-- [ ] **Égaliseur graphique (EQ) :** Presets (Rock, Pop, Jazz, Bass Boost) et égaliseur paramétrique multibandes.
 - [ ] **Éditeur de métadonnées in-app :** Modification directe des tags ID3 / Vorbis sur un ou plusieurs fichiers sélectionnés.
 - [ ] **Téléchargement automatique de pochettes :** Recherche en ligne (MusicBrainz / Cover Art Archive) des jaquettes manquantes.
 - [ ] **Filtres de recherche avancés :** Filtrage combiné par genre, année, débit binaire (bitrate) et format sans perte (Lossless).
-
----
-
-### 🔵 Version 0.4.2 — Compatibilité réseau Linux & macOS
-
 - [ ] **Détection des montages réseau (Linux & macOS) :** `amso/core/network_paths.py` ne reconnaît aujourd'hui que les chemins UNC et les lecteurs mappés Windows ; reconnaître les montages NFS / SMB / AFP (`/proc/self/mountinfo`, `statfs`) pour éviter tout sondage disque bloquant au démarrage sur ces systèmes.
 - [ ] **Validation sur Linux et macOS :** moteur `buffer`, transitions et packaging à confirmer sur de vrais systèmes à partir des retours des testeurs.
 

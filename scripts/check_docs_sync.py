@@ -170,7 +170,6 @@ def check_docs(project_root: Path | None = None, release: bool = False) -> list[
         expected_screenshots = [
             "screenshots/2026-11-18%20v0.5.png",
             "screenshots/2026-11-18%20v0.5%20sources.png",
-            "screenshots/2026-10-25%20v0.4.0%2002.png",
             "screenshots/2026-10-18%20v0.3.0%20blind%20test.png",
         ]
         for shot in expected_screenshots:

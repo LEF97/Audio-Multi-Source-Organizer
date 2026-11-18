@@ -24,15 +24,11 @@
 ---
 
 <p align="center">
-  <img src="screenshots/2026-11-15%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
+  <img src="screenshots/2026-11-18%20v0.5.png" alt="Audio Multi-Source Organizer (AMSO) - Lecteur audio v0.5.0" width="850">
 </p>
 
 <p align="center">
-  <img src="screenshots/2026-11-15%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
-</p>
-
-<p align="center">
-  <img src="screenshots/2026-10-25%20v0.4.0%2002.png" alt="Audio Multi-Source Organizer (AMSO) - Arborescence par dossiers & feuille CUE 💿 (pistes virtuelles)" width="850">
+  <img src="screenshots/2026-11-18%20v0.5%20sources.png" alt="Audio Multi-Source Organizer (AMSO) - Gestion des sources et de la bibliothèque" width="850">
 </p>
 
 <p align="center">
@@ -51,10 +47,13 @@
 | **Support des Playlists (M3U, PLS, XSPF, WPL) & feuilles CUE** | Indexation arborescente (🎶), ordre séquentiel d'écoute, repérage visuel des morceaux manquants ; les fichiers `.cue` (💿) s'ouvrent comme un dossier de pistes virtuelles avec leur durée et se lisent comme de vraies pistes | 🟢 Implémenté |
 | **Gestionnaire de Playlist & Glisser-Déposer** | File d'attente virtualisée, drag & drop fluide, aléatoire (shuffle) réversible et boucles | 🟢 Implémenté |
 | **Mode « 🎲 Blind Test » interactif** | Jeu musical immersif avec décompte animé, fondu sonore, révélation douce et enchaînement automatique | 🟢 Implémenté |
+| **Sources & Bibliothèque** | Tableau de bord des sources avec indicateurs de santé (sources hors ligne, erreurs de scan, fichiers manquants), vue globale ou par source et actions rapides | 🟢 Implémenté |
+| **Éditeur, réparation & export de playlists** | Réorganisation, relocalisation manuelle ou automatique des fichiers manquants, sauvegarde en M3U / M3U8 / PLS / XSPF / WPL, regroupement par album | 🟢 Implémenté |
+| **Outils audio** | Égaliseur graphique 10 bandes avec presets, normalisation ReplayGain, vitesse de lecture, choix de la sortie audio et minuterie d'arrêt (moteur à tampon continu) | 🟢 Implémenté |
+| **Intégration Windows & effets visuels** | Barre des tâches, zone de notification, guides d'aide, effets visuels réglables avec mode Aléatoire | 🟢 Implémenté |
 | **Mises à jour in-app** | Vérification automatique/manuelle des versions via GitHub Releases | 🟢 Implémenté |
 | **Versions Linux & macOS** | Paquets `.AppImage` / `.tar.gz` (Linux) et `.dmg` non signé (macOS), VLC requis | 🟡 Expérimental (non testé) |
 | **Gestion des artistes & Discographie** | Vue dédiée par artiste avec albums, singles et discographie complète | 🟡 Prévu |
-| **Égaliseur graphique (EQ)** | Presets audio et égaliseur multibandes paramétrique | 🟡 Prévu |
 | **Connecteur Google Drive** | Scan et synchronisation de collections audio distantes via OAuth 2.0 | ⚪ Planifié |
 | **Connecteur Amazon Music** | Scan et synchronisation de collections distantes via OAuth 2.0 | ⚪ Planifié |
 | **Connecteur Spotify / Deezer** | Importation de playlists et correspondance de pistes | ⚪ Planifié |
