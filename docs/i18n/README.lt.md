@@ -153,7 +153,7 @@ Testai vyksta automatiškai **Windows, macOS ir Ubuntu** kiekviename push'e per 
 
 AMSO yra nemokamas ir laisvių kodų programinė įranga (open source). Jei jums patinka ši programa ir norite padėti palaikti jos vystymą:
 
-- 🎮 **Keičiantis & Pay What You Want :** [Page Itch.io d'AMSO](https://lef97.itch.io/audio-multi-source-organizer) (pasirengęs, išankstiai sukompuotavęs)
+- 🎮 **Keičiantis & Pay What You Want :** [Page Itch.io d'AMSO](https://arnaudlef97.itch.io/amso) (pasirengęs, išankstiai sukompuotavęs)
 - ☕ **Atlikti tiesioginį dovanojimą :** [Ko-fi (@arnaudlef97)](https://ko-fi.com/arnaudlef97)
 - ⭐ **GitHub Sponsors :** [Patikiuoti LEF97](https://github.com/sponsors/LEF97)
 

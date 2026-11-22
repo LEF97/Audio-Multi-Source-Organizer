@@ -153,7 +153,7 @@ Các bài kiểm tra được chạy tự động trên **Windows, macOS và Ubu
 
 AMSO là một phần mềm tự do và miễn phí (open source). Nếu bạn thích ứng dụng và muốn khuyến khích phát triển nó:
 
-- 🎮 **Tải xuống & Pay What You Want :** [Trang Itch.io của AMSO](https://lef97.itch.io/audio-multi-source-organizer) (tệp thực thi được biên dịch sẵn, sẵn sàng sử dụng)
+- 🎮 **Tải xuống & Pay What You Want :** [Trang Itch.io của AMSO](https://arnaudlef97.itch.io/amso) (tệp thực thi được biên dịch sẵn, sẵn sàng sử dụng)
 - ☕ **Ủng hộ trực tiếp :** [Ko-fi (@arnaudlef97)](https://ko-fi.com/arnaudlef97)
 - ⭐ **Nhà tài trợ GitHub :** [Tài trợ cho LEF97](https://github.com/sponsors/LEF97)
 

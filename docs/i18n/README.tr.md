@@ -153,7 +153,7 @@ Testler otomatik olarak **Windows, macOS ve Ubuntu** üzerinde, GitHub Actions a
 
 AMSO ücretsiz ve açık kaynaklı bir yazılımdır (open source). Uygulamayı beğenirseniz ve geliştirilmesini desteklemek isterseniz:
 
-- 🎮 **İndirme & İstediğin Kadar Öde :** [Page Itch.io d'AMSO](https://lef97.itch.io/audio-multi-source-organizer) (kullanıma hazır önceden derlenmiş çalıştırılabilir dosya)
+- 🎮 **İndirme & İstediğin Kadar Öde :** [Page Itch.io d'AMSO](https://arnaudlef97.itch.io/amso) (kullanıma hazır önceden derlenmiş çalıştırılabilir dosya)
 - ☕ **Doğrudan bağış yapmak :** [Ko-fi (@arnaudlef97)](https://ko-fi.com/arnaudlef97)
 - ⭐ **GitHub Sponsors :** [LEF97'i Sponsor Yapmak](https://github.com/sponsors/LEF97)
 

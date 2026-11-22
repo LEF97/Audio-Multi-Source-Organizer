@@ -147,7 +147,7 @@ Tests run automatically across **Windows, macOS, and Ubuntu** on every push via 
 
 AMSO is 100% free and open-source software. If you enjoy the project and want to support ongoing development:
 
-- 🎮 **Download & Pay What You Want:** [AMSO on Itch.io](https://lef97.itch.io/audio-multi-source-organizer) (precompiled portable standalone executable)
+- 🎮 **Download & Pay What You Want:** [AMSO on Itch.io](https://arnaudlef97.itch.io/amso) (precompiled portable standalone executable)
 - ☕ **Direct Donation:** [Ko-fi (@arnaudlef97)](https://ko-fi.com/arnaudlef97)
 - ⭐ **GitHub Sponsors:** [Sponsor LEF97](https://github.com/sponsors/LEF97)
 

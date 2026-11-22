@@ -153,7 +153,7 @@ A tesztek automatikusan futnak **Windows, macOS et Ubuntu** minden pushon keresz
 
 AMSO egy ingyenes és szabad forráskódú (open source) szoftver. Ha kedveli az alkalmazást, és szeretné támogatni a fejlesztését:
 
-- 🎮 **Letöltés & Fizessen, amennyit akar :** [Page Itch.io d'AMSO](https://lef97.itch.io/audio-multi-source-organizer) (előkompilált, használatra kész végrehajtható fájl)
+- 🎮 **Letöltés & Fizessen, amennyit akar :** [Page Itch.io d'AMSO](https://arnaudlef97.itch.io/amso) (előkompilált, használatra kész végrehajtható fájl)
 - ☕ **Közvetlen adományozás :** [Ko-fi (@arnaudlef97)](https://ko-fi.com/arnaudlef97)
 - ⭐ **GitHub Sponsors :** [LEF97 támogatása](https://github.com/sponsors/LEF97)
 
