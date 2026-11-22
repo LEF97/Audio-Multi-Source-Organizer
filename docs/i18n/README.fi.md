@@ -153,7 +153,7 @@ Testit suoritetaan automaattisesti **Windows, macOS ja Ubuntu** -käyttöjärjes
 
 AMSO on vapaa ja ilmainen ohjelmisto (open source). Jos pidät sovelluksesta ja haluat tukea sen kehitystä:
 
-- 🎮 **Lataus & Pay What You Want :** [AMSO:n Itch.io-sivu](https://lef97.itch.io/audio-multi-source-organizer) (Ennaltaäänteistetty, valmis käyttöön oleva suoritettava tiedosto)
+- 🎮 **Lataus & Pay What You Want :** [AMSO:n Itch.io-sivu](https://arnaudlef97.itch.io/amso) (Ennaltaäänteistetty, valmis käyttöön oleva suoritettava tiedosto)
 - ☕ **Suora lahjoitus :** [Ko-fi (@arnaudlef97)](https://ko-fi.com/arnaudlef97)
 - ⭐ **GitHub Sponsorit :** [Sponsoroi LEF97](https://github.com/sponsors/LEF97)
 

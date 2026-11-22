@@ -56,10 +56,8 @@ def test_funding_yaml_exists_and_valid():
 
     content = funding_path.read_text(encoding="utf-8")
     assert "github: [LEF97]" in content or "github: LEF97" in content
-    assert "ko_fi: arnaudlef97" in content or "ko_fi: lef97" in content
-    assert (
-        "https://arnaudlef97.itch.io/amso" in content or "https://lef97.itch.io/audio-multi-source-organizer" in content
-    )
+    assert "ko_fi: arnaudlef97" in content
+    assert "https://arnaudlef97.itch.io/amso" in content
 
 
 def test_constants_and_version():

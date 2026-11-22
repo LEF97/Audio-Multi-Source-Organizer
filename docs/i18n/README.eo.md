@@ -153,7 +153,7 @@ Testoj ekzigrante aŭtomatiskaj sur **Windows, macOS et Ubuntu** ĉiu pŝo per G
 
 AMSO estas un libera kaj gratis programaro (open source). Se vi apreciigas la aplikaĵon kaj deziras stimuli ĝej dezvolviĝon:
 
-- 🎮 **Avenemdonado & Pagonu Kion Vi Volas :** [Page Itch.io d'AMSO](https://lef97.itch.io/audio-multi-source-organizer) (prekompilita ekzekutablo parata por uzo)
+- 🎮 **Avenemdonado & Pagonu Kion Vi Volas :** [Page Itch.io d'AMSO](https://arnaudlef97.itch.io/amso) (prekompilita ekzekutablo parata por uzo)
 - ☕ **Direkta Donacoj :** [Ko-fi (@arnaudlef97)](https://ko-fi.com/arnaudlef97)
 - ⭐ **GitHub Sponsoroj :** [Sponzori LEF97](https://github.com/sponsors/LEF97)
 

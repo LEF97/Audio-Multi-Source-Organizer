@@ -153,7 +153,7 @@ Mitkaji hivi hivi inatendeka kiotomatiki kwenye **Windows, macOS et Ubuntu** kil
 
 AMSO ni programu huru na ya bure (open source). Ikiwa unapenda programu na unataka kusaidia maendeleo yake:
 
-- 🎮 **Upakuaji & Lipa Unachotaka :** [Page Itch.io d'AMSO](https://lef97.itch.io/audio-multi-source-organizer) (programu inayofanywa tayari na tayari ya kutumika)
+- 🎮 **Upakuaji & Lipa Unachotaka :** [Page Itch.io d'AMSO](https://arnaudlef97.itch.io/amso) (programu inayofanywa tayari na tayari ya kutumika)
 - ☕ **Kutoa sadaka moja kwa moja :** [Ko-fi (@arnaudlef97)](https://ko-fi.com/arnaudlef97)
 - ⭐ **GitHub Sponsors :** [Kuunga mkono LEF97](https://github.com/sponsors/LEF97)
 

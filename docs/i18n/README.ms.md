@@ -153,7 +153,7 @@ Ujian dijalankan secara automatik pada **Windows, macOS et Ubuntu** pada setiap 
 
 AMSO adalah perisian bebas dan percuma (open source). Jika anda menghargai aplikasi ini dan ingin menyokong perkembangannya:
 
-- 🎮 **Muat Turun & Bayar Apa Yang Anda Mahu :** [Page Itch.io d'AMSO](https://lef97.itch.io/audio-multi-source-organizer) (executable pra-kompilasi sedia untuk digunakan)
+- 🎮 **Muat Turun & Bayar Apa Yang Anda Mahu :** [Page Itch.io d'AMSO](https://arnaudlef97.itch.io/amso) (executable pra-kompilasi sedia untuk digunakan)
 - ☕ **Derma terus :** [Ko-fi (@arnaudlef97)](https://ko-fi.com/arnaudlef97)
 - ⭐ **Penaja GitHub :** [Sponsor LEF97](https://github.com/sponsors/LEF97)
 
