@@ -154,7 +154,7 @@ pytest -v
 AMSO 是一個免費且開源的軟體 (open source)。如果您喜歡這個應用程式並希望支持其開發：
 
 - 🎮 **下載與隨心支付：** [Page Itch.io d'AMSO](https://lef97.itch.io/audio-multi-source-organizer) (即用型預編譯執行檔)
-- ☕ **直接捐款：** [Ko-fi (@lef97)](https://ko-fi.com/lef97)
+- ☕ **直接捐款：** [Ko-fi (@arnaudlef97)](https://ko-fi.com/arnaudlef97)
 - ⭐ **GitHub 贊助人：** [贊助 LEF97](https://github.com/sponsors/LEF97)
 
 ---

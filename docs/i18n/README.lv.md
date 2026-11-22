@@ -154,7 +154,7 @@ Testi tiek izturēti automātiski uz **Windows, macOS un Ubuntu** katrā pushā 
 AMSO ir bezmaksas un atvērta kods programmatūra (open source). Ja jums patīk lietotne un vēlaties atbalstīt tās attīstību:
 
 - 🎮 **Ilejotāšana & Makšķerot, cik vēlies :** [Page Itch.io d'AMSO](https://lef97.itch.io/audio-multi-source-organizer) (pārinstalējs, kas ir priekšaprasējis un gatavs lietošanai)
-- ☕ **Darīt tiešu dāvanu :** [Ko-fi (@lef97)](https://ko-fi.com/lef97)
+- ☕ **Darīt tiešu dāvanu :** [Ko-fi (@arnaudlef97)](https://ko-fi.com/arnaudlef97)
 - ⭐ **GitHub Patrunīji :** [Sponsoriser LEF97](https://github.com/sponsors/LEF97)
 
 ---

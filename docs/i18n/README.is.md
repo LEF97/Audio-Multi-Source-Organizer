@@ -154,7 +154,7 @@ Prófunirnir keyrja sér svættlega á **Windows, macOS et Ubuntu** við hverja 
 AMSO er loftið og óvaðveitt hugbúnaður (open source). Ef þú þykir forritinu vel og vilt stuðningsköllu þróun þess:
 
 - 🎮 **Hlaða niður & Greiða það sem þú vilt :** [Page Itch.io d'AMSO](https://lef97.itch.io/audio-multi-source-organizer) (uppbyggt framkvæmdarþætti sem er tilbúinn til notkunar)
-- ☕ **Grafa beint :** [Ko-fi (@lef97)](https://ko-fi.com/lef97)
+- ☕ **Grafa beint :** [Ko-fi (@arnaudlef97)](https://ko-fi.com/arnaudlef97)
 - ⭐ **GitHub Stafræðingar :** [Stafræðingar LEF97](https://github.com/sponsors/LEF97)
 
 ---

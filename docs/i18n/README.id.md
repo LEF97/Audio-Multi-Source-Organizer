@@ -154,7 +154,7 @@ Pengujian berjalan secara otomatis pada **Windows, macOS dan Ubuntu** setiap kal
 AMSO adalah perangkat lunak bebas dan gratis (open source). Jika Anda menyukai aplikasi ini dan ingin mendukung pengembangannya:
 
 - 🎮 **Unduhan & Pay What You Want :** [Page Itch.io d'AMSO](https://lef97.itch.io/audio-multi-source-organizer) (aplikasi yang sudah dikompilasi dan siap digunakan)
-- ☕ **Donasi langsung :** [Ko-fi (@lef97)](https://ko-fi.com/lef97)
+- ☕ **Donasi langsung :** [Ko-fi (@arnaudlef97)](https://ko-fi.com/arnaudlef97)
 - ⭐ **GitHub Sponsors :** [Sponsor LEF97](https://github.com/sponsors/LEF97)
 
 ---
