@@ -154,7 +154,7 @@ Probakak automatikoki egiten dira **Windows, macOS et Ubuntu**-an, bako push-ean
 AMSO da software hardoa eta ingurubi (open source). Aplikazioa gustatzen zaizkio eta desarowera bixikatu nahi dizkio:
 
 - 🎮 **Deskarga & Ordaindu Zerbait :** [Page Itch.io d'AMSO](https://lef97.itch.io/audio-multi-source-organizer) (erakutle prekompilatuta, erabiltzeko prest)
-- ☕ **Donazio zuzen bat egitea :** [Ko-fi (@lef97)](https://ko-fi.com/lef97)
+- ☕ **Donazio zuzen bat egitea :** [Ko-fi (@arnaudlef97)](https://ko-fi.com/arnaudlef97)
 - ⭐ **GitHub Sponsors :** [LEF97-ari sponsoratu](https://github.com/sponsors/LEF97)
 
 ---

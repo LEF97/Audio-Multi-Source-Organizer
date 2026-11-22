@@ -8,4 +8,4 @@ URL_GITHUB_RELEASES: str = "https://github.com/LEF97/Audio-Multi-Source-Organize
 URL_GITHUB_API_LATEST_RELEASE: str = "https://api.github.com/repos/LEF97/Audio-Multi-Source-Organizer/releases/latest"
 URL_ITCH_IO: str = "https://arnaudlef97.itch.io/amso"
 URL_KO_FI: str = "https://ko-fi.com/arnaudlef97"
-URL_GITHUB_SPONSORS: str = "https://github.com/sponsors/lef97"
+URL_GITHUB_SPONSORS: str = "https://github.com/sponsors/LEF97"

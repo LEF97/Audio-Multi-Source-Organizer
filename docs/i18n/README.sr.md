@@ -154,7 +154,7 @@ Testovi se automatski pokreću na **Windows, macOS i Ubuntu** pri svakom push-u 
 AMSO je slobodan i besplatan softver (open source). Ako vam se sviđa aplikacija i želite da podstaknete njen razvoj:
 
 - 🎮 **Preuzimanje & Plati koliko želiš :** [Itch.io stranica AMSO](https://lef97.itch.io/audio-multi-source-organizer) (predkompajlirani izvršni fajl spreman za upotrebu)
-- ☕ **Direktni doprinos :** [Ko-fi (@lef97)](https://ko-fi.com/lef97)
+- ☕ **Direktni doprinos :** [Ko-fi (@arnaudlef97)](https://ko-fi.com/arnaudlef97)
 - ⭐ **GitHub Sponzori :** [Sponzorišati LEF97](https://github.com/sponsors/LEF97)
 
 ---

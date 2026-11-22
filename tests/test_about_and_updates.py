@@ -68,7 +68,7 @@ def test_constants_and_version():
     assert "github.com/LEF97" in URL_GITHUB_REPO
     assert "itch.io" in URL_ITCH_IO
     assert "ko-fi.com" in URL_KO_FI
-    assert URL_GITHUB_SPONSORS == "https://github.com/sponsors/lef97"
+    assert URL_GITHUB_SPONSORS == "https://github.com/sponsors/LEF97"
     assert "api.github.com" in URL_GITHUB_API_LATEST_RELEASE
 
 

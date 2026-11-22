@@ -154,7 +154,7 @@ Ang mga test ay awtomatikong tumatakbo sa **Windows, macOS, at Ubuntu** sa bawat
 AMSO ay isang libre at open-source na software. Kung nagugustuhan mo ang application at gusto mong suportahan ang pag-unlad nito:
 
 - 🎮 **Pag-download & Pay What You Want :** [Page Itch.io d'AMSO](https://lef97.itch.io/audio-multi-source-organizer) (pre-compiled executable ready to use)
-- ☕ **Direktang Donasyon :** [Ko-fi (@lef97)](https://ko-fi.com/lef97)
+- ☕ **Direktang Donasyon :** [Ko-fi (@arnaudlef97)](https://ko-fi.com/arnaudlef97)
 - ⭐ **GitHub Sponsors :** [Sponsoriser LEF97](https://github.com/sponsors/LEF97)
 
 ---
